@@ -143,7 +143,7 @@ export function parseCSVPlayers(
       continue;
     }
 
-    let teamId = teamMap[rowTeamName.toLowerCase()];
+    let teamId: number | null = teamMap[rowTeamName.toLowerCase()] ?? null;
     if (!teamId) teamId = fuzzyTeamMatch(rowTeamName, teamMap);
     if (!teamId) {
       const available =

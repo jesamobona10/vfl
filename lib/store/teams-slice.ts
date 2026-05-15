@@ -29,6 +29,10 @@ function normalizeTeams(): Team[] {
   }));
 }
 
+function getTeams(get: () => any): Team[] {
+  return get().teams as Team[];
+}
+
 export const createTeamsSlice: StateCreator<any, [], [], TeamsSlice> = (
   set,
   get
@@ -38,16 +42,16 @@ export const createTeamsSlice: StateCreator<any, [], [], TeamsSlice> = (
   setTeams: (teams) => set({ teams }),
 
   addTeam: (team) => {
-    set({ teams: [...get().teams, team] });
+    set({ teams: [...getTeams(get), team] });
   },
 
   deleteTeam: (id) => {
-    set({ teams: get().teams.filter((t) => t.id !== id) });
+    set({ teams: getTeams(get).filter((t) => t.id !== id) });
   },
 
   updateTeam: (id, data) => {
     set({
-      teams: get().teams.map((t) =>
+      teams: getTeams(get).map((t) =>
         t.id === id ? { ...t, ...data } : t
       ),
     });
@@ -57,14 +61,14 @@ export const createTeamsSlice: StateCreator<any, [], [], TeamsSlice> = (
 
   setTeamLogo: (id, logo) => {
     set({
-      teams: get().teams.map((t) =>
+      teams: getTeams(get).map((t) =>
         t.id === id ? { ...t, logo } : t
       ),
     });
   },
 
   teamName: (id) =>
-    get().teams.find((t) => t.id === Number(id))?.name || "Unknown Team",
+    getTeams(get).find((t) => t.id === Number(id))?.name || "Unknown Team",
 
-  getTeam: (id) => get().teams.find((t) => t.id === Number(id)),
+  getTeam: (id) => getTeams(get).find((t) => t.id === Number(id)),
 });

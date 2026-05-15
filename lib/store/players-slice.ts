@@ -1,5 +1,5 @@
 import type { StateCreator } from "zustand";
-import type { Player, ImportResult } from "../types";
+import type { Player, Team, ImportResult } from "../types";
 import { parseCSVPlayers } from "../utils/csv";
 
 export interface PlayersSlice {
@@ -11,10 +11,14 @@ export interface PlayersSlice {
   deletePlayer: (id: number) => void;
   deleteTeamPlayers: (teamId: number) => void;
   deleteAllPlayers: () => void;
-  importPlayers: (csvText: string, teams: { id: number; name: string }[]) => ImportResult;
+  importPlayers: (csvText: string, teams: Team[]) => ImportResult;
   getTeamPlayers: (teamId: number) => Player[];
   getAllPlayers: () => Player[];
   recalculateRatings: () => void;
+}
+
+function getPlayers(get: () => any): Player[] {
+  return get().players as Player[];
 }
 
 export const createPlayersSlice: StateCreator<
@@ -28,12 +32,12 @@ export const createPlayersSlice: StateCreator<
   setPlayers: (players) => set({ players }),
 
   addPlayer: (player) => {
-    set({ players: [...get().players, player] });
+    set({ players: [...getPlayers(get), player] });
   },
 
   updatePlayer: (id, data) => {
     set({
-      players: get().players.map((p) =>
+      players: getPlayers(get).map((p) =>
         p.id === id ? { ...p, ...data } : p
       ),
     });
@@ -41,32 +45,32 @@ export const createPlayersSlice: StateCreator<
 
   deletePlayer: (id) => {
     set({
-      players: get().players.filter((p) => p.id !== id),
+      players: getPlayers(get).filter((p) => p.id !== id),
     });
   },
 
   deleteTeamPlayers: (teamId) => {
-    set({ players: get().players.filter((p) => p.teamId !== teamId) });
+    set({ players: getPlayers(get).filter((p) => p.teamId !== teamId) });
   },
 
   deleteAllPlayers: () => set({ players: [] }),
 
   importPlayers: (csvText, teams) => {
-    const result = parseCSVPlayers(csvText, teams, get().players);
+    const result = parseCSVPlayers(csvText, teams, getPlayers(get));
     if (result.imported.length > 0) {
-      set({ players: [...get().players, ...result.imported] });
+      set({ players: [...getPlayers(get), ...result.imported] });
     }
     return result;
   },
 
   getTeamPlayers: (teamId) =>
-    get().players.filter((p) => p.teamId === teamId),
+    getPlayers(get).filter((p) => p.teamId === teamId),
 
-  getAllPlayers: () => get().players,
+  getAllPlayers: () => getPlayers(get),
 
   recalculateRatings: () => {
     set({
-      players: get().players.map((p) => ({ ...p })),
+      players: getPlayers(get).map((p) => ({ ...p })),
     });
   },
 });
