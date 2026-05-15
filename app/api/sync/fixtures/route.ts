@@ -4,7 +4,7 @@ import { createServiceRoleClient } from "@/lib/supabase/service-role";
 export async function POST(request: Request) {
   try {
     const body = await request.json();
-    const { fixtures } = body;
+    const { fixtures, teamIdMap } = body;
 
     if (!fixtures || !Array.isArray(fixtures)) {
       return NextResponse.json(
@@ -18,11 +18,13 @@ export async function POST(request: Request) {
     const allMatches: any[] = [];
     for (const round of fixtures) {
       for (const match of round.matches ?? []) {
+        const localHomeId = match.homeId ?? match.home_team_id;
+        const localAwayId = match.awayId ?? match.away_team_id;
         allMatches.push({
           id: Math.trunc(Number(match.id)),
           round: match.round ?? round.round,
-          home_team_id: match.homeId ?? match.home_team_id,
-          away_team_id: match.awayId ?? match.away_team_id,
+          home_team_id: teamIdMap?.[localHomeId] ?? localHomeId,
+          away_team_id: teamIdMap?.[localAwayId] ?? localAwayId,
           home_score: match.homeScore ?? match.home_score,
           away_score: match.awayScore ?? match.away_score,
           status: match.status ?? "scheduled",

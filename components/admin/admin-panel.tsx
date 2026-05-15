@@ -321,6 +321,7 @@ function DatabaseManager() {
   const fixtures = useAppStore((s) => s.fixtures);
   const [syncing, setSyncing] = useState<string | null>(null);
   const [results, setResults] = useState<Record<string, string | null>>({});
+  const [teamIdMap, setTeamIdMap] = useState<Record<string, number> | null>(null);
 
   const syncTeams = async () => {
     setSyncing("teams");
@@ -332,7 +333,33 @@ function DatabaseManager() {
         body: JSON.stringify({ teams }),
       });
       const data = await res.json();
-      setResults((r) => ({ ...r, teams: data.error ? data.error : `Synced ${data.teams?.length || 0} teams.` }));
+      if (data.error) {
+        setResults((r) => ({ ...r, teams: data.error }));
+      } else {
+        const store = useAppStore.getState();
+        store.setTeams(data.teams);
+
+        const curPlayers = store.players;
+        const remappedPlayers = curPlayers.map((p) => ({
+          ...p,
+          teamId: data.idMap[p.teamId] ?? p.teamId,
+        }));
+        store.setPlayers(remappedPlayers);
+
+        const curFixtures = store.fixtures;
+        const remappedFixtures = curFixtures.map((r) => ({
+          ...r,
+          matches: r.matches.map((m) => ({
+            ...m,
+            homeId: data.idMap[m.homeId] ?? m.homeId,
+            awayId: data.idMap[m.awayId] ?? m.awayId,
+          })),
+        }));
+        store.setFixtures(remappedFixtures);
+
+        setTeamIdMap(data.idMap);
+        setResults((r) => ({ ...r, teams: `Synced ${data.teams?.length || 0} teams.` }));
+      }
     } catch {
       setResults((r) => ({ ...r, teams: "Sync failed." }));
     } finally {
@@ -347,10 +374,14 @@ function DatabaseManager() {
       const res = await fetch("/api/sync/players", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ players }),
+        body: JSON.stringify({ players, teamIdMap }),
       });
       const data = await res.json();
-      setResults((r) => ({ ...r, players: data.error ? data.error : `Synced ${data.players?.length || 0} players.` }));
+      if (data.error) {
+        setResults((r) => ({ ...r, players: data.error }));
+      } else {
+        setResults((r) => ({ ...r, players: `Synced ${data.players?.length || 0} players.` }));
+      }
     } catch {
       setResults((r) => ({ ...r, players: "Sync failed." }));
     } finally {
@@ -365,10 +396,14 @@ function DatabaseManager() {
       const res = await fetch("/api/sync/fixtures", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ fixtures }),
+        body: JSON.stringify({ fixtures, teamIdMap }),
       });
       const data = await res.json();
-      setResults((r) => ({ ...r, fixtures: data.error ? data.error : `Synced ${data.fixtures?.length || 0} matches.` }));
+      if (data.error) {
+        setResults((r) => ({ ...r, fixtures: data.error }));
+      } else {
+        setResults((r) => ({ ...r, fixtures: `Synced ${data.fixtures?.length || 0} matches.` }));
+      }
     } catch {
       setResults((r) => ({ ...r, fixtures: "Sync failed." }));
     } finally {
