@@ -105,8 +105,10 @@ export const createFixturesSlice: StateCreator<
       }
     }
 
+    const allMatchIds = getFixtures(get).flatMap((r) => r.matches.map((m) => m.id));
+    const newId = allMatchIds.length ? Math.max(...allMatchIds) + 1 : 1;
     const newMatch: Match = {
-      id: Date.now() + Math.floor(Math.random() * 1000),
+      id: newId,
       round: roundNum,
       homeId,
       awayId,

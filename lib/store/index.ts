@@ -26,6 +26,25 @@ export const useAppStore = create<AppStore>()(
         fixtures: state.fixtures,
         players: state.players,
       }),
+      onRehydrateStorage: () => (state) => {
+        if (!state) return;
+        const teamIds = new Set(
+          (state.teams as { id: number }[] | undefined)?.map((t) => t.id)
+        );
+        if (!teamIds.size) return;
+        const hasOrphanedMatches = (
+          state.fixtures as { matches: { homeId: number; awayId: number }[] }[]
+        )?.some((r) =>
+          r.matches?.some(
+            (m) => !teamIds.has(m.homeId) || !teamIds.has(m.awayId)
+          )
+        );
+        if (hasOrphanedMatches) {
+          (
+            state as { setFixtures?: (f: []) => void }
+          ).setFixtures?.([]);
+        }
+      },
     }
   )
 );

@@ -44,8 +44,9 @@ export function calculateStandings(
   const tableById = new Map(table.map((team) => [team.id, team]));
 
   completedMatches(fixtures).forEach((match) => {
-    const home = tableById.get(match.homeId)!;
-    const away = tableById.get(match.awayId)!;
+    const home = tableById.get(match.homeId);
+    const away = tableById.get(match.awayId);
+    if (!home || !away) return;
     home.played += 1;
     away.played += 1;
     home.gf += match.homeScore!;

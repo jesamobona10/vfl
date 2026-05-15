@@ -128,6 +128,8 @@ export function parseCSVPlayers(
   const imported: Player[] = [];
   const errors: string[] = [];
   const validPositions = ["GK", "DEF", "MID", "ATT"];
+  let nextPlayerId =
+    existingPlayers.reduce((max, p) => Math.max(max, p.id), 0) + 1;
 
   for (let i = 1; i < lines.length; i++) {
     const fields = parseCSVLine(lines[i]);
@@ -209,7 +211,7 @@ export function parseCSVPlayers(
     existingByNumber.add(numberKey);
 
     imported.push({
-      id: Date.now() + i,
+      id: nextPlayerId++,
       teamId,
       name,
       position: position as Player["position"],

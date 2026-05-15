@@ -108,7 +108,8 @@ export function generateRoundRobinFixtures(
     }
   }
 
-  let nextId = Date.now();
+  const allIds = existingFixtures.flatMap((r) => r.matches.map((m) => m.id));
+  let nextId = allIds.length ? Math.max(...allIds) + 1 : 1;
   const result: FixtureRound[] = roundPairings.map((rp, i) => {
     const roundNum = i + 1;
     const existingRound = existingByRound.get(roundNum);
