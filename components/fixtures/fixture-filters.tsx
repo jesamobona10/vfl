@@ -3,6 +3,11 @@
 import { useState, useRef, useEffect } from "react";
 import { useAppStore } from "@/lib/store";
 import { Download, ChevronDown } from "lucide-react";
+import {
+  exportAsJSON,
+  exportAsPNG,
+  exportAsPDF,
+} from "@/lib/utils/export";
 
 interface FixtureFiltersProps {
   roundFilter: string;
@@ -11,6 +16,7 @@ interface FixtureFiltersProps {
   onRoundChange: (value: string) => void;
   onTeamChange: (value: string) => void;
   onStatusChange: (value: string) => void;
+  captureRef?: React.RefObject<HTMLDivElement | null>;
 }
 
 export function FixtureFilters({
@@ -20,6 +26,7 @@ export function FixtureFilters({
   onRoundChange,
   onTeamChange,
   onStatusChange,
+  captureRef,
 }: FixtureFiltersProps) {
   const [menuOpen, setMenuOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
@@ -39,9 +46,8 @@ export function FixtureFilters({
     return () => document.removeEventListener("mousedown", handleClick);
   }, []);
 
-  const handleDownloadJSON = () => {
-    setMenuOpen(false);
-    const filtered = fixtures
+  const getFilteredFixtures = () => {
+    return fixtures
       .filter(
         (r) =>
           roundFilter === "all" || String(r.round) === roundFilter
@@ -59,38 +65,35 @@ export function FixtureFilters({
         }),
       }))
       .filter((r) => r.matches.length > 0);
+  };
 
+  const handleDownloadJSON = () => {
+    setMenuOpen(false);
+    const filtered = getFilteredFixtures();
     if (!filtered.length) {
       alert("No fixtures match the current filters.");
       return;
     }
-
     const label =
       roundFilter !== "all"
         ? `round-${roundFilter}`
         : "all-fixtures";
-    const blob = new Blob([JSON.stringify(filtered, null, 2)], {
-      type: "application/json",
-    });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = `vuna-fixtures-${label}.json`;
-    a.click();
-    URL.revokeObjectURL(url);
+    exportAsJSON(filtered, `vuna-fixtures-${label}.json`);
   };
 
-  const handleDownloadPNG = () => {
+  const handleDownloadPNG = async () => {
     setMenuOpen(false);
-    alert(
-      "PNG export requires html2canvas. Install with: npm install html2canvas"
-    );
+    if (!captureRef?.current) return;
+    await exportAsPNG(captureRef.current, "vuna-fixtures.png");
   };
 
-  const handleDownloadPDF = () => {
+  const handleDownloadPDF = async () => {
     setMenuOpen(false);
-    alert(
-      "PDF export requires jspdf. Install with: npm install jspdf"
+    if (!captureRef?.current) return;
+    await exportAsPDF(
+      captureRef.current,
+      "vuna-fixtures.pdf",
+      "Fixtures"
     );
   };
 

@@ -1,18 +1,27 @@
 "use client";
 
-import { useRef, useState } from "react";
-import { Upload, Loader2, Image as ImageIcon } from "lucide-react";
+import { useEffect, useRef, useState } from "react";
+import { Upload, Loader2, Image as ImageIcon, AlertTriangle } from "lucide-react";
 
 interface ImageUploadProps {
   currentUrl?: string;
   teamId: number;
+  teamName: string;
   onUploadComplete: (url: string) => void;
 }
 
-export function ImageUpload({ currentUrl, teamId, onUploadComplete }: ImageUploadProps) {
+export function ImageUpload({ currentUrl, teamId, teamName, onUploadComplete }: ImageUploadProps) {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [uploading, setUploading] = useState(false);
   const [preview, setPreview] = useState<string | null>(null);
+  const [bucketOk, setBucketOk] = useState<boolean | null>(null);
+
+  useEffect(() => {
+    fetch("/api/upload/logo/check")
+      .then((r) => r.json())
+      .then((data) => setBucketOk(data.exists))
+      .catch(() => setBucketOk(false));
+  }, []);
 
   const handleFileSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -36,6 +45,7 @@ export function ImageUpload({ currentUrl, teamId, onUploadComplete }: ImageUploa
       const formData = new FormData();
       formData.append("file", file);
       formData.append("teamId", String(teamId));
+      formData.append("teamName", teamName);
 
       const res = await fetch("/api/upload/logo", {
         method: "POST",
@@ -62,6 +72,12 @@ export function ImageUpload({ currentUrl, teamId, onUploadComplete }: ImageUploa
 
   return (
     <div className="flex flex-col items-center gap-2">
+      {bucketOk === false && (
+        <div className="flex items-center gap-1.5 text-xs text-danger bg-danger/10 rounded-lg px-3 py-1.5 max-w-[180px] text-center">
+          <AlertTriangle size={12} />
+          Storage bucket not configured
+        </div>
+      )}
       <div
         className="w-20 h-20 rounded-xl bg-surface-2 flex items-center justify-center overflow-hidden border border-line cursor-pointer"
         onClick={() => fileInputRef.current?.click()}
@@ -85,7 +101,7 @@ export function ImageUpload({ currentUrl, teamId, onUploadComplete }: ImageUploa
       />
       <button
         onClick={() => fileInputRef.current?.click()}
-        disabled={uploading}
+        disabled={uploading || bucketOk === false}
         className="btn-ghost text-xs py-1"
       >
         {uploading ? (

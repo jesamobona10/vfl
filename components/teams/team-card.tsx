@@ -31,6 +31,7 @@ export function TeamCard({ team, index, isManaged }: TeamCardProps) {
         <ImageUpload
           currentUrl={team.logo}
           teamId={team.id}
+          teamName={team.name}
           onUploadComplete={handleLogoComplete}
         />
       </div>

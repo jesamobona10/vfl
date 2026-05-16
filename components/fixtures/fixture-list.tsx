@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useRef } from "react";
 import { useAppStore } from "@/lib/store";
 import { FixtureFilters } from "./fixture-filters";
 import { FixtureCreator } from "./fixture-creator";
@@ -21,6 +21,7 @@ export function FixtureList() {
   const managedId = useAppStore((s) => s.getManagedTeamId)();
 
   const effectiveTeamFilter = isTeamAccount() ? String(managedId) : teamFilter;
+  const captureRef = useRef<HTMLDivElement>(null);
 
   const handleDrop = (matchId: number, targetId: number) => {
     const round = fixtures.find((r) =>
@@ -78,6 +79,7 @@ export function FixtureList() {
             onRoundChange={setRoundFilter}
             onTeamChange={setTeamFilter}
             onStatusChange={setStatusFilter}
+            captureRef={captureRef}
           />
         </div>
       )}
@@ -88,7 +90,7 @@ export function FixtureList() {
         </div>
       )}
 
-      <div className="space-y-4">
+      <div ref={captureRef} className="space-y-4">
         {!fixturesExist ? (
           <div className="text-center py-16">
             <Calendar

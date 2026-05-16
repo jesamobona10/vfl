@@ -1,7 +1,8 @@
 "use client";
 
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { useAppStore } from "@/lib/store";
+import { refreshAdminData } from "@/lib/hooks/use-team-data";
 import { AppHeader } from "./app-header";
 import { TabNav } from "./tab-nav";
 import { LoginForm } from "./login-form";
@@ -10,11 +11,20 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   const currentTeamAccount = useAppStore((s) => s.currentTeamAccount);
   const isAdmin = useAppStore((s) => s.isAdmin);
   const authLoading = useAppStore((s) => s.authLoading);
+  const teamDataLoaded = useAppStore((s) => s.teamDataLoaded);
   const initializeAuth = useAppStore((s) => s.initializeAuth);
+  const [fetchingAdminData, setFetchingAdminData] = useState(false);
 
   useEffect(() => {
     initializeAuth();
   }, [initializeAuth]);
+
+  useEffect(() => {
+    if (isAdmin && !teamDataLoaded && !fetchingAdminData) {
+      setFetchingAdminData(true);
+      refreshAdminData().finally(() => setFetchingAdminData(false));
+    }
+  }, [isAdmin, teamDataLoaded, fetchingAdminData]);
 
   if (authLoading) {
     return (

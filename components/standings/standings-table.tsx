@@ -7,6 +7,11 @@ import {
   completedMatches,
 } from "@/lib/logic/standings";
 import { Download, ChevronDown } from "lucide-react";
+import {
+  exportAsJSON,
+  exportAsPNG,
+  exportAsPDF,
+} from "@/lib/utils/export";
 import type { StandingRow } from "@/lib/types";
 
 function computeForm(
@@ -55,6 +60,7 @@ function FormGuide({ form }: { form: string[] }) {
 export function StandingsTable() {
   const [menuOpen, setMenuOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
+  const tableRef = useRef<HTMLDivElement>(null);
 
   const teams = useAppStore((s) => s.teams);
   const fixtures = useAppStore((s) => s.fixtures);
@@ -82,29 +88,22 @@ export function StandingsTable() {
 
   const handleDownloadJSON = () => {
     setMenuOpen(false);
-    const blob = new Blob(
-      [JSON.stringify(standings, null, 2)],
-      { type: "application/json" }
-    );
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = "vuna-standings.json";
-    a.click();
-    URL.revokeObjectURL(url);
+    exportAsJSON(standings, "vuna-standings.json");
   };
 
-  const handleDownloadPNG = () => {
+  const handleDownloadPNG = async () => {
     setMenuOpen(false);
-    alert(
-      "PNG export requires html2canvas. Install: npm install html2canvas"
-    );
+    if (!tableRef.current) return;
+    await exportAsPNG(tableRef.current, "vuna-standings.png");
   };
 
-  const handleDownloadPDF = () => {
+  const handleDownloadPDF = async () => {
     setMenuOpen(false);
-    alert(
-      "PDF export requires jspdf. Install: npm install jspdf"
+    if (!tableRef.current) return;
+    await exportAsPDF(
+      tableRef.current,
+      "vuna-standings.pdf",
+      "League Standings"
     );
   };
 
@@ -117,7 +116,7 @@ export function StandingsTable() {
   }
 
   return (
-    <div className="card overflow-hidden">
+    <div className="card overflow-hidden" ref={tableRef}>
       <div className="px-5 py-3 border-b border-line flex items-center justify-between">
         <h2 className="font-semibold">Full League Table</h2>
         <div className="relative" ref={menuRef}>

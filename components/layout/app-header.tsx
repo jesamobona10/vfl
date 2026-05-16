@@ -4,7 +4,7 @@ import { useState } from "react";
 import { useAppStore } from "@/lib/store";
 import { parseImportFile, buildImportPlan } from "@/lib/utils/data-import";
 import { refreshTeamData } from "@/lib/hooks/use-team-data";
-import { Download, Upload, RotateCcw, LogOut, Shield, RefreshCw } from "lucide-react";
+import { Download, Upload, RotateCcw, LogOut, Shield, RefreshCw, Loader2 } from "lucide-react";
 
 export function AppHeader() {
   const currentTeamAccount = useAppStore((s) => s.currentTeamAccount);
@@ -19,6 +19,7 @@ export function AppHeader() {
   const fixtures = useAppStore((s) => s.fixtures);
   const players = useAppStore((s) => s.players);
   const [refreshing, setRefreshing] = useState(false);
+  const [importing, setImporting] = useState(false);
 
   const handleExport = () => {
     const data = { teams, fixtures, players };
@@ -37,11 +38,11 @@ export function AppHeader() {
     const input = document.createElement("input");
     input.type = "file";
     input.accept = ".json";
-    input.onchange = (e) => {
+    input.onchange = async (e) => {
       const file = (e.target as HTMLInputElement).files?.[0];
       if (!file) return;
       const reader = new FileReader();
-      reader.onload = (ev) => {
+      reader.onload = async (ev) => {
         try {
           const json = JSON.parse(ev.target?.result as string);
           const parsed = parseImportFile(json);
@@ -53,7 +54,33 @@ export function AppHeader() {
           setTeams(plan.teams);
           setFixtures(plan.fixtures);
           setPlayers(plan.players);
-          alert(`Data imported successfully. ${plan.teams.length} teams, ${plan.players.length} players, ${plan.fixtures.reduce((s, r) => s + r.matches.length, 0)} matches.`);
+          setImporting(true);
+          try {
+            const teamsRes = await fetch("/api/sync/teams", {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({ teams: plan.teams }),
+            });
+            const teamsData = await teamsRes.json();
+            if (!teamsData.error && teamsData.idMap) {
+              const idMap = teamsData.idMap;
+              await fetch("/api/sync/players", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ players: plan.players, teamIdMap: idMap }),
+              });
+              await fetch("/api/sync/fixtures", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ fixtures: plan.fixtures, teamIdMap: idMap }),
+              });
+            }
+            alert(`Import complete. ${plan.teams.length} teams, ${plan.players.length} players synced to database.`);
+          } catch {
+            alert(`Data imported locally. Sync to database failed — use the Database tab to retry.`);
+          } finally {
+            setImporting(false);
+          }
         } catch {
           alert("Invalid JSON file.");
         }
@@ -91,10 +118,11 @@ export function AppHeader() {
         </button>
         <button
           onClick={handleImport}
+          disabled={importing}
           className="btn-icon"
-          title="Import data"
+          title={importing ? "Importing & syncing..." : "Import data"}
         >
-          <Upload size={18} />
+          {importing ? <Loader2 size={18} className="animate-spin" /> : <Upload size={18} />}
         </button>
         <button
           onClick={handleReset}

@@ -1,15 +1,24 @@
 import { NextResponse } from "next/server";
 import { createServiceRoleClient } from "@/lib/supabase/service-role";
 
+function slugify(name: string): string {
+  return name
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-+|-+$/g, "")
+    .slice(0, 60);
+}
+
 export async function POST(request: Request) {
   try {
     const formData = await request.formData();
     const file = formData.get("file") as File | null;
     const teamId = formData.get("teamId") as string | null;
+    const teamName = formData.get("teamName") as string | null;
 
-    if (!file || !teamId) {
+    if (!file || !teamId || !teamName) {
       return NextResponse.json(
-        { error: "File and teamId are required." },
+        { error: "File, teamId, and teamName are required." },
         { status: 400 }
       );
     }
@@ -31,7 +40,8 @@ export async function POST(request: Request) {
     }
 
     const buffer = Buffer.from(await file.arrayBuffer());
-    const fileName = `team-${teamId}.${ext}`;
+    const slug = slugify(teamName);
+    const fileName = `team-${slug}.${ext}`;
 
     const sb = createServiceRoleClient();
 
@@ -62,7 +72,8 @@ export async function POST(request: Request) {
     }
 
     return NextResponse.json({ url: publicUrl });
-  } catch {
+  } catch (err) {
+    console.error("Logo upload error:", err);
     return NextResponse.json({ error: "Internal server error." }, { status: 500 });
   }
 }

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useRef } from "react";
+import { useState, useRef, useCallback } from "react";
 import { useAppStore } from "@/lib/store";
 import { parseImportFile, buildImportPlan } from "@/lib/utils/data-import";
 import type { ImportData, ImportPlan } from "@/lib/utils/data-import";
@@ -16,6 +16,7 @@ import {
   Shield,
   Users,
   Calendar,
+  Database,
 } from "lucide-react";
 
 type Step = "upload" | "preview" | "confirm" | "done";
@@ -38,6 +39,9 @@ export function DataImporter() {
     players: number;
     mapped: number;
   } | null>(null);
+  const [syncStatus, setSyncStatus] = useState<"idle" | "syncing" | "synced" | "error">("idle");
+  const [syncMessage, setSyncMessage] = useState("");
+  const [syncError, setSyncError] = useState("");
   const fileRef = useRef<HTMLInputElement>(null);
 
   const handleFile = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -79,6 +83,45 @@ export function DataImporter() {
     }
   };
 
+  const autoSync = useCallback(async (plan: ImportPlan) => {
+    setSyncStatus("syncing");
+    try {
+      setSyncMessage("Syncing teams...");
+      const teamsRes = await fetch("/api/sync/teams", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ teams: plan.teams }),
+      });
+      const teamsData = await teamsRes.json();
+      if (teamsData.error) throw new Error(teamsData.error);
+      const idMap = teamsData.idMap as Record<string, number>;
+
+      setSyncMessage("Syncing players...");
+      const playersRes = await fetch("/api/sync/players", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ players: plan.players, teamIdMap: idMap }),
+      });
+      const playersData = await playersRes.json();
+      if (playersData.error) throw new Error(playersData.error);
+
+      setSyncMessage("Syncing fixtures...");
+      const fixturesRes = await fetch("/api/sync/fixtures", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ fixtures: plan.fixtures, teamIdMap: idMap }),
+      });
+      const fixturesData = await fixturesRes.json();
+      if (fixturesData.error) throw new Error(fixturesData.error);
+
+      setSyncMessage("All data synced to database.");
+      setSyncStatus("synced");
+    } catch (err) {
+      setSyncError(err instanceof Error ? err.message : "Sync failed.");
+      setSyncStatus("error");
+    }
+  }, []);
+
   const handleImport = () => {
     if (!plan) return;
     setImporting(true);
@@ -101,6 +144,7 @@ export function DataImporter() {
     } finally {
       setImporting(false);
     }
+    autoSync(plan);
   };
 
   const handleReset = () => {
@@ -110,6 +154,9 @@ export function DataImporter() {
     setParsed(null);
     setPlan(null);
     setSummary(null);
+    setSyncStatus("idle");
+    setSyncMessage("");
+    setSyncError("");
     if (fileRef.current) fileRef.current.value = "";
   };
 
@@ -120,7 +167,7 @@ export function DataImporter() {
   if (step === "done" && summary) {
     return (
       <div className="space-y-6">
-        <div className="text-center py-10 space-y-4">
+        <div className="text-center py-6 space-y-4">
           <div className="mx-auto w-16 h-16 rounded-full bg-brand/10 flex items-center justify-center">
             <CheckCircle size={36} className="text-brand" />
           </div>
@@ -148,6 +195,39 @@ export function DataImporter() {
           <p className="text-xs text-muted">
             {summary.mapped} teams were auto-matched by name.
           </p>
+        </div>
+
+        <div className="card p-4">
+          <div className="flex items-center gap-2 mb-2">
+            <Database size={16} className="text-muted" />
+            <h4 className="font-semibold text-sm">Database Sync</h4>
+          </div>
+          {syncStatus === "syncing" && (
+            <div className="flex items-center gap-2 text-sm text-muted">
+              <Loader2 size={14} className="animate-spin" />
+              {syncMessage}
+            </div>
+          )}
+          {syncStatus === "synced" && (
+            <div className="flex items-center gap-2 text-sm text-brand">
+              <CheckCircle size={14} />
+              {syncMessage}
+            </div>
+          )}
+          {syncStatus === "error" && (
+            <div className="flex items-center gap-2 text-sm text-danger">
+              <AlertCircle size={14} />
+              Sync warning: {syncError}. You can manually sync in the Database tab.
+            </div>
+          )}
+          {syncStatus === "idle" && (
+            <p className="text-xs text-muted">
+              Syncing to database...
+            </p>
+          )}
+        </div>
+
+        <div className="text-center">
           <button onClick={handleReset} className="btn-primary">
             <Upload size={16} /> Import Another File
           </button>

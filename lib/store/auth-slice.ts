@@ -43,6 +43,7 @@ export const createAuthSlice: StateCreator<any, [], [], AuthSlice> = (set, get) 
           currentTeamAccount: null,
           userProfile: data.profile,
           authLoading: false,
+          teamDataLoaded: false,
         });
       } else if (data.role === "team_account") {
         set({
@@ -79,6 +80,7 @@ export const createAuthSlice: StateCreator<any, [], [], AuthSlice> = (set, get) 
         isAdmin: true,
         currentTeamAccount: null,
         userProfile: { id: data.user.id, role: "super_admin", displayName: data.user.email },
+        teamDataLoaded: false,
       });
       return {};
     } catch {
@@ -124,7 +126,7 @@ export const createAuthSlice: StateCreator<any, [], [], AuthSlice> = (set, get) 
     try {
       await fetch("/api/auth/logout", { method: "POST" });
     } catch {}
-    set({ currentTeamAccount: null, isAdmin: false, userProfile: null, teamDataLoaded: false });
+    set({ currentTeamAccount: null, isAdmin: false, userProfile: null, teamDataLoaded: false, authLoading: false });
   },
 
   setTeamDataLoaded: (v) => set({ teamDataLoaded: v }),
