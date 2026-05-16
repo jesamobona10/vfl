@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { createClient } from "@/lib/supabase/server";
 import { createServiceRoleClient } from "@/lib/supabase/service-role";
 
 function slugify(name: string): string {
@@ -11,6 +12,21 @@ function slugify(name: string): string {
 
 export async function POST(request: Request) {
   try {
+    const supabase = await createClient();
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
+    const { data: adminUser } = await supabase
+      .from("admin_users")
+      .select("id")
+      .eq("id", session.user.id)
+      .single();
+    if (!adminUser) {
+      return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+    }
+
     const formData = await request.formData();
     const file = formData.get("file") as File | null;
     const teamId = formData.get("teamId") as string | null;
@@ -23,11 +39,10 @@ export async function POST(request: Request) {
       );
     }
 
-    const ext = file.name.split(".").pop()?.toLowerCase();
-    const allowed = ["png", "jpg", "jpeg", "webp", "gif"];
-    if (!ext || !allowed.includes(ext)) {
+    const allowedMime = ["image/png", "image/jpeg", "image/webp", "image/gif"];
+    if (!allowedMime.includes(file.type)) {
       return NextResponse.json(
-        { error: "Invalid file type. Allowed: png, jpg, jpeg, webp, gif" },
+        { error: "Invalid file type. Allowed: PNG, JPG, WEBP, GIF" },
         { status: 400 }
       );
     }
@@ -39,9 +54,10 @@ export async function POST(request: Request) {
       );
     }
 
+    const ext = file.name.split(".").pop()?.toLowerCase() || "png";
     const buffer = Buffer.from(await file.arrayBuffer());
     const slug = slugify(teamName);
-    const fileName = `team-${slug}.${ext}`;
+    const fileName = `team-${slug}-${teamId}.${ext}`;
 
     const sb = createServiceRoleClient();
 

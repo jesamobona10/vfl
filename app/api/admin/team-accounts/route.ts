@@ -5,13 +5,19 @@ export async function GET() {
   try {
     const supabase = await createClient();
 
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
     const { data: adminCheck } = await supabase
       .from("admin_users")
       .select("id")
+      .eq("id", session.user.id)
       .single();
 
     if (!adminCheck) {
-      return NextResponse.json({ error: "Unauthorized." }, { status: 403 });
+      return NextResponse.json({ error: "Forbidden" }, { status: 403 });
     }
 
     const { data, error } = await supabase

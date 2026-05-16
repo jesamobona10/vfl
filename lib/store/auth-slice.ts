@@ -26,7 +26,7 @@ export const createAuthSlice: StateCreator<any, [], [], AuthSlice> = (set, get) 
 
   isTeamAccount: () => get().currentTeamAccount !== null,
 
-  getManagedTeamId: () => get().currentTeamAccount?.teamId || null,
+  getManagedTeamId: () => get().currentTeamAccount?.teamId ?? null,
 
   initializeAuth: async () => {
     try {
@@ -58,6 +58,7 @@ export const createAuthSlice: StateCreator<any, [], [], AuthSlice> = (set, get) 
           },
           userProfile: data.profile,
           authLoading: false,
+          teamDataLoaded: false,
         });
       } else {
         set({ authLoading: false });
@@ -108,6 +109,7 @@ export const createAuthSlice: StateCreator<any, [], [], AuthSlice> = (set, get) 
       set({
         currentTeamAccount: account,
         isAdmin: false,
+        teamDataLoaded: false,
         userProfile: {
           id: data.user.id,
           role: "team_account",

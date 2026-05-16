@@ -16,6 +16,7 @@ import {
   Trash2,
   Plus,
   Save,
+  Edit2,
   X,
   Database,
   Upload,
@@ -64,7 +65,8 @@ function TeamManager() {
   };
 
   const saveEdit = (id: number) => {
-    updateTeam(id, { name: editName, rating: parseFloat(editRating) || 6.0 });
+    const parsedRating = parseFloat(editRating);
+    updateTeam(id, { name: editName, rating: isNaN(parsedRating) ? 6.0 : parsedRating });
     setEditingId(null);
   };
 
@@ -133,7 +135,7 @@ function TeamManager() {
                 <span className="flex-1 text-sm font-medium">{t.name}</span>
                 <span className="text-xs text-muted">Rating: {t.rating}</span>
                 <button onClick={() => startEdit(t)} className="btn-icon" title="Edit team">
-                  <Save size={14} />
+                  <Edit2 size={14} />
                 </button>
                 <button onClick={() => handleDelete(t.id)} className="btn-icon text-danger" title="Delete team">
                   <Trash2 size={14} />
@@ -193,7 +195,8 @@ function PlayerManager() {
   const handleDeleteAllFromTeam = () => {
     if (!filterTeam) return;
     const team = teams.find((t) => t.id === Number(filterTeam));
-    if (!confirm(`Delete all players from ${team?.name}?`)) return;
+    if (!team) return;
+    if (!confirm(`Delete all players from ${team.name}?`)) return;
     deleteTeamPlayers(Number(filterTeam));
   };
 
@@ -501,9 +504,11 @@ function TeamAccountManager() {
   const fetchAccounts = useCallback(async () => {
     try {
       const res = await fetch("/api/admin/team-accounts");
+      const data = await res.json();
       if (res.ok) {
-        const data = await res.json();
         setAccounts(data.accounts || []);
+      } else {
+        setError(data.error || "Failed to load team accounts.");
       }
     } catch {
       setError("Failed to load team accounts.");

@@ -23,7 +23,7 @@ const tabs = [
   { href: "/reports", label: "Reports", icon: BarChart3 },
 ];
 
-const teamAccountHidden = new Set(["/teams", "/reports"]);
+const teamAccountHidden = new Set(["/teams", "/reports", "/players"]);
 
 export function TabNav() {
   const pathname = usePathname();

@@ -109,28 +109,32 @@ export function AppHeader() {
       </div>
 
       <div className="flex items-center gap-2">
-        <button
-          onClick={handleExport}
-          className="btn-icon"
-          title="Export data"
-        >
-          <Download size={18} />
-        </button>
-        <button
-          onClick={handleImport}
-          disabled={importing}
-          className="btn-icon"
-          title={importing ? "Importing & syncing..." : "Import data"}
-        >
-          {importing ? <Loader2 size={18} className="animate-spin" /> : <Upload size={18} />}
-        </button>
-        <button
-          onClick={handleReset}
-          className="btn-icon text-danger"
-          title="Reset to defaults"
-        >
-          <RotateCcw size={18} />
-        </button>
+        {isAdmin && (
+          <>
+            <button
+              onClick={handleExport}
+              className="btn-icon"
+              title="Export data"
+            >
+              <Download size={18} />
+            </button>
+            <button
+              onClick={handleImport}
+              disabled={importing}
+              className="btn-icon"
+              title={importing ? "Importing & syncing..." : "Import data"}
+            >
+              {importing ? <Loader2 size={18} className="animate-spin" /> : <Upload size={18} />}
+            </button>
+            <button
+              onClick={handleReset}
+              className="btn-icon text-danger"
+              title="Reset to defaults"
+            >
+              <RotateCcw size={18} />
+            </button>
+          </>
+        )}
         {(currentTeamAccount || isAdmin) && (
           <div className="flex items-center gap-2 ml-3 pl-3 border-l border-line">
             <span className="text-sm text-muted">

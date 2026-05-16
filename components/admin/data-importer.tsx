@@ -96,11 +96,32 @@ export function DataImporter() {
       if (teamsData.error) throw new Error(teamsData.error);
       const idMap = teamsData.idMap as Record<string, number>;
 
-      setSyncMessage("Syncing players...");
+      const store = useAppStore.getState();
+      if (teamsData.teams) {
+        store.setTeams(teamsData.teams);
+      }
+
+      const remappedPlayers = plan.players.map((p) => ({
+        ...p,
+        teamId: idMap[p.teamId] ?? p.teamId,
+      }));
+      store.setPlayers(remappedPlayers);
+
+      const remappedFixtures = plan.fixtures.map((r) => ({
+        ...r,
+        matches: r.matches.map((m) => ({
+          ...m,
+          homeId: idMap[m.homeId] ?? m.homeId,
+          awayId: idMap[m.awayId] ?? m.awayId,
+        })),
+      }));
+      store.setFixtures(remappedFixtures);
+
+      setSyncMessage("Syncing to database...");
       const playersRes = await fetch("/api/sync/players", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ players: plan.players, teamIdMap: idMap }),
+        body: JSON.stringify({ players: remappedPlayers, teamIdMap: idMap }),
       });
       const playersData = await playersRes.json();
       if (playersData.error) throw new Error(playersData.error);
@@ -109,7 +130,7 @@ export function DataImporter() {
       const fixturesRes = await fetch("/api/sync/fixtures", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ fixtures: plan.fixtures, teamIdMap: idMap }),
+        body: JSON.stringify({ fixtures: remappedFixtures, teamIdMap: idMap }),
       });
       const fixturesData = await fixturesRes.json();
       if (fixturesData.error) throw new Error(fixturesData.error);
@@ -122,7 +143,7 @@ export function DataImporter() {
     }
   }, []);
 
-  const handleImport = () => {
+  const handleImport = async () => {
     if (!plan) return;
     setImporting(true);
     try {
@@ -139,12 +160,12 @@ export function DataImporter() {
         mapped: matchCount,
       });
       setStep("done");
+      await autoSync(plan);
     } catch {
       setError("Import failed unexpectedly.");
     } finally {
       setImporting(false);
     }
-    autoSync(plan);
   };
 
   const handleReset = () => {

@@ -10,8 +10,10 @@ export function UpcomingMatches() {
   const isTeamAccount = useAppStore((s) => s.isTeamAccount);
   const managedId = useAppStore((s) => s.getManagedTeamId)();
 
+  const hasTeam = isTeamAccount() && managedId != null;
+
   const nextRound = fixtures.find((r) =>
-    r.matches.some((m) => m.status !== "completed" && (!isTeamAccount() || m.homeId === managedId || m.awayId === managedId))
+    r.matches.some((m) => m.status !== "completed" && (!hasTeam || m.homeId === managedId || m.awayId === managedId))
   );
 
   if (!fixtures.length) {
@@ -28,6 +30,10 @@ export function UpcomingMatches() {
     );
   }
 
+  if (!hasTeam && isTeamAccount()) {
+    return null;
+  }
+
   if (!nextRound) {
     return (
       <div className="card p-6 text-center">
@@ -40,7 +46,7 @@ export function UpcomingMatches() {
   }
 
   const upcoming = nextRound.matches.filter(
-    (m) => m.status !== "completed" && (!isTeamAccount() || m.homeId === managedId || m.awayId === managedId)
+    (m) => m.status !== "completed" && (!hasTeam || m.homeId === managedId || m.awayId === managedId)
   );
 
   if (!upcoming.length) {

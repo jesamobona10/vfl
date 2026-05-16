@@ -1,8 +1,24 @@
 import { NextResponse } from "next/server";
+import { createClient } from "@/lib/supabase/server";
 import { createServiceRoleClient } from "@/lib/supabase/service-role";
 
 export async function POST(request: Request) {
   try {
+    const supabase = await createClient();
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
+    const { data: adminUser } = await supabase
+      .from("admin_users")
+      .select("id")
+      .eq("id", session.user.id)
+      .single();
+    if (!adminUser) {
+      return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+    }
+
     const body = await request.json();
     const { teams } = body;
 
@@ -15,9 +31,13 @@ export async function POST(request: Request) {
 
     const sb = createServiceRoleClient();
 
-    const { data: existingTeams } = await sb
+    const { data: existingTeams, error: fetchError } = await sb
       .from("teams")
       .select("*");
+
+    if (fetchError) {
+      return NextResponse.json({ error: fetchError.message }, { status: 500 });
+    }
 
     const existing =
       (existingTeams as { id: number; name: string; logo_url?: string | null; rating?: number }[]) ?? [];

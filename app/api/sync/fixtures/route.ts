@@ -1,8 +1,24 @@
 import { NextResponse } from "next/server";
+import { createClient } from "@/lib/supabase/server";
 import { createServiceRoleClient } from "@/lib/supabase/service-role";
 
 export async function POST(request: Request) {
   try {
+    const supabase = await createClient();
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
+    const { data: adminUser } = await supabase
+      .from("admin_users")
+      .select("id")
+      .eq("id", session.user.id)
+      .single();
+    if (!adminUser) {
+      return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+    }
+
     const body = await request.json();
     const { fixtures, teamIdMap } = body;
 
@@ -20,8 +36,10 @@ export async function POST(request: Request) {
       for (const match of round.matches ?? []) {
         const localHomeId = match.homeId ?? match.home_team_id;
         const localAwayId = match.awayId ?? match.away_team_id;
+        const id = match.id != null ? Math.trunc(Number(match.id)) : undefined;
+        if (id == null || Number.isNaN(id)) continue;
         allMatches.push({
-          id: Math.trunc(Number(match.id)),
+          id,
           round: match.round ?? round.round,
           home_team_id: teamIdMap?.[localHomeId] ?? localHomeId,
           away_team_id: teamIdMap?.[localAwayId] ?? localAwayId,

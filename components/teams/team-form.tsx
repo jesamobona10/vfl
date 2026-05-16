@@ -29,7 +29,7 @@ export function TeamForm() {
     const names = teams.map((t) => t.name.trim().toLowerCase());
     const hasEmpty = names.some((n) => !n);
     const hasDuplicate = new Set(names).size !== names.length;
-    if (hasEmpty) return "All 11 teams need names.";
+    if (hasEmpty) return `All ${teams.length} teams need names.`;
     if (hasDuplicate) return "Team names must be unique.";
     return "";
   })();
