@@ -203,7 +203,21 @@ export function StandingsTable() {
                   {index + 1}
                 </td>
                 <td className="px-5 py-3 font-medium">
-                  {team.name}
+                  <span className="flex items-center gap-2">
+                    {(() => {
+                      const t = teams.find((tt) => tt.id === team.id);
+                      return t?.logo ? (
+                        <img
+                          src={t.logo}
+                          alt=""
+                          className="w-5 h-5 rounded-full object-cover"
+                        />
+                      ) : (
+                        <span className="w-5 h-5 rounded-full bg-surface-2 inline-block shrink-0" />
+                      );
+                    })()}
+                    {team.name}
+                  </span>
                 </td>
                 <td className="px-5 py-3 text-center">
                   {team.rating?.toFixed(1) || "6.0"}

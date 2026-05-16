@@ -7,6 +7,7 @@ import {
   UserCog,
   Calendar,
   Trophy,
+  Goal,
 } from "lucide-react";
 import Link from "next/link";
 
@@ -32,14 +33,19 @@ export function MetricCards() {
 
   const teamPlayers = players.filter((p) => p.teamId === managedId);
 
+  const teamGoalsScored = teamCompleted.reduce((total, m) => {
+    if (m.homeId === managedId) return total + (m.homeScore ?? 0);
+    return total + (m.awayScore ?? 0);
+  }, 0);
+
   if (isTeamAccount()) {
     const cards = [
       {
-        label: "Squad",
-        value: teamPlayers.length,
-        icon: Users,
+        label: "Goals",
+        value: teamGoalsScored,
+        icon: Goal,
         color: "text-brand",
-        href: "/players",
+        href: "/standings",
       },
       {
         label: "Players",
