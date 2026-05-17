@@ -1,19 +1,24 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { usePathname } from "next/navigation";
 import { useAppStore } from "@/lib/store";
 import { refreshAdminData } from "@/lib/hooks/use-team-data";
 import { AppHeader } from "./app-header";
 import { TabNav } from "./tab-nav";
 import { LoginForm } from "./login-form";
 
+const publicPaths = new Set(["/live"]);
+
 export function AppShell({ children }: { children: React.ReactNode }) {
+  const pathname = usePathname();
   const currentTeamAccount = useAppStore((s) => s.currentTeamAccount);
   const isAdmin = useAppStore((s) => s.isAdmin);
   const authLoading = useAppStore((s) => s.authLoading);
   const teamDataLoaded = useAppStore((s) => s.teamDataLoaded);
   const initializeAuth = useAppStore((s) => s.initializeAuth);
   const [fetchingAdminData, setFetchingAdminData] = useState(false);
+  const isPublicPath = publicPaths.has(pathname);
 
   useEffect(() => {
     initializeAuth();
@@ -37,6 +42,9 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   const isAuthenticated = currentTeamAccount !== null || isAdmin;
 
   if (!isAuthenticated) {
+    if (isPublicPath) {
+      return <>{children}</>;
+    }
     return (
       <div className="min-h-screen flex items-center justify-center bg-bg p-4">
         <LoginForm />
