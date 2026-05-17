@@ -4,9 +4,13 @@ import { useState } from "react";
 import { useAppStore } from "@/lib/store";
 import { parseImportFile, buildImportPlan } from "@/lib/utils/data-import";
 import { refreshTeamData } from "@/lib/hooks/use-team-data";
-import { Download, Upload, RotateCcw, LogOut, Shield, RefreshCw, Loader2 } from "lucide-react";
+import { Search, Download, Upload, RotateCcw, LogOut, Shield, RefreshCw, Loader2 } from "lucide-react";
 
-export function AppHeader() {
+interface AppHeaderProps {
+  onOpenSearch: () => void;
+}
+
+export function AppHeader({ onOpenSearch }: AppHeaderProps) {
   const currentTeamAccount = useAppStore((s) => s.currentTeamAccount);
   const isAdmin = useAppStore((s) => s.isAdmin);
   const logout = useAppStore((s) => s.logout);
@@ -109,6 +113,13 @@ export function AppHeader() {
       </div>
 
       <div className="flex items-center gap-2">
+        <button
+          onClick={onOpenSearch}
+          className="btn-icon"
+          title="Search"
+        >
+          <Search size={18} />
+        </button>
         {isAdmin && (
           <>
             <button

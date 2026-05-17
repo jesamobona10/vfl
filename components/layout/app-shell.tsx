@@ -7,6 +7,7 @@ import { refreshAdminData } from "@/lib/hooks/use-team-data";
 import { AppHeader } from "./app-header";
 import { TabNav } from "./tab-nav";
 import { LoginForm } from "./login-form";
+import { SearchModal } from "../search/search-modal";
 
 const publicPaths = new Set(["/live"]);
 
@@ -18,6 +19,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   const teamDataLoaded = useAppStore((s) => s.teamDataLoaded);
   const initializeAuth = useAppStore((s) => s.initializeAuth);
   const [fetchingAdminData, setFetchingAdminData] = useState(false);
+  const [isSearchOpen, setSearchOpen] = useState(false);
   const isPublicPath = publicPaths.has(pathname);
 
   useEffect(() => {
@@ -54,9 +56,10 @@ export function AppShell({ children }: { children: React.ReactNode }) {
 
   return (
     <div className="min-h-screen bg-bg">
-      <AppHeader />
+      <AppHeader onOpenSearch={() => setSearchOpen(true)} />
       <TabNav />
       <main className="max-w-7xl mx-auto px-6 py-6">{children}</main>
+      <SearchModal isOpen={isSearchOpen} onClose={() => setSearchOpen(false)} />
     </div>
   );
 }
