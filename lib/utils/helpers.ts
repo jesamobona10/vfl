@@ -90,31 +90,45 @@ function parseTimeToMinutes(time: string): number | null {
   return null;
 }
 
-export function matchSortKey(date: string, time: string): number {
-  if (!date) return Infinity;
-
-  let d: Date | null = null;
+function parseDateToMs(date: string): number | null {
   const dmy = date.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/);
   if (dmy) {
-    d = new Date(Number(dmy[3]), Number(dmy[2]) - 1, Number(dmy[1]));
-  } else {
-    d = new Date(date);
+    const d = new Date(Number(dmy[3]), Number(dmy[2]) - 1, Number(dmy[1]));
+    return isNaN(d.getTime()) ? null : d.getTime();
   }
-
-  if (isNaN(d.getTime())) return Infinity;
-
-  const mins = parseTimeToMinutes(time);
-  if (mins !== null) {
-    return d.getTime() + mins * 60 * 1000;
-  }
-
-  return d.getTime();
+  const d = new Date(date);
+  return isNaN(d.getTime()) ? null : d.getTime();
 }
 
 export function sortMatchesByDateTime<T extends { date: string; time: string }>(matches: T[]): T[] {
   return [...matches].sort((a, b) => {
-    const ka = matchSortKey(a.date, a.time);
-    const kb = matchSortKey(b.date, b.time);
-    return ka - kb;
+    const aHasDate = Boolean(a.date?.trim());
+    const bHasDate = Boolean(b.date?.trim());
+
+    if (aHasDate !== bHasDate) return aHasDate ? -1 : 1;
+
+    if (aHasDate) {
+      const da = parseDateToMs(a.date);
+      const db = parseDateToMs(b.date);
+      if (da !== null && db !== null && da !== db) return da - db;
+      if (da !== null && db === null) return -1;
+      if (da === null && db !== null) return 1;
+
+      const ta = parseTimeToMinutes(a.time);
+      const tb = parseTimeToMinutes(b.time);
+      if (ta !== null && tb !== null && ta !== tb) return ta - tb;
+      if (ta !== null && tb === null) return -1;
+      if (ta === null && tb !== null) return 1;
+
+      return 0;
+    }
+
+    const ta = parseTimeToMinutes(a.time);
+    const tb = parseTimeToMinutes(b.time);
+    if (ta !== null && tb !== null && ta !== tb) return ta - tb;
+    if (ta !== null && tb === null) return -1;
+    if (ta === null && tb !== null) return 1;
+
+    return 0;
   });
 }
