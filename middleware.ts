@@ -17,7 +17,8 @@ export async function middleware(request: NextRequest) {
   const isPublicApi =
     pathname === "/api/auth/admin-signup" ||
     pathname === "/api/auth/admin-login" ||
-    pathname === "/api/auth/team-login";
+    pathname === "/api/auth/team-login" ||
+    pathname.startsWith("/api/public/");
 
   if (!session) {
     if (isAdminPage || (isApiRoute && !isPublicApi && !isAuthPage)) {

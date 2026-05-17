@@ -11,10 +11,12 @@ import {
   UserCog,
   Shield,
   BarChart3,
+  Radio,
 } from "lucide-react";
 
 const tabs = [
   { href: "/", label: "Dashboard", icon: LayoutDashboard },
+  { href: "/live", label: "Live", icon: Radio },
   { href: "/fixtures", label: "Fixtures", icon: Calendar },
   { href: "/standings", label: "Standings", icon: Trophy },
   { href: "/teams", label: "Teams", icon: Users },

@@ -153,6 +153,13 @@ CREATE POLICY "match_events_update_admin_only" ON match_events
 CREATE POLICY "match_events_delete_admin_only" ON match_events
   FOR DELETE USING (EXISTS (SELECT 1 FROM admin_users WHERE id = auth.uid()));
 
+-- Public read policies for live scores (anon access)
+CREATE POLICY "teams_read_public" ON teams
+  FOR SELECT USING (true);
+
+CREATE POLICY "fixtures_read_public" ON fixtures
+  FOR SELECT USING (true);
+
 -- Admin users: only the user themselves can read their own record
 CREATE POLICY "admin_users_read_own" ON admin_users
   FOR SELECT USING (id = auth.uid());
