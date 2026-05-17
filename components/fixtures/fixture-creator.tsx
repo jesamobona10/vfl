@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { useAppStore } from "@/lib/store";
 import { Plus, X, AlertCircle, CheckCircle } from "lucide-react";
+import { TimeInput } from "../shared/time-input";
 
 export function FixtureCreator() {
   const [open, setOpen] = useState(false);
@@ -137,12 +138,7 @@ export function FixtureCreator() {
               <label className="block text-sm font-medium mb-1">
                 Time
               </label>
-              <input
-                type="time"
-                value={time}
-                onChange={(e) => setTime(e.target.value)}
-                className="input"
-              />
+              <TimeInput value={time} onChange={setTime} />
             </div>
             <div>
               <label className="block text-sm font-medium mb-1">

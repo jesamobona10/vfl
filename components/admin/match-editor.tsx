@@ -7,6 +7,7 @@ import { fixtureIssue } from "@/lib/logic/validation";
 import { matchMeta } from "@/lib/utils/helpers";
 import { EventLog } from "./event-log";
 import { ChevronDown, ChevronRight, AlertCircle } from "lucide-react";
+import { TimeInput } from "../shared/time-input";
 
 function teamLocked(match: ReturnType<typeof allMatches>[number]): boolean {
   return (
@@ -249,13 +250,9 @@ export function MatchEditor() {
                     <label className="block text-xs text-muted mb-1">
                       Time
                     </label>
-                    <input
-                      type="time"
+                    <TimeInput
                       value={match.time || ""}
-                      onChange={(e) =>
-                        handleFieldChange(match.id, "time", e.target.value)
-                      }
-                      className="input text-sm py-1.5"
+                      onChange={(val) => handleFieldChange(match.id, "time", val)}
                     />
                   </div>
                   <div>
