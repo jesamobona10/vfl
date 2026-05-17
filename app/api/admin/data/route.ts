@@ -3,6 +3,7 @@ import { createClient } from "@/lib/supabase/server";
 import { createServiceRoleClient } from "@/lib/supabase/service-role";
 import type { Team, Player, FixtureRound, Match } from "@/lib/types";
 import { roundByeId } from "@/lib/logic/standings";
+import { sortMatchesByDateTime } from "@/lib/utils/helpers";
 
 export async function GET() {
   try {
@@ -101,7 +102,7 @@ export async function GET() {
 
     const sortedRounds = Array.from(roundSet).sort((a, b) => a - b);
     const fixtures: FixtureRound[] = sortedRounds.map((round) => {
-      const matches = grouped.get(round)!;
+      const matches = sortMatchesByDateTime(grouped.get(round)!);
       const roundObj: FixtureRound = { round, byeId: null, matches };
       roundObj.byeId = roundByeId(roundObj, teams);
       return roundObj;

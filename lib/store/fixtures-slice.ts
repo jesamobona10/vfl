@@ -1,6 +1,6 @@
 import type { StateCreator } from "zustand";
 import type { FixtureRound, Match, NewMatchInput, RepairResult } from "../types";
-import { pairKey } from "../utils/helpers";
+import { pairKey, sortMatchesByDateTime } from "../utils/helpers";
 import { generateRoundRobinFixtures } from "../logic/round-robin";
 import { repairFixturesFromLocks } from "../logic/repair";
 import { allMatches } from "../logic/standings";
@@ -38,7 +38,13 @@ export const createFixturesSlice: StateCreator<
   fixtures: [],
   repairNotice: "",
 
-  setFixtures: (fixtures) => set({ fixtures }),
+  setFixtures: (fixtures) =>
+    set({
+      fixtures: fixtures.map((r) => ({
+        ...r,
+        matches: sortMatchesByDateTime(r.matches),
+      })),
+    }),
 
   generateFixtures: (teams) => {
     const result = generateRoundRobinFixtures(teams, getFixtures(get));
@@ -125,7 +131,10 @@ export const createFixturesSlice: StateCreator<
     const fixtures = [...getFixtures(get)];
     let round = fixtures.find((r) => r.round === roundNum);
     if (round) {
-      round = { ...round, matches: [...round.matches, newMatch] };
+      round = {
+        ...round,
+        matches: sortMatchesByDateTime([...round.matches, newMatch]),
+      };
       fixtures[fixtures.findIndex((r) => r.round === roundNum)] = round;
     } else {
       fixtures.push({
@@ -209,7 +218,12 @@ export const createFixturesSlice: StateCreator<
         return updated;
       }),
     }));
-    set({ fixtures, repairNotice: "" });
+
+    const sorted = fixtures.map((r) => ({
+      ...r,
+      matches: sortMatchesByDateTime(r.matches),
+    }));
+    set({ fixtures: sorted, repairNotice: "" });
   },
 
   setRepairNotice: (notice) => set({ repairNotice: notice }),

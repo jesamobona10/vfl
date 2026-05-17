@@ -73,6 +73,8 @@ export async function POST(request: Request) {
       .from("fixtures")
       .select("*")
       .order("round")
+      .order("date")
+      .order("time")
       .order("id");
 
     return NextResponse.json({ success: true, fixtures: synced });

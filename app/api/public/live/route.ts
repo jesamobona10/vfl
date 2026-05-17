@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { createPublicClient } from "@/lib/supabase/public";
+import { sortMatchesByDateTime } from "@/lib/utils/helpers";
 
 export async function GET() {
   try {
@@ -55,8 +56,8 @@ export async function GET() {
     }
 
     return NextResponse.json({
-      live,
-      upcoming,
+      live: sortMatchesByDateTime(live),
+      upcoming: sortMatchesByDateTime(upcoming),
       today,
       fetchedAt: new Date().toISOString(),
     });
