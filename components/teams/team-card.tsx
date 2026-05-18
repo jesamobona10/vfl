@@ -8,13 +8,22 @@ interface TeamCardProps {
   team: Team;
   index: number;
   isManaged: boolean;
+  showAdmin?: boolean;
+  onDelete?: (id: number) => void;
 }
 
-export function TeamCard({ team, index, isManaged }: TeamCardProps) {
+export function TeamCard({ team, index, isManaged, showAdmin, onDelete }: TeamCardProps) {
   const updateTeam = useAppStore((s) => s.updateTeam);
 
   const handleNameChange = (value: string) => {
     updateTeam(team.id, { name: value });
+  };
+
+  const handleRatingChange = (value: string) => {
+    const rating = parseFloat(value);
+    if (!Number.isNaN(rating)) {
+      updateTeam(team.id, { rating });
+    }
   };
 
   const handleLogoComplete = (url: string) => {
@@ -44,6 +53,30 @@ export function TeamCard({ team, index, isManaged }: TeamCardProps) {
         className="input text-center"
         placeholder="Team name"
       />
+
+      {showAdmin && (
+        <div className="mt-4 flex flex-col gap-3">
+          <label className="flex items-center gap-2 text-sm text-muted">
+            Rating
+            <input
+              type="number"
+              step="0.1"
+              min="1"
+              max="10"
+              value={team.rating.toFixed(1)}
+              onChange={(e) => handleRatingChange(e.target.value)}
+              className="input w-24 text-sm"
+            />
+          </label>
+          <button
+            type="button"
+            onClick={() => onDelete?.(team.id)}
+            className="btn-ghost text-danger"
+          >
+            Delete Team
+          </button>
+        </div>
+      )}
     </div>
   );
 }

@@ -3,6 +3,7 @@
 import { useState, useEffect, useCallback } from "react";
 import { useAppStore } from "@/lib/store";
 import { MatchEditor } from "./match-editor";
+import { TeamForm } from "../teams/team-form";
 import { DataImporter } from "./data-importer";
 import {
   Wrench,
@@ -29,125 +30,6 @@ import {
 import type { Team, Player } from "@/lib/types";
 
 type AdminTab = "teams" | "players" | "fixtures" | "database" | "accounts" | "import";
-
-function TeamManager() {
-  const teams = useAppStore((s) => s.teams);
-  const addTeam = useAppStore((s) => s.addTeam);
-  const deleteTeam = useAppStore((s) => s.deleteTeam);
-  const updateTeam = useAppStore((s) => s.updateTeam);
-  const deleteTeamPlayers = useAppStore((s) => s.deleteTeamPlayers);
-  const deleteAllPlayers = useAppStore((s) => s.deleteAllPlayers);
-  const setFixtures = useAppStore((s) => s.setFixtures);
-  const [newName, setNewName] = useState("");
-  const [editingId, setEditingId] = useState<number | null>(null);
-  const [editName, setEditName] = useState("");
-  const [editRating, setEditRating] = useState("");
-
-  const handleAdd = () => {
-    const name = newName.trim();
-    if (!name) return;
-    const maxId = teams.reduce((m, t) => Math.max(m, t.id), 0);
-    addTeam({ id: maxId + 1, name, rating: 6.0 });
-    setNewName("");
-  };
-
-  const handleDelete = (id: number) => {
-    const name = teams.find((t) => t.id === id)?.name || "this team";
-    if (!confirm(`Delete ${name} and all its players? This cannot be undone.`)) return;
-    deleteTeam(id);
-    deleteTeamPlayers(id);
-  };
-
-  const startEdit = (t: Team) => {
-    setEditingId(t.id);
-    setEditName(t.name);
-    setEditRating(String(t.rating));
-  };
-
-  const saveEdit = (id: number) => {
-    const parsedRating = parseFloat(editRating);
-    updateTeam(id, { name: editName, rating: isNaN(parsedRating) ? 6.0 : parsedRating });
-    setEditingId(null);
-  };
-
-  const handleResetAll = () => {
-    if (!confirm("Reset ALL data (teams, fixtures, players)? This cannot be undone.")) return;
-    useAppStore.getState().resetTeams();
-    setFixtures([]);
-    deleteAllPlayers();
-  };
-
-  return (
-    <div className="space-y-4">
-      <div className="flex items-center justify-between">
-        <h3 className="text-lg font-bold">Teams</h3>
-        <button onClick={handleResetAll} className="btn-ghost text-xs text-danger">
-          <Trash2 size={14} />
-          Reset All Data
-        </button>
-      </div>
-
-      <div className="flex gap-2">
-        <input
-          type="text"
-          value={newName}
-          onChange={(e) => setNewName(e.target.value)}
-          className="input flex-1"
-          placeholder="New team name..."
-          onKeyDown={(e) => e.key === "Enter" && handleAdd()}
-        />
-        <button onClick={handleAdd} className="btn-primary" disabled={!newName.trim()}>
-          <Plus size={16} />
-          Add Team
-        </button>
-      </div>
-
-      <div className="space-y-2">
-        {teams.map((t) => (
-          <div key={t.id} className="card px-4 py-3 flex items-center gap-3">
-            {editingId === t.id ? (
-              <>
-                <input
-                  type="text"
-                  value={editName}
-                  onChange={(e) => setEditName(e.target.value)}
-                  className="input flex-1 text-sm py-1.5"
-                />
-                <input
-                  type="number"
-                  step="0.1"
-                  min="1"
-                  max="10"
-                  value={editRating}
-                  onChange={(e) => setEditRating(e.target.value)}
-                  className="input w-20 text-sm py-1.5"
-                />
-                <button onClick={() => saveEdit(t.id)} className="btn-icon text-brand">
-                  <Save size={16} />
-                </button>
-                <button onClick={() => setEditingId(null)} className="btn-icon">
-                  <X size={16} />
-                </button>
-              </>
-            ) : (
-              <>
-                <Shield size={16} className="text-muted shrink-0" />
-                <span className="flex-1 text-sm font-medium">{t.name}</span>
-                <span className="text-xs text-muted">Rating: {t.rating}</span>
-                <button onClick={() => startEdit(t)} className="btn-icon" title="Edit team">
-                  <Edit2 size={14} />
-                </button>
-                <button onClick={() => handleDelete(t.id)} className="btn-icon text-danger" title="Delete team">
-                  <Trash2 size={14} />
-                </button>
-              </>
-            )}
-          </div>
-        ))}
-      </div>
-    </div>
-  );
-}
 
 function PlayerManager() {
   const players = useAppStore((s) => s.players);
@@ -763,7 +645,7 @@ export function AdminPanel() {
         })}
       </div>
 
-      {tab === "teams" && <TeamManager />}
+      {tab === "teams" && <TeamForm />}
       {tab === "players" && <PlayerManager />}
       {tab === "fixtures" && <FixtureManager />}
       {tab === "accounts" && <TeamAccountManager />}
