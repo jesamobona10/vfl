@@ -1,10 +1,10 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useAppStore } from "@/lib/store";
-import type { Team } from "@/lib/types";
+import type { Team, TeamLineup } from "@/lib/types";
 import { ImageUpload } from "@/components/shared/image-upload";
-import { Trash2, Users, Star } from "lucide-react";
+import { Trash2, Users, Star, X } from "lucide-react";
 
 interface TeamCardProps {
   team: Team;
@@ -27,6 +27,51 @@ export function TeamCard({ team, index, isManaged, showAdmin, onDelete }: TeamCa
   }, [team.name, team.rating]);
 
   const teamPlayers = players.filter((p) => p.teamId === team.id);
+  const [showDetails, setShowDetails] = useState(false);
+  const [lineup, setLineup] = useState<TeamLineup | null>(null);
+  const [lineupLoading, setLineupLoading] = useState(false);
+  const [lineupError, setLineupError] = useState("");
+
+  const playerStats = useMemo(() => {
+    return {
+      yellowCards: teamPlayers.reduce((sum, player) => sum + player.yellowCards, 0),
+      redCards: teamPlayers.reduce((sum, player) => sum + player.redCards, 0),
+      goals: teamPlayers.reduce((sum, player) => sum + player.goals, 0),
+      assists: teamPlayers.reduce((sum, player) => sum + player.assists, 0),
+      saves: teamPlayers.reduce((sum, player) => sum + player.saves, 0),
+      cleanSheets: teamPlayers.reduce((sum, player) => sum + player.cleanSheets, 0),
+      averageRating:
+        teamPlayers.length > 0
+          ? teamPlayers.reduce((sum, player) => sum + player.rating, 0) / teamPlayers.length
+          : 0,
+    };
+  }, [teamPlayers]);
+
+  const fetchLineup = async () => {
+    setLineupLoading(true);
+    setLineupError("");
+    try {
+      const res = await fetch(`/api/teams/${team.id}/lineups`);
+      const body = await res.json();
+      if (!res.ok) {
+        setLineupError(body.error || "Unable to load lineup.");
+        setLineup(null);
+      } else {
+        const active = (body.lineups || []).find((item: TeamLineup) => item.isActive) || body.lineups?.[0] || null;
+        setLineup(active);
+      }
+    } catch (error) {
+      setLineupError("Unable to load lineup.");
+      setLineup(null);
+    } finally {
+      setLineupLoading(false);
+    }
+  };
+
+  const openDetails = () => {
+    setShowDetails(true);
+    fetchLineup();
+  };
 
   const saveTeam = async (data: Partial<Pick<Team, "name" | "rating">>) => {
     if (Object.keys(data).length === 0) return;
@@ -149,7 +194,128 @@ export function TeamCard({ team, index, isManaged, showAdmin, onDelete }: TeamCa
             </span>
           )}
         </div>
+
+        <button
+          type="button"
+          onClick={openDetails}
+          className="btn-outline w-full mt-4"
+        >
+          View Team Details
+        </button>
       </div>
+
+      {showDetails && (
+        <div className="fixed inset-0 bg-black/40 z-50 flex items-center justify-center p-4">
+          <div className="bg-surface w-full max-w-2xl rounded-xl shadow-xl overflow-hidden">
+            <div className="px-6 py-4 border-b border-line flex items-center justify-between">
+              <div>
+                <h3 className="text-lg font-semibold">{team.name} Overview</h3>
+                <p className="text-sm text-muted">Full team summary and lineup preview</p>
+              </div>
+              <button
+                type="button"
+                onClick={() => setShowDetails(false)}
+                className="text-muted hover:text-text"
+                title="Close"
+              >
+                <X size={18} />
+              </button>
+            </div>
+
+            <div className="p-6 grid gap-6 lg:grid-cols-[1.3fr_0.9fr]">
+              <div className="space-y-4">
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="card p-4">
+                    <h4 className="text-sm font-semibold text-text mb-2">Team Rating</h4>
+                    <p className="text-3xl font-bold">{team.rating.toFixed(1)}</p>
+                  </div>
+                  <div className="card p-4">
+                    <h4 className="text-sm font-semibold text-text mb-2">Players</h4>
+                    <p className="text-3xl font-bold">{teamPlayers.length}</p>
+                  </div>
+                  <div className="card p-4">
+                    <h4 className="text-sm font-semibold text-text mb-2">Yellow Cards</h4>
+                    <p className="text-3xl font-bold">{playerStats.yellowCards}</p>
+                  </div>
+                  <div className="card p-4">
+                    <h4 className="text-sm font-semibold text-text mb-2">Red Cards</h4>
+                    <p className="text-3xl font-bold">{playerStats.redCards}</p>
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="card p-4">
+                    <h4 className="text-sm font-semibold text-text mb-2">Goals</h4>
+                    <p className="text-2xl font-bold">{playerStats.goals}</p>
+                  </div>
+                  <div className="card p-4">
+                    <h4 className="text-sm font-semibold text-text mb-2">Assists</h4>
+                    <p className="text-2xl font-bold">{playerStats.assists}</p>
+                  </div>
+                  <div className="card p-4">
+                    <h4 className="text-sm font-semibold text-text mb-2">Saves</h4>
+                    <p className="text-2xl font-bold">{playerStats.saves}</p>
+                  </div>
+                  <div className="card p-4">
+                    <h4 className="text-sm font-semibold text-text mb-2">Clean Sheets</h4>
+                    <p className="text-2xl font-bold">{playerStats.cleanSheets}</p>
+                  </div>
+                </div>
+
+                <div className="card p-4">
+                  <h4 className="text-sm font-semibold text-text mb-2">Average Player Rating</h4>
+                  <p className="text-2xl font-bold">{teamPlayers.length > 0 ? playerStats.averageRating.toFixed(1) : "N/A"}</p>
+                </div>
+              </div>
+
+              <div className="space-y-4">
+                <div className="card p-4">
+                  <div className="flex items-center justify-between mb-3">
+                    <div>
+                      <h4 className="text-sm font-semibold text-text">Active Lineup</h4>
+                      <p className="text-xs text-muted">Source: team account lineup</p>
+                    </div>
+                    {lineupLoading && <span className="text-xs text-muted">Loading…</span>}
+                  </div>
+
+                  {!lineupLoading && lineup && (
+                    <div className="space-y-3">
+                      <div className="rounded-lg bg-surface-2 p-3 border border-line">
+                        <p className="text-sm font-semibold">{lineup.name}</p>
+                        <p className="text-xs text-muted">Formation: {lineup.formation}</p>
+                      </div>
+                      <ul className="space-y-2 text-sm">
+                        {lineup.slots.map((slot) => {
+                          const player = players.find((p) => p.id === slot.playerId);
+                          return (
+                            <li key={slot.slotId} className="flex items-center justify-between gap-3">
+                              <span className="font-medium">{slot.label}</span>
+                              <span className="text-muted">{slot.position}</span>
+                              <span className="text-right">
+                                {player ? player.name : "Empty"}
+                              </span>
+                            </li>
+                          );
+                        })}
+                      </ul>
+                    </div>
+                  )}
+
+                  {!lineupLoading && !lineup && (
+                    <div className="rounded-lg bg-surface-2 p-4 border border-dashed border-line text-sm text-muted">
+                      Coach has not added a lineup yet, so nothing is available here yet.
+                    </div>
+                  )}
+
+                  {lineupError && (
+                    <p className="text-sm text-danger">{lineupError}</p>
+                  )}
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
