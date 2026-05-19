@@ -10,6 +10,37 @@ interface PlayerModalProps {
   onClose: () => void;
 }
 
+function mapDbPlayer(player: any): Player {
+  return {
+    id: player.id,
+    teamId: player.team_id,
+    name: player.name,
+    position: player.position as Player["position"],
+    number: player.jersey_number || 0,
+    goals: player.goals ?? 0,
+    assists: player.assists ?? 0,
+    ownGoals: 0,
+    yellowCards: player.yellow_cards ?? 0,
+    redCards: player.red_cards ?? 0,
+    saves: player.saves ?? 0,
+    penaltySaves: 0,
+    cleanSheets: player.clean_sheets ?? 0,
+    motm: 0,
+    tackles: player.tackles ?? 0,
+    interceptions: player.interceptions ?? 0,
+    blocks: player.blocks ?? 0,
+    aerialDuelsWon: player.aerial_duels_won ?? 0,
+    errorsLeadingToGoal: player.errors_leading_to_goal ?? 0,
+    penaltiesConceded: player.penalties_conceded ?? 0,
+    goalsConceded: player.goals_conceded ?? 0,
+    matchWins: player.match_wins ?? 0,
+    bonus5Saves: player.bonus_5_saves ?? 0,
+    captain: player.is_captain ?? false,
+    rating: player.rating ?? 6.0,
+    matchRatings: player.match_ratings ?? {},
+  };
+}
+
 export function PlayerModal({ player, onClose }: PlayerModalProps) {
   const teams = useAppStore((s) => s.teams);
   const addPlayer = useAppStore((s) => s.addPlayer);
@@ -23,6 +54,7 @@ export function PlayerModal({ player, onClose }: PlayerModalProps) {
   const [number, setNumber] = useState("");
   const [captain, setCaptain] = useState(false);
   const [error, setError] = useState("");
+  const [saving, setSaving] = useState(false);
 
   const isEdit = player !== null;
   const managedId = getManagedTeamId();
@@ -43,68 +75,75 @@ export function PlayerModal({ player, onClose }: PlayerModalProps) {
     }
   }, [player, managedId]);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError("");
+    setSaving(true);
 
     if (!name.trim()) {
       setError("Player name is required.");
+      setSaving(false);
       return;
     }
     const tid = managedId || Number(teamId);
     if (!tid) {
       setError("Team is required.");
+      setSaving(false);
       return;
     }
     if (!position) {
       setError("Position is required.");
+      setSaving(false);
       return;
     }
     const num = Number(number);
     if (!Number.isFinite(num) || num < 1 || num > 99) {
       setError("Jersey number must be between 1 and 99.");
+      setSaving(false);
       return;
     }
 
-    if (isEdit && player) {
-      updatePlayer(player.id, {
+    try {
+      const payload = {
+        team_id: tid,
         name: name.trim(),
-        teamId: tid,
-        position: position as Player["position"],
-        number: num,
-        captain,
-      });
-    } else {
-      addPlayer({
-        id: Date.now() + Math.floor(Math.random() * 1000),
-        teamId: tid,
-        name: name.trim(),
-        position: position as Player["position"],
-        number: num,
-        captain,
-        goals: 0,
-        assists: 0,
-        ownGoals: 0,
-        yellowCards: 0,
-        redCards: 0,
-        saves: 0,
-        penaltySaves: 0,
-        cleanSheets: 0,
-        motm: 0,
-        tackles: 0,
-        interceptions: 0,
-        blocks: 0,
-        aerialDuelsWon: 0,
-        errorsLeadingToGoal: 0,
-        penaltiesConceded: 0,
-        goalsConceded: 0,
-        matchWins: 0,
-        bonus5Saves: 0,
-        rating: 6.0,
-        matchRatings: {},
-      });
+        position,
+        jersey_number: num,
+        is_captain: captain,
+      };
+
+      if (isEdit && player) {
+        const res = await fetch(`/api/players/${player.id}`, {
+          method: "PUT",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(payload),
+        });
+        const body = await res.json();
+        if (!res.ok) {
+          setError(body.error || "Failed to update player.");
+          return;
+        }
+        const updatedPlayer = mapDbPlayer(body.player);
+        updatePlayer(player.id, updatedPlayer);
+      } else {
+        const res = await fetch(`/api/players`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(payload),
+        });
+        const body = await res.json();
+        if (!res.ok) {
+          setError(body.error || "Failed to create player.");
+          return;
+        }
+        addPlayer(mapDbPlayer(body.player));
+      }
+      onClose();
+    } catch {
+      setError("Unable to save player. Please try again.");
+    } finally {
+      setSaving(false);
     }
-    onClose();
   };
 
   return (
@@ -206,8 +245,18 @@ export function PlayerModal({ player, onClose }: PlayerModalProps) {
             <p className="text-sm text-danger">{error}</p>
           )}
 
-          <button type="submit" className="btn-primary w-full">
-            {isEdit ? "Update Player" : "Save Player"}
+          <button
+            type="submit"
+            className="btn-primary w-full"
+            disabled={saving}
+          >
+            {saving
+              ? isEdit
+                ? "Updating..."
+                : "Saving..."
+              : isEdit
+              ? "Update Player"
+              : "Save Player"}
           </button>
         </form>
       </div>

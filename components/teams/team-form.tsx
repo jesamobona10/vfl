@@ -4,9 +4,11 @@ import { useState } from "react";
 import { useAppStore } from "@/lib/store";
 import { TeamCard } from "./team-card";
 import { RotateCcw, AlertCircle, Plus, Trash2 } from "lucide-react";
+import type { Team } from "@/lib/types";
 
 export function TeamForm() {
   const [newTeamName, setNewTeamName] = useState("");
+  const [adminError, setAdminError] = useState("");
   const teams = useAppStore((s) => s.teams);
   const isTeamAccount = useAppStore((s) => s.isTeamAccount);
   const getManagedTeamId = useAppStore((s) => s.getManagedTeamId);
@@ -39,19 +41,57 @@ export function TeamForm() {
     return "";
   })();
 
-  const handleAdd = () => {
+  const handleAdd = async () => {
     const name = newTeamName.trim();
     if (!name) return;
-    const maxId = teams.reduce((max, t) => Math.max(max, t.id), 0);
-    addTeam({ id: maxId + 1, name, rating: 6.0 });
-    setNewTeamName("");
+    setAdminError("");
+
+    try {
+      const res = await fetch("/api/teams", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ name, rating: 6.0 }),
+      });
+      const payload = await res.json();
+      if (!res.ok) {
+        setAdminError(payload.error || "Could not add team.");
+        return;
+      }
+
+      const newTeam: Team = {
+        id: payload.team.id,
+        name: payload.team.name,
+        rating: payload.team.rating ?? 6.0,
+        logo: payload.team.logo_url || undefined,
+      };
+      addTeam(newTeam);
+      setNewTeamName("");
+    } catch (error) {
+      setAdminError("Unable to add team. Please try again.");
+      console.error("Add team error:", error);
+    }
   };
 
-  const handleDelete = (id: number) => {
+  const handleDelete = async (id: number) => {
     const name = teams.find((t) => t.id === id)?.name || "this team";
     if (!confirm(`Delete ${name} and all its players? This cannot be undone.`)) return;
-    deleteTeam(id);
-    deleteTeamPlayers(id);
+    setAdminError("");
+
+    try {
+      const res = await fetch(`/api/teams/${id}`, {
+        method: "DELETE",
+      });
+      const payload = await res.json();
+      if (!res.ok) {
+        setAdminError(payload.error || "Could not delete team.");
+        return;
+      }
+      deleteTeam(id);
+      deleteTeamPlayers(id);
+    } catch (error) {
+      setAdminError("Unable to delete team. Please try again.");
+      console.error("Delete team error:", error);
+    }
   };
 
   const handleResetNames = () => {
@@ -119,6 +159,12 @@ export function TeamForm() {
         <div className="flex items-center gap-2 text-sm text-danger bg-danger/10 rounded-lg px-4 py-3 mb-6">
           <AlertCircle size={16} />
           {validationMsg}
+        </div>
+      )}
+      {adminError && (
+        <div className="flex items-center gap-2 text-sm text-danger bg-danger/10 rounded-lg px-4 py-3 mb-6">
+          <AlertCircle size={16} />
+          {adminError}
         </div>
       )}
 
