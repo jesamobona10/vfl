@@ -284,20 +284,75 @@ export function TeamCard({ team, index, isManaged, showAdmin, onDelete }: TeamCa
                         <p className="text-sm font-semibold">{lineup.name}</p>
                         <p className="text-xs text-muted">Formation: {lineup.formation}</p>
                       </div>
-                      <ul className="space-y-2 text-sm">
-                        {lineup.slots.map((slot) => {
-                          const player = players.find((p) => p.id === slot.playerId);
-                          return (
-                            <li key={slot.slotId} className="flex items-center justify-between gap-3">
-                              <span className="font-medium">{slot.label}</span>
-                              <span className="text-muted">{slot.position}</span>
-                              <span className="text-right">
-                                {player ? player.name : "Empty"}
-                              </span>
-                            </li>
-                          );
-                        })}
-                      </ul>
+                      <div>
+                        {/* Formation mini-board */}
+                        <div className="w-full flex flex-col items-center gap-3">
+                          {/** Show formation name */}
+                          <div className="w-full text-center text-sm text-muted mb-1">Formation: {lineup.formation}</div>
+
+                          {/* Build formation rows: forwards, midfield, defense, GK */}
+                          {(() => {
+                            const parts = (lineup.formation || "").split("-").map((n) => parseInt(n, 10)).filter(Boolean);
+                            // default to 4-4-2 if parsing fails
+                            const formation = parts.length >= 2 ? parts : [4, 4, 2];
+                            const [defCount, midCount, attCount] = formation.length === 3 ? formation : [formation[0], formation[1] ?? 4, formation[2] ?? 2];
+
+                            const gkSlots = lineup.slots.filter((s) => s.position === "GK");
+                            const defSlots = lineup.slots.filter((s) => s.position === "DEF");
+                            const midSlots = lineup.slots.filter((s) => s.position === "MID");
+                            const attSlots = lineup.slots.filter((s) => s.position === "ATT");
+
+                            const makeRow = (count: number, slots: typeof lineup.slots, roleLabel: string) => {
+                              const cells: (typeof slots[0] | null)[] = [];
+                              for (let i = 0; i < count; i++) {
+                                cells.push(slots[i] ?? null);
+                              }
+                              return (
+                                <div key={roleLabel} className={`w-full grid grid-cols-${count} gap-2`} style={{ gridTemplateColumns: `repeat(${count}, minmax(0, 1fr))` }}>
+                                  {cells.map((slot, idx) => {
+                                    const player = slot ? players.find((p) => p.id === slot.playerId) : null;
+                                    return (
+                                      <div key={slot ? slot.slotId : `empty-${roleLabel}-${idx}`} className="bg-surface-2 p-2 rounded text-center text-xs border border-line">
+                                        <div className="font-medium">{player ? player.number + " - " + player.name : (slot ? slot.label : "Empty")}</div>
+                                        <div className="text-muted text-[11px]">{slot ? slot.position : ""}</div>
+                                      </div>
+                                    );
+                                  })}
+                                </div>
+                              );
+                            };
+
+                            return (
+                              <div className="w-full space-y-3">
+                                {/* Attackers on top */}
+                                {makeRow(attCount, attSlots, "ATT")}
+                                {/* Midfield */}
+                                {makeRow(midCount, midSlots, "MID")}
+                                {/* Defense */}
+                                {makeRow(defCount, defSlots, "DEF")}
+                                {/* Goalkeeper centered */}
+                                <div className="w-full flex justify-center mt-2">
+                                  <div className="w-1/3">
+                                    {gkSlots[0] ? (
+                                      (() => {
+                                        const p = players.find((p) => p.id === gkSlots[0].playerId);
+                                        return (
+                                          <div className="bg-surface-2 p-2 rounded text-center text-xs border border-line">
+                                            <div className="font-medium">{p ? p.number + " - " + p.name : gkSlots[0].label}</div>
+                                            <div className="text-muted text-[11px]">GK</div>
+                                          </div>
+                                        );
+                                      })()
+                                    ) : (
+                                      <div className="bg-surface-2 p-2 rounded text-center text-xs border border-dashed border-line text-muted">No goalkeeper</div>
+                                    )}
+                                  </div>
+                                </div>
+                              </div>
+                            );
+                          })()}
+                        </div>
+                      </div>
                     </div>
                   )}
 
