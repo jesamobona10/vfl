@@ -4,6 +4,7 @@ import { useState } from "react";
 import { useAppStore } from "@/lib/store";
 import { parseImportFile, buildImportPlan } from "@/lib/utils/data-import";
 import { refreshTeamData } from "@/lib/hooks/use-team-data";
+import Notifications from "@/components/notifications/notifications";
 import { Search, Download, Upload, RotateCcw, LogOut, Shield, RefreshCw, Loader2 } from "lucide-react";
 
 interface AppHeaderProps {
@@ -151,6 +152,10 @@ export function AppHeader({ onOpenSearch }: AppHeaderProps) {
             <span className="text-sm text-muted">
               {isAdmin ? "Admin" : currentTeamAccount?.name}
             </span>
+            {/* Notifications */}
+            <div className="ml-2">
+              <Notifications />
+            </div>
             {currentTeamAccount && (
               <button
                 onClick={async () => {

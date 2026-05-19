@@ -132,6 +132,63 @@ CREATE INDEX IF NOT EXISTS idx_fixtures_away_team ON fixtures(away_team_id);
 CREATE INDEX IF NOT EXISTS idx_match_events_match ON match_events(match_id);
 CREATE INDEX IF NOT EXISTS idx_team_accounts_team ON team_accounts(team_id);
 
+-- Player transfers audit log
+CREATE TABLE IF NOT EXISTS player_transfers (
+  id BIGSERIAL PRIMARY KEY,
+  player_id BIGINT NOT NULL REFERENCES players(id) ON DELETE CASCADE,
+  from_team_id INTEGER REFERENCES teams(id) ON DELETE SET NULL,
+  to_team_id INTEGER REFERENCES teams(id) ON DELETE SET NULL,
+  performed_by UUID REFERENCES auth.users(id) ON DELETE SET NULL,
+  performed_by_role TEXT NOT NULL,
+  notes TEXT,
+  created_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+ALTER TABLE player_transfers ENABLE ROW LEVEL SECURITY;
+
+CREATE POLICY "player_transfers_read_admin_or_involving_team" ON player_transfers
+  FOR SELECT USING (
+    EXISTS (SELECT 1 FROM admin_users WHERE id = auth.uid())
+    OR EXISTS (
+      SELECT 1 FROM team_accounts ta
+      WHERE ta.id = auth.uid() AND (ta.team_id = player_transfers.from_team_id OR ta.team_id = player_transfers.to_team_id)
+    )
+  );
+
+CREATE INDEX IF NOT EXISTS idx_player_transfers_player_id ON player_transfers(player_id);
+CREATE INDEX IF NOT EXISTS idx_player_transfers_from_team ON player_transfers(from_team_id);
+CREATE INDEX IF NOT EXISTS idx_player_transfers_to_team ON player_transfers(to_team_id);
+
+-- Notifications table for in-app alerts
+CREATE TABLE IF NOT EXISTS notifications (
+  id BIGSERIAL PRIMARY KEY,
+  team_id INTEGER REFERENCES teams(id) ON DELETE SET NULL,
+  type TEXT NOT NULL,
+  payload JSONB,
+  is_read BOOLEAN DEFAULT FALSE,
+  created_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+ALTER TABLE notifications ENABLE ROW LEVEL SECURITY;
+
+CREATE POLICY "notifications_read_admin_or_team" ON notifications
+  FOR SELECT USING (
+    EXISTS (SELECT 1 FROM admin_users WHERE id = auth.uid())
+    OR EXISTS (
+      SELECT 1 FROM team_accounts ta
+      WHERE ta.id = auth.uid() AND ta.team_id = notifications.team_id
+    )
+  );
+
+CREATE POLICY "notifications_insert_admin_or_system" ON notifications
+  FOR INSERT WITH CHECK (
+    EXISTS (SELECT 1 FROM admin_users WHERE id = auth.uid())
+    OR auth.role() = 'authenticated'
+  );
+
+CREATE INDEX IF NOT EXISTS idx_notifications_team_id ON notifications(team_id);
+CREATE INDEX IF NOT EXISTS idx_notifications_created_at ON notifications(created_at DESC);
+
 -- 3. ROW LEVEL SECURITY
 
 ALTER TABLE teams ENABLE ROW LEVEL SECURITY;

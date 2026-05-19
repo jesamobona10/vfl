@@ -55,6 +55,8 @@ export function PlayerModal({ player, onClose }: PlayerModalProps) {
   const [captain, setCaptain] = useState(false);
   const [error, setError] = useState("");
   const [saving, setSaving] = useState(false);
+  const [showConfirm, setShowConfirm] = useState(false);
+  const [originalTeamId, setOriginalTeamId] = useState("");
 
   const isEdit = player !== null;
   const managedId = getManagedTeamId();
@@ -66,12 +68,14 @@ export function PlayerModal({ player, onClose }: PlayerModalProps) {
       setPosition(player.position);
       setNumber(String(player.number));
       setCaptain(player.captain);
+      setOriginalTeamId(String(player.teamId));
     } else {
       setName("");
       setTeamId(managedId ? String(managedId) : "");
       setPosition("");
       setNumber("");
       setCaptain(false);
+      setOriginalTeamId("");
     }
   }, [player, managedId]);
 
@@ -118,6 +122,14 @@ export function PlayerModal({ player, onClose }: PlayerModalProps) {
         is_captain: captain,
       };
 
+      // If editing and changing team, show confirmation modal
+      if (isEdit && player && String(player.teamId) !== String(payload.team_id)) {
+        setShowConfirm(true);
+        setSaving(false);
+        return;
+      }
+
+      // proceed with save
       if (isEdit && player) {
         const res = await fetch(`/api/players/${player.id}`, {
           method: "PUT",
@@ -265,6 +277,63 @@ export function PlayerModal({ player, onClose }: PlayerModalProps) {
               : "Save Player"}
           </button>
         </form>
+        {showConfirm && (
+          <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-60">
+            <div className="card p-6 max-w-sm">
+              <h3 className="font-bold mb-2">Confirm Transfer</h3>
+              <p className="mb-4 text-sm">
+                You're about to transfer this player from <strong>{teams.find(t=>String(t.id)===originalTeamId)?.name || 'Unknown'}</strong> to <strong>{teams.find(t=>String(t.id)===teamId)?.name || 'Unknown'}</strong>.
+              </p>
+              <div className="flex gap-2 justify-end">
+                <button
+                  className="btn"
+                  onClick={() => {
+                    setShowConfirm(false);
+                  }}
+                >
+                  Cancel
+                </button>
+                <button
+                  className="btn-primary"
+                  onClick={async () => {
+                    setShowConfirm(false);
+                    setSaving(true);
+                    try {
+                      const payload = {
+                        team_id: managedId || Number(teamId),
+                        name: name.trim(),
+                        position,
+                        jersey_number: Number(number),
+                        is_captain: captain,
+                      };
+                      if (player) {
+                        const res = await fetch(`/api/players/${player.id}`, {
+                          method: "PUT",
+                          headers: { "Content-Type": "application/json" },
+                          body: JSON.stringify(payload),
+                        });
+                        const body = await res.json();
+                        if (!res.ok) {
+                          setError(body.error || "Failed to transfer player.");
+                          return;
+                        }
+                        const updatedPlayer = mapDbPlayer(body.player);
+                        updatePlayer(player.id, updatedPlayer);
+                      }
+                      onClose();
+                    } catch {
+                      setError("Unable to transfer player. Please try again.");
+                    } finally {
+                      setSaving(false);
+                    }
+                  }}
+                >
+                  Confirm Transfer
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );
