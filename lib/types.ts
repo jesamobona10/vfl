@@ -14,6 +14,24 @@ export interface Team {
   form?: string;
 }
 
+export interface LineupSlot {
+  slotId: string;
+  label: string;
+  position: "GK" | "DEF" | "MID" | "ATT";
+  playerId: number | null;
+}
+
+export interface TeamLineup {
+  id: number;
+  teamId: number;
+  name: string;
+  formation: string;
+  slots: LineupSlot[];
+  isActive: boolean;
+  createdAt: string;
+  updatedAt: string;
+}
+
 export interface MatchEvent {
   playerId: number;
   type: string;

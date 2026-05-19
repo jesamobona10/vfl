@@ -72,6 +72,57 @@ CREATE TABLE IF NOT EXISTS match_events (
   created_at TIMESTAMPTZ DEFAULT NOW()
 );
 
+CREATE TABLE IF NOT EXISTS team_lineups (
+  id BIGSERIAL PRIMARY KEY,
+  team_id INTEGER NOT NULL REFERENCES teams(id) ON DELETE CASCADE,
+  name TEXT NOT NULL,
+  formation TEXT NOT NULL,
+  slots JSONB NOT NULL,
+  is_active BOOLEAN DEFAULT FALSE,
+  created_at TIMESTAMPTZ DEFAULT NOW(),
+  updated_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+ALTER TABLE team_lineups ENABLE ROW LEVEL SECURITY;
+
+CREATE POLICY "team_lineups_read_admin_or_own_team" ON team_lineups
+  FOR SELECT USING (
+    EXISTS (SELECT 1 FROM admin_users WHERE id = auth.uid())
+    OR EXISTS (
+      SELECT 1 FROM team_accounts
+      WHERE id = auth.uid() AND team_id = team_lineups.team_id
+    )
+  );
+
+CREATE POLICY "team_lineups_insert_admin_or_own_team" ON team_lineups
+  FOR INSERT WITH CHECK (
+    EXISTS (SELECT 1 FROM admin_users WHERE id = auth.uid())
+    OR EXISTS (
+      SELECT 1 FROM team_accounts
+      WHERE id = auth.uid() AND team_id = team_lineups.team_id
+    )
+  );
+
+CREATE POLICY "team_lineups_update_admin_or_own_team" ON team_lineups
+  FOR UPDATE USING (
+    EXISTS (SELECT 1 FROM admin_users WHERE id = auth.uid())
+    OR EXISTS (
+      SELECT 1 FROM team_accounts
+      WHERE id = auth.uid() AND team_id = team_lineups.team_id
+    )
+  );
+
+CREATE POLICY "team_lineups_delete_admin_or_own_team" ON team_lineups
+  FOR DELETE USING (
+    EXISTS (SELECT 1 FROM admin_users WHERE id = auth.uid())
+    OR EXISTS (
+      SELECT 1 FROM team_accounts
+      WHERE id = auth.uid() AND team_id = team_lineups.team_id
+    )
+  );
+
+CREATE INDEX IF NOT EXISTS idx_team_lineups_team_id ON team_lineups(team_id);
+
 -- 2. INDEXES
 
 CREATE INDEX IF NOT EXISTS idx_players_team_id ON players(team_id);

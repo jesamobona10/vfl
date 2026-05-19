@@ -4,13 +4,15 @@ import { useState } from "react";
 import { PlayerList } from "@/components/players/player-list";
 import { PlayerStats } from "@/components/players/player-stats";
 import { TeamOfRound } from "@/components/players/team-of-round";
+import { LineupBuilder } from "@/components/players/lineup-builder";
 
-type Tab = "list" | "stats" | "totr";
+type Tab = "list" | "stats" | "totr" | "lineup";
 
 const tabs: { key: Tab; label: string }[] = [
   { key: "list", label: "Players" },
   { key: "stats", label: "Statistics" },
   { key: "totr", label: "Team of the Round" },
+  { key: "lineup", label: "Lineup Builder" },
 ];
 
 export default function PlayersPage() {
@@ -48,6 +50,7 @@ export default function PlayersPage() {
       {tab === "list" && <PlayerList />}
       {tab === "stats" && <PlayerStats />}
       {tab === "totr" && <TeamOfRound />}
+      {tab === "lineup" && <LineupBuilder />}
     </div>
   );
 }

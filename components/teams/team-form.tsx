@@ -3,13 +3,15 @@
 import { useState } from "react";
 import { useAppStore } from "@/lib/store";
 import { TeamCard } from "./team-card";
-import { RotateCcw, AlertCircle, Plus, Trash2 } from "lucide-react";
+import { RotateCcw, AlertCircle, Plus, Trash2, Shield } from "lucide-react";
 import type { Team } from "@/lib/types";
 
 export function TeamForm() {
   const [newTeamName, setNewTeamName] = useState("");
   const [adminError, setAdminError] = useState("");
+  const [showAddForm, setShowAddForm] = useState(false);
   const teams = useAppStore((s) => s.teams);
+  const players = useAppStore((s) => s.players);
   const isTeamAccount = useAppStore((s) => s.isTeamAccount);
   const getManagedTeamId = useAppStore((s) => s.getManagedTeamId);
   const resetTeams = useAppStore((s) => s.resetTeams);
@@ -25,6 +27,10 @@ export function TeamForm() {
   const visibleTeams = isTeam
     ? teams.filter((t) => t.id === managedId)
     : teams;
+
+  const totalPlayers = isTeam
+    ? players.filter((p) => p.teamId === managedId).length
+    : players.length;
 
   const validationMsg = (() => {
     if (isTeam) {
@@ -66,6 +72,7 @@ export function TeamForm() {
       };
       addTeam(newTeam);
       setNewTeamName("");
+      setShowAddForm(false);
     } catch (error) {
       setAdminError("Unable to add team. Please try again.");
       console.error("Add team error:", error);
@@ -118,68 +125,83 @@ export function TeamForm() {
       <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between mb-6">
         <div>
           <h1 className="text-2xl font-bold">Team Management</h1>
-          <p className="text-sm text-muted">Exactly 11 Teams Required</p>
+          <p className="text-sm text-muted">
+            {teams.length} team{teams.length !== 1 ? "s" : ""} &middot; {totalPlayers} player{totalPlayers !== 1 ? "s" : ""}
+          </p>
         </div>
 
         {!isTeam && (
-          <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
-            <div className="flex gap-2">
-              <input
-                type="text"
-                value={newTeamName}
-                onChange={(e) => setNewTeamName(e.target.value)}
-                className="input"
-                placeholder="New team name..."
-                onKeyDown={(e) => e.key === "Enter" && handleAdd()}
-              />
-              <button
-                onClick={handleAdd}
-                className="btn-primary"
-                disabled={!newTeamName.trim()}
-              >
-                <Plus size={16} />
-                Add Team
-              </button>
-            </div>
-            <div className="flex gap-2">
-              <button onClick={handleResetNames} className="btn-ghost">
-                <RotateCcw size={16} />
-                Reset Names
-              </button>
-              <button onClick={handleResetAll} className="btn-ghost text-danger">
-                <Trash2 size={16} />
-                Reset All Data
-              </button>
-            </div>
+          <div className="flex flex-wrap items-center gap-2">
+            <button
+              onClick={() => setShowAddForm(!showAddForm)}
+              className="btn-primary"
+            >
+              <Plus size={16} />
+              {showAddForm ? "Cancel" : "Add Team"}
+            </button>
+            <button onClick={handleResetNames} className="btn-ghost">
+              <RotateCcw size={16} />
+              Reset Names
+            </button>
+            <button onClick={handleResetAll} className="btn-ghost text-danger">
+              <Trash2 size={16} />
+              Reset All
+            </button>
           </div>
         )}
       </div>
 
-      {validationMsg && (
-        <div className="flex items-center gap-2 text-sm text-danger bg-danger/10 rounded-lg px-4 py-3 mb-6">
-          <AlertCircle size={16} />
-          {validationMsg}
-        </div>
-      )}
-      {adminError && (
-        <div className="flex items-center gap-2 text-sm text-danger bg-danger/10 rounded-lg px-4 py-3 mb-6">
-          <AlertCircle size={16} />
-          {adminError}
+      {!isTeam && showAddForm && (
+        <div className="card p-4 mb-6 border-l-4 border-l-brand">
+          <div className="flex items-center gap-3">
+            <Shield size={18} className="text-brand shrink-0" />
+            <input
+              type="text"
+              value={newTeamName}
+              onChange={(e) => setNewTeamName(e.target.value)}
+              className="input flex-1"
+              placeholder="Enter new team name..."
+              onKeyDown={(e) => e.key === "Enter" && handleAdd()}
+              autoFocus
+            />
+            <button
+              onClick={handleAdd}
+              className="btn-primary text-sm"
+              disabled={!newTeamName.trim()}
+            >
+              Add
+            </button>
+          </div>
         </div>
       )}
 
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-        {visibleTeams.map((team, index) => (
-          <TeamCard
-            key={team.id}
-            team={team}
-            index={teams.indexOf(team)}
-            isManaged={isTeam && team.id === managedId}
-            showAdmin={!isTeam}
-            onDelete={!isTeam ? handleDelete : undefined}
-          />
-        ))}
-      </div>
+      {(validationMsg || adminError) && (
+        <div className="flex items-center gap-2 text-sm text-danger bg-danger/10 rounded-lg px-4 py-3 mb-6">
+          <AlertCircle size={16} />
+          {validationMsg || adminError}
+        </div>
+      )}
+
+      {visibleTeams.length === 0 ? (
+        <div className="card p-12 text-center text-muted">
+          <Shield size={48} className="mx-auto mb-4 opacity-20" />
+          <p className="text-lg font-medium">No teams yet</p>
+          <p className="text-sm mt-1">Add your first team to get started.</p>
+        </div>
+      ) : (
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+          {visibleTeams.map((team, index) => (
+            <TeamCard
+              key={team.id}
+              team={team}
+              index={index}
+              isManaged={isTeam && team.id === managedId}
+              showAdmin={!isTeam}
+              onDelete={!isTeam ? handleDelete : undefined}
+            />
+          ))}
+        </div>
+      )}
     </div>
   );
 }

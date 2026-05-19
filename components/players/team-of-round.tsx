@@ -1,9 +1,19 @@
 "use client";
 
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { useAppStore } from "@/lib/store";
 import { downloadFormationImage } from "@/lib/formation-image";
 import { Download } from "lucide-react";
+
+type FormationType = "4-3-3" | "4-4-2" | "3-5-2";
+
+const formations: FormationType[] = ["4-3-3", "4-4-2", "3-5-2"];
+
+const formationCounts: Record<FormationType, { GK: number; DEF: number; MID: number; ATT: number }> = {
+  "4-3-3": { GK: 1, DEF: 4, MID: 3, ATT: 3 },
+  "4-4-2": { GK: 1, DEF: 4, MID: 4, ATT: 2 },
+  "3-5-2": { GK: 1, DEF: 3, MID: 5, ATT: 2 },
+};
 
 function getPlayerRoundScore(
   playerId: number,
@@ -41,25 +51,26 @@ function getPlayerRoundScore(
 
 export function TeamOfRound() {
   const [roundNum, setRoundNum] = useState("");
+  const [formation, setFormation] = useState<FormationType>("4-3-3");
 
   const fixtures = useAppStore((s) => s.fixtures);
   const players = useAppStore((s) => s.players);
   const teamName = useAppStore((s) => s.teamName);
 
-  const selectedRound = fixtures.find(
-    (r) => r.round === Number(roundNum)
-  );
-  const matchIds = selectedRound
-    ? selectedRound.matches.map((m) => m.id)
-    : [];
+  const selectedRound = fixtures.find((r) => r.round === Number(roundNum));
+  const matchIds = selectedRound ? selectedRound.matches.map((m) => m.id) : [];
 
-  const scored = players
-    .map((p) => ({
-      ...p,
-      roundScore: getPlayerRoundScore(p.id, matchIds),
-      teamName: teamName(p.teamId),
-    }))
-    .filter((p) => matchIds.length > 0);
+  const scored = useMemo(
+    () =>
+      players
+        .map((p) => ({
+          ...p,
+          roundScore: getPlayerRoundScore(p.id, matchIds),
+          teamName: teamName(p.teamId),
+        }))
+        .filter(() => matchIds.length > 0),
+    [players, matchIds, teamName]
+  );
 
   const positions: Record<string, typeof scored> = {
     GK: [],
@@ -67,23 +78,16 @@ export function TeamOfRound() {
     MID: [],
     ATT: [],
   };
+
   for (const p of scored) {
-    if (positions[p.position])
-      positions[p.position].push(p);
+    if (positions[p.position]) positions[p.position].push(p);
   }
 
-  const bestGK = positions.GK.sort(
-    (a, b) => b.roundScore - a.roundScore
-  )[0];
-  const bestDEF = positions.DEF.sort(
-    (a, b) => b.roundScore - a.roundScore
-  ).slice(0, 4);
-  const bestMID = positions.MID.sort(
-    (a, b) => b.roundScore - a.roundScore
-  ).slice(0, 3);
-  const bestATT = positions.ATT.sort(
-    (a, b) => b.roundScore - a.roundScore
-  ).slice(0, 3);
+  const counts = formationCounts[formation];
+  const bestGK = positions.GK.sort((a, b) => b.roundScore - a.roundScore)[0];
+  const bestDEF = positions.DEF.sort((a, b) => b.roundScore - a.roundScore).slice(0, counts.DEF);
+  const bestMID = positions.MID.sort((a, b) => b.roundScore - a.roundScore).slice(0, counts.MID);
+  const bestATT = positions.ATT.sort((a, b) => b.roundScore - a.roundScore).slice(0, counts.ATT);
 
   const handleDownload = () => {
     if (!roundNum || !selectedRound) return;
@@ -92,27 +96,57 @@ export function TeamOfRound() {
       bestDEF,
       bestMID,
       bestATT,
-      roundNum
+      roundNum,
+      formation
     );
   };
 
+  const formationRows = [
+    { label: "Goalkeeper", players: bestGK ? [bestGK] : [], count: counts.GK },
+    { label: "Defenders", players: bestDEF, count: counts.DEF },
+    { label: "Midfielders", players: bestMID, count: counts.MID },
+    { label: "Attackers", players: bestATT, count: counts.ATT },
+  ];
+
   return (
     <div>
-      <div className="flex items-center gap-3 mb-4">
-        <select
-          value={roundNum}
-          onChange={(e) => setRoundNum(e.target.value)}
-          className="input w-auto min-w-[180px]"
-        >
-          <option value="">Select a round</option>
-          {fixtures.map((r) => (
-            <option key={r.round} value={r.round}>
-              Round {r.round}
-            </option>
-          ))}
-        </select>
+      <div className="flex flex-col gap-3 md:flex-row md:items-center mb-4">
+        <div className="flex items-center gap-3">
+          <label className="text-sm font-medium text-slate-700">Round</label>
+          <select
+            value={roundNum}
+            onChange={(e) => setRoundNum(e.target.value)}
+            className="input w-auto min-w-[180px]"
+          >
+            <option value="">Select a round</option>
+            {fixtures.map((r) => (
+              <option key={r.round} value={r.round}>
+                Round {r.round}
+              </option>
+            ))}
+          </select>
+        </div>
+
+        <div className="flex items-center gap-3">
+          <label className="text-sm font-medium text-slate-700">Formation</label>
+          <select
+            value={formation}
+            onChange={(e) => setFormation(e.target.value as FormationType)}
+            className="input w-auto min-w-[140px]"
+            disabled={!roundNum}
+          >
+            {formations.map((form) => (
+              <option key={form} value={form}>
+                {form}
+              </option>
+            ))}
+          </select>
+        </div>
+
         {roundNum && (
-          <button onClick={handleDownload} className="btn-ghost">
+          <button onClick={handleDownload} className="btn-ghost"
+            type="button"
+          >
             <Download size={16} />
             Download
           </button>
@@ -124,31 +158,25 @@ export function TeamOfRound() {
           <p>Select a round to view Team of the Round.</p>
         </div>
       ) : (
-        <div className="card p-6">
-          <h3 className="text-lg font-bold mb-6 text-center">
-            Team of Round {roundNum}
-          </h3>
+        <div className="card p-6 space-y-6">
+          <div>
+            <h3 className="text-lg font-bold mb-2 text-center">
+              Team of Round {roundNum}
+            </h3>
+            <p className="text-sm text-center text-slate-600">
+              Formation: <span className="font-semibold">{formation}</span>
+            </p>
+          </div>
+
           <div className="space-y-4">
-            <Row
-              label="Goalkeeper"
-              players={bestGK ? [bestGK] : []}
-              teamName={teamName}
-            />
-            <Row
-              label="Defenders"
-              players={bestDEF}
-              teamName={teamName}
-            />
-            <Row
-              label="Midfielders"
-              players={bestMID}
-              teamName={teamName}
-            />
-            <Row
-              label="Attackers"
-              players={bestATT}
-              teamName={teamName}
-            />
+            {formationRows.map((row) => (
+              <FormationRow
+                key={row.label}
+                label={row.label}
+                players={row.players}
+                count={row.count}
+              />
+            ))}
           </div>
         </div>
       )}
@@ -156,42 +184,49 @@ export function TeamOfRound() {
   );
 }
 
-function Row({
+function FormationRow({
   label,
   players,
-  teamName,
+  count,
 }: {
   label: string;
   players: any[];
-  teamName: (id: number) => string;
+  count: number;
 }) {
   return (
-    <div>
-      <p className="text-xs text-muted font-semibold uppercase tracking-wider mb-2">
-        {label}
-      </p>
-      <div className="flex flex-wrap gap-2">
-        {players.length === 0 ? (
-          <p className="text-sm text-muted">None</p>
-        ) : (
-          players.map((p) => (
+    <div className="space-y-3">
+      <div className="flex items-center justify-between">
+        <p className="text-xs text-muted font-semibold uppercase tracking-wider">
+          {label}
+        </p>
+        <p className="text-xs text-slate-500">{players.length}/{count}</p>
+      </div>
+      <div
+        className="grid gap-3"
+        style={{ gridTemplateColumns: `repeat(${count}, minmax(0, 1fr))` }}
+      >
+        {Array.from({ length: count }).map((_, index) => {
+          const player = players[index];
+          return (
             <div
-              key={p.id}
-              className="flex items-center gap-2 px-3 py-2 rounded-lg bg-surface-2 text-sm"
+              key={`${label}-${index}`}
+              className="rounded-2xl border border-slate-200 bg-slate-50 p-3 text-center min-h-[96px]"
             >
-              <span className="font-medium">{p.name}</span>
-              <span className="text-xs text-muted">
-                #{p.number} | {teamName(p.teamId)}
-              </span>
-              <span className="text-xs font-semibold">
-                {p.rating.toFixed(1)}
-              </span>
-              <span className="text-xs text-accent">
-                {p.roundScore.toFixed(1)}pts
-              </span>
+              {player ? (
+                <>
+                  <p className="font-semibold text-slate-900">{player.name}</p>
+                  <p className="text-xs text-slate-500">#{player.number}</p>
+                  <p className="text-xs text-slate-500">{player.teamName}</p>
+                  <p className="mt-2 text-sm font-semibold text-slate-700">
+                    {player.roundScore.toFixed(1)} pts
+                  </p>
+                </>
+              ) : (
+                <p className="text-sm text-slate-500">No player</p>
+              )}
             </div>
-          ))
-        )}
+          );
+        })}
       </div>
     </div>
   );
