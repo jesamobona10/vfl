@@ -9,6 +9,33 @@ export async function PUT(
     const supabase = await createClient();
     const body = await request.json();
 
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+
+    const { data: adminUser } = await supabase
+      .from("admin_users")
+      .select("id")
+      .eq("id", session.user.id)
+      .single();
+
+    const { data: teamAccount } = await supabase
+      .from("team_accounts")
+      .select("id, team_id")
+      .eq("id", session.user.id)
+      .single();
+
+    // If team account, ensure the player belongs to their managed team before allowing updates
+    if (teamAccount && !adminUser) {
+      const { data: existingPlayer } = await supabase
+        .from("players")
+        .select("team_id")
+        .eq("id", params.id)
+        .single();
+      if (!existingPlayer || existingPlayer.team_id !== teamAccount.team_id) {
+        return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+      }
+    }
+
     const { data, error } = await supabase
       .from("players")
       .update(body)
@@ -31,6 +58,19 @@ export async function DELETE(
 ) {
   try {
     const supabase = await createClient();
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+
+    const { data: adminUser } = await supabase
+      .from("admin_users")
+      .select("id")
+      .eq("id", session.user.id)
+      .single();
+
+    if (!adminUser) {
+      return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+    }
+
     const { error } = await supabase
       .from("players")
       .delete()

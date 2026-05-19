@@ -45,7 +45,7 @@ export function PlayerModal({ player, onClose }: PlayerModalProps) {
   const teams = useAppStore((s) => s.teams);
   const addPlayer = useAppStore((s) => s.addPlayer);
   const updatePlayer = useAppStore((s) => s.updatePlayer);
-  const isTeamAccount = useAppStore((s) => s.isTeamAccount);
+  const isTeamAccount = useAppStore((s) => s.isTeamAccount)();
   const getManagedTeamId = useAppStore((s) => s.getManagedTeamId);
 
   const [name, setName] = useState("");
@@ -86,6 +86,12 @@ export function PlayerModal({ player, onClose }: PlayerModalProps) {
       return;
     }
     const tid = managedId || Number(teamId);
+    // If editing, and this is a team account, ensure they can only edit players from their team
+    if (isEdit && isTeamAccount && player && managedId && player.teamId !== managedId) {
+      setError("Not authorized to edit this player.");
+      setSaving(false);
+      return;
+    }
     if (!tid) {
       setError("Team is required.");
       setSaving(false);
@@ -183,7 +189,7 @@ export function PlayerModal({ player, onClose }: PlayerModalProps) {
               value={teamId}
               onChange={(e) => setTeamId(e.target.value)}
               className="input"
-              disabled={!!managedId || isEdit}
+              disabled={!!managedId && !isEdit}
               required
             >
               <option value="">Select a team</option>

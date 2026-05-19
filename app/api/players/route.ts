@@ -22,11 +22,34 @@ export async function POST(request: Request) {
   try {
     const supabase = await createClient();
     const body = await request.json();
+    const { data: { session } } = await supabase.auth.getSession();
+
+    if (!session) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
+    const { data: adminUser } = await supabase
+      .from("admin_users")
+      .select("id")
+      .eq("id", session.user.id)
+      .single();
+
+    const { data: teamAccount } = await supabase
+      .from("team_accounts")
+      .select("id, team_id")
+      .eq("id", session.user.id)
+      .single();
+
+    // If user is a team account (not admin), force creation under their managed team
+    let teamIdToUse = body.team_id || body.teamId;
+    if (teamAccount && !adminUser) {
+      teamIdToUse = teamAccount.team_id;
+    }
 
     const { data, error } = await supabase
       .from("players")
       .insert({
-        team_id: body.team_id || body.teamId,
+        team_id: teamIdToUse,
         name: body.name,
         position: body.position,
         jersey_number: body.jersey_number ?? body.jerseyNumber,
