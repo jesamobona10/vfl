@@ -60,6 +60,7 @@ export function PlayerModal({ player, onClose }: PlayerModalProps) {
 
   const isEdit = player !== null;
   const managedId = getManagedTeamId();
+  const canChangeTeam = !isTeamAccount;
 
   useEffect(() => {
     if (player) {
@@ -89,7 +90,7 @@ export function PlayerModal({ player, onClose }: PlayerModalProps) {
       setSaving(false);
       return;
     }
-    const tid = managedId || Number(teamId);
+    const tid = isTeamAccount ? managedId : Number(teamId);
     // If editing, and this is a team account, ensure they can only edit players from their team
     if (isEdit && isTeamAccount && player && managedId && player.teamId !== managedId) {
       setError("Not authorized to edit this player.");
@@ -123,7 +124,7 @@ export function PlayerModal({ player, onClose }: PlayerModalProps) {
       };
 
       // If editing and changing team, show confirmation modal
-      if (isEdit && player && String(player.teamId) !== String(payload.team_id)) {
+      if (canChangeTeam && isEdit && player && String(player.teamId) !== String(payload.team_id)) {
         setShowConfirm(true);
         setSaving(false);
         return;
@@ -201,7 +202,7 @@ export function PlayerModal({ player, onClose }: PlayerModalProps) {
               value={teamId}
               onChange={(e) => setTeamId(e.target.value)}
               className="input"
-              disabled={!!managedId && !isEdit}
+              disabled={!canChangeTeam}
               required
             >
               <option value="">Select a team</option>
@@ -211,7 +212,15 @@ export function PlayerModal({ player, onClose }: PlayerModalProps) {
                 </option>
               ))}
             </select>
-            <p className="text-xs text-muted mt-2">Changing a player's team creates a transfer record and requires confirmation.</p>
+            {canChangeTeam ? (
+              <p className="text-xs text-muted mt-2">
+                Changing a player's team creates a transfer record and requires confirmation.
+              </p>
+            ) : (
+              <p className="text-xs text-muted mt-2">
+                Team is locked for team accounts.
+              </p>
+            )}
           </div>
 
           <div>
@@ -301,7 +310,7 @@ export function PlayerModal({ player, onClose }: PlayerModalProps) {
                     setSaving(true);
                     try {
                       const payload = {
-                        team_id: managedId || Number(teamId),
+                        team_id: Number(teamId),
                         name: name.trim(),
                         position,
                         jersey_number: Number(number),
