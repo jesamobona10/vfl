@@ -211,6 +211,7 @@ export function PlayerModal({ player, onClose }: PlayerModalProps) {
                 </option>
               ))}
             </select>
+            <p className="text-xs text-muted mt-2">Changing a player's team creates a transfer record and requires confirmation.</p>
           </div>
 
           <div>

@@ -99,24 +99,72 @@ export function MatchEditor() {
             key={match.id}
             className="card overflow-hidden"
           >
-            <button
+            <div
               onClick={() => toggleExpanded(match.id)}
-              className="w-full flex items-center gap-3 px-5 py-3 text-left hover:bg-surface-2/50 transition-colors"
+              className="w-full flex items-center gap-4 px-5 py-3 hover:bg-surface-2/50 transition-colors cursor-pointer"
             >
               {isOpen ? (
                 <ChevronDown size={16} className="shrink-0 text-muted" />
               ) : (
                 <ChevronRight size={16} className="shrink-0 text-muted" />
               )}
-              <div className="flex-1 min-w-0">
-                <strong className="text-sm">
-                  Round {match.round}: {home?.name || "?"} vs{" "}
-                  {away?.name || "?"}
-                </strong>
-                <span className="text-xs text-muted ml-2">
-                  {matchMeta(match)}
+
+              {/* Home Team */}
+              <div className="flex items-center gap-2 min-w-0 flex-1">
+                {home?.logo && (
+                  <img
+                    src={home.logo}
+                    alt={home.name}
+                    className="w-8 h-8 rounded object-cover shrink-0"
+                  />
+                )}
+                <span className="text-sm font-medium truncate">
+                  {home?.name || "?"}
                 </span>
               </div>
+
+              {/* Score Inputs */}
+              <div className="flex items-center gap-2 shrink-0">
+                <input
+                  type="number"
+                  min={0}
+                  max={99}
+                  value={match.homeScore ?? ""}
+                  onChange={(e) =>
+                    handleFieldChange(match.id, "homeScore", e.target.value)
+                  }
+                  onClick={(e) => e.stopPropagation()}
+                  className="input text-2xl font-bold text-center w-16 py-1"
+                />
+                <span className="text-xl font-bold text-muted">-</span>
+                <input
+                  type="number"
+                  min={0}
+                  max={99}
+                  value={match.awayScore ?? ""}
+                  onChange={(e) =>
+                    handleFieldChange(match.id, "awayScore", e.target.value)
+                  }
+                  onClick={(e) => e.stopPropagation()}
+                  className="input text-2xl font-bold text-center w-16 py-1"
+                />
+              </div>
+
+              {/* Away Team */}
+              <div className="flex items-center gap-2 min-w-0 flex-1 justify-end">
+                <span className="text-sm font-medium truncate">
+                  {away?.name || "?"}
+                </span>
+                {away?.logo && (
+                  <img
+                    src={away.logo}
+                    alt={away.name}
+                    className="w-8 h-8 rounded object-cover shrink-0"
+                  />
+                )}
+              </div>
+
+              {/* Metadata Badges */}
               <div className="flex items-center gap-2 shrink-0">
                 {issue && (
                   <span className="text-xs text-danger flex items-center gap-1">
@@ -136,7 +184,7 @@ export function MatchEditor() {
                   </span>
                 )}
               </div>
-            </button>
+            </div>
 
             {isOpen && (
               <div className="border-t border-line px-5 py-4 space-y-4">
@@ -178,44 +226,6 @@ export function MatchEditor() {
                         </option>
                       ))}
                     </select>
-                  </div>
-                  <div>
-                    <label className="block text-xs text-muted mb-1">
-                      Home Score
-                    </label>
-                    <input
-                      type="number"
-                      min={0}
-                      max={99}
-                      value={match.homeScore ?? ""}
-                      onChange={(e) =>
-                        handleFieldChange(
-                          match.id,
-                          "homeScore",
-                          e.target.value
-                        )
-                      }
-                      className="input text-sm py-1.5"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-xs text-muted mb-1">
-                      Away Score
-                    </label>
-                    <input
-                      type="number"
-                      min={0}
-                      max={99}
-                      value={match.awayScore ?? ""}
-                      onChange={(e) =>
-                        handleFieldChange(
-                          match.id,
-                          "awayScore",
-                          e.target.value
-                        )
-                      }
-                      className="input text-sm py-1.5"
-                    />
                   </div>
                   <div>
                     <label className="block text-xs text-muted mb-1">

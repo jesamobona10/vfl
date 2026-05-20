@@ -40,10 +40,18 @@ export async function POST(request: Request) {
       .eq("id", session.user.id)
       .single();
 
-    // If user is a team account (not admin), force creation under their managed team
+    if (!adminUser && !teamAccount) {
+      return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+    }
+
+    // If user is a team account, force creation under their managed team
     let teamIdToUse = body.team_id || body.teamId;
     if (teamAccount && !adminUser) {
       teamIdToUse = teamAccount.team_id;
+    }
+
+    if (!teamIdToUse) {
+      return NextResponse.json({ error: "Team is required." }, { status: 400 });
     }
 
     const { data, error } = await supabase

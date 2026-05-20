@@ -24,6 +24,10 @@ export async function PUT(
       .eq("id", session.user.id)
       .single();
 
+    if (!adminUser && !teamAccount) {
+      return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+    }
+
     // Fetch existing player to detect transfers and to enforce team-account restrictions
     const { data: existingPlayer } = await supabase
       .from("players")
