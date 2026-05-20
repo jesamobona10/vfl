@@ -1,6 +1,8 @@
-import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import type { TeamLineup } from "@/lib/types";
+import { getAuthContext, json, logApiError, ownsTeam, parseJsonObject, sanitizeText } from "@/lib/security";
+
+export const dynamic = "force-dynamic";
 
 export async function GET(
   request: Request,
@@ -9,14 +11,17 @@ export async function GET(
   const teamId = Number(params.id);
 
   if (Number.isNaN(teamId)) {
-    return NextResponse.json({ error: "Invalid team id." }, { status: 400 });
+    return json({ error: "Invalid team id." }, { status: 400 });
   }
 
   const supabase = createClient();
-  const { data: { session } } = await supabase.auth.getSession();
+  const auth = await getAuthContext(supabase);
 
-  if (!session) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  if (!auth) {
+    return json({ error: "Unauthorized" }, { status: 401 });
+  }
+  if (!ownsTeam(auth, teamId)) {
+    return json({ error: "Forbidden" }, { status: 403 });
   }
 
   const { data, error } = await supabase
@@ -26,7 +31,8 @@ export async function GET(
     .order("id", { ascending: true });
 
   if (error) {
-    return NextResponse.json({ error: error.message }, { status: 500 });
+    logApiError("lineups_list_failed", error, { userId: auth.userId, teamId });
+    return json({ error: "Unable to load lineups." }, { status: 500 });
   }
 
   const lineups: TeamLineup[] = (data || []).map((row: any) => ({
@@ -40,7 +46,7 @@ export async function GET(
     updatedAt: row.updated_at,
   }));
 
-  return NextResponse.json({ lineups });
+  return json({ lineups });
 }
 
 export async function POST(
@@ -50,24 +56,29 @@ export async function POST(
   const teamId = Number(params.id);
 
   if (Number.isNaN(teamId)) {
-    return NextResponse.json({ error: "Invalid team id." }, { status: 400 });
+    return json({ error: "Invalid team id." }, { status: 400 });
   }
 
-  const body = await request.json();
-  const name = String(body.name || "").trim();
-  const formation = String(body.formation || "").trim();
+  const parsed = await parseJsonObject(request);
+  if (parsed.error) return json({ error: parsed.error }, { status: 400 });
+  const body = parsed.data!;
+  const name = sanitizeText(String(body.name || "").trim()).slice(0, 80);
+  const formation = sanitizeText(String(body.formation || "").trim()).slice(0, 40);
   const slots = Array.isArray(body.slots) ? body.slots : [];
   const isActive = typeof body.is_active === "boolean" ? body.is_active : false;
 
   if (!name || !formation || slots.length === 0) {
-    return NextResponse.json({ error: "Name, formation, and slots are required." }, { status: 400 });
+    return json({ error: "Name, formation, and slots are required." }, { status: 400 });
   }
 
   const supabase = createClient();
-  const { data: { session } } = await supabase.auth.getSession();
+  const auth = await getAuthContext(supabase);
 
-  if (!session) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  if (!auth) {
+    return json({ error: "Unauthorized" }, { status: 401 });
+  }
+  if (!ownsTeam(auth, teamId)) {
+    return json({ error: "Forbidden" }, { status: 403 });
   }
 
   if (isActive) {
@@ -89,7 +100,8 @@ export async function POST(
     .single();
 
   if (error) {
-    return NextResponse.json({ error: error.message }, { status: 500 });
+    logApiError("lineup_create_failed", error, { userId: auth.userId, teamId });
+    return json({ error: "Unable to create lineup." }, { status: 500 });
   }
 
   const lineup: TeamLineup = {
@@ -103,5 +115,5 @@ export async function POST(
     updatedAt: data.updated_at,
   };
 
-  return NextResponse.json({ lineup }, { status: 201 });
+  return json({ lineup }, { status: 201 });
 }

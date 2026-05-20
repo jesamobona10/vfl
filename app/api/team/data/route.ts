@@ -1,29 +1,29 @@
-import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { createServiceRoleClient } from "@/lib/supabase/service-role";
 import type { Team, Player, FixtureRound, Match } from "@/lib/types";
 import { roundByeId } from "@/lib/logic/standings";
 import { sortMatchesByDateTime } from "@/lib/utils/helpers";
+import { getAuthContext, json, logApiError, requireAuth } from "@/lib/security";
+
+export const dynamic = "force-dynamic";
 
 export async function GET() {
   try {
     const supabase = await createClient();
-    const { data: { session } } = await supabase.auth.getSession();
-
-    if (!session) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    }
+    const auth = await getAuthContext(supabase);
+    const authError = requireAuth(auth);
+    if (authError) return authError;
 
     const sb = createServiceRoleClient();
 
     const { data: account, error: accountError } = await sb
       .from("team_accounts")
       .select("id, team_id, display_name")
-      .eq("id", session.user.id)
+      .eq("id", auth!.userId)
       .single();
 
     if (accountError || !account || !account.team_id) {
-      return NextResponse.json({ error: "Team account not found." }, { status: 404 });
+      return json({ error: "Team account not found." }, { status: 404 });
     }
 
     const { data: dbTeams } = await sb
@@ -109,14 +109,15 @@ export async function GET() {
       return roundObj;
     });
 
-    return NextResponse.json({
+    return json({
       teams,
       players,
       fixtures,
       teamId: account.team_id,
       teamName: account.display_name,
     });
-  } catch {
-    return NextResponse.json({ error: "Internal server error." }, { status: 500 });
+  } catch (error) {
+    logApiError("team_data_error", error);
+    return json({ error: "Internal server error." }, { status: 500 });
   }
 }

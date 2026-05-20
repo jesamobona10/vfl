@@ -1,29 +1,26 @@
-import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { createServiceRoleClient } from "@/lib/supabase/service-role";
+import { asInteger, asOptionalString, asString, getAuthContext, json, logApiError, parseJsonObject, requireAdmin, sanitizeText } from "@/lib/security";
+
+export const dynamic = "force-dynamic";
 
 export async function POST(request: Request) {
   try {
     const supabase = await createClient();
-    const { data: { session } } = await supabase.auth.getSession();
-    if (!session) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    }
+    const auth = await getAuthContext(supabase);
+    const adminError = requireAdmin(auth);
+    if (adminError) return adminError;
 
-    const { data: adminUser } = await supabase
-      .from("admin_users")
-      .select("id")
-      .eq("id", session.user.id)
-      .single();
-    if (!adminUser) {
-      return NextResponse.json({ error: "Forbidden" }, { status: 403 });
-    }
-
-    const body = await request.json();
-    const { fixtures, teamIdMap } = body;
+    const parsed = await parseJsonObject(request);
+    if (parsed.error) return json({ error: parsed.error }, { status: 400 });
+    const fixtures = parsed.data!.fixtures;
+    const teamIdMap =
+      parsed.data!.teamIdMap && typeof parsed.data!.teamIdMap === "object"
+        ? (parsed.data!.teamIdMap as Record<string, unknown>)
+        : {};
 
     if (!fixtures || !Array.isArray(fixtures)) {
-      return NextResponse.json(
+      return json(
         { error: "Fixtures array is required." },
         { status: 400 }
       );
@@ -37,24 +34,29 @@ export async function POST(request: Request) {
         const localHomeId = match.homeId ?? match.home_team_id;
         const localAwayId = match.awayId ?? match.away_team_id;
         const id = match.id != null ? Math.trunc(Number(match.id)) : undefined;
-        if (id == null || Number.isNaN(id)) continue;
+        const roundNo = asInteger(match.round ?? round.round, 1, 999);
+        const homeTeamId = asInteger(teamIdMap?.[localHomeId] ?? localHomeId, 1);
+        const awayTeamId = asInteger(teamIdMap?.[localAwayId] ?? localAwayId, 1);
+        if (id == null || Number.isNaN(id) || !roundNo || !homeTeamId || !awayTeamId || homeTeamId === awayTeamId) continue;
+        const status = asString(match.status, 30) || "scheduled";
+        const venue = asOptionalString(match.venue, 120);
         allMatches.push({
           id,
-          round: match.round ?? round.round,
-          home_team_id: teamIdMap?.[localHomeId] ?? localHomeId,
-          away_team_id: teamIdMap?.[localAwayId] ?? localAwayId,
+          round: roundNo,
+          home_team_id: homeTeamId,
+          away_team_id: awayTeamId,
           home_score: match.homeScore ?? match.home_score,
           away_score: match.awayScore ?? match.away_score,
-          status: match.status ?? "scheduled",
+          status,
           date: match.date || null,
           time: match.time || null,
-          venue: match.venue || null,
+          venue: venue ? sanitizeText(venue) : null,
         });
       }
     }
 
     if (allMatches.length === 0) {
-      return NextResponse.json(
+      return json(
         { error: "No matches found in fixtures data." },
         { status: 400 }
       );
@@ -66,7 +68,8 @@ export async function POST(request: Request) {
     });
 
     if (insertError) {
-      return NextResponse.json({ error: insertError.message }, { status: 500 });
+      logApiError("sync_fixtures_upsert_failed", insertError, { userId: auth!.userId });
+      return json({ error: "Unable to sync fixtures." }, { status: 500 });
     }
 
     const { data: synced } = await sb
@@ -77,8 +80,9 @@ export async function POST(request: Request) {
       .order("time")
       .order("id");
 
-    return NextResponse.json({ success: true, fixtures: synced });
-  } catch {
-    return NextResponse.json({ error: "Internal server error." }, { status: 500 });
+    return json({ success: true, fixtures: synced });
+  } catch (error) {
+    logApiError("sync_fixtures_error", error);
+    return json({ error: "Internal server error." }, { status: 500 });
   }
 }

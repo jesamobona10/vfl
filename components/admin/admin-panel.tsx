@@ -409,8 +409,8 @@ function TeamAccountManager() {
     setCreateResult(null);
 
     if (!selectedTeam || !password) return;
-    if (password.length < 4) {
-      setError("Password must be at least 4 characters.");
+    if (password.length < 12) {
+      setError("Password must be at least 12 characters.");
       return;
     }
 
@@ -432,7 +432,7 @@ function TeamAccountManager() {
       } else {
         setCreateResult({
           username: data.account.username,
-          password: data.account.password,
+          password,
         });
         setPassword("");
         setSelectedTeam("");
@@ -539,8 +539,8 @@ function TeamAccountManager() {
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
                     className="input w-full pr-10"
-                    placeholder="Min 4 characters"
-                    minLength={4}
+                    placeholder="Min 12 characters"
+                    minLength={12}
                     required
                   />
                   <button

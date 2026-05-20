@@ -1,5 +1,19 @@
-import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
+import {
+  asBoolean,
+  asInteger,
+  asString,
+  getAuthContext,
+  json,
+  logApiError,
+  ownsTeam,
+  parseJsonObject,
+  requireAdmin,
+  requireAuth,
+  sanitizeText,
+} from "@/lib/security";
+
+export const dynamic = "force-dynamic";
 
 export async function PUT(
   request: Request,
@@ -7,50 +21,71 @@ export async function PUT(
 ) {
   try {
     const supabase = await createClient();
-    const body = await request.json();
+    const playerId = asInteger(params.id, 1);
+    if (!playerId) return json({ error: "Invalid player id." }, { status: 400 });
 
-    const { data: { session } } = await supabase.auth.getSession();
-    if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    const auth = await getAuthContext(supabase);
+    const authError = requireAuth(auth);
+    if (authError) return authError;
 
-    const { data: adminUser } = await supabase
-      .from("admin_users")
-      .select("id")
-      .eq("id", session.user.id)
-      .single();
-
-    const { data: teamAccount } = await supabase
-      .from("team_accounts")
-      .select("id, team_id")
-      .eq("id", session.user.id)
-      .single();
-
-    if (!adminUser && !teamAccount) {
-      return NextResponse.json({ error: "Forbidden" }, { status: 403 });
-    }
+    const parsed = await parseJsonObject(request);
+    if (parsed.error) return json({ error: parsed.error }, { status: 400 });
 
     // Fetch existing player to detect transfers and to enforce team-account restrictions
-    const { data: existingPlayer } = await supabase
+    const { data: existingPlayer, error: existingError } = await supabase
       .from("players")
       .select("team_id, name")
-      .eq("id", params.id)
-      .single();
+      .eq("id", playerId)
+      .maybeSingle();
+
+    if (existingError || !existingPlayer) {
+      return json({ error: "Player not found." }, { status: 404 });
+    }
 
     // If team account, ensure the player belongs to their managed team before allowing updates
-    if (teamAccount && !adminUser) {
-      if (!existingPlayer || existingPlayer.team_id !== teamAccount.team_id) {
-        return NextResponse.json({ error: "Forbidden" }, { status: 403 });
-      }
+    if (!ownsTeam(auth!, existingPlayer.team_id)) {
+      return json({ error: "Forbidden" }, { status: 403 });
+    }
+
+    const update: Record<string, unknown> = {};
+    const name = asString(parsed.data!.name, 80);
+    const position = asString(parsed.data!.position, 40);
+    const jerseyNumber = asInteger(parsed.data!.jersey_number ?? parsed.data!.jerseyNumber, 0, 999);
+    const isCaptain = asBoolean(parsed.data!.is_captain ?? parsed.data!.isCaptain);
+    const teamId = asInteger(parsed.data!.team_id ?? parsed.data!.teamId, 1);
+    if (name) update.name = sanitizeText(name);
+    if (position) update.position = sanitizeText(position);
+    if (jerseyNumber !== null) update.jersey_number = jerseyNumber;
+    if (isCaptain !== null) update.is_captain = isCaptain;
+    if (auth!.isAdmin && teamId !== null) {
+      update.team_id = teamId;
+    } else if (!auth!.isAdmin && teamId !== null && teamId !== existingPlayer.team_id) {
+      return json({ error: "Forbidden" }, { status: 403 });
+    }
+
+    for (const key of ["goals", "assists", "yellow_cards", "red_cards", "saves", "tackles", "clean_sheets"]) {
+      const value = asInteger(parsed.data![key], 0, 999);
+      if (value !== null) update[key] = value;
+    }
+    const rating = typeof parsed.data!.rating === "number" ? parsed.data!.rating : null;
+    if (rating !== null && Number.isFinite(rating) && rating >= 0 && rating <= 10) {
+      update.rating = rating;
+    }
+
+    if (Object.keys(update).length === 0) {
+      return json({ error: "No valid fields to update." }, { status: 400 });
     }
 
     const { data, error } = await supabase
       .from("players")
-      .update(body)
-      .eq("id", params.id)
+      .update(update)
+      .eq("id", playerId)
       .select()
       .single();
 
     if (error) {
-      return NextResponse.json({ error: error.message }, { status: 400 });
+      logApiError("player_update_failed", error, { userId: auth!.userId, playerId });
+      return json({ error: "Unable to update player." }, { status: 400 });
     }
     // If team changed, insert a transfer audit record
     try {
@@ -58,11 +93,11 @@ export async function PUT(
       const newTeam = data?.team_id ?? null;
       if (oldTeam !== newTeam) {
         await supabase.from("player_transfers").insert({
-          player_id: Number(params.id),
+          player_id: playerId,
           from_team_id: oldTeam,
           to_team_id: newTeam,
-          performed_by: session.user.id,
-          performed_by_role: adminUser ? "admin" : "team_account",
+          performed_by: auth!.userId,
+          performed_by_role: auth!.isAdmin ? "admin" : "team_account",
         });
       }
     } catch (e) {
@@ -75,11 +110,11 @@ export async function PUT(
       const oldTeam = existingPlayer?.team_id ?? null;
       const newTeam = data?.team_id ?? null;
       const payload = {
-        player_id: Number(params.id),
+        player_id: playerId,
         player_name: existingPlayer?.name ?? null,
         from_team_id: oldTeam,
         to_team_id: newTeam,
-        performed_by: session.user.id,
+        performed_by: auth!.userId,
       };
       if (oldTeam) {
         await supabase.from("notifications").insert({
@@ -99,9 +134,10 @@ export async function PUT(
       console.error("Failed to insert notifications:", e);
     }
 
-    return NextResponse.json({ player: data });
-  } catch {
-    return NextResponse.json({ error: "Internal server error." }, { status: 500 });
+    return json({ player: data });
+  } catch (error) {
+    logApiError("player_update_error", error);
+    return json({ error: "Internal server error." }, { status: 500 });
   }
 }
 
@@ -111,29 +147,25 @@ export async function DELETE(
 ) {
   try {
     const supabase = await createClient();
-    const { data: { session } } = await supabase.auth.getSession();
-    if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    const auth = await getAuthContext(supabase);
+    const adminError = requireAdmin(auth);
+    if (adminError) return adminError;
 
-    const { data: adminUser } = await supabase
-      .from("admin_users")
-      .select("id")
-      .eq("id", session.user.id)
-      .single();
-
-    if (!adminUser) {
-      return NextResponse.json({ error: "Forbidden" }, { status: 403 });
-    }
+    const playerId = asInteger(params.id, 1);
+    if (!playerId) return json({ error: "Invalid player id." }, { status: 400 });
 
     const { error } = await supabase
       .from("players")
       .delete()
-      .eq("id", params.id);
+      .eq("id", playerId);
 
     if (error) {
-      return NextResponse.json({ error: error.message }, { status: 400 });
+      logApiError("player_delete_failed", error, { userId: auth!.userId, playerId });
+      return json({ error: "Unable to delete player." }, { status: 400 });
     }
-    return NextResponse.json({ success: true });
-  } catch {
-    return NextResponse.json({ error: "Internal server error." }, { status: 500 });
+    return json({ success: true });
+  } catch (error) {
+    logApiError("player_delete_error", error);
+    return json({ error: "Internal server error." }, { status: 500 });
   }
 }

@@ -1,29 +1,26 @@
-import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { createServiceRoleClient } from "@/lib/supabase/service-role";
+import { asInteger, asString, getAuthContext, json, logApiError, parseJsonObject, requireAdmin, sanitizeText } from "@/lib/security";
+
+export const dynamic = "force-dynamic";
 
 export async function POST(request: Request) {
   try {
     const supabase = await createClient();
-    const { data: { session } } = await supabase.auth.getSession();
-    if (!session) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    }
+    const auth = await getAuthContext(supabase);
+    const adminError = requireAdmin(auth);
+    if (adminError) return adminError;
 
-    const { data: adminUser } = await supabase
-      .from("admin_users")
-      .select("id")
-      .eq("id", session.user.id)
-      .single();
-    if (!adminUser) {
-      return NextResponse.json({ error: "Forbidden" }, { status: 403 });
-    }
-
-    const body = await request.json();
-    const { players, teamIdMap } = body;
+    const parsed = await parseJsonObject(request);
+    if (parsed.error) return json({ error: parsed.error }, { status: 400 });
+    const players = parsed.data!.players;
+    const teamIdMap =
+      parsed.data!.teamIdMap && typeof parsed.data!.teamIdMap === "object"
+        ? (parsed.data!.teamIdMap as Record<string, unknown>)
+        : {};
 
     if (!players || !Array.isArray(players)) {
-      return NextResponse.json(
+      return json(
         { error: "Players array is required." },
         { status: 400 }
       );
@@ -36,12 +33,15 @@ export async function POST(request: Request) {
       const localTeamId = p.teamId ?? p.team_id;
       const dbTeamId = teamIdMap?.[localTeamId] ?? localTeamId;
       const id = p.id != null ? Math.trunc(Number(p.id)) : undefined;
-      if (id == null || isNaN(id)) continue;
+      const name = asString(p.name, 80);
+      const position = asString(p.position, 40);
+      const teamId = asInteger(dbTeamId, 1);
+      if (id == null || isNaN(id) || !name || !position || !teamId) continue;
       rows.push({
         id,
-        team_id: dbTeamId,
-        name: p.name,
-        position: p.position,
+        team_id: teamId,
+        name: sanitizeText(name),
+        position: sanitizeText(position),
         jersey_number: p.jerseyNumber ?? p.jersey_number,
         is_captain: p.isCaptain ?? p.is_captain ?? false,
         goals: p.goals ?? 0,
@@ -61,7 +61,8 @@ export async function POST(request: Request) {
     });
 
     if (insertError) {
-      return NextResponse.json({ error: insertError.message }, { status: 500 });
+      logApiError("sync_players_upsert_failed", insertError, { userId: auth!.userId });
+      return json({ error: "Unable to sync players." }, { status: 500 });
     }
 
     const { data: synced } = await sb
@@ -69,8 +70,9 @@ export async function POST(request: Request) {
       .select("*")
       .order("id");
 
-    return NextResponse.json({ success: true, players: synced });
-  } catch {
-    return NextResponse.json({ error: "Internal server error." }, { status: 500 });
+    return json({ success: true, players: synced });
+  } catch (error) {
+    logApiError("sync_players_error", error);
+    return json({ error: "Internal server error." }, { status: 500 });
   }
 }

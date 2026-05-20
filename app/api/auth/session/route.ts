@@ -1,5 +1,7 @@
-import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
+import { json, logApiError } from "@/lib/security";
+
+export const dynamic = "force-dynamic";
 
 export async function GET() {
   try {
@@ -10,7 +12,7 @@ export async function GET() {
     } = await supabase.auth.getSession();
 
     if (!session) {
-      return NextResponse.json({ authenticated: false }, { status: 401 });
+      return json({ authenticated: false }, { status: 401 });
     }
 
     const { data: adminUser } = await supabase
@@ -20,7 +22,7 @@ export async function GET() {
       .single();
 
     if (adminUser) {
-      return NextResponse.json({
+      return json({
         authenticated: true,
         role: "super_admin",
         profile: { id: adminUser.id, role: "super_admin", displayName: adminUser.email },
@@ -34,7 +36,7 @@ export async function GET() {
       .single();
 
     if (teamAccount) {
-      return NextResponse.json({
+      return json({
         authenticated: true,
         role: "team_account",
         profile: {
@@ -47,8 +49,9 @@ export async function GET() {
       });
     }
 
-    return NextResponse.json({ authenticated: false }, { status: 401 });
-  } catch {
-    return NextResponse.json({ authenticated: false }, { status: 500 });
+    return json({ authenticated: false }, { status: 401 });
+  } catch (error) {
+    logApiError("session_lookup_error", error);
+    return json({ authenticated: false }, { status: 500 });
   }
 }

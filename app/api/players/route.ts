@@ -1,76 +1,97 @@
-import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
+import {
+  asBoolean,
+  asInteger,
+  asString,
+  getAuthContext,
+  json,
+  logApiError,
+  ownsTeam,
+  parseJsonObject,
+  requireAuth,
+  sanitizeText,
+} from "@/lib/security";
+
+export const dynamic = "force-dynamic";
 
 export async function GET() {
   try {
     const supabase = await createClient();
-    const { data, error } = await supabase
+    const auth = await getAuthContext(supabase);
+    const authError = requireAuth(auth);
+    if (authError) return authError;
+
+    let query = supabase
       .from("players")
       .select("*")
       .order("id");
+    if (!auth!.isAdmin) {
+      if (!auth!.teamAccount?.team_id) return json({ players: [] });
+      query = query.eq("team_id", auth!.teamAccount.team_id);
+    }
+
+    const { data, error } = await query;
 
     if (error) {
-      return NextResponse.json({ error: error.message }, { status: 500 });
+      logApiError("players_list_failed", error, { userId: auth!.userId });
+      return json({ error: "Unable to load players." }, { status: 500 });
     }
-    return NextResponse.json({ players: data });
-  } catch {
-    return NextResponse.json({ error: "Internal server error." }, { status: 500 });
+    return json({ players: data });
+  } catch (error) {
+    logApiError("players_list_error", error);
+    return json({ error: "Internal server error." }, { status: 500 });
   }
 }
 
 export async function POST(request: Request) {
   try {
     const supabase = await createClient();
-    const body = await request.json();
-    const { data: { session } } = await supabase.auth.getSession();
+    const auth = await getAuthContext(supabase);
+    const authError = requireAuth(auth);
+    if (authError) return authError;
 
-    if (!session) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    const parsed = await parseJsonObject(request);
+    if (parsed.error) return json({ error: parsed.error }, { status: 400 });
+
+    let teamIdToUse = asInteger(parsed.data!.team_id ?? parsed.data!.teamId, 1);
+    if (!auth!.isAdmin) teamIdToUse = auth!.teamAccount?.team_id ?? null;
+
+    if (!teamIdToUse || !ownsTeam(auth!, teamIdToUse)) {
+      return json({ error: "Forbidden" }, { status: 403 });
     }
 
-    const { data: adminUser } = await supabase
-      .from("admin_users")
-      .select("id")
-      .eq("id", session.user.id)
-      .single();
+    const name = asString(parsed.data!.name, 80);
+    const position = asString(parsed.data!.position, 40);
+    const jerseyNumber = asInteger(
+      parsed.data!.jersey_number ?? parsed.data!.jerseyNumber,
+      0,
+      999
+    );
+    const isCaptain = asBoolean(parsed.data!.is_captain ?? parsed.data!.isCaptain) ?? false;
 
-    const { data: teamAccount } = await supabase
-      .from("team_accounts")
-      .select("id, team_id")
-      .eq("id", session.user.id)
-      .single();
-
-    if (!adminUser && !teamAccount) {
-      return NextResponse.json({ error: "Forbidden" }, { status: 403 });
-    }
-
-    // If user is a team account, force creation under their managed team
-    let teamIdToUse = body.team_id || body.teamId;
-    if (teamAccount && !adminUser) {
-      teamIdToUse = teamAccount.team_id;
-    }
-
-    if (!teamIdToUse) {
-      return NextResponse.json({ error: "Team is required." }, { status: 400 });
+    if (!name || !position) {
+      return json({ error: "Name and position are required." }, { status: 400 });
     }
 
     const { data, error } = await supabase
       .from("players")
       .insert({
         team_id: teamIdToUse,
-        name: body.name,
-        position: body.position,
-        jersey_number: body.jersey_number ?? body.jerseyNumber,
-        is_captain: body.is_captain ?? body.isCaptain ?? false,
+        name: sanitizeText(name),
+        position: sanitizeText(position),
+        jersey_number: jerseyNumber,
+        is_captain: isCaptain,
       })
       .select()
       .single();
 
     if (error) {
-      return NextResponse.json({ error: error.message }, { status: 400 });
+      logApiError("player_create_failed", error, { userId: auth!.userId, teamId: teamIdToUse });
+      return json({ error: "Unable to create player." }, { status: 400 });
     }
-    return NextResponse.json({ player: data });
-  } catch {
-    return NextResponse.json({ error: "Internal server error." }, { status: 500 });
+    return json({ player: data });
+  } catch (error) {
+    logApiError("player_create_error", error);
+    return json({ error: "Internal server error." }, { status: 500 });
   }
 }

@@ -1,16 +1,40 @@
-import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { createServiceRoleClient } from "@/lib/supabase/service-role";
+import {
+  asString,
+  getClientIp,
+  json,
+  logApiError,
+  logSecurityEvent,
+  parseJsonObject,
+  rateLimit,
+  rateLimitResponse,
+} from "@/lib/security";
+
+export const dynamic = "force-dynamic";
 
 export async function POST(request: Request) {
   try {
-    const { username, password } = await request.json();
+    const ip = getClientIp(request);
+    const parsed = await parseJsonObject(request);
+    if (parsed.error) return json({ error: parsed.error }, { status: 400 });
 
-    if (!username || !password) {
-      return NextResponse.json(
-        { error: "Username and password are required." },
-        { status: 400 }
-      );
+    const username = asString(parsed.data!.username, 80)?.toUpperCase();
+    const password = asString(parsed.data!.password, 128);
+
+    if (!username || !/^[A-Z0-9-]{3,80}$/.test(username) || !password) {
+      logSecurityEvent("invalid_team_login_payload", { ip });
+      return json({ error: "Invalid username or password." }, { status: 400 });
+    }
+
+    const limited = rateLimit({
+      key: `login:team:${ip}:${username}`,
+      limit: 5,
+      windowMs: 15 * 60_000,
+    });
+    if (limited.limited) {
+      logSecurityEvent("team_login_rate_limited", { ip, username });
+      return rateLimitResponse(limited.resetAt);
     }
 
     const sb = createServiceRoleClient();
@@ -21,7 +45,8 @@ export async function POST(request: Request) {
       .single();
 
     if (accountError || !account) {
-      return NextResponse.json(
+      logSecurityEvent("team_login_unknown_account", { ip, username });
+      return json(
         { error: "Invalid username or password." },
         { status: 401 }
       );
@@ -37,13 +62,15 @@ export async function POST(request: Request) {
       });
 
     if (authError) {
-      return NextResponse.json(
+      logSecurityEvent("team_login_failed", { ip, username });
+      return json(
         { error: "Invalid username or password." },
         { status: 401 }
       );
     }
 
-    return NextResponse.json({
+    logSecurityEvent("team_login_succeeded", { ip, userId: authData.user.id });
+    return json({
       user: {
         id: account.id,
         username: account.username,
@@ -52,7 +79,8 @@ export async function POST(request: Request) {
         role: account.role,
       },
     });
-  } catch {
-    return NextResponse.json({ error: "Internal server error." }, { status: 500 });
+  } catch (error) {
+    logApiError("team_login_error", error);
+    return json({ error: "Internal server error." }, { status: 500 });
   }
 }

@@ -346,3 +346,72 @@ INSERT INTO teams (name) VALUES
   ('Storm Breakers'),
   ('Crystal Palace Academy')
 ON CONFLICT (name) DO NOTHING;
+
+-- ============================================================
+-- SECURITY HARDENING
+-- Apply after the original schema to tighten ownership checks.
+-- ============================================================
+
+CREATE TABLE IF NOT EXISTS auth_audit_logs (
+  id BIGSERIAL PRIMARY KEY,
+  user_id UUID REFERENCES auth.users(id) ON DELETE SET NULL,
+  event_type TEXT NOT NULL,
+  ip_address TEXT,
+  user_agent TEXT,
+  metadata JSONB DEFAULT '{}'::jsonb,
+  created_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+ALTER TABLE auth_audit_logs ENABLE ROW LEVEL SECURITY;
+
+DROP POLICY IF EXISTS "auth_audit_logs_admin_read" ON auth_audit_logs;
+DROP POLICY IF EXISTS "auth_audit_logs_admin_insert" ON auth_audit_logs;
+
+CREATE POLICY "auth_audit_logs_admin_read" ON auth_audit_logs
+  FOR SELECT USING (EXISTS (SELECT 1 FROM admin_users WHERE id = auth.uid()));
+
+CREATE POLICY "auth_audit_logs_admin_insert" ON auth_audit_logs
+  FOR INSERT WITH CHECK (EXISTS (SELECT 1 FROM admin_users WHERE id = auth.uid()));
+
+CREATE INDEX IF NOT EXISTS idx_auth_audit_logs_user_id ON auth_audit_logs(user_id);
+CREATE INDEX IF NOT EXISTS idx_auth_audit_logs_created_at ON auth_audit_logs(created_at DESC);
+CREATE INDEX IF NOT EXISTS idx_auth_audit_logs_event_type ON auth_audit_logs(event_type);
+
+DROP POLICY IF EXISTS "players_read_all_authenticated" ON players;
+CREATE POLICY "players_read_admin_or_own_team" ON players
+  FOR SELECT USING (
+    EXISTS (SELECT 1 FROM admin_users WHERE id = auth.uid())
+    OR EXISTS (SELECT 1 FROM team_accounts WHERE id = auth.uid() AND team_id = players.team_id)
+  );
+
+DROP POLICY IF EXISTS "fixtures_read_all_authenticated" ON fixtures;
+CREATE POLICY "fixtures_read_admin_or_involving_team" ON fixtures
+  FOR SELECT USING (
+    EXISTS (SELECT 1 FROM admin_users WHERE id = auth.uid())
+    OR EXISTS (
+      SELECT 1 FROM team_accounts
+      WHERE id = auth.uid()
+        AND (team_id = fixtures.home_team_id OR team_id = fixtures.away_team_id)
+    )
+  );
+
+DROP POLICY IF EXISTS "match_events_read_all_authenticated" ON match_events;
+CREATE POLICY "match_events_read_admin_or_own_team" ON match_events
+  FOR SELECT USING (
+    EXISTS (SELECT 1 FROM admin_users WHERE id = auth.uid())
+    OR EXISTS (SELECT 1 FROM team_accounts WHERE id = auth.uid() AND team_id = match_events.team_id)
+  );
+
+DROP POLICY IF EXISTS "notifications_insert_admin_or_system" ON notifications;
+CREATE POLICY "notifications_insert_admin_only" ON notifications
+  FOR INSERT WITH CHECK (EXISTS (SELECT 1 FROM admin_users WHERE id = auth.uid()));
+
+DROP POLICY IF EXISTS "notifications_update_admin_or_team" ON notifications;
+CREATE POLICY "notifications_update_admin_or_team" ON notifications
+  FOR UPDATE USING (
+    EXISTS (SELECT 1 FROM admin_users WHERE id = auth.uid())
+    OR EXISTS (
+      SELECT 1 FROM team_accounts ta
+      WHERE ta.id = auth.uid() AND ta.team_id = notifications.team_id
+    )
+  );

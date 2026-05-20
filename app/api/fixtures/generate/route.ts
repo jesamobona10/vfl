@@ -1,10 +1,15 @@
-import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { generateRoundRobinFixtures } from "@/lib/logic/round-robin";
+import { getAuthContext, json, logApiError, requireAdmin } from "@/lib/security";
+
+export const dynamic = "force-dynamic";
 
 export async function POST() {
   try {
     const supabase = await createClient();
+    const auth = await getAuthContext(supabase);
+    const adminError = requireAdmin(auth);
+    if (adminError) return adminError;
 
     const { data: teams, error: teamsError } = await supabase
       .from("teams")
@@ -12,7 +17,7 @@ export async function POST() {
       .order("id");
 
     if (teamsError || !teams?.length) {
-      return NextResponse.json(
+      return json(
         { error: "No teams found." },
         { status: 400 }
       );
@@ -24,7 +29,7 @@ export async function POST() {
       .limit(1);
 
     if (existing && existing.length > 0) {
-      return NextResponse.json(
+      return json(
         { error: "Fixtures already exist. Delete them first to regenerate." },
         { status: 409 }
       );
@@ -55,11 +60,13 @@ export async function POST() {
       .insert(rows);
 
     if (insertError) {
-      return NextResponse.json({ error: insertError.message }, { status: 500 });
+      logApiError("fixtures_generate_insert_failed", insertError, { userId: auth!.userId });
+      return json({ error: "Unable to generate fixtures." }, { status: 500 });
     }
 
-    return NextResponse.json({ success: true, count: rows.length });
-  } catch {
-    return NextResponse.json({ error: "Internal server error." }, { status: 500 });
+    return json({ success: true, count: rows.length });
+  } catch (error) {
+    logApiError("fixtures_generate_error", error);
+    return json({ error: "Internal server error." }, { status: 500 });
   }
 }

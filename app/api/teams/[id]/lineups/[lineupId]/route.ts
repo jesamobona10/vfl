@@ -1,6 +1,8 @@
-import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import type { TeamLineup } from "@/lib/types";
+import { getAuthContext, json, logApiError, ownsTeam, parseJsonObject, sanitizeText } from "@/lib/security";
+
+export const dynamic = "force-dynamic";
 
 export async function PUT(
   request: Request,
@@ -10,24 +12,29 @@ export async function PUT(
   const lineupId = Number(params.lineupId);
 
   if (Number.isNaN(teamId) || Number.isNaN(lineupId)) {
-    return NextResponse.json({ error: "Invalid team id or lineup id." }, { status: 400 });
+    return json({ error: "Invalid team id or lineup id." }, { status: 400 });
   }
 
-  const body = await request.json();
-  const name = String(body.name || "").trim();
-  const formation = String(body.formation || "").trim();
+  const parsed = await parseJsonObject(request);
+  if (parsed.error) return json({ error: parsed.error }, { status: 400 });
+  const body = parsed.data!;
+  const name = sanitizeText(String(body.name || "").trim()).slice(0, 80);
+  const formation = sanitizeText(String(body.formation || "").trim()).slice(0, 40);
   const slots = Array.isArray(body.slots) ? body.slots : [];
   const isActive = typeof body.is_active === "boolean" ? body.is_active : false;
 
   if (!name || !formation || slots.length === 0) {
-    return NextResponse.json({ error: "Name, formation, and slots are required." }, { status: 400 });
+    return json({ error: "Name, formation, and slots are required." }, { status: 400 });
   }
 
   const supabase = createClient();
-  const { data: { session } } = await supabase.auth.getSession();
+  const auth = await getAuthContext(supabase);
 
-  if (!session) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  if (!auth) {
+    return json({ error: "Unauthorized" }, { status: 401 });
+  }
+  if (!ownsTeam(auth, teamId)) {
+    return json({ error: "Forbidden" }, { status: 403 });
   }
 
   if (isActive) {
@@ -48,11 +55,12 @@ export async function PUT(
     .single();
 
   if (error) {
-    return NextResponse.json({ error: error.message }, { status: 500 });
+    logApiError("lineup_update_failed", error, { userId: auth.userId, teamId, lineupId });
+    return json({ error: "Unable to update lineup." }, { status: 500 });
   }
 
   if (!data) {
-    return NextResponse.json({ error: "Lineup not found." }, { status: 404 });
+    return json({ error: "Lineup not found." }, { status: 404 });
   }
 
   const lineup: TeamLineup = {
@@ -66,7 +74,7 @@ export async function PUT(
     updatedAt: data.updated_at,
   };
 
-  return NextResponse.json({ lineup });
+  return json({ lineup });
 }
 
 export async function DELETE(
@@ -77,14 +85,17 @@ export async function DELETE(
   const lineupId = Number(params.lineupId);
 
   if (Number.isNaN(teamId) || Number.isNaN(lineupId)) {
-    return NextResponse.json({ error: "Invalid team id or lineup id." }, { status: 400 });
+    return json({ error: "Invalid team id or lineup id." }, { status: 400 });
   }
 
   const supabase = createClient();
-  const { data: { session } } = await supabase.auth.getSession();
+  const auth = await getAuthContext(supabase);
 
-  if (!session) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  if (!auth) {
+    return json({ error: "Unauthorized" }, { status: 401 });
+  }
+  if (!ownsTeam(auth, teamId)) {
+    return json({ error: "Forbidden" }, { status: 403 });
   }
 
   const { error } = await supabase
@@ -93,8 +104,9 @@ export async function DELETE(
     .match({ id: lineupId, team_id: teamId });
 
   if (error) {
-    return NextResponse.json({ error: error.message }, { status: 500 });
+    logApiError("lineup_delete_failed", error, { userId: auth.userId, teamId, lineupId });
+    return json({ error: "Unable to delete lineup." }, { status: 500 });
   }
 
-  return NextResponse.json({ success: true });
+  return json({ success: true });
 }

@@ -1,6 +1,8 @@
-import { NextResponse } from "next/server";
 import { createPublicClient } from "@/lib/supabase/public";
 import { sortMatchesByDateTime } from "@/lib/utils/helpers";
+import { json, logApiError } from "@/lib/security";
+
+export const dynamic = "force-dynamic";
 
 export async function GET() {
   try {
@@ -12,7 +14,8 @@ export async function GET() {
       .order("id");
 
     if (teamsError) {
-      return NextResponse.json({ error: teamsError.message }, { status: 500 });
+      logApiError("public_live_teams_failed", teamsError);
+      return json({ error: "Unable to load live data." }, { status: 500 });
     }
 
     const teamMap = new Map((teams || []).map((t: any) => [t.id, { name: t.name, logo: t.logo_url || undefined }]));
@@ -27,7 +30,8 @@ export async function GET() {
       .order("id");
 
     if (fixturesError) {
-      return NextResponse.json({ error: fixturesError.message }, { status: 500 });
+      logApiError("public_live_fixtures_failed", fixturesError);
+      return json({ error: "Unable to load live data." }, { status: 500 });
     }
 
     const live: any[] = [];
@@ -55,13 +59,14 @@ export async function GET() {
       }
     }
 
-    return NextResponse.json({
+    return json({
       live: sortMatchesByDateTime(live),
       upcoming: sortMatchesByDateTime(upcoming),
       today,
       fetchedAt: new Date().toISOString(),
     });
-  } catch {
-    return NextResponse.json({ error: "Internal server error." }, { status: 500 });
+  } catch (error) {
+    logApiError("public_live_error", error);
+    return json({ error: "Internal server error." }, { status: 500 });
   }
 }

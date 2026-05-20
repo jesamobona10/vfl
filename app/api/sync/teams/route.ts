@@ -1,29 +1,22 @@
-import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { createServiceRoleClient } from "@/lib/supabase/service-role";
+import { asString, getAuthContext, json, logApiError, parseJsonObject, requireAdmin, sanitizeText } from "@/lib/security";
+
+export const dynamic = "force-dynamic";
 
 export async function POST(request: Request) {
   try {
     const supabase = await createClient();
-    const { data: { session } } = await supabase.auth.getSession();
-    if (!session) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    }
+    const auth = await getAuthContext(supabase);
+    const adminError = requireAdmin(auth);
+    if (adminError) return adminError;
 
-    const { data: adminUser } = await supabase
-      .from("admin_users")
-      .select("id")
-      .eq("id", session.user.id)
-      .single();
-    if (!adminUser) {
-      return NextResponse.json({ error: "Forbidden" }, { status: 403 });
-    }
-
-    const body = await request.json();
-    const { teams } = body;
+    const parsed = await parseJsonObject(request);
+    if (parsed.error) return json({ error: parsed.error }, { status: 400 });
+    const teams = parsed.data!.teams;
 
     if (!teams || !Array.isArray(teams)) {
-      return NextResponse.json(
+      return json(
         { error: "Teams array is required." },
         { status: 400 }
       );
@@ -36,7 +29,8 @@ export async function POST(request: Request) {
       .select("*");
 
     if (fetchError) {
-      return NextResponse.json({ error: fetchError.message }, { status: 500 });
+      logApiError("sync_teams_fetch_failed", fetchError, { userId: auth!.userId });
+      return json({ error: "Unable to sync teams." }, { status: 500 });
     }
 
     const existing =
@@ -47,8 +41,10 @@ export async function POST(request: Request) {
     const toInsert: { name: string; logo_url: string | null; rating: number }[] = [];
 
     for (const t of teams) {
+      const validName = asString((t as any).name, 80);
+      if (!validName) continue;
       const match = existing.find(
-        (e) => e.name.toLowerCase() === (t.name as string).trim().toLowerCase()
+        (e) => e.name.toLowerCase() === validName.toLowerCase()
       );
       if (match) {
         idMap[Number(t.id)] = match.id;
@@ -59,7 +55,7 @@ export async function POST(request: Request) {
         });
       } else {
         toInsert.push({
-          name: t.name,
+          name: sanitizeText(validName),
           logo_url: (t.logo as string) || null,
           rating: (t.rating as number) ?? 6.0,
         });
@@ -92,8 +88,9 @@ export async function POST(request: Request) {
       .select("*")
       .order("id");
 
-    return NextResponse.json({ success: true, teams: synced, idMap });
-  } catch {
-    return NextResponse.json({ error: "Internal server error." }, { status: 500 });
+    return json({ success: true, teams: synced, idMap });
+  } catch (error) {
+    logApiError("sync_teams_error", error);
+    return json({ error: "Internal server error." }, { status: 500 });
   }
 }
