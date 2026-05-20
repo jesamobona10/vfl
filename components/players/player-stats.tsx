@@ -1,7 +1,7 @@
 "use client";
 
 import { useAppStore } from "@/lib/store";
-import { Trophy, Crosshair, ShieldAlert, Ban, Hand, Sword, Sparkles, Download } from "lucide-react";
+import { Trophy, Crosshair, ShieldAlert, Ban, Hand, Sword, Sparkles, Download, TrendingUp, Users } from "lucide-react";
 
 function StatColumn({
   title,
@@ -13,7 +13,7 @@ function StatColumn({
   data: { rank: number; name: string; teamName: string; value: number }[];
 }) {
   return (
-    <div className="card p-4">
+    <div className="card p-4 border border-line bg-surface">
       <div className="flex items-center gap-2 text-muted mb-3">
         <Icon size={16} />
         <h3 className="text-sm font-semibold">{title}</h3>
@@ -40,6 +40,17 @@ export function PlayerStats() {
   const players = useAppStore((s) => s.players);
   const teamName = useAppStore((s) => s.teamName);
 
+  const totalPlayers = players.length;
+  const averageRating =
+    totalPlayers === 0
+      ? 0
+      : Number(
+          (
+            players.reduce((sum, p) => sum + p.rating, 0) / totalPlayers
+          ).toFixed(1)
+        );
+  const totalGoals = players.reduce((sum, p) => sum + p.goals, 0);
+
   const top = (field: string, filter?: string) =>
     players
       .filter((p) => !filter || p.position === filter)
@@ -51,6 +62,8 @@ export function PlayerStats() {
         teamName: teamName(p.teamId),
         value: (p as any)[field] as number,
       }));
+
+  const topScorer = top("goals")[0];
 
   const statSections: { title: string; field: string; filter?: string }[] = [
     { title: "Top Scorers", field: "goals" },
@@ -81,11 +94,54 @@ export function PlayerStats() {
   };
 
   return (
-    <div>
-      <div className="flex justify-end mb-4">
-        <button onClick={handleDownload} className="btn-ghost">
+    <div className="space-y-6">
+      <div className="grid gap-4 sm:grid-cols-3">
+        <div className="card p-4 border border-line bg-surface">
+          <div className="flex items-start gap-3 text-muted mb-3">
+            <Users size={20} />
+            <div>
+              <p className="text-xs uppercase tracking-[0.2em] text-muted">
+                Total players
+              </p>
+              <p className="text-2xl font-semibold">{totalPlayers}</p>
+            </div>
+          </div>
+        </div>
+        <div className="card p-4 border border-line bg-surface">
+          <div className="flex items-start gap-3 text-muted mb-3">
+            <TrendingUp size={20} />
+            <div>
+              <p className="text-xs uppercase tracking-[0.2em] text-muted">
+                Average rating
+              </p>
+              <p className="text-2xl font-semibold">{averageRating}</p>
+            </div>
+          </div>
+        </div>
+        <div className="card p-4 border border-line bg-surface">
+          <div className="flex items-start gap-3 text-muted mb-3">
+            <Trophy size={20} />
+            <div>
+              <p className="text-xs uppercase tracking-[0.2em] text-muted">
+                Total goals
+              </p>
+              <p className="text-2xl font-semibold">{totalGoals}</p>
+            </div>
+          </div>
+          {topScorer ? (
+            <p className="text-sm text-muted">
+              Top scorer: <span className="font-semibold text-text">{topScorer.name}</span>
+            </p>
+          ) : (
+            <p className="text-sm text-muted">No goals recorded yet.</p>
+          )}
+        </div>
+      </div>
+
+      <div className="flex justify-end">
+        <button onClick={handleDownload} className="btn-secondary inline-flex items-center gap-2">
           <Download size={16} />
-          Download
+          Download report
         </button>
       </div>
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">

@@ -70,25 +70,38 @@ export function PlayerCard({
   };
 
   return (
-    <div className="card p-4 flex items-start gap-3">
-      <div className="flex-1 min-w-0">
-        <div className="flex items-center gap-1.5 mb-0.5">
-          <strong className="text-sm truncate">
-            {player.name}
-          </strong>
-          {player.captain && (
-            <Crown
-              size={14}
-              className="text-accent shrink-0"
-            />
-          )}
+    <div className="card p-4 shadow-sm border border-line hover:shadow-md transition-shadow duration-150">
+      <div className="flex flex-col gap-3 flex-1 min-w-0">
+        <div className="flex items-start justify-between gap-3">
+          <div className="min-w-0">
+            <div className="flex items-center gap-2 mb-1">
+              <strong className="text-sm font-semibold truncate">
+                {player.name}
+              </strong>
+              {player.captain && (
+                <Crown
+                  size={14}
+                  className="text-accent shrink-0"
+                />
+              )}
+            </div>
+            <p className="text-xs text-muted">
+              #{player.number} · {posLabel(player.position)}
+            </p>
+          </div>
+          <div className="flex flex-col items-end gap-1 text-right">
+            <span className="rounded-full bg-surface-2 px-2 py-1 text-[11px] font-medium text-muted">
+              {teamName}
+            </span>
+            <span className="rounded-full bg-emerald-100 text-emerald-800 px-2 py-1 text-[11px] font-semibold">
+              {player.rating.toFixed(1)}
+            </span>
+          </div>
         </div>
-        <p className="text-xs text-muted mb-2">
-          #{player.number} | {posLabel(player.position)} |{" "}
-          {teamName}
-        </p>
+
         <StatRow />
       </div>
+
       <div className="flex gap-1 shrink-0">
         <button
           onClick={() => onEdit(player)}
