@@ -41,6 +41,7 @@ export function PlayerStats() {
   const teamName = useAppStore((s) => s.teamName);
 
   const totalPlayers = players.length;
+  const totalTeams = new Set(players.map((p) => p.teamId)).size;
   const averageRating =
     totalPlayers === 0
       ? 0
@@ -64,6 +65,7 @@ export function PlayerStats() {
       }));
 
   const topScorer = top("goals")[0];
+  const topAssister = top("assists")[0];
 
   const statSections: { title: string; field: string; filter?: string }[] = [
     { title: "Top Scorers", field: "goals" },
@@ -95,13 +97,13 @@ export function PlayerStats() {
 
   return (
     <div className="space-y-6">
-      <div className="grid gap-4 sm:grid-cols-3">
+      <div className="grid gap-4 sm:grid-cols-4">
         <div className="card p-4 border border-line bg-surface">
           <div className="flex items-start gap-3 text-muted mb-3">
             <Users size={20} />
             <div>
               <p className="text-xs uppercase tracking-[0.2em] text-muted">
-                Total players
+                Players
               </p>
               <p className="text-2xl font-semibold">{totalPlayers}</p>
             </div>
@@ -112,7 +114,7 @@ export function PlayerStats() {
             <TrendingUp size={20} />
             <div>
               <p className="text-xs uppercase tracking-[0.2em] text-muted">
-                Average rating
+                Avg rating
               </p>
               <p className="text-2xl font-semibold">{averageRating}</p>
             </div>
@@ -128,21 +130,50 @@ export function PlayerStats() {
               <p className="text-2xl font-semibold">{totalGoals}</p>
             </div>
           </div>
-          {topScorer ? (
-            <p className="text-sm text-muted">
-              Top scorer: <span className="font-semibold text-text">{topScorer.name}</span>
-            </p>
-          ) : (
-            <p className="text-sm text-muted">No goals recorded yet.</p>
-          )}
+        </div>
+        <div className="card p-4 border border-line bg-surface">
+          <div className="flex items-start gap-3 text-muted mb-3">
+            <Crosshair size={20} />
+            <div>
+              <p className="text-xs uppercase tracking-[0.2em] text-muted">
+                Teams
+              </p>
+              <p className="text-2xl font-semibold">{totalTeams}</p>
+            </div>
+          </div>
         </div>
       </div>
 
-      <div className="flex justify-end">
-        <button onClick={handleDownload} className="btn-secondary inline-flex items-center gap-2">
-          <Download size={16} />
-          Download report
-        </button>
+      <div className="grid gap-4 lg:grid-cols-2">
+        <div className="card p-4 border border-line bg-surface">
+          <p className="text-xs uppercase tracking-[0.2em] text-muted mb-3">
+            Leading performer
+          </p>
+          <div className="flex flex-col gap-2">
+            <div>
+              <p className="text-sm text-muted">Top scorer</p>
+              <p className="text-lg font-semibold">
+                {topScorer ? topScorer.name : "No scorer yet"}
+              </p>
+            </div>
+            <div>
+              <p className="text-sm text-muted">Top assist</p>
+              <p className="text-lg font-semibold">
+                {topAssister ? topAssister.name : "No assists yet"}
+              </p>
+            </div>
+          </div>
+        </div>
+
+        <div className="card p-4 border border-line bg-surface">
+          <p className="text-xs uppercase tracking-[0.2em] text-muted mb-3">
+            Report actions
+          </p>
+          <button onClick={handleDownload} className="btn-secondary inline-flex items-center gap-2">
+            <Download size={16} />
+            Download report
+          </button>
+        </div>
       </div>
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
         <StatColumn title="Top Scorers" icon={Trophy} data={top("goals")} />

@@ -70,6 +70,11 @@ export function FixtureCard({
     }
   };
 
+  const showScore =
+    match.status === "completed" ||
+    match.status === "in-progress" ||
+    match.status === "live";
+
   return (
     <article
       draggable
@@ -79,7 +84,7 @@ export function FixtureCard({
       onDragEnter={handleDragEnter}
       onDragLeave={handleDragLeave}
       onDrop={handleDrop}
-      className={`flex items-center gap-3 px-4 py-3 rounded-lg border transition-all ${
+      className={`flex flex-col gap-3 px-4 py-4 rounded-3xl border transition-all ${
         isDragging
           ? "opacity-50 border-brand"
           : isDragOver
@@ -87,37 +92,45 @@ export function FixtureCard({
           : "border-line bg-surface hover:border-muted/30"
       }`}
     >
-      <GripVertical
-        size={16}
-        className="text-muted/40 cursor-grab active:cursor-grabbing shrink-0"
-      />
-      <div className="flex-1 min-w-0">
-        <div className="flex items-center gap-2 mb-0.5">
-          <span className="text-xs text-muted font-medium">
-            {label}
+      <div className="flex items-center justify-between gap-3">
+        <div className="flex items-center gap-2 text-xs text-muted">
+          <span>{label}</span>
+          <span className="rounded-full bg-surface-2 px-2 py-1 text-[11px] font-semibold">
+            {titleCase(match.status)}
           </span>
         </div>
-        <div className="font-semibold text-sm">
-          <span>{homeTeam?.name || "Unknown"}</span>
-          <span className="text-muted mx-1.5">vs</span>
-          <span>{awayTeam?.name || "Unknown"}</span>
-          {match.status === "completed" &&
-            Number.isInteger(match.homeScore) &&
-            Number.isInteger(match.awayScore) && (
-              <span className="ml-2 text-muted font-mono">
-                {match.homeScore}-{match.awayScore}
-              </span>
-            )}
-        </div>
-        <p className="text-xs text-muted truncate mt-0.5">
-          {matchMeta(match)}
-        </p>
+        {showScore && match.homeScore != null && match.awayScore != null ? (
+          <div className="rounded-full bg-surface-2 px-3 py-1 text-sm font-semibold text-text">
+            {match.homeScore}-{match.awayScore}
+          </div>
+        ) : (
+          <div className="rounded-full bg-surface-2 px-3 py-1 text-sm text-muted">
+            {match.time || match.date || "TBA"}
+          </div>
+        )}
       </div>
-      <span
-        className={`shrink-0 text-xs font-medium px-2.5 py-0.5 rounded-full ${statusColor}`}
-      >
-        {titleCase(match.status)}
-      </span>
+
+      <div className="grid grid-cols-[1fr_auto_1fr] items-center gap-3">
+        <div className="min-w-0 text-right">
+          <div className="font-semibold truncate">{homeTeam?.name || "Unknown"}</div>
+          {match.homeScore != null && match.status !== "scheduled" ? (
+            <div className="text-xs text-muted">{match.homeScore}</div>
+          ) : null}
+        </div>
+
+        <div className="text-center text-xs text-muted uppercase tracking-[0.2em]">
+          vs
+        </div>
+
+        <div className="min-w-0 text-left">
+          <div className="font-semibold truncate">{awayTeam?.name || "Unknown"}</div>
+          {match.awayScore != null && match.status !== "scheduled" ? (
+            <div className="text-xs text-muted">{match.awayScore}</div>
+          ) : null}
+        </div>
+      </div>
+
+      <p className="text-xs text-muted truncate">{matchMeta(match)}</p>
     </article>
   );
 }

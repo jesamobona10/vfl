@@ -29,73 +29,67 @@ interface LiveData {
 }
 
 function MatchCard({ match, isLive }: { match: MatchData; isLive: boolean }) {
+  const statusBadge = isLive
+    ? "bg-danger/10 text-danger"
+    : match.status === "completed"
+    ? "bg-slate-100 text-slate-800"
+    : "bg-surface-2 text-muted";
+
   return (
     <div
-      className={`rounded-xl border p-5 ${
+      className={`rounded-3xl border p-5 shadow-sm transition-all ${
         isLive
-          ? "border-danger/40 bg-danger/[0.04] shadow-lg shadow-danger/5"
+          ? "border-danger/40 bg-danger/[0.04] shadow-danger/5"
           : "border-line bg-surface"
       }`}
     >
-      {isLive && (
-        <div className="flex items-center gap-2 mb-4">
-          <span className="relative flex h-3 w-3">
-            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-danger opacity-75" />
-            <span className="relative inline-flex rounded-full h-3 w-3 bg-danger" />
-          </span>
-          <span className="text-sm font-bold text-danger uppercase tracking-wider">Live</span>
-        </div>
-      )}
-
-      <div className="flex items-center gap-4">
-        <div className="flex-1 flex flex-col items-center text-center min-w-0">
-          {match.homeTeam.logo ? (
-            <img src={match.homeTeam.logo} alt="" className="w-10 h-10 rounded-full object-cover mb-1.5" />
-          ) : (
-            <div className="w-10 h-10 rounded-full bg-surface-2 flex items-center justify-center mb-1.5">
-              <span className="text-xs font-bold text-muted">{match.homeTeam.name.charAt(0)}</span>
-            </div>
-          )}
-          <span className="text-sm font-semibold leading-tight truncate w-full">{match.homeTeam.name}</span>
-        </div>
-
-        <div className="shrink-0 text-center min-w-[72px]">
-          {isLive || match.status === "completed" ? (
-            <span className="text-3xl font-extrabold tabular-nums">
-              {match.homeScore ?? "-"}
-              <span className="text-muted mx-1">:</span>
-              {match.awayScore ?? "-"}
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+        <div>
+          <div className="flex items-center gap-2 text-sm font-semibold">
+            <span>{match.homeTeam.name}</span>
+            <span className="text-muted">vs</span>
+            <span>{match.awayTeam.name}</span>
+          </div>
+          <div className="mt-2 flex flex-wrap items-center gap-2 text-xs text-muted">
+            <span className="rounded-full bg-surface-2 px-2 py-1">
+              Round {match.round}
             </span>
-          ) : (
-            <span className="text-lg font-bold text-muted">vs</span>
-          )}
+            <span className={`rounded-full px-2 py-1 text-[11px] font-semibold ${statusBadge}`}>
+              {isLive ? "Live" : match.status === "completed" ? "Finished" : "Upcoming"}
+            </span>
+          </div>
         </div>
 
-        <div className="flex-1 flex flex-col items-center text-center min-w-0">
-          {match.awayTeam.logo ? (
-            <img src={match.awayTeam.logo} alt="" className="w-10 h-10 rounded-full object-cover mb-1.5" />
-          ) : (
-            <div className="w-10 h-10 rounded-full bg-surface-2 flex items-center justify-center mb-1.5">
-              <span className="text-xs font-bold text-muted">{match.awayTeam.name.charAt(0)}</span>
-            </div>
-          )}
-          <span className="text-sm font-semibold leading-tight truncate w-full">{match.awayTeam.name}</span>
+        <div className="flex items-center justify-center gap-2 text-center">
+          <div className="flex flex-col items-center min-w-[80px]">
+            <div className="text-lg font-semibold">{match.homeTeam.name.charAt(0)}</div>
+            <span className="text-xs text-muted">Home</span>
+          </div>
+          <div className="text-3xl font-extrabold tabular-nums">
+            {isLive || match.status === "completed" ? match.homeScore ?? "-" : "-"}
+            <span className="text-muted mx-1">:</span>
+            {isLive || match.status === "completed" ? match.awayScore ?? "-" : "-"}
+          </div>
+          <div className="flex flex-col items-center min-w-[80px]">
+            <div className="text-lg font-semibold">{match.awayTeam.name.charAt(0)}</div>
+            <span className="text-xs text-muted">Away</span>
+          </div>
         </div>
       </div>
 
-      <div className="flex items-center justify-center gap-4 mt-4 text-xs text-muted">
-        {match.venue && (
-          <span className="flex items-center gap-1">
-            <MapPin size={12} />
-            {match.venue}
-          </span>
-        )}
-        {match.time && (
-          <span className="flex items-center gap-1">
-            <Clock size={12} />
-            {match.time}
-          </span>
-        )}
+      <div className="mt-4 grid gap-2 sm:grid-cols-3 text-xs text-muted">
+        <div className="flex items-center gap-1">
+          <MapPin size={12} />
+          {match.venue || "Venue TBA"}
+        </div>
+        <div className="flex items-center gap-1">
+          <Clock size={12} />
+          {match.time || "Time TBA"}
+        </div>
+        <div className="flex items-center gap-1">
+          <Calendar size={12} />
+          {match.date}
+        </div>
       </div>
     </div>
   );
