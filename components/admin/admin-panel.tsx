@@ -33,6 +33,7 @@ import { GeneratePlayerCredentials } from "@/components/players/generate-player-
 type AdminTab = "teams" | "players" | "fixtures" | "database" | "accounts" | "import";
 
 function PlayerManager() {
+  const isAdmin = useAppStore((s) => s.isAdmin);
   const players = useAppStore((s) => s.players);
   const teams = useAppStore((s) => s.teams);
   const addPlayer = useAppStore((s) => s.addPlayer);
@@ -91,12 +92,14 @@ function PlayerManager() {
     <div className="space-y-4">
       <h3 className="text-lg font-bold">Players</h3>
 
-      <GeneratePlayerCredentials
-        scope="admin"
-        teamId={filterTeam ? Number(filterTeam) : undefined}
-        teamName={filterTeamName}
-        playerCount={filtered.length}
-      />
+      {isAdmin && (
+        <GeneratePlayerCredentials
+          scope="admin"
+          teamId={filterTeam ? Number(filterTeam) : undefined}
+          teamName={filterTeamName}
+          playerCount={filtered.length}
+        />
+      )}
 
       <div className="card p-4 space-y-3">
         <h4 className="text-sm font-semibold text-muted uppercase tracking-wider">Add Player</h4>

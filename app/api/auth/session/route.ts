@@ -12,7 +12,7 @@ export async function GET() {
     } = await supabase.auth.getSession();
 
     if (!session) {
-      return json({ authenticated: false }, { status: 401 });
+      return json({ authenticated: false });
     }
 
     const { data: adminUser } = await supabase
@@ -69,7 +69,7 @@ export async function GET() {
       });
     }
 
-    return json({ authenticated: false }, { status: 401 });
+    return json({ authenticated: false });
   } catch (error) {
     logApiError("session_lookup_error", error);
     return json({ authenticated: false }, { status: 500 });
