@@ -26,17 +26,20 @@ const tabs = [
 ];
 
 const teamAccountHidden = new Set(["/teams", "/reports", "/players"]);
+const playerAccountOnly = new Set(["/fixtures", "/standings", "/players"]);
 
 export function TabNav() {
   const pathname = usePathname();
   const isAdmin = useAppStore((s) => s.isAdmin);
   const currentTeamAccount = useAppStore((s) => s.currentTeamAccount);
+  const isPlayer = useAppStore((s) => s.userProfile?.role === "player");
 
   return (
     <nav className="bg-surface border-b border-line px-6">
       <div className="flex gap-1 overflow-x-auto">
         {tabs.map((tab) => {
           if (tab.adminOnly && !isAdmin) return null;
+          if (isPlayer && !playerAccountOnly.has(tab.href)) return null;
           if (currentTeamAccount && teamAccountHidden.has(tab.href)) return null;
           const active = pathname === tab.href;
           const Icon = tab.icon;

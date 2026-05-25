@@ -100,10 +100,11 @@ export interface TeamAccount {
 
 export interface UserProfile {
   id: string;
-  role: "super_admin" | "team_account";
+  role: "super_admin" | "team_account" | "player";
   displayName?: string;
   teamId?: number | null;
   username?: string;
+  playerId?: number | null;
 }
 
 export interface StandingRow {

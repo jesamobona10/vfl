@@ -3,6 +3,49 @@ import type { NextRequest } from "next/server";
 import { createMiddlewareClient } from "@/lib/supabase/middleware";
 import { getClientIp, logSecurityEvent, rateLimit, rateLimitResponse } from "@/lib/security";
 
+type AccountKind = "admin" | "team" | "player" | "unknown";
+
+/** Pages player accounts may visit (fixtures, standings, player stats). */
+const PLAYER_PAGE_PREFIXES = ["/fixtures", "/standings", "/players"] as const;
+
+const PLAYER_DEFAULT_PAGE = "/fixtures";
+
+function isPlayerAllowedPage(pathname: string): boolean {
+  return PLAYER_PAGE_PREFIXES.some(
+    (prefix) => pathname === prefix || pathname.startsWith(`${prefix}/`)
+  );
+}
+
+function isPlayerAllowedApi(pathname: string, method: string): boolean {
+  if (pathname.startsWith("/api/public/")) return true;
+  if (pathname === "/api/auth/session" && method === "GET") return true;
+  if (pathname === "/api/auth/logout" && (method === "POST" || method === "GET")) return true;
+  if (pathname === "/api/fixtures" && method === "GET") return true;
+  if (pathname === "/api/players" && method === "GET") return true;
+  if (/^\/api\/players\/\d+$/.test(pathname) && method === "GET") return true;
+  return false;
+}
+
+async function resolveAccountKind(
+  supabase: ReturnType<typeof createMiddlewareClient>["supabase"],
+  userId: string
+): Promise<AccountKind> {
+  const [{ data: admin }, { data: team }] = await Promise.all([
+    supabase.from("admin_users").select("id").eq("id", userId).maybeSingle(),
+    supabase.from("team_accounts").select("id").eq("id", userId).maybeSingle(),
+  ]);
+  if (admin) return "admin";
+  if (team) return "team";
+
+  const { data: player } = await supabase
+    .from("player_profiles")
+    .select("id")
+    .eq("id", userId)
+    .maybeSingle();
+  if (player) return "player";
+  return "unknown";
+}
+
 function secure(response: NextResponse) {
   response.headers.set("X-Content-Type-Options", "nosniff");
   response.headers.set("X-Frame-Options", "DENY");
@@ -43,6 +86,8 @@ export async function middleware(request: NextRequest) {
     pathname === "/api/auth/admin-signup" ||
     pathname === "/api/auth/admin-login" ||
     pathname === "/api/auth/team-login" ||
+    pathname === "/api/auth/player-login" ||
+    pathname === "/api/auth/player-register" ||
     pathname.startsWith("/api/public/");
 
   if (isApiRoute) {
@@ -87,17 +132,48 @@ export async function middleware(request: NextRequest) {
     return secure(NextResponse.redirect(new URL("/", request.url)));
   }
 
-  if (isAdminPage) {
-    const { data: adminUser } = await supabase
-      .from("admin_users")
-      .select("id")
-      .eq("id", session.user.id)
-      .single();
+  const accountKind = await resolveAccountKind(supabase, session.user.id);
 
-    if (!adminUser) {
-      logSecurityEvent("forbidden_admin_page", { userId: session.user.id, pathname });
-      return secure(NextResponse.redirect(new URL("/", request.url)));
+  if (isAdminPage) {
+    if (accountKind !== "admin") {
+      logSecurityEvent("forbidden_admin_page", {
+        userId: session.user.id,
+        pathname,
+        accountKind,
+      });
+      const redirectTo =
+        accountKind === "player" ? PLAYER_DEFAULT_PAGE : "/";
+      return secure(NextResponse.redirect(new URL(redirectTo, request.url)));
     }
+    return secure(response);
+  }
+
+  if (accountKind === "player") {
+    if (isApiRoute && !isPublicApi) {
+      if (!isPlayerAllowedApi(pathname, request.method)) {
+        logSecurityEvent("forbidden_player_api", {
+          userId: session.user.id,
+          pathname,
+          method: request.method,
+        });
+        return secure(
+          NextResponse.json({ error: "Forbidden" }, { status: 403 })
+        );
+      }
+    } else if (!isPlayerAllowedPage(pathname)) {
+      logSecurityEvent("forbidden_player_page", {
+        userId: session.user.id,
+        pathname,
+      });
+      return secure(
+        NextResponse.redirect(new URL(PLAYER_DEFAULT_PAGE, request.url))
+      );
+    }
+  }
+
+  if (accountKind === "unknown" && isApiRoute && !isPublicApi) {
+    logSecurityEvent("unknown_account_api", { userId: session.user.id, pathname });
+    return secure(NextResponse.json({ error: "Unauthorized" }, { status: 401 }));
   }
 
   return secure(response);

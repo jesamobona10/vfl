@@ -13,6 +13,7 @@ export interface AuthSlice {
   initializeAuth: () => Promise<void>;
   loginAdmin: (email: string, password: string) => Promise<{ error?: string }>;
   loginTeamAccount: (username: string, password: string) => Promise<{ error?: string }>;
+  loginPlayer: (username: string, password: string) => Promise<{ error?: string }>;
   logout: () => Promise<void>;
   setTeamDataLoaded: (v: boolean) => void;
 }
@@ -60,6 +61,14 @@ export const createAuthSlice: StateCreator<any, [], [], AuthSlice> = (set, get) 
           authLoading: false,
           teamDataLoaded: false,
         });
+      } else if (data.role === "player") {
+        set({
+          isAdmin: false,
+          currentTeamAccount: null,
+          userProfile: data.profile,
+          authLoading: false,
+          teamDataLoaded: false,
+        });
       } else {
         set({ authLoading: false });
       }
@@ -82,6 +91,33 @@ export const createAuthSlice: StateCreator<any, [], [], AuthSlice> = (set, get) 
         currentTeamAccount: null,
         userProfile: { id: data.user.id, role: "super_admin", displayName: data.user.email },
         teamDataLoaded: false,
+      });
+      return {};
+    } catch {
+      return { error: "Connection error. Please try again." };
+    }
+  },
+
+  loginPlayer: async (username, password) => {
+    try {
+      const res = await fetch("/api/auth/player-login", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ username, password }),
+      });
+      const data = await res.json();
+      if (data.error) return { error: data.error };
+      set({
+        isAdmin: false,
+        currentTeamAccount: null,
+        teamDataLoaded: false,
+        userProfile: {
+          id: data.user.id,
+          role: "player",
+          displayName: data.user.displayName,
+          username: data.user.username,
+          playerId: data.user.playerId,
+        },
       });
       return {};
     } catch {

@@ -49,6 +49,26 @@ export async function GET() {
       });
     }
 
+    const { data: playerProfile } = await supabase
+      .from("player_profiles")
+      .select("id, player_id, display_name, username")
+      .eq("id", session.user.id)
+      .single();
+
+    if (playerProfile) {
+      return json({
+        authenticated: true,
+        role: "player",
+        profile: {
+          id: playerProfile.id,
+          role: "player",
+          displayName: playerProfile.display_name,
+          username: playerProfile.username,
+          playerId: playerProfile.player_id,
+        },
+      });
+    }
+
     return json({ authenticated: false }, { status: 401 });
   } catch (error) {
     logApiError("session_lookup_error", error);

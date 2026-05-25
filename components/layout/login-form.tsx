@@ -2,9 +2,9 @@
 
 import { useState } from "react";
 import { useAppStore } from "@/lib/store";
-import { Shield, User, LogIn, AlertCircle } from "lucide-react";
+import { Shield, User, LogIn, AlertCircle, UserCog } from "lucide-react";
 
-type LoginMode = "admin" | "team";
+type LoginMode = "admin" | "team" | "player";
 
 export function LoginForm() {
   const [mode, setMode] = useState<LoginMode>("team");
@@ -17,12 +17,22 @@ export function LoginForm() {
 
   const loginTeamAccount = useAppStore((s) => s.loginTeamAccount);
   const loginAdmin = useAppStore((s) => s.loginAdmin);
+  const loginPlayer = useAppStore((s) => s.loginPlayer);
 
   const handleTeamLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setError("");
     setLoading(true);
     const result = await loginTeamAccount(username, password);
+    setLoading(false);
+    if (result.error) setError(result.error);
+  };
+
+  const handlePlayerLogin = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setError("");
+    setLoading(true);
+    const result = await loginPlayer(username.toUpperCase(), password);
     setLoading(false);
     if (result.error) setError(result.error);
   };
@@ -47,31 +57,48 @@ export function LoginForm() {
       <div className="card p-6">
         <div className="flex gap-1 bg-surface-2 rounded-lg p-1 mb-6">
           <button
+            type="button"
             onClick={() => {
               setMode("team");
               setError("");
             }}
-            className={`flex-1 py-2 text-sm font-medium rounded-md transition-colors ${
+            className={`flex-1 py-2 text-xs sm:text-sm font-medium rounded-md transition-colors ${
               mode === "team"
                 ? "bg-surface shadow-sm text-text"
                 : "text-muted hover:text-text"
             }`}
           >
-            <User size={16} className="inline mr-1.5" />
-            Team Account
+            <User size={16} className="inline mr-1" />
+            Team
           </button>
           <button
+            type="button"
+            onClick={() => {
+              setMode("player");
+              setError("");
+            }}
+            className={`flex-1 py-2 text-xs sm:text-sm font-medium rounded-md transition-colors ${
+              mode === "player"
+                ? "bg-surface shadow-sm text-text"
+                : "text-muted hover:text-text"
+            }`}
+          >
+            <UserCog size={16} className="inline mr-1" />
+            Player
+          </button>
+          <button
+            type="button"
             onClick={() => {
               setMode("admin");
               setError("");
             }}
-            className={`flex-1 py-2 text-sm font-medium rounded-md transition-colors ${
+            className={`flex-1 py-2 text-xs sm:text-sm font-medium rounded-md transition-colors ${
               mode === "admin"
                 ? "bg-surface shadow-sm text-text"
                 : "text-muted hover:text-text"
             }`}
           >
-            <Shield size={16} className="inline mr-1.5" />
+            <Shield size={16} className="inline mr-1" />
             Admin
           </button>
         </div>
@@ -119,6 +146,39 @@ export function LoginForm() {
               Contact your league administrator if you don&apos;t have an
               account.
             </p>
+          </form>
+        ) : mode === "player" ? (
+          <form onSubmit={handlePlayerLogin} className="space-y-4">
+            <div>
+              <label className="block text-sm font-medium mb-1">Username</label>
+              <input
+                type="text"
+                value={username}
+                onChange={(e) => setUsername(e.target.value.toUpperCase())}
+                className="input font-mono"
+                placeholder="e.g. MESSI_VOXMACHINA_001"
+                required
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium mb-1">Password</label>
+              <input
+                type="password"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                className="input"
+                placeholder="e.g. MESSI_001"
+                required
+              />
+            </div>
+            <button
+              type="submit"
+              className="btn-primary w-full"
+              disabled={loading}
+            >
+              <LogIn size={16} />
+              {loading ? "Signing in..." : "Sign In as Player"}
+            </button>
           </form>
         ) : (
           <form onSubmit={handleAdminLogin} className="space-y-4">

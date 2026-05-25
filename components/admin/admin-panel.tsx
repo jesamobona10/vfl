@@ -28,6 +28,7 @@ import {
   FileDown,
 } from "lucide-react";
 import type { Team, Player } from "@/lib/types";
+import { GeneratePlayerCredentials } from "@/components/players/generate-player-credentials";
 
 type AdminTab = "teams" | "players" | "fixtures" | "database" | "accounts" | "import";
 
@@ -82,9 +83,20 @@ function PlayerManager() {
     deleteTeamPlayers(Number(filterTeam));
   };
 
+  const filterTeamName = filterTeam
+    ? teams.find((t) => t.id === Number(filterTeam))?.name
+    : undefined;
+
   return (
     <div className="space-y-4">
       <h3 className="text-lg font-bold">Players</h3>
+
+      <GeneratePlayerCredentials
+        scope="admin"
+        teamId={filterTeam ? Number(filterTeam) : undefined}
+        teamName={filterTeamName}
+        playerCount={filtered.length}
+      />
 
       <div className="card p-4 space-y-3">
         <h4 className="text-sm font-semibold text-muted uppercase tracking-wider">Add Player</h4>

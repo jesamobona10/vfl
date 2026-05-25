@@ -41,7 +41,9 @@ export function AppShell({ children }: { children: React.ReactNode }) {
     );
   }
 
-  const isAuthenticated = currentTeamAccount !== null || isAdmin;
+  const userProfile = useAppStore((s) => s.userProfile);
+  const isPlayer = userProfile?.role === "player";
+  const isAuthenticated = currentTeamAccount !== null || isAdmin || isPlayer;
 
   if (!isAuthenticated) {
     if (isPublicPath) {

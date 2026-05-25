@@ -198,6 +198,116 @@ ALTER TABLE match_events ENABLE ROW LEVEL SECURITY;
 ALTER TABLE admin_users ENABLE ROW LEVEL SECURITY;
 ALTER TABLE team_accounts ENABLE ROW LEVEL SECURITY;
 
+-- Player profiles link auth.users -> players (existing players table)
+CREATE TABLE IF NOT EXISTS player_profiles (
+  id UUID PRIMARY KEY REFERENCES auth.users(id) ON DELETE CASCADE,
+  player_id BIGINT REFERENCES players(id) ON DELETE SET NULL,
+  username TEXT,
+  must_change_password BOOLEAN NOT NULL DEFAULT true,
+  display_name TEXT,
+  jersey_number INTEGER,
+  position TEXT,
+  photo_url TEXT,
+  bio TEXT,
+  created_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+CREATE UNIQUE INDEX IF NOT EXISTS idx_player_profiles_username
+  ON player_profiles (username)
+  WHERE username IS NOT NULL;
+
+CREATE TABLE IF NOT EXISTS credential_generation_logs (
+  id BIGSERIAL PRIMARY KEY,
+  generated_by UUID REFERENCES auth.users(id) ON DELETE SET NULL,
+  team_id INTEGER REFERENCES teams(id) ON DELETE SET NULL,
+  scope TEXT NOT NULL CHECK (scope IN ('admin', 'team')),
+  players_affected INTEGER NOT NULL DEFAULT 0,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+-- Optional aggregated stats table if separate from `players`
+CREATE TABLE IF NOT EXISTS player_statistics (
+  id BIGSERIAL PRIMARY KEY,
+  player_id BIGINT NOT NULL REFERENCES players(id) ON DELETE CASCADE,
+  goals INTEGER DEFAULT 0,
+  assists INTEGER DEFAULT 0,
+  appearances INTEGER DEFAULT 0,
+  yellow_cards INTEGER DEFAULT 0,
+  red_cards INTEGER DEFAULT 0,
+  minutes_played INTEGER DEFAULT 0,
+  average_rating DOUBLE PRECISION DEFAULT 0,
+  updated_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+ALTER TABLE IF EXISTS player_statistics ENABLE ROW LEVEL SECURITY;
+DROP POLICY IF EXISTS player_statistics_read_all_authenticated ON player_statistics;
+CREATE POLICY player_statistics_read_all_authenticated ON player_statistics
+  FOR SELECT USING (
+    auth.role() = 'authenticated'
+  );
+
+DROP POLICY IF EXISTS player_statistics_write_admin_only ON player_statistics;
+CREATE POLICY player_statistics_write_admin_only ON player_statistics
+  FOR ALL
+  USING (EXISTS (SELECT 1 FROM admin_users WHERE id = auth.uid()))
+  WITH CHECK (EXISTS (SELECT 1 FROM admin_users WHERE id = auth.uid()));
+
+-- RLS: allow player role readonly access to fixtures, standings, and player stats
+ALTER TABLE IF EXISTS fixtures ENABLE ROW LEVEL SECURITY;
+DROP POLICY IF EXISTS fixtures_read_for_authenticated ON fixtures;
+CREATE POLICY fixtures_read_for_authenticated ON fixtures
+  FOR SELECT USING (
+    auth.role() = 'authenticated'
+  );
+
+DROP POLICY IF EXISTS fixtures_write_admin_only ON fixtures;
+CREATE POLICY fixtures_write_admin_only ON fixtures
+  FOR ALL
+  USING (EXISTS (SELECT 1 FROM admin_users WHERE id = auth.uid()))
+  WITH CHECK (EXISTS (SELECT 1 FROM admin_users WHERE id = auth.uid()));
+
+ALTER TABLE IF EXISTS players ENABLE ROW LEVEL SECURITY;
+DROP POLICY IF EXISTS players_read_for_authenticated ON players;
+CREATE POLICY players_read_for_authenticated ON players
+  FOR SELECT USING (
+    auth.role() = 'authenticated'
+  );
+DROP POLICY IF EXISTS players_write_admin_or_team ON players;
+CREATE POLICY players_write_admin_or_team ON players
+  FOR ALL
+  USING (
+    EXISTS (SELECT 1 FROM admin_users WHERE id = auth.uid())
+    OR EXISTS (SELECT 1 FROM team_accounts WHERE id = auth.uid() AND team_id = players.team_id)
+  )
+  WITH CHECK (
+    EXISTS (SELECT 1 FROM admin_users WHERE id = auth.uid())
+    OR EXISTS (SELECT 1 FROM team_accounts WHERE id = auth.uid() AND team_id = players.team_id)
+  );
+
+ALTER TABLE IF NOT EXISTS player_profiles ENABLE ROW LEVEL SECURITY;
+DROP POLICY IF EXISTS player_profiles_read_owner_or_admin ON player_profiles;
+CREATE POLICY player_profiles_read_owner_or_admin ON player_profiles
+  FOR SELECT USING (
+    auth.uid() = id
+    OR EXISTS (SELECT 1 FROM admin_users WHERE id = auth.uid())
+  );
+DROP POLICY IF EXISTS player_profiles_write_owner_or_admin ON player_profiles;
+DROP POLICY IF EXISTS player_profiles_insert_owner_or_admin ON player_profiles;
+DROP POLICY IF EXISTS player_profiles_update_owner_or_admin ON player_profiles;
+DROP POLICY IF EXISTS player_profiles_delete_owner_or_admin ON player_profiles;
+CREATE POLICY player_profiles_insert_owner_or_admin ON player_profiles
+  FOR INSERT WITH CHECK (
+    auth.uid() = id OR EXISTS (SELECT 1 FROM admin_users WHERE id = auth.uid())
+  );
+CREATE POLICY player_profiles_update_owner_or_admin ON player_profiles
+  FOR UPDATE USING (
+    auth.uid() = id OR EXISTS (SELECT 1 FROM admin_users WHERE id = auth.uid())
+  );
+CREATE POLICY player_profiles_delete_owner_or_admin ON player_profiles
+  FOR DELETE USING (
+    auth.uid() = id OR EXISTS (SELECT 1 FROM admin_users WHERE id = auth.uid())
+  );
+
 -- Teams: all authenticated users can read, only admins can write
 CREATE POLICY "teams_read_all_authenticated" ON teams
   FOR SELECT USING (auth.role() = 'authenticated');
