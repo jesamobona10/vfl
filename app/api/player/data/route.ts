@@ -11,7 +11,7 @@ export async function GET() {
 
     const { data: profile } = await supabase
       .from("player_profiles")
-      .select("player_id, display_name, jersey_number, position as profile_position, photo_url")
+      .select("player_id, display_name, jersey_number, position, photo_url")
       .eq("id", session.user.id)
       .single();
 
@@ -63,7 +63,7 @@ export async function GET() {
         id: player.id,
         teamId: player.team_id,
         name: player.name,
-        position: profile.profile_position || player.position,
+        position: profile.position || player.position,
         number: profile.jersey_number || player.number,
         photoUrl: profile.photo_url || null,
         goals: player.goals,
