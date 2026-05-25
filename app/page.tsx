@@ -7,6 +7,7 @@ import { MetricCards } from "@/components/dashboard/metric-cards";
 import { LeagueStats } from "@/components/dashboard/league-stats";
 import { UpcomingMatches } from "@/components/dashboard/upcoming-matches";
 import { TopFiveStandings } from "@/components/dashboard/top-five-standings";
+import { PlayerDashboard } from "@/components/player/player-dashboard";
 import { Shield, RefreshCw, Loader2 } from "lucide-react";
 import { GeneratePlayerCredentials } from "@/components/players/generate-player-credentials";
 
@@ -15,6 +16,7 @@ export default function DashboardPage() {
   const players = useAppStore((s) => s.players);
   const generateFixtures = useAppStore((s) => s.generateFixtures);
   const isAdmin = useAppStore((s) => s.isAdmin);
+  const isPlayer = useAppStore((s) => s.userProfile?.role === "player");
   const currentTeamAccount = useAppStore((s) => s.currentTeamAccount);
   const teamDataLoaded = useAppStore((s) => s.teamDataLoaded);
   const setTeamDataLoaded = useAppStore((s) => s.setTeamDataLoaded);
@@ -39,6 +41,10 @@ export default function DashboardPage() {
         <Loader2 size={28} className="animate-spin text-muted" />
       </div>
     );
+  }
+
+  if (isPlayer) {
+    return <PlayerDashboard />;
   }
 
   return (

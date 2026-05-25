@@ -26,7 +26,7 @@ const tabs = [
 ];
 
 const teamAccountHidden = new Set(["/teams", "/reports", "/players"]);
-const playerAccountOnly = new Set(["/fixtures", "/standings", "/players"]);
+const playerAccountHidden = new Set(["/teams", "/reports", "/players", "/admin"]);
 
 export function TabNav() {
   const pathname = usePathname();
@@ -39,7 +39,7 @@ export function TabNav() {
       <div className="flex gap-1 overflow-x-auto">
         {tabs.map((tab) => {
           if (tab.adminOnly && !isAdmin) return null;
-          if (isPlayer && !playerAccountOnly.has(tab.href)) return null;
+          if (isPlayer && playerAccountHidden.has(tab.href)) return null;
           if (currentTeamAccount && teamAccountHidden.has(tab.href)) return null;
           const active = pathname === tab.href;
           const Icon = tab.icon;
