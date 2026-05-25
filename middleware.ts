@@ -6,7 +6,7 @@ import { getClientIp, logSecurityEvent, rateLimit, rateLimitResponse } from "@/l
 type AccountKind = "admin" | "team" | "player" | "unknown";
 
 /** Pages player accounts may visit (fixtures, standings, player stats). */
-const PLAYER_PAGE_PREFIXES = ["/fixtures", "/standings", "/players"] as const;
+const PLAYER_PAGE_PREFIXES = ["/", "/fixtures", "/standings", "/players"] as const;
 
 const PLAYER_DEFAULT_PAGE = "/fixtures";
 

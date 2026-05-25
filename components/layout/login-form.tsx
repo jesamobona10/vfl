@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 import { useAppStore } from "@/lib/store";
 import { Shield, User, LogIn, AlertCircle, UserCog } from "lucide-react";
 
@@ -15,6 +16,7 @@ export function LoginForm() {
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
 
+  const router = useRouter();
   const loginTeamAccount = useAppStore((s) => s.loginTeamAccount);
   const loginAdmin = useAppStore((s) => s.loginAdmin);
   const loginPlayer = useAppStore((s) => s.loginPlayer);
@@ -26,6 +28,7 @@ export function LoginForm() {
     const result = await loginTeamAccount(username, password);
     setLoading(false);
     if (result.error) setError(result.error);
+    else router.push("/");
   };
 
   const handlePlayerLogin = async (e: React.FormEvent) => {
@@ -35,6 +38,7 @@ export function LoginForm() {
     const result = await loginPlayer(username.toUpperCase(), password);
     setLoading(false);
     if (result.error) setError(result.error);
+    else router.push("/");
   };
 
   const handleAdminLogin = async (e: React.FormEvent) => {
@@ -44,6 +48,7 @@ export function LoginForm() {
     const result = await loginAdmin(adminEmail, adminPassword);
     setLoading(false);
     if (result.error) setError(result.error);
+    else router.push("/");
   };
 
   return (
