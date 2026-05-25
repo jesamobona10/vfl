@@ -17,10 +17,13 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   const isAdmin = useAppStore((s) => s.isAdmin);
   const authLoading = useAppStore((s) => s.authLoading);
   const teamDataLoaded = useAppStore((s) => s.teamDataLoaded);
+  const userProfile = useAppStore((s) => s.userProfile);
   const initializeAuth = useAppStore((s) => s.initializeAuth);
   const [fetchingAdminData, setFetchingAdminData] = useState(false);
   const [isSearchOpen, setSearchOpen] = useState(false);
   const isPublicPath = publicPaths.has(pathname);
+  const isPlayer = userProfile?.role === "player";
+  const isAuthenticated = currentTeamAccount !== null || isAdmin || isPlayer;
 
   useEffect(() => {
     initializeAuth();
@@ -40,10 +43,6 @@ export function AppShell({ children }: { children: React.ReactNode }) {
       </div>
     );
   }
-
-  const userProfile = useAppStore((s) => s.userProfile);
-  const isPlayer = userProfile?.role === "player";
-  const isAuthenticated = currentTeamAccount !== null || isAdmin || isPlayer;
 
   if (!isAuthenticated) {
     if (isPublicPath) {
