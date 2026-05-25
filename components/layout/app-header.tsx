@@ -13,7 +13,9 @@ interface AppHeaderProps {
 
 export function AppHeader({ onOpenSearch }: AppHeaderProps) {
   const currentTeamAccount = useAppStore((s) => s.currentTeamAccount);
+  const userProfile = useAppStore((s) => s.userProfile);
   const isAdmin = useAppStore((s) => s.isAdmin);
+  const isPlayer = userProfile?.role === "player";
   const logout = useAppStore((s) => s.logout);
   const resetTeams = useAppStore((s) => s.resetTeams);
   const setTeams = useAppStore((s) => s.setTeams);
@@ -147,10 +149,10 @@ export function AppHeader({ onOpenSearch }: AppHeaderProps) {
             </button>
           </>
         )}
-        {(currentTeamAccount || isAdmin) && (
+        {userProfile && (
           <div className="flex items-center gap-2 ml-3 pl-3 border-l border-line">
             <span className="text-sm text-muted">
-              {isAdmin ? "Admin" : currentTeamAccount?.name}
+              {isAdmin ? "Admin" : isPlayer ? userProfile.displayName || "Player" : currentTeamAccount?.name}
             </span>
             {/* Notifications */}
             <div className="ml-2">
