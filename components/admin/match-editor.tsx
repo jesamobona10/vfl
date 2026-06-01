@@ -60,9 +60,9 @@ export function MatchEditor() {
 
   const statusTone: Record<string, string> = {
     scheduled: "bg-surface-2 text-muted",
-    "in-progress": "bg-amber-100 text-amber-800",
-    live: "bg-emerald-100 text-emerald-800",
-    completed: "bg-slate-100 text-slate-700",
+    "in-progress": "bg-accent/10 text-accent",
+    live: "bg-brand/10 text-brand",
+    completed: "bg-muted/10 text-muted",
   };
 
   const toggleExpanded = (id: number) => {
@@ -118,7 +118,7 @@ export function MatchEditor() {
           >
             <div
               onClick={() => toggleExpanded(match.id)}
-              className="w-full grid grid-cols-[auto_1fr_auto] items-center gap-4 px-5 py-4 hover:bg-surface-2/50 transition-colors cursor-pointer"
+              className="w-full flex flex-col sm:grid sm:grid-cols-[auto_1fr_auto] items-start sm:items-center gap-3 sm:gap-4 px-5 py-4 hover:bg-surface-2/50 transition-colors cursor-pointer"
             >
               <div className="flex items-center gap-2">
                 {isOpen ? (
@@ -203,23 +203,23 @@ export function MatchEditor() {
                 </span>
                 <div className="flex flex-wrap gap-1 justify-end">
                   {issue && (
-                    <span className="rounded-full bg-rose-50 text-rose-700 px-2 py-1 text-[11px] font-medium flex items-center gap-1">
+                    <span className="rounded-full bg-danger/10 text-danger px-2 py-1 text-[11px] font-medium flex items-center gap-1">
                       <AlertCircle size={12} />
                       {issue}
                     </span>
                   )}
                   {match.manualEdited && (
-                    <span className="rounded-full bg-violet-50 text-violet-700 px-2 py-1 text-[11px] font-medium">
+                    <span className="rounded-full bg-accent/10 text-accent px-2 py-1 text-[11px] font-medium">
                       Manual
                     </span>
                   )}
                   {match.autoAdjusted && (
-                    <span className="rounded-full bg-sky-50 text-sky-700 px-2 py-1 text-[11px] font-medium">
+                    <span className="rounded-full bg-brand/10 text-brand px-2 py-1 text-[11px] font-medium">
                       Adjusted
                     </span>
                   )}
                   {locked && (
-                    <span className="rounded-full bg-slate-100 text-slate-700 px-2 py-1 text-[11px] font-medium">
+                    <span className="rounded-full bg-muted/10 text-muted px-2 py-1 text-[11px] font-medium">
                       Locked
                     </span>
                   )}
@@ -229,7 +229,7 @@ export function MatchEditor() {
 
             {isOpen && (
               <div className="border-t border-line px-5 py-4 space-y-4">
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
                   <div>
                     <label className="block text-xs text-muted mb-1">
                       Home Team
