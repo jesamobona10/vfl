@@ -15,12 +15,19 @@ export function exportAsJSON(data: unknown, filename: string) {
 
 export async function exportAsPNG(
   element: HTMLElement,
-  filename: string
+  filename: string,
+  width = 390
 ) {
   const canvas = await html2canvas(element, {
     scale: 2,
     useCORS: true,
     backgroundColor: "#ffffff",
+    windowWidth: width,
+    onclone: (doc) => {
+      const style = doc.createElement("style");
+      style.textContent = `[class*="max-w-"] { max-width: 100% !important; width: 100% !important; }`;
+      doc.head.appendChild(style);
+    },
   });
   const blob = await new Promise<Blob | null>((resolve) =>
     canvas.toBlob(resolve, "image/png")
