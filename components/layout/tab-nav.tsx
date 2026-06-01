@@ -12,12 +12,14 @@ import {
   Shield,
   BarChart3,
   Radio,
+  Swords,
 } from "lucide-react";
 
 const tabs = [
   { href: "/", label: "Dashboard", icon: LayoutDashboard },
   { href: "/live", label: "Live", icon: Radio },
   { href: "/fixtures", label: "Fixtures", icon: Calendar },
+  { href: "/knockout", label: "Knockout", icon: Swords },
   { href: "/standings", label: "Standings", icon: Trophy },
   { href: "/teams", label: "Teams", icon: Users },
   { href: "/players", label: "Players", icon: UserCog },

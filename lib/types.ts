@@ -153,3 +153,35 @@ export interface NewMatchInput {
   time?: string;
   venue?: string;
 }
+
+export type CupRound = "playoff" | "quarter" | "semi" | "final";
+export type CompletedVia = "regular" | "extra_time" | "penalties";
+
+export interface CupMatch {
+  id: number;
+  round: CupRound;
+  matchIndex: number;
+  homeId: number | null;
+  awayId: number | null;
+  homeFromMatchId?: number;
+  awayFromMatchId?: number;
+  homeScore: number | null;
+  awayScore: number | null;
+  homeETScore: number | null;
+  awayETScore: number | null;
+  homePenScore: number | null;
+  awayPenScore: number | null;
+  status: "scheduled" | "completed";
+  winnerId: number | null;
+  completedVia: CompletedVia | null;
+  date: string;
+  time: string;
+  venue: string;
+}
+
+export interface CupState {
+  matches: CupMatch[];
+  champion: number | null;
+  playoffsGenerated: boolean;
+  bracketGenerated: boolean;
+}

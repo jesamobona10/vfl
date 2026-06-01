@@ -1,0 +1,1138 @@
+<!DOCTYPE html><html><head>
+<meta charset="utf-8">
+<style>
+  @page { size: A4; margin: 20mm 15mm; }
+  body { font-family: 'Segoe UI', Arial, sans-serif; font-size: 10pt; color: #222; line-height: 1.5; max-width: 800px; margin: 0 auto; padding: 20px; }
+  h1 { font-size: 22pt; color: #0d0d1a; border-bottom: 2px solid #0d0d1a; padding-bottom: 6px; margin-top: 30px; page-break-before: always; }
+  h1:first-of-type { page-break-before: avoid; }
+  h2 { font-size: 16pt; color: #1a1a2e; border-bottom: 1px solid #ccc; padding-bottom: 4px; margin-top: 24px; }
+  h3 { font-size: 13pt; color: #1a1a2e; margin-top: 20px; }
+  h4 { font-size: 11pt; color: #333; margin-top: 16px; }
+  h5 { font-size: 10pt; color: #444; margin-top: 12px; }
+  h6 { font-size: 9pt; color: #555; margin-top: 10px; }
+  p { margin: 4px 0; }
+  ul, ol { margin: 4px 0; padding-left: 22px; }
+  li { margin: 1px 0; }
+  code { background: #f4f4f4; padding: 1px 4px; border-radius: 3px; font-size: 9pt; }
+  pre { background: #f8f8f8; border: 1px solid #ddd; border-radius: 4px; padding: 10px; font-size: 8pt; overflow-x: auto; margin: 6px 0; white-space: pre-wrap; }
+  table { border-collapse: collapse; width: 100%; margin: 8px 0; font-size: 9pt; page-break-inside: avoid; }
+  th, td { border: 1px solid #ccc; padding: 4px 8px; text-align: left; }
+  th { background: #f0f0f0; font-weight: 600; }
+  tr:nth-child(even) td { background: #fafafa; }
+  strong { font-weight: 600; }
+  em { font-style: italic; }
+  hr { border: none; border-top: 1px solid #ddd; margin: 16px 0; }
+  blockquote { border-left: 3px solid #ccc; margin: 6px 0; padding: 4px 12px; color: #555; }
+  .title-page { text-align: center; padding-top: 140px; page-break-after: always; }
+  .title-page h1 { font-size: 28pt; border: none; page-break-before: avoid; margin-top: 0; }
+  .title-page p { font-size: 12pt; color: #666; margin-top: 8px; }
+  .title-page .sub { font-size: 14pt; color: #444; }
+  .title-page .tech { font-size: 10pt; color: #999; margin-top: 40px; }
+  .title-page .date { font-size: 9pt; color: #aaa; margin-top: 20px; }
+  @media print { body { padding: 0; } .title-page { padding-top: 100px; } }
+</style>
+</head><body>
+<div class="title-page">
+  <h1>VUNA Football League</h1>
+  <p class="sub">Management System</p>
+  <p class="tech">Next.js 14 · Zustand · Supabase · Tailwind CSS</p>
+  <p class="date">Generated: May 28, 2026</p>
+</div>
+<h1>VUNA Football League — Management System</h1>
+
+<p>> <strong>Version:</strong> 1.0.0</p>
+<p>> <strong>Framework:</strong> Next.js 14.1.0 (App Router)</p>
+<p>> <strong>State Management:</strong> Zustand 4.5 with <code>persist</code> middleware</p>
+<p>> <strong>Database:</strong> Supabase (PostgreSQL)</p>
+<p>> <strong>Auth:</strong> Supabase Auth (cookie-based SSR sessions)</p>
+<p>> <strong>Styling:</strong> Tailwind CSS</p>
+<p>> <strong>Deployment:</strong> Vercel</p>
+
+<hr>
+
+<h2>Table of Contents</h2>
+
+<ol>
+<li><a href="#1-project-overview">Project Overview</a></li>
+<li><a href="#2-architecture--data-flow">Architecture & Data Flow</a></li>
+<li><a href="#3-authentication-system">Authentication System</a></li>
+<li><a href="#4-route-map">Route Map</a></li>
+<li><a href="#5-page-by-page-documentation">Page-by-Page Documentation</a></li>
+</ol>
+<ul>
+<li>5.1 Login (<code>/auth/login</code>)</li>
+<li>5.2 Dashboard (<code>/</code>)</li>
+<li>5.3 Live Scores (<code>/live</code>)</li>
+<li>5.4 Fixtures (<code>/fixtures</code>)</li>
+<li>5.5 Standings (<code>/standings</code>)</li>
+<li>5.6 Teams (<code>/teams</code>)</li>
+<li>5.7 Players (<code>/players</code>)</li>
+<li>5.8 Admin Panel (<code>/admin</code>)</li>
+<li>5.9 Reports (<code>/reports</code>)</li>
+<li>5.10 Setup (<code>/auth/setup</code>)</li>
+</ul>
+<ol>
+<li><a href="#6-component-catalog">Component Catalog</a></li>
+<li><a href="#7-api-reference">API Reference</a></li>
+<li><a href="#8-database-schema">Database Schema</a></li>
+<li><a href="#9-state-management">State Management</a></li>
+<li><a href="#10-key-libraries--utilities">Key Libraries & Utilities</a></li>
+</ol>
+
+<hr>
+
+<h2>1. Project Overview</h2>
+
+<p>The <strong>VUNA Football League Management System</strong> is a full-featured web application for managing football league operations. It supports three user roles with different access levels:</p>
+
+<table>
+<thead><tr><th></th><th>Role</th><th>Login Method</th><th>Scope</th><th></th></tr></thead>
+<tbody>
+<tr><td></td><td><strong>Super Admin</strong></td><td>Email + Password (Supabase Auth)</td><td>Full CRUD — manage teams, players, fixtures, standings, accounts</td><td></td></tr>
+<tr><td></td><td><strong>Team Account</strong></td><td>Username + Password (auto-generated email <code>team_teamname-001@vfl.local</code>)</td><td>View own team's data, generate player credentials</td><td></td></tr>
+<tr><td></td><td><strong>Player Account</strong></td><td>Username + Password (auto-generated email <code>player_username@vfl.local</code>)</td><td>View personal dashboard, stats, match history, leaderboards</td><td></td></tr>
+</tbody></table>
+
+<p><strong>Key UI Features:</strong></p>
+<ul>
+<li>Global search across teams, players, and fixtures</li>
+<li>AM/PM time input component</li>
+<li>Public live scores page (no login required)</li>
+<li>Team logo upload and display</li>
+<li>Player performance charts and achievement badges</li>
+<li>Fixture generation with round-robin algorithm</li>
+<li>Lineup builder with formation visualization</li>
+<li>Team of the Round computation</li>
+<li>Data import/export (JSON/CSV/PDF/PNG)</li>
+</ul>
+
+<hr>
+
+<h2>2. Architecture & Data Flow</h2>
+
+<pre><code>┌─────────────────────────────────────────────────────────────┐
+│                       Browser (Client)                       │
+│  ┌─────────────────────────────────────────────────────────┐│
+│  │              Zustand Store (vfl-app-state)              ││
+│  │  ┌──────────┐  ┌──────────┐  ┌──────────┐             ││
+│  │  │  Teams   │  │ Players  │  │ Fixtures │  ← persisted ││
+│  │  └──────────┘  └──────────┘  └──────────┘  localStorage││
+│  │  ┌──────────┐  ┌──────────┐                            ││
+│  │  │   Auth   │  │  Session │  ← NOT persisted          ││
+│  │  └──────────┘  └──────────┘                            ││
+│  └─────────────────────────────────────────────────────────┘│
+│                           │                                  │
+│          ┌────────────────┼────────────────────┐            │
+│          ▼                ▼                    ▼            │
+│     Admin/Team      Player Dashboard     Public Pages       │
+│     (api/team/data) (api/player/data)    (api/public/live)  │
+└──────────────────────┬──────────────────────────────────────┘
+                       │ HTTP Fetch
+                       ▼
+┌──────────────────────────────────────────────────────────────┐
+│                     Next.js API Routes                        │
+│  ┌────────────┐  ┌────────────┐  ┌────────────────────────┐ │
+│  │ Auth APIs  │  │ Data APIs  │  │ Sync/Management APIs   │ │
+│  │ (login,    │  │ (team,     │  │ (sync, upload,        │ │
+│  │  logout,   │  │  player,   │  │  fixtures, players,   │ │
+│  │  session)  │  │  admin)    │  │  teams, transfers)    │ │
+│  └────────────┘  └────────────┘  └────────────────────────┘ │
+└──────────────────────┬───────────────────────────────────────┘
+                       │ Supabase Client
+                       ▼
+┌──────────────────────────────────────────────────────────────┐
+│                        Supabase                               │
+│  ┌────────────────────────────────────────────────────────┐  │
+│  │  PostgreSQL Database                                    │  │
+│  │  Tables: teams, players, fixtures, match_events,       │  │
+│  │  admin_users, team_accounts, player_profiles,          │  │
+│  │  credential_generation_logs, notifications, transfers, │  │
+│  │  team_lineups                                           │  │
+│  └────────────────────────────────────────────────────────┘  │
+│  ┌────────────────────────────────────────────────────────┐  │
+│  │  Auth (Supabase Auth)                                  │  │
+│  │  Users: admins (email/pwd), team accounts, players    │  │
+│  └────────────────────────────────────────────────────────┘  │
+│  ┌────────────────────────────────────────────────────────┐  │
+│  │  Storage (Team Logos)                                  │  │
+│  └────────────────────────────────────────────────────────┘  │
+└──────────────────────────────────────────────────────────────┘
+</code></pre>
+
+<h3>Data Flow by Role</h3>
+
+<p><strong>Admin Flow:</strong></p>
+<ol>
+<li>Admin manages data locally in Zustand (persisted to localStorage)</li>
+<li>Manually syncs to Supabase via "Sync to DB" buttons (<code>/api/sync/*</code>)</li>
+<li>Fetches from Supabase on login via <code>/api/admin/data</code></li>
+</ol>
+
+<p><strong>Team Account Flow:</strong></p>
+<ol>
+<li>On login, fetches data from Supabase via <code>/api/team/data</code></li>
+<li>Receives own team's players, all fixtures, all teams for standings</li>
+<li>Teams/Reports tabs hidden — cannot manage these entities</li>
+</ol>
+
+<p><strong>Player Account Flow:</strong></p>
+<ol>
+<li>On login, fetches data from Supabase via <code>/api/player/data</code></li>
+<li>Receives own profile, team info, team fixtures, all fixtures, match events, all players, standings</li>
+<li>Read-only — no edit/delete/add buttons visible</li>
+<li>Dashboard shows personal stats, match history, performance chart, badges, leaderboards</li>
+</ol>
+
+<hr>
+
+<h2>3. Authentication System</h2>
+
+<h3>Three Auth Modes</h3>
+
+<table>
+<thead><tr><th></th><th>Mode</th><th>DB Table</th><th>Auth Provider</th><th>Login Route</th><th>Session Key</th><th></th></tr></thead>
+<tbody>
+<tr><td></td><td><strong>Admin</strong></td><td><code>admin_users</code></td><td>Supabase Auth (email/pwd)</td><td><code>POST /api/auth/admin-login</code></td><td>Supabase session cookie</td><td></td></tr>
+<tr><td></td><td><strong>Team Account</strong></td><td><code>team_accounts</code></td><td>Supabase Auth (auto-generated email)</td><td><code>POST /api/auth/team-login</code></td><td>Supabase session cookie</td><td></td></tr>
+<tr><td></td><td><strong>Player</strong></td><td><code>player_profiles</code></td><td>Supabase Auth (auto-generated email)</td><td><code>POST /api/auth/player-login</code></td><td>Supabase session cookie</td><td></td></tr>
+</tbody></table>
+
+<h3>Authentication Flow</h3>
+
+<ol>
+<li>User submits credentials via <code><LoginForm></code></li>
+<li>Zustand login action POSTs to appropriate endpoint</li>
+<li>Endpoint validates credentials against Supabase Auth</li>
+<li>On success, session cookie is set (HTTP-only, server-managed)</li>
+<li>Zustand store updates: <code>isAdmin</code>, <code>userProfile</code>, <code>currentTeamAccount</code></li>
+<li><code><AppShell></code> detects authentication change and renders the full app layout</li>
+<li>On subsequent requests, middleware validates the session and enforces role-based access</li>
+</ol>
+
+<h3>Middleware Security (<code>middleware.ts</code>)</h3>
+
+<p>The middleware runs on every server request and enforces:</p>
+
+<ul>
+<li><strong>Rate limiting</strong> — Separate limits for auth endpoints (10 req/min), public API (120 req/min), and other API (80 req/min)</li>
+<li><strong>Session validation</strong> — Checks Supabase session on every request</li>
+<li><strong>Role-based page access</strong>:</li>
+<li>Players may only visit: <code>/</code>, <code>/fixtures</code>, <code>/standings</code>, <code>/players</code></li>
+<li>Admins may visit all pages, including <code>/admin</code> and <code>/admin/*</code></li>
+<li>Team accounts have no middleware restriction (limited by tab visibility instead)</li>
+<li><strong>API route protection</strong> — Blocks unauthorized access to non-public API routes</li>
+<li><strong>Redirect logic</strong> — Players accessing restricted pages get redirected to <code>/fixtures</code></li>
+<li><strong>Security headers</strong> — X-Content-Type-Options, X-Frame-Options, Referrer-Policy, Permissions-Policy, HSTS (production)</li>
+</ul>
+
+<h3>Credential Generation</h3>
+
+<p>Player accounts are created via the credential generation system:</p>
+
+<ul>
+<li><strong>Username format:</strong> <code>PLAYERNAME_TEAMNAME_001</code></li>
+<li><strong>Password format:</strong> <code>PLAYERNAME_001</code></li>
+<li><strong>Email format:</strong> <code>player_username@vfl.local</code></li>
+<li>Implementation: <code>lib/player-credentials.ts::generatePlayerCredentialsForScope()</code></li>
+<li>Uses Supabase Admin API to create auth users with auto-confirmed emails</li>
+<li>Creates corresponding row in <code>player_profiles</code> table</li>
+</ul>
+
+<hr>
+
+<h2>4. Route Map</h2>
+
+<h3>Pages</h3>
+
+<table>
+<thead><tr><th></th><th>Route</th><th>Page Component</th><th>Visibility</th><th>Tab in Nav</th><th></th></tr></thead>
+<tbody>
+<tr><td></td><td><code>/</code></td><td>DashboardPage</td><td>Admin, Team, Player</td><td>Dashboard</td><td></td></tr>
+<tr><td></td><td><code>/live</code></td><td>LiveFeed (on page)</td><td><strong>Public</strong></td><td>Live</td><td></td></tr>
+<tr><td></td><td><code>/fixtures</code></td><td>FixtureList</td><td>All authenticated</td><td>Fixtures</td><td></td></tr>
+<tr><td></td><td><code>/standings</code></td><td>StandingsTable</td><td>All authenticated</td><td>Standings</td><td></td></tr>
+<tr><td></td><td><code>/teams</code></td><td>TeamForm</td><td><strong>Admin</strong> (hidden from Team/Player)</td><td>Teams</td><td></td></tr>
+<tr><td></td><td><code>/players</code></td><td>PlayerList + PlayerStats + TeamOfRound + LineupBuilder</td><td><strong>Admin</strong> (hidden from Team/Player)</td><td>Players</td><td></td></tr>
+<tr><td></td><td><code>/admin</code></td><td>AdminPanel</td><td><strong>Admin only</strong> (adminOnly tab)</td><td>Admin</td><td></td></tr>
+<tr><td></td><td><code>/admin/transfers</code></td><td>Transfers page</td><td>Admin</td><td>Link from Admin</td><td></td></tr>
+<tr><td></td><td><code>/reports</code></td><td>ReportView</td><td><strong>Admin</strong> (hidden from Team/Player)</td><td>Reports</td><td></td></tr>
+<tr><td></td><td><code>/auth/login</code></td><td>LoginForm</td><td>Unauthenticated only</td><td>—</td><td></td></tr>
+<tr><td></td><td><code>/auth/setup</code></td><td>First-time admin setup</td><td>Unauthenticated only</td><td>—</td><td></td></tr>
+</tbody></table>
+
+<h3>API Routes</h3>
+
+<table>
+<thead><tr><th></th><th>Route</th><th>Methods</th><th>Auth</th><th>Purpose</th><th></th></tr></thead>
+<tbody>
+<tr><td></td><td><code>/api/auth/admin-login</code></td><td>POST</td><td>Public</td><td>Admin email/password login</td><td></td></tr>
+<tr><td></td><td><code>/api/auth/admin-signup</code></td><td>POST</td><td>Public</td><td>Admin registration</td><td></td></tr>
+<tr><td></td><td><code>/api/auth/team-login</code></td><td>POST</td><td>Public</td><td>Team account username login</td><td></td></tr>
+<tr><td></td><td><code>/api/auth/player-login</code></td><td>POST</td><td>Public</td><td>Player username login</td><td></td></tr>
+<tr><td></td><td><code>/api/auth/player-register</code></td><td>POST</td><td>Public</td><td>Player self-registration</td><td></td></tr>
+<tr><td></td><td><code>/api/auth/logout</code></td><td>POST</td><td>Authenticated</td><td>Clear session</td><td></td></tr>
+<tr><td></td><td><code>/api/auth/session</code></td><td>GET</td><td>Public</td><td>Returns session info or <code>{authenticated: false}</code></td><td></td></tr>
+<tr><td></td><td><code>/api/admin/data</code></td><td>GET</td><td>Admin</td><td>Fetch all teams, players, fixtures</td><td></td></tr>
+<tr><td></td><td><code>/api/admin/create-team-account</code></td><td>POST</td><td>Admin</td><td>Create a new team account</td><td></td></tr>
+<tr><td></td><td><code>/api/admin/team-accounts</code></td><td>GET</td><td>Admin</td><td>List all team accounts</td><td></td></tr>
+<tr><td></td><td><code>/api/admin/generate-player-credentials</code></td><td>POST</td><td>Admin</td><td>Generate player login credentials</td><td></td></tr>
+<tr><td></td><td><code>/api/team/data</code></td><td>GET</td><td>Team Account</td><td>Fetch team-scoped data</td><td></td></tr>
+<tr><td></td><td><code>/api/team/generate-player-credentials</code></td><td>POST</td><td>Team Account</td><td>Generate credentials for own team</td><td></td></tr>
+<tr><td></td><td><code>/api/player/data</code></td><td>GET</td><td>Player</td><td>Fetch player dashboard data</td><td></td></tr>
+<tr><td></td><td><code>/api/fixtures</code></td><td>GET</td><td>Authenticated</td><td>List all fixtures</td><td></td></tr>
+<tr><td></td><td><code>/api/fixtures/:id</code></td><td>GET/PUT</td><td>Authenticated</td><td>Single fixture read/update</td><td></td></tr>
+<tr><td></td><td><code>/api/fixtures/generate</code></td><td>POST</td><td>Admin</td><td>Generate round-robin fixtures</td><td></td></tr>
+<tr><td></td><td><code>/api/teams</code></td><td>GET/POST</td><td>Authenticated (admin for POST)</td><td>List/create teams</td><td></td></tr>
+<tr><td></td><td><code>/api/teams/:id</code></td><td>GET/PUT/DELETE</td><td>Authenticated</td><td>Single team CRUD</td><td></td></tr>
+<tr><td></td><td><code>/api/teams/:id/lineups</code></td><td>GET/POST</td><td>Authenticated</td><td>List/create lineups</td><td></td></tr>
+<tr><td></td><td><code>/api/teams/:id/lineups/:lineupId</code></td><td>GET/PUT/DELETE</td><td>Authenticated</td><td>Single lineup CRUD</td><td></td></tr>
+<tr><td></td><td><code>/api/players</code></td><td>GET/POST</td><td>Authenticated (admin for POST)</td><td>List/create players</td><td></td></tr>
+<tr><td></td><td><code>/api/players/:id</code></td><td>GET/PUT/DELETE</td><td>Authenticated</td><td>Single player CRUD</td><td></td></tr>
+<tr><td></td><td><code>/api/notifications</code></td><td>GET/PATCH</td><td>Authenticated</td><td>List/mark-read notifications</td><td></td></tr>
+<tr><td></td><td><code>/api/public/live</code></td><td>GET</td><td><strong>Public</strong></td><td>Live scores feed</td><td></td></tr>
+<tr><td></td><td><code>/api/transfers</code></td><td>GET</td><td>Admin</td><td>Transfer history</td><td></td></tr>
+<tr><td></td><td><code>/api/sync/teams</code></td><td>POST</td><td>Admin</td><td>Sync teams to Supabase</td><td></td></tr>
+<tr><td></td><td><code>/api/sync/players</code></td><td>POST</td><td>Admin</td><td>Sync players to Supabase</td><td></td></tr>
+<tr><td></td><td><code>/api/sync/fixtures</code></td><td>POST</td><td>Admin</td><td>Sync fixtures to Supabase</td><td></td></tr>
+<tr><td></td><td><code>/api/upload/logo</code></td><td>POST</td><td>Authenticated</td><td>Upload team logo</td><td></td></tr>
+<tr><td></td><td><code>/api/upload/logo/check</code></td><td>GET</td><td>Authenticated</td><td>Check storage bucket</td><td></td></tr>
+</tbody></table>
+
+<hr>
+
+<h2>5. Page-by-Page Documentation</h2>
+
+<h3>5.1 Login (<code>/auth/login</code>)</h3>
+
+<p><strong>Renders:</strong> <code><LoginForm></code></p>
+<p><strong>Visibility:</strong> Unauthenticated users only</p>
+
+<p>The login form has three modes switchable via pill tabs:</p>
+
+<ul>
+<li><strong>Team mode:</strong> Username input + Password input + Sign In button</li>
+<li><strong>Player mode:</strong> Username input (auto-uppercased) + Password input + Sign In as Player button</li>
+<li><strong>Admin mode:</strong> Email input + Password input + Sign In as Admin button</li>
+</ul>
+
+<p>On successful login, the user is redirected to <code>/</code>. Error messages display in a red alert box.</p>
+
+<p>The login form is also rendered inline by <code><AppShell></code> when a user accesses any protected page without authentication.</p>
+
+<h3>5.2 Dashboard (<code>/</code>)</h3>
+
+<p><strong>Visibility:</strong> Admin, Team Account, Player Account</p>
+
+<h4>Admin/Team Account View</h4>
+
+<ol>
+<li><strong>Heading</strong> — "Season Control" (admin) or "Team Dashboard" + team name (team account)</li>
+<li><strong>Generate Fixtures button</strong> (admin) / <strong>Refresh button</strong> (team account)</li>
+<li><strong>Team welcome card</strong> (team only) — Team logo, name, rating</li>
+<li><strong>GeneratePlayerCredentials</strong> (team only) — Card to generate login credentials for team players</li>
+<li><strong><code><MetricCards></code></strong> — 4-stat grid:</li>
+</ol>
+<ul>
+<li>Admin: Teams count, Goals, Matches, Players</li>
+<li>Team: Team Players, Team Goals, Matches Played, Wins</li>
+</ul>
+<ol>
+<li><strong><code><LeagueStats></code></strong> (admin only) — Goals Scored, Goals Per Match, Biggest Win, Highest Round</li>
+<li><strong>Two-column layout:</strong></li>
+</ol>
+<ul>
+<li><code><UpcomingMatches></code> — Next round's matches with status badges</li>
+<li><code><TopFiveStandings></code> — Top 5 teams by points with logos, GD, rating</li>
+</ul>
+
+<h4>Player View</h4>
+
+<ol>
+<li><strong>Heading</strong> — "Player Dashboard" + player name</li>
+<li><strong><code><PlayerHero></code></strong> — Profile card: photo (or placeholder), jersey number badge, name, captain badge, position, team name, rating badge, team logo</li>
+<li><strong><code><PlayerStatsSummary></code></strong> — Single card with 6 stat groups:</li>
+</ol>
+<ul>
+<li><strong>Attacking:</strong> Goals, Assists, Own Goals</li>
+<li><strong>Discipline:</strong> Yellow Cards, Red Cards</li>
+<li><strong>Goalkeeping:</strong> Saves, Penalty Saves, Clean Sheets, Goals Conceded</li>
+<li><strong>Defensive:</strong> Tackles, Interceptions, Blocks, Aerial Duels</li>
+<li><strong>Performance:</strong> Avg Rating, MOTM, Match Wins, Bonus 5 Saves</li>
+<li><strong>Miscellaneous:</strong> Errors Leading to Goal, Penalties Conceded</li>
+</ul>
+<ol>
+<li><strong>Two-column layout:</strong></li>
+</ol>
+<ul>
+<li><code><PlayerFormGuide></code> — Last 5 match results as W/L circles with rating color dots</li>
+<li><strong>Upcoming Matches</strong> card — Next 3 scheduled matches</li>
+</ul>
+<ol>
+<li><strong><code><PlayerPerformanceChart></code></strong> — SVG line chart of match ratings across rounds (0-10 scale)</li>
+<li><strong><code><PlayerBadges></code></strong> — Achievement badges:</li>
+</ol>
+<ul>
+<li>First Goal (1+), Goal Scorer (5+), Sharp Shooter (10+), Playmaker (1+), Creator (5+), Star Player (1+ MOTM), Superstar (5+), Wall (1+ clean sheet), Safe Hands (5+ saves)</li>
+</ul>
+<ol>
+<li><strong><code><PlayerLeaderboards></code></strong> — Three top-5 tables: Top Scorers, Most Assists, Highest Rating (with rank medals, team logo, name, value, highlights current player)</li>
+<li><strong><code><PlayerMatchHistory></code></strong> — Expandable completed matches: score, W/L badge, rating badge, events. Expanded view shows date/time/venue and player-specific events</li>
+</ol>
+
+<h3>5.3 Live Scores (<code>/live</code>)</h3>
+
+<p><strong>Visibility:</strong> Public (no login required)</p>
+
+<p><strong>Renders:</strong> <code><LiveFeed></code></p>
+<p><strong>Data source:</strong> <code>GET /api/public/live</code> (uses anon key Supabase client)</p>
+
+<ul>
+<li>Auto-refreshes every 30 seconds</li>
+<li>Shows live/in-progress matches first, then today's upcoming matches</li>
+<li>Team crests displayed alongside team names</li>
+<li>No auth wrapper — <code><AppShell></code> bypasses login for <code>/live</code></li>
+</ul>
+
+<h3>5.4 Fixtures (<code>/fixtures</code>)</h3>
+
+<p><strong>Visibility:</strong> All authenticated users</p>
+
+<p><strong>Renders:</strong> <code><FixtureList></code></p>
+
+<ol>
+<li><strong>Header</strong> — 4 summary stat cards: Rounds count, Total Matches, Live/In-progress, Completed</li>
+<li><strong><code><FixtureFilters></code></strong> (admin only) — Round/Team/Status dropdown filters + Export menu (JSON/PNG/PDF)</li>
+<li><strong><code><FixtureCreator></code></strong> (admin only) — Expandable form to add a fixture:</li>
+</ol>
+<ul>
+<li>Home team dropdown, Away team dropdown</li>
+<li>Round number, Date input, Time (via <code><TimeInput></code> component with 24h/12h toggle), Venue</li>
+</ul>
+<ol>
+<li><strong>List of <code><FixtureRoundPanel></code> sections</strong>, each containing:</li>
+</ol>
+<ul>
+<li>"Round N" header with bye indicator (if a team has a bye)</li>
+<li><code><FixtureCard></code> items: home/away names, scores (if played), status badge, date/time/venue</li>
+<li>Admin can drag-and-drop to reorder matches</li>
+</ul>
+
+<p>Fixtures are sorted by date then time within each round. Empty dates sort last.</p>
+
+<h3>5.5 Standings (<code>/standings</code>)</h3>
+
+<p><strong>Visibility:</strong> All authenticated users</p>
+
+<p><strong>Renders:</strong> <code><StandingsTable></code></p>
+
+<table>
+<thead><tr><th></th><th>Column</th><th>Content</th><th></th></tr></thead>
+<tbody>
+<tr><td></td><td>#</td><td>Rank number</td><td></td></tr>
+<tr><td></td><td>Team</td><td>Team logo (20×20px circular) + Team name</td><td></td></tr>
+<tr><td></td><td>Rtg</td><td>Team rating</td><td></td></tr>
+<tr><td></td><td>P</td><td>Matches played</td><td></td></tr>
+<tr><td></td><td>W</td><td>Wins</td><td></td></tr>
+<tr><td></td><td>D</td><td>Draws</td><td></td></tr>
+<tr><td></td><td>L</td><td>Losses</td><td></td></tr>
+<tr><td></td><td>GF</td><td>Goals for</td><td></td></tr>
+<tr><td></td><td>GA</td><td>Goals against</td><td></td></tr>
+<tr><td></td><td>GD</td><td>Goal difference</td><td></td></tr>
+<tr><td></td><td>Pts</td><td>Points</td><td></td></tr>
+<tr><td></td><td>Form</td><td>Last 5 results (W/D/L colored indicators)</td><td></td></tr>
+</tbody></table>
+
+<p><strong>Features:</strong></p>
+<ul>
+<li>Download menu: JSON / PDF / PNG export</li>
+</ul>
+
+<h3>5.6 Teams (<code>/teams</code>)</h3>
+
+<p><strong>Visibility:</strong> Admin only (tab hidden from Team/Player accounts)</p>
+
+<p><strong>Renders:</strong> <code><TeamForm></code> + grid of <code><TeamCard></code> items</p>
+
+<ol>
+<li><strong>Add Team form</strong> — Team name input, Add button, validation</li>
+<li><strong>Action buttons</strong> — Reset names, Reset all</li>
+<li><strong>Grid of TeamCards</strong>, each showing:</li>
+</ol>
+<ul>
+<li>Logo upload (via <code><ImageUpload></code>)</li>
+<li>Editable team name</li>
+<li>Player count badge</li>
+<li>Editable rating (admin, inline edit)</li>
+<li>Delete button (admin)</li>
+<li>"View Team Details" modal:</li>
+<li>Overview stats: Rating, Player count, Y/R cards, Goals, Assists, Saves, Clean sheets, Avg player rating</li>
+<li>Mini pitch formation preview (GK / DEF / MID / ATT)</li>
+</ul>
+
+<h3>5.7 Players (<code>/players</code>)</h3>
+
+<p><strong>Visibility:</strong> Admin only (tab hidden from Team/Player accounts)</p>
+
+<p>Four sub-tabs:</p>
+
+<h4>Tab 1: Players List</h4>
+<ul>
+<li>Add Player button, CSV Import, Download CSV, Delete All</li>
+<li>Team/position filter dropdowns</li>
+<li>Grid of <code><PlayerCard></code>: name, number, position, team badge, rating, position-specific stats (GK: Saves/PS/CS/GC; DEF: T/INT/BLK/AD/G/A; MID: G/A/T/INT; ATT: G/A), captain crown icon, edit/delete buttons</li>
+<li><code><PlayerModal></code> for add/edit: name, team, position, jersey number, captain checkbox</li>
+</ul>
+
+<h4>Tab 2: Statistics</h4>
+<ul>
+<li>4 metric cards: Players count, Avg rating, Total goals, Teams count</li>
+<li>Leading performer section</li>
+<li>7 stat tables: Top Scorers, Top Assists, Yellow Cards, Red Cards, Saves (GK only), Tackles, Clean Sheets</li>
+<li>Download report button</li>
+</ul>
+
+<h4>Tab 3: Team of the Round</h4>
+<ul>
+<li>Round selector dropdown</li>
+<li>Formation selector (4-3-3, 4-4-2, 3-5-2)</li>
+<li>Computes best 11 based on match events with scoring algorithm</li>
+<li>Displays in formation rows (GK / DEF / MID / ATT)</li>
+<li>Download as image</li>
+</ul>
+
+<h4>Tab 4: Lineup Builder</h4>
+<ul>
+<li><strong>Lineup details:</strong> Team selector, Name, Formation, Active checkbox, Save/Delete</li>
+<li><strong>Saved lineups:</strong> Load/save from API</li>
+<li><strong>Formation builder:</strong> Per-slot player assignments filtered by position</li>
+<li><strong>Preview panel:</strong> Mini pitch visualization</li>
+<li>Supported formations: 4-3-3, 4-4-2, 3-5-2</li>
+</ul>
+
+<h3>5.8 Admin Panel (<code>/admin</code>)</h3>
+
+<p><strong>Visibility:</strong> Admin only (adminOnly tab, middleware blocks non-admin)</p>
+
+<p>Six sub-tabs:</p>
+
+<h4>Tab 1: Fixtures & Scores</h4>
+<ul>
+<li>Generate Fixtures button + Repair Fixtures button</li>
+<li>Status notices for generation/repair results</li>
+<li><strong><code><MatchEditor></code></strong> — Expandable list of all matches with:</li>
+<li>Home/Away score inputs</li>
+<li>Team selectors</li>
+<li>Status selector (scheduled/in-progress/completed)</li>
+<li>Date, Time (via <code><TimeInput></code>), Venue</li>
+<li>Status badges (Live, Completed)</li>
+<li>Issue flags</li>
+<li>Embedded <strong><code><EventLog></code></strong></li>
+</ul>
+
+<h4>Tab 2: Teams</h4>
+<ul>
+<li>Same as <code>/teams</code> page: <code><TeamForm></code> + <code><TeamCard></code> grid</li>
+</ul>
+
+<h4>Tab 3: Players</h4>
+<ul>
+<li>Add player form</li>
+<li><code><GeneratePlayerCredentials></code></li>
+<li>Team filter dropdown</li>
+<li>List of all players with edit/delete</li>
+</ul>
+
+<h4>Tab 4: Team Accounts</h4>
+<ul>
+<li>List of existing team accounts (username, team, role)</li>
+<li>Create form: Team selector, Password, Show/hide toggle</li>
+<li>Displays generated credentials after creation</li>
+</ul>
+
+<h4>Tab 5: Database</h4>
+<ul>
+<li>Sync Teams to Database button with status</li>
+<li>Sync Players to Database button with status</li>
+<li>Sync Fixtures to Database button with status</li>
+</ul>
+
+<h4>Tab 6: Import Data</h4>
+<ul>
+<li><strong>4-step wizard:</strong></li>
+</ul>
+<ol>
+<li><strong>Upload</strong> — File dropzone or paste JSON</li>
+<li><strong>Preview</strong> — Shows teams/matches/players counts + team name mapping</li>
+<li><strong>Confirm</strong> — Destructive warning, final confirm</li>
+<li><strong>Done</strong> — Summary + auto-sync to database</li>
+</ol>
+<ul>
+<li>Handles ID remapping during import</li>
+</ul>
+
+<h3>5.9 Reports (<code>/reports</code>)</h3>
+
+<p><strong>Visibility:</strong> Admin only (tab hidden from Team/Player)</p>
+
+<p><strong>Renders:</strong> <code><ReportView></code></p>
+
+<ul>
+<li>Printable text report combining fixture schedule + standings</li>
+<li>Plain text format suitable for printing or copying</li>
+</ul>
+
+<h3>5.10 Setup (<code>/auth/setup</code>)</h3>
+
+<p><strong>Visibility:</strong> Unauthenticated users (first time setup)</p>
+
+<ul>
+<li>First-time admin account creation form</li>
+<li>Creates the initial super admin in <code>admin_users</code> table</li>
+<li>Redirects to <code>/auth/login</code> after success (2-second delay)</li>
+</ul>
+
+<hr>
+
+<h2>6. Component Catalog</h2>
+
+<h3>Layout Components (<code>components/layout/</code>)</h3>
+
+<table>
+<thead><tr><th></th><th>Component</th><th>File</th><th>Purpose</th><th></th></tr></thead>
+<tbody>
+<tr><td></td><td><strong>AppShell</strong></td><td><code>app-shell.tsx</code></td><td>Root wrapper — handles auth gating, renders spinner/login form/layout</td><td></td></tr>
+<tr><td></td><td><strong>AppHeader</strong></td><td><code>app-header.tsx</code></td><td>Top bar: logo, title, search button, admin tools (export/import/reset), user info, notifications, logout</td><td></td></tr>
+<tr><td></td><td><strong>TabNav</strong></td><td><code>tab-nav.tsx</code></td><td>Horizontal role-filtered tab bar: Dashboard, Live, Fixtures, Standings, Teams, Players, Admin, Reports</td><td></td></tr>
+<tr><td></td><td><strong>LoginForm</strong></td><td><code>login-form.tsx</code></td><td>3-mode login form (Team/Player/Admin) with mode tabs</td><td></td></tr>
+</tbody></table>
+
+<h3>Dashboard Components (<code>components/dashboard/</code>)</h3>
+
+<table>
+<thead><tr><th></th><th>Component</th><th>File</th><th>Purpose</th><th>Visibility</th><th></th></tr></thead>
+<tbody>
+<tr><td></td><td><strong>MetricCards</strong></td><td><code>metric-cards.tsx</code></td><td>4-stat summary grid</td><td>All authenticated</td><td></td></tr>
+<tr><td></td><td><strong>LeagueStats</strong></td><td><code>league-stats.tsx</code></td><td>4 league-wide stats</td><td>Admin only</td><td></td></tr>
+<tr><td></td><td><strong>UpcomingMatches</strong></td><td><code>upcoming-matches.tsx</code></td><td>Next round matches list</td><td>All authenticated</td><td></td></tr>
+<tr><td></td><td><strong>TopFiveStandings</strong></td><td><code>top-five-standings.tsx</code></td><td>Top 5 teams table</td><td>All authenticated</td><td></td></tr>
+</tbody></table>
+
+<h3>Fixture Components (<code>components/fixtures/</code>)</h3>
+
+<table>
+<thead><tr><th></th><th>Component</th><th>File</th><th>Purpose</th><th></th></tr></thead>
+<tbody>
+<tr><td></td><td><strong>FixtureList</strong></td><td><code>fixture-list.tsx</code></td><td>Full fixtures page with filters, creator, round panels</td><td></td></tr>
+<tr><td></td><td><strong>FixtureRoundPanel</strong></td><td><code>fixture-round.tsx</code></td><td>Single round section with matches</td><td></td></tr>
+<tr><td></td><td><strong>FixtureCard</strong></td><td><code>fixture-card.tsx</code></td><td>Individual match display card</td><td></td></tr>
+<tr><td></td><td><strong>FixtureFilters</strong></td><td><code>fixture-filters.tsx</code></td><td>Round/Team/Status filters + Export</td><td></td></tr>
+<tr><td></td><td><strong>FixtureCreator</strong></td><td><code>fixture-creator.tsx</code></td><td>Add fixture form</td><td></td></tr>
+</tbody></table>
+
+<h3>Admin Components (<code>components/admin/</code>)</h3>
+
+<table>
+<thead><tr><th></th><th>Component</th><th>File</th><th>Purpose</th><th></th></tr></thead>
+<tbody>
+<tr><td></td><td><strong>AdminPanel</strong></td><td><code>admin-panel.tsx</code></td><td>6-tab admin panel (Fixtures, Teams, Players, Accounts, Database, Import)</td><td></td></tr>
+<tr><td></td><td><strong>MatchEditor</strong></td><td><code>match-editor.tsx</code></td><td>Full match editing with scores, status, date/time, embedded EventLog</td><td></td></tr>
+<tr><td></td><td><strong>EventLog</strong></td><td><code>event-log.tsx</code></td><td>Match events CRUD (17 event types)</td><td></td></tr>
+<tr><td></td><td><strong>DataImporter</strong></td><td><code>data-importer.tsx</code></td><td>4-step JSON import wizard</td><td></td></tr>
+</tbody></table>
+
+<h3>Player Components (<code>components/player/</code>)</h3>
+
+<table>
+<thead><tr><th></th><th>Component</th><th>File</th><th>Purpose</th><th></th></tr></thead>
+<tbody>
+<tr><td></td><td><strong>PlayerDashboard</strong></td><td><code>player-dashboard.tsx</code></td><td>Player dashboard orchestrator</td><td></td></tr>
+<tr><td></td><td><strong>PlayerHero</strong></td><td><code>player-hero.tsx</code></td><td>Profile card with photo, jersey, name, rating, team</td><td></td></tr>
+<tr><td></td><td><strong>PlayerStatsSummary</strong></td><td><code>player-stats-summary.tsx</code></td><td>Comprehensive single-card stats with 6 groups</td><td></td></tr>
+<tr><td></td><td><strong>PlayerFormGuide</strong></td><td><code>player-form-guide.tsx</code></td><td>Last 5 match W/L circles</td><td></td></tr>
+<tr><td></td><td><strong>PlayerPerformanceChart</strong></td><td><code>player-performance-chart.tsx</code></td><td>SVG rating line chart</td><td></td></tr>
+<tr><td></td><td><strong>PlayerMatchHistory</strong></td><td><code>player-match-history.tsx</code></td><td>Expandable match list</td><td></td></tr>
+<tr><td></td><td><strong>PlayerBadges</strong></td><td><code>player-badges.tsx</code></td><td>Achievement badges with progress</td><td></td></tr>
+<tr><td></td><td><strong>PlayerLeaderboards</strong></td><td><code>player-leaderboards.tsx</code></td><td>Top 5 scorers/assists/rating tables</td><td></td></tr>
+</tbody></table>
+
+<h3>Standings Components (<code>components/standings/</code>)</h3>
+
+<table>
+<thead><tr><th></th><th>Component</th><th>File</th><th>Purpose</th><th></th></tr></thead>
+<tbody>
+<tr><td></td><td><strong>StandingsTable</strong></td><td><code>standings-table.tsx</code></td><td>Full league table with form guide</td><td></td></tr>
+</tbody></table>
+
+<h3>Team Components (<code>components/teams/</code>)</h3>
+
+<table>
+<thead><tr><th></th><th>Component</th><th>File</th><th>Purpose</th><th></th></tr></thead>
+<tbody>
+<tr><td></td><td><strong>TeamForm</strong></td><td><code>team-form.tsx</code></td><td>Team management form + card grid</td><td></td></tr>
+<tr><td></td><td><strong>TeamCard</strong></td><td><code>team-card.tsx</code></td><td>Individual team display with details modal</td><td></td></tr>
+</tbody></table>
+
+<h3>Player Management Components (<code>components/players/</code>)</h3>
+
+<table>
+<thead><tr><th></th><th>Component</th><th>File</th><th>Purpose</th><th></th></tr></thead>
+<tbody>
+<tr><td></td><td><strong>PlayerList</strong></td><td><code>player-list.tsx</code></td><td>Player grid with filters, add, CRUD</td><td></td></tr>
+<tr><td></td><td><strong>PlayerCard</strong></td><td><code>player-card.tsx</code></td><td>Individual player display card</td><td></td></tr>
+<tr><td></td><td><strong>PlayerModal</strong></td><td><code>player-modal.tsx</code></td><td>Add/edit player form modal</td><td></td></tr>
+<tr><td></td><td><strong>PlayerStats</strong></td><td><code>player-stats.tsx</code></td><td>Statistics tables tab</td><td></td></tr>
+<tr><td></td><td><strong>TeamOfRound</strong></td><td><code>team-of-round.tsx</code></td><td>Best 11 formation display</td><td></td></tr>
+<tr><td></td><td><strong>LineupBuilder</strong></td><td><code>lineup-builder.tsx</code></td><td>Full lineup creation tool</td><td></td></tr>
+<tr><td></td><td><strong>GeneratePlayerCredentials</strong></td><td><code>generate-player-credentials.tsx</code></td><td>Credential generation card</td><td></td></tr>
+</tbody></table>
+
+<h3>Shared Components (<code>components/shared/</code>)</h3>
+
+<table>
+<thead><tr><th></th><th>Component</th><th>File</th><th>Purpose</th><th></th></tr></thead>
+<tbody>
+<tr><td></td><td><strong>TimeInput</strong></td><td><code>time-input.tsx</code></td><td>Time input with 24h/12h toggle</td><td></td></tr>
+<tr><td></td><td><strong>SearchModal</strong></td><td><code>search/search-modal.tsx</code></td><td>Global search overlay</td><td></td></tr>
+<tr><td></td><td><strong>Notifications</strong></td><td><code>notifications/notifications.tsx</code></td><td>Notification bell with dropdown</td><td></td></tr>
+</tbody></table>
+
+<hr>
+
+<h2>7. API Reference</h2>
+
+<h3>Authentication Endpoints</h3>
+
+<h4><code>POST /api/auth/admin-login</code></h4>
+<ul>
+<li><strong>Body:</strong> <code>{ email: string, password: string }</code></li>
+<li><strong>Response:</strong> <code>{ user: { id, email }, session }</code> or <code>{ error: string }</code></li>
+<li><strong>Rate limit:</strong> 10 requests/minute</li>
+</ul>
+
+<h4><code>POST /api/auth/team-login</code></h4>
+<ul>
+<li><strong>Body:</strong> <code>{ username: string, password: string }</code></li>
+<li><strong>Response:</strong> <code>{ user: { id, teamId, displayName, username }, session }</code> or <code>{ error: string }</code></li>
+</ul>
+
+<h4><code>POST /api/auth/player-login</code></h4>
+<ul>
+<li><strong>Body:</strong> <code>{ username: string, password: string }</code></li>
+<li><strong>Response:</strong> <code>{ user: { id, playerId, displayName, username }, session }</code> or <code>{ error: string }</code></li>
+</ul>
+
+<h4><code>GET /api/auth/session</code></h4>
+<ul>
+<li><strong>Returns:</strong> <code>{ authenticated: false }</code> or <code>{ authenticated: true, role: "super_admin"|"team_account"|"player", profile: {...} }</code></li>
+<li>Always returns 200 (no 401 for unauthenticated users)</li>
+</ul>
+
+<h3>Data Endpoints</h3>
+
+<h4><code>GET /api/admin/data</code></h4>
+<ul>
+<li><strong>Auth:</strong> Admin session required</li>
+<li><strong>Returns:</strong> <code>{ teams: Team[], players: Player[], fixtures: FixtureRound[] }</code></li>
+</ul>
+
+<h4><code>GET /api/team/data</code></h4>
+<ul>
+<li><strong>Auth:</strong> Team account session required</li>
+<li><strong>Returns:</strong> <code>{ teams: Team[], players: Player[], fixtures: FixtureRound[] }</code> (scoped to managed team)</li>
+</ul>
+
+<h4><code>GET /api/player/data</code></h4>
+<ul>
+<li><strong>Auth:</strong> Player session required</li>
+<li><strong>Returns:</strong> <code>{ player, team, teamFixtures, allFixtures, matchEvents, allPlayers, standings }</code></li>
+</ul>
+
+<h4><code>GET /api/public/live</code></h4>
+<ul>
+<li><strong>Auth:</strong> None (public)</li>
+<li><strong>Returns:</strong> Live/in-progress and today's upcoming matches</li>
+</ul>
+
+<h3>Sync Endpoints</h3>
+
+<h4><code>POST /api/sync/teams</code></h4>
+<ul>
+<li><strong>Auth:</strong> Admin</li>
+<li><strong>Body:</strong> <code>{ teams: Team[] }</code></li>
+<li><strong>Returns:</strong> <code>{ idMap: Record<number, number> }</code> (old ID → new DB ID mapping)</li>
+</ul>
+
+<h4><code>POST /api/sync/players</code></h4>
+<ul>
+<li><strong>Auth:</strong> Admin</li>
+<li><strong>Body:</strong> <code>{ players: Player[], teamIdMap: Record<number, number> }</code></li>
+<li><strong>Returns:</strong> Operation status</li>
+</ul>
+
+<h4><code>POST /api/sync/fixtures</code></h4>
+<ul>
+<li><strong>Auth:</strong> Admin</li>
+<li><strong>Body:</strong> <code>{ fixtures: FixtureRound[], teamIdMap: Record<number, number> }</code></li>
+<li><strong>Returns:</strong> Operation status</li>
+</ul>
+
+<h3>Upload Endpoint</h3>
+
+<h4><code>POST /api/upload/logo</code></h4>
+<ul>
+<li><strong>Auth:</strong> Authenticated</li>
+<li><strong>Body:</strong> FormData with <code>file</code> (image) and <code>teamId</code></li>
+<li><strong>Validates:</strong> File type (JPEG/PNG/WebP), size (< 2MB), dimensions</li>
+<li><strong>Returns:</strong> <code>{ url: string }</code> — public URL of uploaded logo</li>
+</ul>
+
+<hr>
+
+<h2>8. Database Schema</h2>
+
+<h3>Tables</h3>
+
+<h4><code>teams</code></h4>
+<table>
+<thead><tr><th></th><th>Column</th><th>Type</th><th>Description</th><th></th></tr></thead>
+<tbody>
+<tr><td></td><td>id</td><td>BIGSERIAL PK</td><td>Auto-incrementing ID</td><td></td></tr>
+<tr><td></td><td>name</td><td>TEXT NOT NULL</td><td>Team name</td><td></td></tr>
+<tr><td></td><td>logo</td><td>TEXT</td><td>Logo URL (Supabase Storage)</td><td></td></tr>
+<tr><td></td><td>rating</td><td>NUMERIC DEFAULT 3.0</td><td>Team rating</td><td></td></tr>
+<tr><td></td><td>created_at</td><td>TIMESTAMPTZ</td><td>Creation timestamp</td><td></td></tr>
+</tbody></table>
+
+<h4><code>players</code></h4>
+<table>
+<thead><tr><th></th><th>Column</th><th>Type</th><th>Description</th><th></th></tr></thead>
+<tbody>
+<tr><td></td><td>id</td><td>BIGSERIAL PK</td><td>Auto-incrementing ID</td><td></td></tr>
+<tr><td></td><td>team_id</td><td>BIGINT FK → teams(id)</td><td>Team membership</td><td></td></tr>
+<tr><td></td><td>name</td><td>TEXT NOT NULL</td><td>Player name</td><td></td></tr>
+<tr><td></td><td>position</td><td>TEXT</td><td>GK / DEF / MID / ATT</td><td></td></tr>
+<tr><td></td><td>number</td><td>INTEGER</td><td>Jersey number</td><td></td></tr>
+<tr><td></td><td>goals, assists, own_goals</td><td>INTEGER</td><td>Attacking stats</td><td></td></tr>
+<tr><td></td><td>yellow_cards, red_cards</td><td>INTEGER</td><td>Discipline stats</td><td></td></tr>
+<tr><td></td><td>saves, penalty_saves</td><td>INTEGER</td><td>Goalkeeper stats</td><td></td></tr>
+<tr><td></td><td>clean_sheets, goals_conceded</td><td>INTEGER</td><td>Defensive stats</td><td></td></tr>
+<tr><td></td><td>tackles, interceptions, blocks</td><td>INTEGER</td><td>Defensive actions</td><td></td></tr>
+<tr><td></td><td>aerial_duels_won</td><td>INTEGER</td><td>Aerial stats</td><td></td></tr>
+<tr><td></td><td>motm, match_wins</td><td>INTEGER</td><td>Performance stats</td><td></td></tr>
+<tr><td></td><td>bonus_5_saves</td><td>INTEGER</td><td>Bonus stat</td><td></td></tr>
+<tr><td></td><td>errors_leading_to_goal</td><td>INTEGER</td><td>Negative stat</td><td></td></tr>
+<tr><td></td><td>penalties_conceded</td><td>INTEGER</td><td>Negative stat</td><td></td></tr>
+<tr><td></td><td>captain</td><td>BOOLEAN DEFAULT false</td><td>Captain flag</td><td></td></tr>
+<tr><td></td><td>rating</td><td>NUMERIC DEFAULT 5.0</td><td>Average rating</td><td></td></tr>
+<tr><td></td><td>match_ratings</td><td>JSONB</td><td>Per-match ratings <code>{ "matchId": rating }</code></td><td></td></tr>
+<tr><td></td><td>created_at, updated_at</td><td>TIMESTAMPTZ</td><td>Timestamps</td><td></td></tr>
+</tbody></table>
+
+<h4><code>fixtures</code></h4>
+<table>
+<thead><tr><th></th><th>Column</th><th>Type</th><th>Description</th><th></th></tr></thead>
+<tbody>
+<tr><td></td><td>id</td><td>BIGSERIAL PK</td><td>Auto-incrementing ID</td><td></td></tr>
+<tr><td></td><td>round</td><td>INTEGER</td><td>Round number</td><td></td></tr>
+<tr><td></td><td>home_id</td><td>BIGINT FK → teams(id)</td><td>Home team</td><td></td></tr>
+<tr><td></td><td>away_id</td><td>BIGINT FK → teams(id)</td><td>Away team</td><td></td></tr>
+<tr><td></td><td>home_score, away_score</td><td>INTEGER</td><td>Match scores (null until played)</td><td></td></tr>
+<tr><td></td><td>status</td><td>TEXT</td><td>scheduled / in-progress / completed / live</td><td></td></tr>
+<tr><td></td><td>date</td><td>TEXT</td><td>Match date (DD/MM/YYYY or YYYY-MM-DD)</td><td></td></tr>
+<tr><td></td><td>time</td><td>TEXT</td><td>Match time (HH:MM or H:MM AM/PM)</td><td></td></tr>
+<tr><td></td><td>venue</td><td>TEXT</td><td>Venue name</td><td></td></tr>
+<tr><td></td><td>events</td><td>JSONB</td><td>Match events array</td><td></td></tr>
+</tbody></table>
+
+<h4><code>match_events</code></h4>
+<table>
+<thead><tr><th></th><th>Column</th><th>Type</th><th>Description</th><th></th></tr></thead>
+<tbody>
+<tr><td></td><td>id</td><td>BIGSERIAL PK</td><td>Auto-incrementing ID</td><td></td></tr>
+<tr><td></td><td>fixture_id</td><td>BIGINT FK → fixtures(id)</td><td>Associated fixture</td><td></td></tr>
+<tr><td></td><td>player_id</td><td>BIGINT FK → players(id)</td><td>Player involved</td><td></td></tr>
+<tr><td></td><td>team_id</td><td>BIGINT FK → teams(id)</td><td>Player's team</td><td></td></tr>
+<tr><td></td><td>event_type</td><td>TEXT</td><td>Event type</td><td></td></tr>
+<tr><td></td><td>minute</td><td>INTEGER</td><td>Minute of event</td><td></td></tr>
+<tr><td></td><td>created_at</td><td>TIMESTAMPTZ</td><td>Creation timestamp</td><td></td></tr>
+</tbody></table>
+
+<h4><code>admin_users</code></h4>
+<table>
+<thead><tr><th></th><th>Column</th><th>Type</th><th>Description</th><th></th></tr></thead>
+<tbody>
+<tr><td></td><td>id</td><td>UUID PK → auth.users(id)</td><td>Supabase Auth user ID</td><td></td></tr>
+<tr><td></td><td>email</td><td>TEXT</td><td>Admin email</td><td></td></tr>
+<tr><td></td><td>created_at</td><td>TIMESTAMPTZ</td><td>Creation timestamp</td><td></td></tr>
+</tbody></table>
+
+<h4><code>team_accounts</code></h4>
+<table>
+<thead><tr><th></th><th>Column</th><th>Type</th><th>Description</th><th></th></tr></thead>
+<tbody>
+<tr><td></td><td>id</td><td>UUID PK → auth.users(id)</td><td>Supabase Auth user ID</td><td></td></tr>
+<tr><td></td><td>team_id</td><td>BIGINT FK → teams(id)</td><td>Managed team</td><td></td></tr>
+<tr><td></td><td>username</td><td>TEXT UNIQUE</td><td>Login username</td><td></td></tr>
+<tr><td></td><td>display_name</td><td>TEXT</td><td>Display name</td><td></td></tr>
+<tr><td></td><td>role</td><td>TEXT</td><td>coach / captain</td><td></td></tr>
+<tr><td></td><td>created_at</td><td>TIMESTAMPTZ</td><td>Creation timestamp</td><td></td></tr>
+</tbody></table>
+
+<h4><code>player_profiles</code></h4>
+<table>
+<thead><tr><th></th><th>Column</th><th>Type</th><th>Description</th><th></th></tr></thead>
+<tbody>
+<tr><td></td><td>id</td><td>UUID PK → auth.users(id)</td><td>Supabase Auth user ID</td><td></td></tr>
+<tr><td></td><td>player_id</td><td>BIGINT FK → players(id)</td><td>Associated player</td><td></td></tr>
+<tr><td></td><td>username</td><td>TEXT (unique index)</td><td>Login username</td><td></td></tr>
+<tr><td></td><td>must_change_password</td><td>BOOLEAN DEFAULT true</td><td>Force password change</td><td></td></tr>
+<tr><td></td><td>display_name</td><td>TEXT</td><td>Player display name</td><td></td></tr>
+<tr><td></td><td>jersey_number</td><td>INTEGER</td><td>Jersey number override</td><td></td></tr>
+<tr><td></td><td>position</td><td>TEXT</td><td>Position override</td><td></td></tr>
+<tr><td></td><td>photo_url</td><td>TEXT</td><td>Profile photo URL</td><td></td></tr>
+<tr><td></td><td>bio</td><td>TEXT</td><td>Player biography</td><td></td></tr>
+<tr><td></td><td>created_at</td><td>TIMESTAMPTZ</td><td>Creation timestamp</td><td></td></tr>
+</tbody></table>
+
+<h4><code>credential_generation_logs</code></h4>
+<table>
+<thead><tr><th></th><th>Column</th><th>Type</th><th>Description</th><th></th></tr></thead>
+<tbody>
+<tr><td></td><td>id</td><td>BIGSERIAL PK</td><td>Auto-incrementing ID</td><td></td></tr>
+<tr><td></td><td>generated_by</td><td>UUID FK → auth.users(id)</td><td>Admin/team who generated</td><td></td></tr>
+<tr><td></td><td>team_id</td><td>BIGINT FK → teams(id)</td><td>Associated team</td><td></td></tr>
+<tr><td></td><td>scope</td><td>TEXT</td><td>admin / team</td><td></td></tr>
+<tr><td></td><td>players_affected</td><td>INTEGER</td><td>Count of generated/regenerated</td><td></td></tr>
+<tr><td></td><td>created_at</td><td>TIMESTAMPTZ</td><td>Creation timestamp</td><td></td></tr>
+</tbody></table>
+
+<h4><code>notifications</code></h4>
+<table>
+<thead><tr><th></th><th>Column</th><th>Type</th><th>Description</th><th></th></tr></thead>
+<tbody>
+<tr><td></td><td>id</td><td>BIGSERIAL PK</td><td>Auto-incrementing ID</td><td></td></tr>
+<tr><td></td><td>user_id</td><td>UUID</td><td>Target user</td><td></td></tr>
+<tr><td></td><td>type</td><td>TEXT</td><td>Notification type</td><td></td></tr>
+<tr><td></td><td>title</td><td>TEXT</td><td>Notification title</td><td></td></tr>
+<tr><td></td><td>message</td><td>TEXT</td><td>Notification body</td><td></td></tr>
+<tr><td></td><td>read</td><td>BOOLEAN DEFAULT false</td><td>Read status</td><td></td></tr>
+<tr><td></td><td>created_at</td><td>TIMESTAMPTZ</td><td>Creation timestamp</td><td></td></tr>
+</tbody></table>
+
+<h4><code>team_lineups</code></h4>
+<table>
+<thead><tr><th></th><th>Column</th><th>Type</th><th>Description</th><th></th></tr></thead>
+<tbody>
+<tr><td></td><td>id</td><td>BIGSERIAL PK</td><td>Auto-incrementing ID</td><td></td></tr>
+<tr><td></td><td>team_id</td><td>BIGINT FK → teams(id)</td><td>Associated team</td><td></td></tr>
+<tr><td></td><td>name</td><td>TEXT</td><td>Lineup name</td><td></td></tr>
+<tr><td></td><td>formation</td><td>TEXT</td><td>4-3-3 / 4-4-2 / 3-5-2</td><td></td></tr>
+<tr><td></td><td>slots</td><td>JSONB</td><td>Player slot assignments</td><td></td></tr>
+<tr><td></td><td>is_active</td><td>BOOLEAN</td><td>Active lineup flag</td><td></td></tr>
+<tr><td></td><td>created_at, updated_at</td><td>TIMESTAMPTZ</td><td>Timestamps</td><td></td></tr>
+</tbody></table>
+
+<h4><code>transfers</code></h4>
+<table>
+<thead><tr><th></th><th>Column</th><th>Type</th><th>Description</th><th></th></tr></thead>
+<tbody>
+<tr><td></td><td>id</td><td>BIGSERIAL PK</td><td>Auto-incrementing ID</td><td></td></tr>
+<tr><td></td><td>player_id</td><td>BIGINT FK → players(id)</td><td>Player transferred</td><td></td></tr>
+<tr><td></td><td>from_team_id</td><td>BIGINT FK → teams(id)</td><td>Source team</td><td></td></tr>
+<tr><td></td><td>to_team_id</td><td>BIGINT FK → teams(id)</td><td>Destination team</td><td></td></tr>
+<tr><td></td><td>transfer_date</td><td>TIMESTAMPTZ</td><td>Transfer date</td><td></td></tr>
+<tr><td></td><td>created_at</td><td>TIMESTAMPTZ</td><td>Creation timestamp</td><td></td></tr>
+</tbody></table>
+
+<hr>
+
+<h2>9. State Management</h2>
+
+<h3>Zustand Store (<code>lib/store/index.ts</code>)</h3>
+
+<p>The app uses Zustand with <code>persist</code> middleware for state management. The store is divided into four slices:</p>
+
+<pre><code>export type AppStore = AuthSlice &amp; TeamsSlice &amp; FixturesSlice &amp; PlayersSlice;
+</code></pre>
+
+<p><strong>Persisted data (localStorage key: <code>vfl-app-state</code>):</strong></p>
+<ul>
+<li><code>teams: Team[]</code></li>
+<li><code>fixtures: FixtureRound[]</code></li>
+<li><code>players: Player[]</code></li>
+</ul>
+
+<p><strong>Non-persisted data (re-initialized on each session):</strong></p>
+<ul>
+<li>Auth state (<code>currentTeamAccount</code>, <code>isAdmin</code>, <code>userProfile</code>, <code>authLoading</code>)</li>
+<li><code>teamDataLoaded</code> flag</li>
+</ul>
+
+<h3>Store Slices</h3>
+
+<h4>Auth Slice (<code>lib/store/auth-slice.ts</code>)</h4>
+
+<table>
+<thead><tr><th></th><th>State</th><th>Type</th><th></th></tr></thead>
+<tbody>
+<tr><td></td><td><code>currentTeamAccount</code></td><td>`TeamAccount \</td><td>null`</td><td></td></tr>
+<tr><td></td><td><code>isAdmin</code></td><td><code>boolean</code></td><td></td></tr>
+<tr><td></td><td><code>userProfile</code></td><td>`UserProfile \</td><td>null`</td><td></td></tr>
+<tr><td></td><td><code>authLoading</code></td><td><code>boolean</code></td><td></td></tr>
+<tr><td></td><td><code>teamDataLoaded</code></td><td><code>boolean</code></td><td></td></tr>
+</tbody></table>
+
+<table>
+<thead><tr><th></th><th>Action</th><th>Description</th><th></th></tr></thead>
+<tbody>
+<tr><td></td><td><code>initializeAuth()</code></td><td>Fetches <code>/api/auth/session</code> and populates state</td><td></td></tr>
+<tr><td></td><td><code>loginAdmin(email, password)</code></td><td>POST to <code>/api/auth/admin-login</code></td><td></td></tr>
+<tr><td></td><td><code>loginTeamAccount(username, password)</code></td><td>POST to <code>/api/auth/team-login</code></td><td></td></tr>
+<tr><td></td><td><code>loginPlayer(username, password)</code></td><td>POST to <code>/api/auth/player-login</code></td><td></td></tr>
+<tr><td></td><td><code>logout()</code></td><td>POST to <code>/api/auth/logout</code>, resets all state</td><td></td></tr>
+<tr><td></td><td><code>setTeamDataLoaded(v)</code></td><td>Sets loading flag</td><td></td></tr>
+</tbody></table>
+
+<h4>Teams Slice (<code>lib/store/teams-slice.ts</code>)</h4>
+
+<table>
+<thead><tr><th></th><th>Action</th><th>Description</th><th></th></tr></thead>
+<tbody>
+<tr><td></td><td><code>setTeams(teams)</code></td><td>Bulk replace teams</td><td></td></tr>
+<tr><td></td><td><code>addTeam(team)</code></td><td>Add single team</td><td></td></tr>
+<tr><td></td><td><code>deleteTeam(id)</code></td><td>Remove by ID</td><td></td></tr>
+<tr><td></td><td><code>updateTeam(id, data)</code></td><td>Partial update</td><td></td></tr>
+<tr><td></td><td><code>resetTeams()</code></td><td>Reset to defaults</td><td></td></tr>
+<tr><td></td><td><code>setTeamLogo(id, logo)</code></td><td>Set logo URL</td><td></td></tr>
+<tr><td></td><td><code>teamName(id)</code></td><td>Get team name by ID</td><td></td></tr>
+<tr><td></td><td><code>getTeam(id)</code></td><td>Get team object by ID</td><td></td></tr>
+</tbody></table>
+
+<h4>Fixtures Slice (<code>lib/store/fixtures-slice.ts</code>)</h4>
+
+<table>
+<thead><tr><th></th><th>Action</th><th>Description</th><th></th></tr></thead>
+<tbody>
+<tr><td></td><td><code>setFixtures(fixtures)</code></td><td>Bulk replace fixtures (auto-sorts)</td><td></td></tr>
+<tr><td></td><td><code>generateFixtures(teams)</code></td><td>Round-robin fixture generation</td><td></td></tr>
+<tr><td></td><td><code>addFixture(input, teams)</code></td><td>Add single match</td><td></td></tr>
+<tr><td></td><td><code>reorderMatch(round, matchId, targetId)</code></td><td>Drag-reorder within round</td><td></td></tr>
+<tr><td></td><td><code>updateMatch(id, field, value)</code></td><td>Update single match field</td><td></td></tr>
+<tr><td></td><td><code>repairFixtures()</code></td><td>Repair fixture locks/balances</td><td></td></tr>
+</tbody></table>
+
+<h4>Players Slice (<code>lib/store/players-slice.ts</code>)</h4>
+
+<table>
+<thead><tr><th></th><th>Action</th><th>Description</th><th></th></tr></thead>
+<tbody>
+<tr><td></td><td><code>setPlayers(players)</code></td><td>Bulk replace players</td><td></td></tr>
+<tr><td></td><td><code>addPlayer(player)</code></td><td>Add single player</td><td></td></tr>
+<tr><td></td><td><code>updatePlayer(id, data)</code></td><td>Partial update</td><td></td></tr>
+<tr><td></td><td><code>deletePlayer(id)</code></td><td>Remove by ID</td><td></td></tr>
+<tr><td></td><td><code>deleteTeamPlayers(teamId)</code></td><td>Remove all players of a team</td><td></td></tr>
+<tr><td></td><td><code>deleteAllPlayers()</code></td><td>Clear all players</td><td></td></tr>
+<tr><td></td><td><code>importPlayers(csvText, teams)</code></td><td>CSV import</td><td></td></tr>
+<tr><td></td><td><code>getTeamPlayers(teamId)</code></td><td>Filter by team</td><td></td></tr>
+<tr><td></td><td><code>getAllPlayers()</code></td><td>Return all</td><td></td></tr>
+<tr><td></td><td><code>recalculateRatings()</code></td><td>Recompute all ratings</td><td></td></tr>
+</tbody></table>
+
+<h3>Persistence Behavior</h3>
+
+<ul>
+<li>Only <code>teams</code>, <code>fixtures</code>, and <code>players</code> are persisted to localStorage</li>
+<li>On rehydration, orphaned matches (with deleted team IDs) are automatically cleared</li>
+<li>Auth state resets on page refresh (re-fetched from session endpoint)</li>
+<li><code>teamDataLoaded</code> resets to <code>false</code> on login to trigger data refresh</li>
+</ul>
+
+<hr>
+
+<h2>10. Key Libraries & Utilities</h2>
+
+<h3>Security (<code>lib/security.ts</code>)</h3>
+
+<table>
+<thead><tr><th></th><th>Function</th><th>Purpose</th><th></th></tr></thead>
+<tbody>
+<tr><td></td><td><code>getClientIp(request)</code></td><td>Extract client IP from headers</td><td></td></tr>
+<tr><td></td><td><code>rateLimit({ key, limit, windowMs })</code></td><td>In-memory rate limiting (Map-based, resets on server restart)</td><td></td></tr>
+<tr><td></td><td><code>rateLimitResponse(resetAt)</code></td><td>429 rate limit response with Retry-After header</td><td></td></tr>
+<tr><td></td><td><code>json(data, init?)</code></td><td>JSON response helper with security headers</td><td></td></tr>
+<tr><td></td><td><code>logSecurityEvent(event, details)</code></td><td>Security event logging (console.warn structured JSON)</td><td></td></tr>
+<tr><td></td><td><code>logApiError(event, error, details)</code></td><td>API error logging (console.error structured JSON)</td><td></td></tr>
+<tr><td></td><td><code>getAuthContext(supabase)</code></td><td>Extract auth context (admin/team/player) from session</td><td></td></tr>
+<tr><td></td><td><code>ownsTeam(auth, teamId)</code></td><td>Check if auth context owns a team</td><td></td></tr>
+<tr><td></td><td><code>requireAuth(auth)</code></td><td>Return 401 if not authenticated</td><td></td></tr>
+<tr><td></td><td><code>requireAdmin(auth)</code></td><td>Return 401/403 if not admin</td><td></td></tr>
+<tr><td></td><td><code>parseJsonObject(request)</code></td><td>Parse and validate JSON request body</td><td></td></tr>
+<tr><td></td><td><code>asString(value, maxLength?)</code></td><td>Validate string input</td><td></td></tr>
+<tr><td></td><td><code>asOptionalString(value, maxLength?)</code></td><td>Optional string input</td><td></td></tr>
+<tr><td></td><td><code>asInteger(value, min?, max?)</code></td><td>Validate integer input</td><td></td></tr>
+<tr><td></td><td><code>asBoolean(value)</code></td><td>Validate boolean input</td><td></td></tr>
+<tr><td></td><td><code>isValidEmail(email)</code></td><td>Email format validation</td><td></td></tr>
+<tr><td></td><td><code>validatePassword(password)</code></td><td>Password strength validation (12+ chars, upper+lower+number)</td><td></td></tr>
+<tr><td></td><td><code>sanitizeText(value)</code></td><td>Strip control characters and angle brackets</td><td></td></tr>
+</tbody></table>
+
+<h3>Player Credentials (<code>lib/player-credentials.ts</code>)</h3>
+
+<table>
+<thead><tr><th></th><th>Function</th><th>Purpose</th><th></th></tr></thead>
+<tbody>
+<tr><td></td><td><code>normalizeCredentialPart(value)</code></td><td>Normalize to uppercase alphanumeric</td><td></td></tr>
+<tr><td></td><td><code>buildPlayerCredentialPair(name, team, seq)</code></td><td>Build username/password pair</td><td></td></tr>
+<tr><td></td><td><code>playerEmailFromUsername(username)</code></td><td>Build email from username</td><td></td></tr>
+<tr><td></td><td><code>isValidPlayerUsername(username)</code></td><td>Validate username format</td><td></td></tr>
+<tr><td></td><td><code>generatePlayerCredentialsForScope(options)</code></td><td>Full credential generation flow</td><td></td></tr>
+</tbody></table>
+
+<h3>Supabase Clients (<code>lib/supabase/</code>)</h3>
+
+<table>
+<thead><tr><th></th><th>File</th><th>Client</th><th>Purpose</th><th></th></tr></thead>
+<tbody>
+<tr><td></td><td><code>client.ts</code></td><td>Browser client</td><td>Client-side Supabase operations</td><td></td></tr>
+<tr><td></td><td><code>server.ts</code></td><td>Server client (cookies)</td><td>Server-side authenticated operations</td><td></td></tr>
+<tr><td></td><td><code>service-role.ts</code></td><td>Service role client</td><td>Admin operations (bypasses RLS)</td><td></td></tr>
+<tr><td></td><td><code>public.ts</code></td><td>Anon key client</td><td>Public data access (live scores)</td><td></td></tr>
+<tr><td></td><td><code>middleware.ts</code></td><td>Middleware client</td><td>Session validation in middleware</td><td></td></tr>
+</tbody></table>
+
+<h3>Data Fetching Hooks (<code>lib/hooks/</code>)</h3>
+
+<table>
+<thead><tr><th></th><th>Hook</th><th>File</th><th>Purpose</th><th></th></tr></thead>
+<tbody>
+<tr><td></td><td><code>refreshTeamData()</code></td><td><code>use-team-data.ts</code></td><td>Fetch team data from <code>/api/team/data</code></td><td></td></tr>
+<tr><td></td><td><code>refreshAdminData()</code></td><td><code>use-team-data.ts</code></td><td>Fetch admin data from <code>/api/admin/data</code></td><td></td></tr>
+<tr><td></td><td><code>usePlayerData()</code></td><td><code>use-player-data.ts</code></td><td>React hook for player dashboard data from <code>/api/player/data</code></td><td></td></tr>
+</tbody></table>
+
+<h3>Business Logic (<code>lib/logic/</code>)</h3>
+
+<table>
+<thead><tr><th></th><th>Module</th><th>Purpose</th><th></th></tr></thead>
+<tbody>
+<tr><td></td><td><code>round-robin.ts</code></td><td>Round-robin fixture schedule generation</td><td></td></tr>
+<tr><td></td><td><code>standings.ts</code></td><td>Standings computation from match results</td><td></td></tr>
+<tr><td></td><td><code>repair.ts</code></td><td>Fixture repair (balancing home/away, resolving locks)</td><td></td></tr>
+</tbody></table>
+
+<h3>Utility Functions (<code>lib/utils/</code>)</h3>
+
+<table>
+<thead><tr><th></th><th>Module</th><th>Purpose</th><th></th></tr></thead>
+<tbody>
+<tr><td></td><td><code>helpers.ts</code></td><td><code>sortMatchesByDateTime()</code>, ID generation, formatting</td><td></td></tr>
+<tr><td></td><td><code>csv.ts</code></td><td>CSV parsing for player import</td><td></td></tr>
+<tr><td></td><td><code>data-import.ts</code></td><td>JSON import parser with ID remapping</td><td></td></tr>
+</tbody></table>
+
+<hr>
+
+<p><em>Generated on 2026-05-28 for the VUNA Football League Management System</em></p>
+
+
+</body></html>
