@@ -69,7 +69,7 @@ export const createCupSlice: StateCreator<any, [], [], CupSlice> = (set, get) =>
 
   updateCupMatch: (id, data) => {
     const current = get().cup;
-    const matches = current.matches.map((m) =>
+    const matches = current.matches.map((m: CupMatch) =>
       m.id === id ? { ...m, ...data } : m
     );
     set({ cup: { ...current, matches } });
@@ -77,13 +77,13 @@ export const createCupSlice: StateCreator<any, [], [], CupSlice> = (set, get) =>
 
   completeCupMatch: (id) => {
     const current = get().cup;
-    const match = current.matches.find((m) => m.id === id);
+    const match = current.matches.find((m: CupMatch) => m.id === id);
     if (!match) return;
 
     const { winnerId, completedVia } = computeWinner(match);
     if (winnerId == null) return;
 
-    let matches = current.matches.map((m) =>
+    let matches = current.matches.map((m: CupMatch) =>
       m.id === id
         ? { ...m, status: "completed" as const, winnerId, completedVia }
         : m
