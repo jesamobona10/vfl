@@ -49,7 +49,7 @@ export default function DashboardPage() {
 
   return (
     <div>
-      <div className="flex items-center justify-between mb-6">
+      <div className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between mb-6">
         <div>
           <p className="text-sm text-muted">
             {currentTeamAccount ? "Team Dashboard" : "Season Control"}
@@ -60,7 +60,7 @@ export default function DashboardPage() {
               : "Dashboard"}
           </h1>
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 shrink-0">
           {currentTeamAccount && (
             <button
               onClick={async () => {

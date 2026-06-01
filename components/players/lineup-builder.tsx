@@ -256,14 +256,14 @@ export function LineupBuilder() {
   return (
     <div className="space-y-6">
       <div className="grid gap-4 md:grid-cols-2">
-        <div className="space-y-3 rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
+        <div className="card p-5 space-y-3">
           <h2 className="text-lg font-semibold">Lineup details</h2>
           <div className="space-y-4">
-            <label className="block text-sm font-medium text-slate-700">
+            <label className="block text-sm font-medium text-text">
               Team
             </label>
             <select
-              className="w-full rounded-md border border-slate-300 bg-white px-3 py-2 text-sm shadow-sm focus:border-slate-500 focus:outline-none"
+              className="input"
               value={selectedTeamId}
               onChange={(event) => {
                 const value = event.target.value;
@@ -279,20 +279,20 @@ export function LineupBuilder() {
                 </option>
               ))}
             </select>
-            <label className="block text-sm font-medium text-slate-700">
+            <label className="block text-sm font-medium text-text">
               Lineup name
             </label>
             <input
-              className="w-full rounded-md border border-slate-300 bg-white px-3 py-2 text-sm shadow-sm focus:border-slate-500 focus:outline-none"
+              className="input"
               value={name}
               onChange={(event) => setName(event.target.value)}
               placeholder="Enter a lineup name"
             />
-            <label className="block text-sm font-medium text-slate-700">
+            <label className="block text-sm font-medium text-text">
               Formation
             </label>
             <select
-              className="w-full rounded-md border border-slate-300 bg-white px-3 py-2 text-sm shadow-sm focus:border-slate-500 focus:outline-none"
+              className="input"
               value={formation}
               onChange={(event) => handleFormationChange(event.target.value as any)}
             >
@@ -308,9 +308,9 @@ export function LineupBuilder() {
                 type="checkbox"
                 checked={isActive}
                 onChange={(event) => setIsActive(event.target.checked)}
-                className="h-4 w-4 rounded border-slate-300 text-slate-600 focus:ring-slate-500"
+                className="h-4 w-4 rounded border-line text-brand focus:ring-brand"
               />
-              <label htmlFor="active-lineup" className="text-sm text-slate-700">
+              <label htmlFor="active-lineup" className="text-sm text-text">
                 Set as active lineup
               </label>
             </div>
@@ -320,14 +320,14 @@ export function LineupBuilder() {
               type="button"
               onClick={handleSave}
               disabled={loading || !selectedTeamId}
-              className="rounded-md bg-slate-900 px-4 py-2 text-sm font-semibold text-white hover:bg-slate-800 disabled:cursor-not-allowed disabled:bg-slate-400"
+              className="btn-primary"
             >
               {selectedLineupId ? "Update lineup" : "Save lineup"}
             </button>
             <button
               type="button"
               onClick={resetBuilder}
-              className="rounded-md border border-slate-300 bg-white px-4 py-2 text-sm text-slate-700 hover:border-slate-400"
+              className="btn-ghost"
             >
               New lineup
             </button>
@@ -336,7 +336,7 @@ export function LineupBuilder() {
                 type="button"
                 onClick={handleDelete}
                 disabled={loading}
-                className="rounded-md border border-red-300 bg-red-50 px-4 py-2 text-sm text-red-700 hover:bg-red-100 disabled:cursor-not-allowed"
+                className="btn-ghost text-danger"
               >
                 Delete lineup
               </button>
@@ -344,29 +344,29 @@ export function LineupBuilder() {
           </div>
           <div className="space-y-2 pt-3 text-sm">
             {error ? (
-              <p className="text-red-600">{error}</p>
+              <p className="text-danger">{error}</p>
             ) : status ? (
-              <p className="text-slate-700">{status}</p>
+              <p className="text-text">{status}</p>
             ) : null}
             {isTeamAccount && !managedTeamId ? (
-              <p className="text-sm text-orange-600">
+              <p className="text-sm text-accent">
                 No managed team found for this account.
               </p>
             ) : null}
             {selectedTeam && (
-              <p className="text-sm text-slate-600">
+              <p className="text-sm text-muted">
                 Building lineup for <strong>{selectedTeam.name}</strong>.
               </p>
             )}
           </div>
         </div>
 
-        <div className="space-y-3 rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
+        <div className="card p-5 space-y-3">
           <h2 className="text-lg font-semibold">Saved lineups</h2>
           <div className="space-y-4">
             <div>
               <select
-                className="w-full rounded-md border border-slate-300 bg-white px-3 py-2 text-sm shadow-sm focus:border-slate-500 focus:outline-none"
+                className="input"
                 value={selectedLineupId ?? ""}
                 onChange={(event) => {
                   const value = event.target.value;
@@ -385,7 +385,7 @@ export function LineupBuilder() {
                 ))}
               </select>
             </div>
-            <div className="rounded-xl bg-slate-50 p-4 text-sm text-slate-700">
+            <div className="rounded-xl bg-surface-2 p-4 text-sm text-muted">
               <p className="font-semibold">Available players</p>
               <p>{availablePlayers.length} players in selected team.</p>
               <p>
@@ -398,20 +398,20 @@ export function LineupBuilder() {
       </div>
 
       <div className="grid gap-4 xl:grid-cols-[1.2fr_0.8fr]">
-        <div className="space-y-3 rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
+        <div className="card p-5 space-y-3">
           <h2 className="text-lg font-semibold">Formation builder</h2>
           <div className="grid gap-3">
             {slots.map((slot) => (
-              <div key={slot.slotId} className="grid gap-2 rounded-lg border border-slate-200 bg-slate-50 p-3">
+              <div key={slot.slotId} className="grid gap-2 rounded-lg border border-line bg-surface-2 p-3">
                 <div className="flex items-center justify-between gap-3">
                   <div>
-                    <p className="text-sm font-semibold text-slate-900">{slot.label}</p>
-                    <p className="text-xs text-slate-600">{slot.position}</p>
+                    <p className="text-sm font-semibold text-text">{slot.label}</p>
+                    <p className="text-xs text-muted">{slot.position}</p>
                   </div>
-                  <p className="text-xs uppercase text-slate-500">{slot.slotId}</p>
+                  <p className="text-xs uppercase text-muted">{slot.slotId}</p>
                 </div>
                 <select
-                  className="w-full rounded-md border border-slate-300 bg-white px-3 py-2 text-sm shadow-sm focus:border-slate-500 focus:outline-none"
+                  className="input"
                   value={slot.playerId ?? ""}
                   onChange={(event) => {
                     const value = event.target.value;
@@ -432,9 +432,9 @@ export function LineupBuilder() {
           </div>
         </div>
 
-        <div className="space-y-3 rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
+        <div className="card p-5 space-y-3">
           <h2 className="text-lg font-semibold">Lineup preview</h2>
-          <div className="space-y-4 rounded-xl bg-slate-50 p-4 text-sm text-slate-700">
+          <div className="space-y-4 rounded-xl bg-surface-2 p-4 text-sm text-muted">
             <p className="font-semibold">Selected team</p>
             <p>{selectedTeam ? selectedTeam.name : "No team selected."}</p>
             <p className="font-semibold">Formation</p>
@@ -444,7 +444,7 @@ export function LineupBuilder() {
               {slots.map((slot) => {
                 const player = availablePlayers.find((item) => item.id === slot.playerId);
                 return (
-                  <li key={slot.slotId} className="rounded-md bg-white px-3 py-2 shadow-sm">
+                  <li key={slot.slotId} className="rounded-md bg-surface px-3 py-2 shadow-sm">
                     <span className="font-semibold">{slot.label}</span>: {player ? `${player.name} #${player.number}` : "Unassigned"}
                   </li>
                 );

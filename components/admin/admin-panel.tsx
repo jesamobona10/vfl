@@ -103,7 +103,7 @@ function PlayerManager() {
 
       <div className="card p-4 space-y-3">
         <h4 className="text-sm font-semibold text-muted uppercase tracking-wider">Add Player</h4>
-        <div className="grid grid-cols-1 sm:grid-cols-5 gap-2">
+        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-2">
           <select value={newTeam} onChange={(e) => setNewTeam(e.target.value)} className="input text-sm py-1.5">
             <option value="">Team...</option>
             {teams.map((t) => <option key={t.id} value={t.id}>{t.name}</option>)}
@@ -637,7 +637,7 @@ export function AdminPanel() {
 
   return (
     <div>
-      <div className="mb-6">
+      <div className="flex flex-col gap-1 mb-6">
         <h1 className="text-2xl font-bold">Admin Panel</h1>
         <p className="text-sm text-muted">Full league management</p>
       </div>

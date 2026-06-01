@@ -68,7 +68,7 @@ export default function Notifications() {
                 Mark all read
               </button>
             </div>
-            {loading && <p>Loading...</p>}
+            {loading && <p className="text-sm text-muted">Loading...</p>}
             {!loading && items.length === 0 && <p className="text-sm text-muted">No notifications</p>}
             <ul className="space-y-2 max-h-64 overflow-auto">
               {items.map((n) => (

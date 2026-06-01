@@ -11,9 +11,9 @@ export function generatePlayoffs(standings: StandingRow[]): CupMatch[] {
   if (playoffTeams.length !== 6) return [];
 
   const pairs: [number, number][] = [
-    [playoffTeams[0].id, playoffTeams[5].id],
-    [playoffTeams[1].id, playoffTeams[4].id],
-    [playoffTeams[2].id, playoffTeams[3].id],
+    [playoffTeams[3].id, playoffTeams[4].id],
+    [playoffTeams[1].id, playoffTeams[5].id],
+    [playoffTeams[0].id, playoffTeams[2].id],
   ];
 
   return pairs.map(([homeId, awayId], i) => ({

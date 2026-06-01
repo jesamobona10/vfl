@@ -181,7 +181,7 @@ export function CupMatchModal({
           </div>
         )}
 
-        <div className="grid grid-cols-3 gap-2">
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
           <div>
             <label className="text-xs text-muted">Date</label>
             <input

@@ -90,12 +90,12 @@ export function ReportView() {
 
   return (
     <div>
-      <div className="flex items-center justify-between mb-6">
+      <div className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between mb-6">
         <div>
           <h1 className="text-2xl font-bold">Reports</h1>
           <p className="text-sm text-muted">Printable reports</p>
         </div>
-        <button onClick={handleCopy} className="btn-primary">
+        <button onClick={handleCopy} className="btn-primary shrink-0">
           {copied ? (
             <>
               <Check size={16} />

@@ -2,7 +2,7 @@
 
 import type { CupMatch } from "@/lib/types";
 import { CupMatchCard } from "./cup-match-card";
-import { Trophy, ChevronRight } from "lucide-react";
+import { Trophy, ChevronRight, ArrowRight } from "lucide-react";
 
 interface CupBracketProps {
   matches: CupMatch[];
@@ -28,30 +28,73 @@ export function CupBracket({
   const bracketMatches = matches.filter((m) => m.round !== "playoff");
   if (!bracketMatches.length) return null;
 
-  const getNextMatchIndex = (
-    round: "quarter" | "semi",
-    matchIndex: number
-  ): number => {
-    if (round === "quarter") return Math.floor(matchIndex / 2);
-    if (round === "semi") return 0;
-    return 0;
-  };
-
   return (
     <div className="card p-5">
-      <div className="flex items-center justify-between mb-5">
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between mb-5">
         <h3 className="text-sm font-semibold text-muted uppercase tracking-wider">
           Cup Bracket
         </h3>
         {champion != null && (
-          <span className="flex items-center gap-1.5 text-sm font-bold text-accent bg-accent/10 px-3 py-1 rounded-full">
+          <span className="flex items-center gap-1.5 text-sm font-bold text-accent bg-accent/10 px-3 py-1 rounded-full w-fit">
             <Trophy size={14} />
             {getTeamName(champion)} Champions
           </span>
         )}
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4 items-start">
+      <div className="md:hidden space-y-6">
+        {roundConfig.map((round, ri) => {
+          const columnMatches = bracketMatches.filter(
+            (m) => m.round === round.key
+          );
+          const isFinal = round.key === "final";
+
+          return (
+            <div key={round.key}>
+              <div className="flex items-center gap-2 mb-3">
+                <span className="w-1.5 h-1.5 rounded-full bg-muted/40" />
+                <span className="text-[10px] font-semibold uppercase tracking-wider text-muted">
+                  {round.label}
+                </span>
+                {ri < roundConfig.length - 1 && (
+                  <ArrowRight size={12} className="text-muted/30" />
+                )}
+              </div>
+
+              <div className="space-y-2">
+                {columnMatches.map((m) => {
+                  const isPlayable =
+                    m.homeId != null && m.awayId != null;
+
+                  return (
+                    <div key={m.id}>
+                      <CupMatchCard
+                        match={m}
+                        getTeamName={getTeamName}
+                        getTeamLogo={getTeamLogo}
+                        onScoreClick={onScoreClick}
+                        isNext={isPlayable && !isFinal}
+                      />
+                    </div>
+                  );
+                })}
+              </div>
+
+              {isFinal && champion != null && (
+                <div className="mt-3 pt-3 border-t border-line text-center">
+                  <Trophy size={20} className="mx-auto text-accent mb-1" />
+                  <p className="text-xs font-bold text-text">
+                    {getTeamName(champion)}
+                  </p>
+                  <p className="text-[10px] text-muted">Champion</p>
+                </div>
+              )}
+            </div>
+          );
+        })}
+      </div>
+
+      <div className="hidden md:grid md:grid-cols-[2fr_1.5fr_1fr_auto] gap-4 items-start">
         {roundConfig.map((round, ri) => {
           const columnMatches = bracketMatches.filter(
             (m) => m.round === round.key
@@ -78,13 +121,21 @@ export function CupBracket({
                   const isPlayable =
                     m.homeId != null && m.awayId != null;
 
+                  const spacingClass =
+                    round.key === "quarter"
+                      ? m.matchIndex === 0 || m.matchIndex === 1
+                        ? ""
+                        : "mt-4"
+                      : round.key === "semi"
+                      ? m.matchIndex === 0
+                        ? "mt-8"
+                        : "mt-4"
+                      : isFinal
+                      ? "md:mt-6"
+                      : "";
+
                   return (
-                    <div
-                      key={m.id}
-                      className={
-                        isFinal ? "md:mt-6" : ""
-                      }
-                    >
+                    <div key={m.id} className={spacingClass}>
                       <CupMatchCard
                         match={m}
                         getTeamName={getTeamName}

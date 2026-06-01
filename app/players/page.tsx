@@ -26,7 +26,7 @@ export default function PlayersPage() {
 
   return (
     <div>
-      <div className="flex flex-col gap-3 mb-6">
+      <div className="flex flex-col gap-4 mb-6">
         <div>
           <h1 className="text-2xl font-bold">
             Players &amp; Statistics
@@ -36,7 +36,7 @@ export default function PlayersPage() {
           </p>
         </div>
 
-        <div className="grid gap-3 sm:grid-cols-3">
+        <div className="grid gap-3 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">
           <div className="card p-4 border border-line bg-surface">
             <p className="text-xs uppercase tracking-[0.2em] text-muted">
               Total players
@@ -58,14 +58,14 @@ export default function PlayersPage() {
         </div>
       </div>
 
-      <div className="inline-flex items-center gap-1 bg-surface-2 rounded-full p-1 mb-6">
+      <div className="inline-flex items-center gap-1 bg-surface-2 rounded-full p-1 mb-6 overflow-x-auto">
         {tabs.map((t) => (
           <button
             key={t.key}
             onClick={() => setTab(t.key)}
             className={`px-4 py-2 text-sm font-semibold rounded-full transition-colors ${
               tab === t.key
-                ? "bg-white shadow-sm text-text"
+                ? "bg-surface shadow-sm text-text"
                 : "text-muted hover:text-text"
             }`}
           >

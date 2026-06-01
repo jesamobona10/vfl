@@ -13,7 +13,12 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="en">
+    <html lang="en" suppressHydrationWarning>
+      <head>
+        <script dangerouslySetInnerHTML={{
+          __html: `(function(){try{var e=localStorage.getItem("vfl-dark-mode");var d=e==="true"||(!e&&window.matchMedia("(prefers-color-scheme: dark)").matches);document.documentElement.classList.toggle("dark",d)}catch(e){}})()`
+        }} />
+      </head>
       <body>
         <AppShell>{children}</AppShell>
       </body>

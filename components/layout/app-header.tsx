@@ -1,11 +1,11 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useAppStore } from "@/lib/store";
 import { parseImportFile, buildImportPlan } from "@/lib/utils/data-import";
 import { refreshTeamData } from "@/lib/hooks/use-team-data";
 import Notifications from "@/components/notifications/notifications";
-import { Search, Download, Upload, RotateCcw, LogOut, Shield, RefreshCw, Loader2 } from "lucide-react";
+import { Search, Download, Upload, RotateCcw, LogOut, Shield, RefreshCw, Loader2, Sun, Moon } from "lucide-react";
 
 interface AppHeaderProps {
   onOpenSearch: () => void;
@@ -25,8 +25,23 @@ export function AppHeader({ onOpenSearch }: AppHeaderProps) {
   const teams = useAppStore((s) => s.teams);
   const fixtures = useAppStore((s) => s.fixtures);
   const players = useAppStore((s) => s.players);
+  const [dark, setDark] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
   const [importing, setImporting] = useState(false);
+
+  useEffect(() => {
+    const stored = localStorage.getItem("vfl-dark-mode");
+    const isDark = stored === "true" || (!stored && window.matchMedia("(prefers-color-scheme: dark)").matches);
+    setDark(isDark);
+    document.documentElement.classList.toggle("dark", isDark);
+  }, []);
+
+  const toggleDark = () => {
+    const next = !dark;
+    setDark(next);
+    document.documentElement.classList.toggle("dark", next);
+    localStorage.setItem("vfl-dark-mode", String(next));
+  };
 
   const handleExport = () => {
     const data = { teams, fixtures, players };
@@ -116,6 +131,13 @@ export function AppHeader({ onOpenSearch }: AppHeaderProps) {
       </div>
 
       <div className="flex items-center gap-2">
+        <button
+          onClick={toggleDark}
+          className="btn-icon"
+          title={dark ? "Switch to light mode" : "Switch to dark mode"}
+        >
+          {dark ? <Sun size={18} /> : <Moon size={18} />}
+        </button>
         <button
           onClick={onOpenSearch}
           className="btn-icon"

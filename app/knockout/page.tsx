@@ -115,13 +115,13 @@ export default function KnockoutPage() {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
         <div>
           <p className="text-sm text-muted">Knockout Stage</p>
           <h1 className="text-2xl font-bold">Cup Tournament</h1>
         </div>
 
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 shrink-0 flex-wrap">
           {hasAnyContent && (
             <div className="relative" ref={menuRef}>
               <button

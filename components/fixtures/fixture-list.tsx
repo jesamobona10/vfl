@@ -81,7 +81,7 @@ export function FixtureList() {
       </div>
 
       {fixturesExist && (
-        <div className="grid gap-3 sm:grid-cols-4 mb-6">
+        <div className="grid gap-3 grid-cols-2 lg:grid-cols-4 mb-6">
           <div className="card p-4 border border-line bg-surface">
             <p className="text-xs uppercase tracking-[0.2em] text-muted">
               Rounds

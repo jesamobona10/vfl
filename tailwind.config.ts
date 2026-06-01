@@ -1,6 +1,7 @@
 import type { Config } from "tailwindcss";
 
 const config: Config = {
+  darkMode: "class",
   content: [
     "./components/**/*.{ts,tsx}",
     "./app/**/*.{ts,tsx}",
@@ -14,10 +15,10 @@ const config: Config = {
         },
         accent: "#d99a21",
         surface: {
-          DEFAULT: "#ffffff",
-          2: "#eef4ec",
+          DEFAULT: "var(--surface)",
+          2: "var(--surface-2)",
         },
-        muted: "#66736a",
+        muted: "var(--muted)",
         danger: "#b42318",
         text: "var(--text)",
         line: "var(--line)",

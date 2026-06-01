@@ -59,7 +59,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
     <div className="min-h-screen bg-bg">
       <AppHeader onOpenSearch={() => setSearchOpen(true)} />
       <TabNav />
-      <main className="max-w-7xl mx-auto px-6 py-6">{children}</main>
+      <main className="max-w-7xl mx-auto px-4 sm:px-6 py-6">{children}</main>
       <SearchModal isOpen={isSearchOpen} onClose={() => setSearchOpen(false)} />
     </div>
   );
