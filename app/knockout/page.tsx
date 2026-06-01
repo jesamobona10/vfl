@@ -1,12 +1,13 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useRef, useEffect } from "react";
 import { useAppStore } from "@/lib/store";
 import { CupBracket } from "@/components/cup/cup-bracket";
 import { CupPlayoffSection } from "@/components/cup/cup-playoff-section";
 import { CupMatchModal } from "@/components/cup/cup-match-modal";
 import type { CupMatch } from "@/lib/types";
-import { Trophy, Loader2, AlertCircle } from "lucide-react";
+import { Trophy, Loader2, Download, ChevronDown } from "lucide-react";
+import { exportAsJSON, exportAsPNG, exportAsPDF } from "@/lib/utils/export";
 
 export default function KnockoutPage() {
   const cup = useAppStore((s) => s.cup);
@@ -21,6 +22,9 @@ export default function KnockoutPage() {
   const [selectedMatch, setSelectedMatch] = useState<CupMatch | null>(null);
   const [generatingPlayoffs, setGeneratingPlayoffs] = useState(false);
   const [generatingBracket, setGeneratingBracket] = useState(false);
+  const [menuOpen, setMenuOpen] = useState(false);
+  const menuRef = useRef<HTMLDivElement>(null);
+  const contentRef = useRef<HTMLDivElement>(null);
 
   const getTeamName = (id: number) =>
     teams.find((t) => t.id === id)?.name || `Team ${id}`;
@@ -55,6 +59,58 @@ export default function KnockoutPage() {
     completeCupMatch(id);
   };
 
+  useEffect(() => {
+    const handleClick = (e: MouseEvent) => {
+      if (menuRef.current && !menuRef.current.contains(e.target as Node)) {
+        setMenuOpen(false);
+      }
+    };
+    document.addEventListener("mousedown", handleClick);
+    return () => document.removeEventListener("mousedown", handleClick);
+  }, []);
+
+  const buildExportData = () => {
+    const data = cup.matches.map((m) => ({
+      round: m.round,
+      matchIndex: m.matchIndex,
+      home: m.homeId != null ? getTeamName(m.homeId) : "TBD",
+      away: m.awayId != null ? getTeamName(m.awayId) : "TBD",
+      homeScore: m.homeScore,
+      awayScore: m.awayScore,
+      homeETScore: m.homeETScore,
+      awayETScore: m.awayETScore,
+      homePenScore: m.homePenScore,
+      awayPenScore: m.awayPenScore,
+      status: m.status,
+      winner: m.winnerId != null ? getTeamName(m.winnerId) : null,
+      completedVia: m.completedVia,
+      venue: m.venue,
+    }));
+    return {
+      tournament: "VUNA Football League — Knockout Stage",
+      champion: cup.champion != null ? getTeamName(cup.champion) : null,
+      matches: data,
+      exportedAt: new Date().toISOString(),
+    };
+  };
+
+  const handleDownloadJSON = () => {
+    setMenuOpen(false);
+    exportAsJSON(buildExportData(), "vuna-knockout.json");
+  };
+
+  const handleDownloadPNG = async () => {
+    setMenuOpen(false);
+    if (!contentRef.current) return;
+    await exportAsPNG(contentRef.current, "vuna-knockout.png");
+  };
+
+  const handleDownloadPDF = async () => {
+    setMenuOpen(false);
+    if (!contentRef.current) return;
+    await exportAsPDF(contentRef.current, "vuna-knockout.pdf", "Knockout Stage");
+  };
+
   const hasAnyContent = cup.playoffsGenerated || cup.bracketGenerated;
 
   return (
@@ -65,56 +121,93 @@ export default function KnockoutPage() {
           <h1 className="text-2xl font-bold">Cup Tournament</h1>
         </div>
 
-        {isAdmin && (
-          <div className="flex items-center gap-2">
-            {cup.playoffsGenerated && (
+        <div className="flex items-center gap-2">
+          {hasAnyContent && (
+            <div className="relative" ref={menuRef}>
               <button
-                onClick={() => {
-                  if (confirm("Reset the entire knockout stage?")) {
-                    resetCup();
-                  }
-                }}
-                className="btn-ghost text-sm text-danger"
+                onClick={() => setMenuOpen(!menuOpen)}
+                className="btn-ghost text-sm"
               >
-                Reset
+                <Download size={14} />
+                Download
+                <ChevronDown size={12} />
               </button>
-            )}
+              {menuOpen && (
+                <div className="absolute right-0 top-full mt-1 bg-surface border border-line rounded-lg shadow-lg py-1 z-20 w-36">
+                  <button
+                    onClick={handleDownloadJSON}
+                    className="w-full text-left px-4 py-2 text-sm hover:bg-surface-2 transition-colors"
+                  >
+                    JSON
+                  </button>
+                  <button
+                    onClick={handleDownloadPDF}
+                    className="w-full text-left px-4 py-2 text-sm hover:bg-surface-2 transition-colors"
+                  >
+                    PDF
+                  </button>
+                  <button
+                    onClick={handleDownloadPNG}
+                    className="w-full text-left px-4 py-2 text-sm hover:bg-surface-2 transition-colors"
+                  >
+                    PNG
+                  </button>
+                </div>
+              )}
+            </div>
+          )}
 
-            {!cup.playoffsGenerated && (
-              <button
-                onClick={handleGeneratePlayoffs}
-                disabled={generatingPlayoffs || teams.length < 11}
-                className="btn-primary"
-              >
-                {generatingPlayoffs ? (
-                  <Loader2 size={14} className="animate-spin" />
-                ) : null}
-                Generate Playoff Matches
-              </button>
-            )}
+          {isAdmin && (
+            <>
+              {cup.playoffsGenerated && (
+                <button
+                  onClick={() => {
+                    if (confirm("Reset the entire knockout stage?")) {
+                      resetCup();
+                    }
+                  }}
+                  className="btn-ghost text-sm text-danger"
+                >
+                  Reset
+                </button>
+              )}
 
-            {cup.playoffsGenerated && !cup.bracketGenerated && (
-              <button
-                onClick={handleGenerateBracket}
-                disabled={generatingBracket || !playoffsCompleted}
-                className={`btn-primary ${
-                  !playoffsCompleted ? "opacity-50 cursor-not-allowed" : ""
-                }`}
-              >
-                {generatingBracket ? (
-                  <Loader2 size={14} className="animate-spin" />
-                ) : null}
-                Generate Cup Bracket
-              </button>
-            )}
+              {!cup.playoffsGenerated && (
+                <button
+                  onClick={handleGeneratePlayoffs}
+                  disabled={generatingPlayoffs || teams.length < 11}
+                  className="btn-primary"
+                >
+                  {generatingPlayoffs ? (
+                    <Loader2 size={14} className="animate-spin" />
+                  ) : null}
+                  Generate Playoff Matches
+                </button>
+              )}
 
-            {!playoffsCompleted && cup.playoffsGenerated && !cup.bracketGenerated && (
-              <span className="text-xs text-muted">
-                Enter all playoff results first
-              </span>
-            )}
-          </div>
-        )}
+              {cup.playoffsGenerated && !cup.bracketGenerated && (
+                <button
+                  onClick={handleGenerateBracket}
+                  disabled={generatingBracket || !playoffsCompleted}
+                  className={`btn-primary ${
+                    !playoffsCompleted ? "opacity-50 cursor-not-allowed" : ""
+                  }`}
+                >
+                  {generatingBracket ? (
+                    <Loader2 size={14} className="animate-spin" />
+                  ) : null}
+                  Generate Cup Bracket
+                </button>
+              )}
+
+              {!playoffsCompleted && cup.playoffsGenerated && !cup.bracketGenerated && (
+                <span className="text-xs text-muted">
+                  Enter all playoff results first
+                </span>
+              )}
+            </>
+          )}
+        </div>
       </div>
 
       {!hasAnyContent && (
@@ -140,35 +233,37 @@ export default function KnockoutPage() {
         </div>
       )}
 
-      {hasAnyContent && !cup.bracketGenerated && (
-        <CupPlayoffSection
-          matches={playoffMatches}
-          getTeamName={getTeamName}
-          getTeamLogo={getTeamLogo}
-          onScoreClick={handleScoreClick}
-        />
-      )}
-
-      {cup.bracketGenerated && (
-        <>
-          {playoffMatches.length > 0 && (
-            <CupPlayoffSection
-              matches={playoffMatches}
-              getTeamName={getTeamName}
-              getTeamLogo={getTeamLogo}
-              onScoreClick={handleScoreClick}
-            />
-          )}
-
-          <CupBracket
-            matches={bracketMatches}
+      <div ref={contentRef}>
+        {hasAnyContent && !cup.bracketGenerated && (
+          <CupPlayoffSection
+            matches={playoffMatches}
             getTeamName={getTeamName}
             getTeamLogo={getTeamLogo}
             onScoreClick={handleScoreClick}
-            champion={cup.champion}
           />
-        </>
-      )}
+        )}
+
+        {cup.bracketGenerated && (
+          <>
+            {playoffMatches.length > 0 && (
+              <CupPlayoffSection
+                matches={playoffMatches}
+                getTeamName={getTeamName}
+                getTeamLogo={getTeamLogo}
+                onScoreClick={handleScoreClick}
+              />
+            )}
+
+            <CupBracket
+              matches={bracketMatches}
+              getTeamName={getTeamName}
+              getTeamLogo={getTeamLogo}
+              onScoreClick={handleScoreClick}
+              champion={cup.champion}
+            />
+          </>
+        )}
+      </div>
 
       {selectedMatch && (
         <CupMatchModal
