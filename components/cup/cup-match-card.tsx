@@ -46,15 +46,20 @@ export function CupMatchCard({
         title={isCompleted ? "View result" : "Enter score"}
       >
         <div className="flex items-center justify-between gap-2">
-          <div className="flex items-center gap-2 min-w-0 flex-1">
-            {homeLogo ? (
-              <img src={homeLogo} alt="" className="w-6 h-6 rounded-full object-cover shrink-0" />
-            ) : (
-              <Shield size={16} className="text-muted shrink-0" />
+          <div className="min-w-0 flex-1">
+            <div className="flex items-center gap-2">
+              {homeLogo ? (
+                <img src={homeLogo} alt="" className="w-6 h-6 rounded-full object-cover shrink-0" />
+              ) : (
+                <Shield size={16} className="text-muted shrink-0" />
+              )}
+              <span className={`text-sm font-medium truncate ${isTbd(homeTeamId) ? "text-muted italic" : "text-text"}`}>
+                {homeName}
+              </span>
+            </div>
+            {homeTeamId != null && match.playoffPairing && match.round === "quarter" && (
+              <p className="text-[10px] text-muted/60 mt-0.5 truncate">{match.playoffPairing}</p>
             )}
-            <span className={`text-sm font-medium truncate ${isTbd(homeTeamId) ? "text-muted italic" : "text-text"}`}>
-              {homeName}
-            </span>
           </div>
 
           <div className="flex items-center gap-1 shrink-0">
@@ -73,14 +78,19 @@ export function CupMatchCard({
             )}
           </div>
 
-          <div className="flex items-center gap-2 min-w-0 flex-1 justify-end">
-            <span className={`text-sm font-medium truncate ${isTbd(awayTeamId) ? "text-muted italic" : "text-text"}`}>
-              {awayName}
-            </span>
-            {awayLogo ? (
-              <img src={awayLogo} alt="" className="w-6 h-6 rounded-full object-cover shrink-0" />
-            ) : (
-              <Shield size={16} className="text-muted shrink-0" />
+          <div className="min-w-0 flex-1">
+            <div className="flex items-center gap-2 justify-end">
+              <span className={`text-sm font-medium truncate ${isTbd(awayTeamId) ? "text-muted italic" : "text-text"}`}>
+                {awayName}
+              </span>
+              {awayLogo ? (
+                <img src={awayLogo} alt="" className="w-6 h-6 rounded-full object-cover shrink-0" />
+              ) : (
+                <Shield size={16} className="text-muted shrink-0" />
+              )}
+            </div>
+            {awayTeamId != null && match.playoffPairing && match.round === "quarter" && (
+              <p className="text-[10px] text-muted/60 mt-0.5 truncate text-right">{match.playoffPairing}</p>
             )}
           </div>
         </div>

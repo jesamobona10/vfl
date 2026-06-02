@@ -112,7 +112,7 @@ export function TeamOfRound() {
     <div>
       <div className="flex flex-col gap-3 md:flex-row md:items-center mb-4">
         <div className="flex items-center gap-3">
-          <label className="text-sm font-medium text-slate-700">Round</label>
+          <label className="text-sm font-medium text-text">Round</label>
           <select
             value={roundNum}
             onChange={(e) => setRoundNum(e.target.value)}
@@ -128,7 +128,7 @@ export function TeamOfRound() {
         </div>
 
         <div className="flex items-center gap-3">
-          <label className="text-sm font-medium text-slate-700">Formation</label>
+          <label className="text-sm font-medium text-text">Formation</label>
           <select
             value={formation}
             onChange={(e) => setFormation(e.target.value as FormationType)}
@@ -163,7 +163,7 @@ export function TeamOfRound() {
             <h3 className="text-lg font-bold mb-2 text-center">
               Team of Round {roundNum}
             </h3>
-            <p className="text-sm text-center text-slate-600">
+            <p className="text-sm text-center text-muted">
               Formation: <span className="font-semibold">{formation}</span>
             </p>
           </div>
@@ -199,7 +199,7 @@ function FormationRow({
         <p className="text-xs text-muted font-semibold uppercase tracking-wider">
           {label}
         </p>
-        <p className="text-xs text-slate-500">{players.length}/{count}</p>
+        <p className="text-xs text-muted">{players.length}/{count}</p>
       </div>
       <div
         className="grid gap-3"
@@ -210,19 +210,19 @@ function FormationRow({
           return (
             <div
               key={`${label}-${index}`}
-              className="rounded-2xl border border-slate-200 bg-slate-50 p-3 text-center min-h-[96px]"
+              className="rounded-2xl border border-line bg-surface-2 p-3 text-center min-h-[96px]"
             >
               {player ? (
                 <>
-                  <p className="font-semibold text-slate-900">{player.name}</p>
-                  <p className="text-xs text-slate-500">#{player.number}</p>
-                  <p className="text-xs text-slate-500">{player.teamName}</p>
-                  <p className="mt-2 text-sm font-semibold text-slate-700">
+                  <p className="font-semibold text-text">{player.name}</p>
+                  <p className="text-xs text-muted">#{player.number}</p>
+                  <p className="text-xs text-muted">{player.teamName}</p>
+                  <p className="mt-2 text-sm font-semibold text-text">
                     {player.roundScore.toFixed(1)} pts
                   </p>
                 </>
               ) : (
-                <p className="text-sm text-slate-500">No player</p>
+                <p className="text-sm text-muted">No player</p>
               )}
             </div>
           );

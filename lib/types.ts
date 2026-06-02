@@ -177,6 +177,7 @@ export interface CupMatch {
   date: string;
   time: string;
   venue: string;
+  playoffPairing?: string;
 }
 
 export interface CupState {

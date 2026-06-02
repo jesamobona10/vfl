@@ -23,10 +23,30 @@ export async function exportAsPNG(
     useCORS: true,
     backgroundColor: "#ffffff",
     windowWidth: width,
-    onclone: (doc) => {
+    onclone: (doc, clonedElement) => {
       const style = doc.createElement("style");
-      style.textContent = `[class*="max-w-"] { max-width: 100% !important; width: 100% !important; }`;
+      style.textContent = `
+        [class*="max-w-"] { max-width: 100% !important; width: 100% !important; }
+        .overflow-hidden { overflow: visible !important; }
+        .overflow-x-auto { overflow: visible !important; }
+        .overflow-y-auto { overflow: visible !important; }
+      `;
       doc.head.appendChild(style);
+
+      clonedElement.style.overflow = "visible";
+      clonedElement.style.maxHeight = "none";
+
+      const all = clonedElement.querySelectorAll("*");
+      all.forEach((el) => {
+        const htmlEl = el as HTMLElement;
+        const cs = doc.defaultView?.getComputedStyle(htmlEl);
+        if (cs) {
+          const ov = cs.overflow;
+          if (ov === "hidden" || ov === "clip" || ov === "auto" || ov === "scroll") {
+            htmlEl.style.overflow = "visible";
+          }
+        }
+      });
     },
   });
   const blob = await new Promise<Blob | null>((resolve) =>
@@ -50,9 +70,35 @@ export async function exportAsPDF(
     scale: 2,
     useCORS: true,
     backgroundColor: "#ffffff",
+    windowWidth: 390,
+    onclone: (doc, clonedElement) => {
+      const style = doc.createElement("style");
+      style.textContent = `
+        [class*="max-w-"] { max-width: 100% !important; width: 100% !important; }
+        .overflow-hidden { overflow: visible !important; }
+        .overflow-x-auto { overflow: visible !important; }
+        .overflow-y-auto { overflow: visible !important; }
+      `;
+      doc.head.appendChild(style);
+
+      clonedElement.style.overflow = "visible";
+      clonedElement.style.maxHeight = "none";
+
+      const all = clonedElement.querySelectorAll("*");
+      all.forEach((el) => {
+        const htmlEl = el as HTMLElement;
+        const cs = doc.defaultView?.getComputedStyle(htmlEl);
+        if (cs) {
+          const ov = cs.overflow;
+          if (ov === "hidden" || ov === "clip" || ov === "auto" || ov === "scroll") {
+            htmlEl.style.overflow = "visible";
+          }
+        }
+      });
+    },
   });
   const imgData = canvas.toDataURL("image/png");
-  const pdf = new jsPDF("l", "mm", "a4");
+  const pdf = new jsPDF("p", "mm", "a4");
   const pageWidth = pdf.internal.pageSize.getWidth();
   const pageHeight = pdf.internal.pageSize.getHeight();
   const imgWidth = pageWidth - 20;

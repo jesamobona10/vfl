@@ -32,7 +32,7 @@ function MatchCard({ match, isLive }: { match: MatchData; isLive: boolean }) {
   const statusBadge = isLive
     ? "bg-danger/10 text-danger"
     : match.status === "completed"
-    ? "bg-slate-100 text-slate-800"
+    ? "bg-muted/10 text-muted"
     : "bg-surface-2 text-muted";
 
   return (

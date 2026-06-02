@@ -44,6 +44,17 @@ export function generateCupBracket(
   const autoQualifiers = standings.slice(0, 5);
   if (autoQualifiers.length !== 5) return [];
 
+  const teamName = (id: number) =>
+    standings.find((s) => s.id === id)?.name || `Team ${id}`;
+
+  const pairingByPlayoffIndex: Record<number, string> = {};
+  playoffMatches.forEach((pm) => {
+    if (pm.homeId != null && pm.awayId != null) {
+      pairingByPlayoffIndex[pm.matchIndex] =
+        `Winner: ${teamName(pm.homeId)} vs ${teamName(pm.awayId)}`;
+    }
+  });
+
   const playoffWinners = playoffMatches
     .filter((m) => m.status === "completed" && m.winnerId != null)
     .sort((a, b) => a.matchIndex - b.matchIndex)
@@ -71,6 +82,7 @@ export function generateCupBracket(
       homePenScore: null, awayPenScore: null,
       status: "scheduled", winnerId: null, completedVia: null,
       date: "", time: "", venue: "Veritas Stadium",
+      playoffPairing: pairingByPlayoffIndex[2],
     },
     {
       id: nextId++, round: "quarter", matchIndex: 1,
@@ -89,6 +101,7 @@ export function generateCupBracket(
       homePenScore: null, awayPenScore: null,
       status: "scheduled", winnerId: null, completedVia: null,
       date: "", time: "", venue: "Veritas Stadium",
+      playoffPairing: pairingByPlayoffIndex[1],
     },
     {
       id: nextId++, round: "quarter", matchIndex: 3,
@@ -98,6 +111,7 @@ export function generateCupBracket(
       homePenScore: null, awayPenScore: null,
       status: "scheduled", winnerId: null, completedVia: null,
       date: "", time: "", venue: "Veritas Stadium",
+      playoffPairing: pairingByPlayoffIndex[0],
     },
   ];
 

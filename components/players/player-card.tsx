@@ -93,7 +93,7 @@ export function PlayerCard({
             <span className="rounded-full bg-surface-2 px-2 py-1 text-[11px] font-medium text-muted">
               {teamName}
             </span>
-            <span className="rounded-full bg-emerald-100 text-emerald-800 px-2 py-1 text-[11px] font-semibold">
+            <span className="rounded-full bg-brand/10 text-brand px-2 py-1 text-[11px] font-semibold">
               {player.rating.toFixed(1)}
             </span>
           </div>
