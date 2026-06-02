@@ -55,65 +55,24 @@ export function generateCupBracket(
     }
   });
 
-  const playoffWinners = playoffMatches
-    .filter((m) => m.status === "completed" && m.winnerId != null)
-    .sort((a, b) => a.matchIndex - b.matchIndex)
-    .map((m) => m.winnerId!);
-
-  if (playoffWinners.length !== 3) return [];
-
-  const seeds = [
-    { id: autoQualifiers[0].id, name: autoQualifiers[0].name },
-    { id: autoQualifiers[1].id, name: autoQualifiers[1].name },
-    { id: autoQualifiers[2].id, name: autoQualifiers[2].name },
-    { id: autoQualifiers[3].id, name: autoQualifiers[3].name },
-    { id: autoQualifiers[4].id, name: autoQualifiers[4].name },
-    { id: playoffWinners[0], name: "" },
-    { id: playoffWinners[1], name: "" },
-    { id: playoffWinners[2], name: "" },
+  const qfData: { homeId: number; awayId: number | null; awayFromMatchId?: number; pairing?: string }[] = [
+    { homeId: autoQualifiers[0].id, awayId: null, awayFromMatchId: playoffMatches[2]?.id, pairing: pairingByPlayoffIndex[2] },
+    { homeId: autoQualifiers[3].id, awayId: autoQualifiers[4].id },
+    { homeId: autoQualifiers[1].id, awayId: null, awayFromMatchId: playoffMatches[1]?.id, pairing: pairingByPlayoffIndex[1] },
+    { homeId: autoQualifiers[2].id, awayId: null, awayFromMatchId: playoffMatches[0]?.id, pairing: pairingByPlayoffIndex[0] },
   ];
 
-  const quarterFinals: CupMatch[] = [
-    {
-      id: nextId++, round: "quarter", matchIndex: 0,
-      homeId: seeds[0].id, awayId: seeds[7].id,
-      homeScore: null, awayScore: null,
-      homeETScore: null, awayETScore: null,
-      homePenScore: null, awayPenScore: null,
-      status: "scheduled", winnerId: null, completedVia: null,
-      date: "", time: "", venue: "Veritas Stadium",
-      playoffPairing: pairingByPlayoffIndex[2],
-    },
-    {
-      id: nextId++, round: "quarter", matchIndex: 1,
-      homeId: seeds[3].id, awayId: seeds[4].id,
-      homeScore: null, awayScore: null,
-      homeETScore: null, awayETScore: null,
-      homePenScore: null, awayPenScore: null,
-      status: "scheduled", winnerId: null, completedVia: null,
-      date: "", time: "", venue: "Veritas Stadium",
-    },
-    {
-      id: nextId++, round: "quarter", matchIndex: 2,
-      homeId: seeds[1].id, awayId: seeds[6].id,
-      homeScore: null, awayScore: null,
-      homeETScore: null, awayETScore: null,
-      homePenScore: null, awayPenScore: null,
-      status: "scheduled", winnerId: null, completedVia: null,
-      date: "", time: "", venue: "Veritas Stadium",
-      playoffPairing: pairingByPlayoffIndex[1],
-    },
-    {
-      id: nextId++, round: "quarter", matchIndex: 3,
-      homeId: seeds[2].id, awayId: seeds[5].id,
-      homeScore: null, awayScore: null,
-      homeETScore: null, awayETScore: null,
-      homePenScore: null, awayPenScore: null,
-      status: "scheduled", winnerId: null, completedVia: null,
-      date: "", time: "", venue: "Veritas Stadium",
-      playoffPairing: pairingByPlayoffIndex[0],
-    },
-  ];
+  const quarterFinals: CupMatch[] = qfData.map((d, i) => ({
+    id: nextId++, round: "quarter" as const, matchIndex: i,
+    homeId: d.homeId, awayId: d.awayId,
+    awayFromMatchId: d.awayFromMatchId,
+    homeScore: null, awayScore: null,
+    homeETScore: null, awayETScore: null,
+    homePenScore: null, awayPenScore: null,
+    status: "scheduled" as const, winnerId: null, completedVia: null,
+    date: "", time: "", venue: "Veritas Stadium",
+    playoffPairing: d.pairing,
+  }));
 
   const semiFinals: CupMatch[] = [
     {

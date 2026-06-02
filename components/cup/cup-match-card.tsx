@@ -43,7 +43,7 @@ export function CupMatchCard({
       <button
         onClick={() => onScoreClick(match)}
         className="w-full text-left"
-        title={isCompleted ? "View result" : "Enter score"}
+        title={isCompleted ? "View result" : isTbd(homeTeamId) || isTbd(awayTeamId) ? "Waiting for opponent" : "Enter score"}
       >
         <div className="flex items-center justify-between gap-2">
           <div className="min-w-0 flex-1">

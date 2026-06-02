@@ -13,15 +13,13 @@ export default function KnockoutPage() {
   const cup = useAppStore((s) => s.cup);
   const teams = useAppStore((s) => s.teams);
   const isAdmin = useAppStore((s) => s.isAdmin);
-  const generatePlayoffMatches = useAppStore((s) => s.generatePlayoffMatches);
-  const generateCupBracketMatches = useAppStore((s) => s.generateCupBracketMatches);
+  const generateKnockoutStage = useAppStore((s) => s.generateKnockoutStage);
   const updateCupMatch = useAppStore((s) => s.updateCupMatch);
   const completeCupMatch = useAppStore((s) => s.completeCupMatch);
   const resetCup = useAppStore((s) => s.resetCup);
 
   const [selectedMatch, setSelectedMatch] = useState<CupMatch | null>(null);
-  const [generatingPlayoffs, setGeneratingPlayoffs] = useState(false);
-  const [generatingBracket, setGeneratingBracket] = useState(false);
+  const [generating, setGenerating] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
   const contentRef = useRef<HTMLDivElement>(null);
@@ -34,29 +32,17 @@ export default function KnockoutPage() {
 
   const playoffMatches = cup.matches.filter((m) => m.round === "playoff");
   const bracketMatches = cup.matches.filter((m) => m.round !== "playoff");
-  const playoffsCompleted = playoffMatches.every((m) => m.status === "completed");
 
-  const handleGeneratePlayoffs = async () => {
-    setGeneratingPlayoffs(true);
+  const handleGenerate = async () => {
+    setGenerating(true);
     resetCup();
-    generatePlayoffMatches();
-    setGeneratingPlayoffs(false);
-  };
-
-  const handleGenerateBracket = async () => {
-    setGeneratingBracket(true);
-    generateCupBracketMatches();
-    setGeneratingBracket(false);
+    generateKnockoutStage();
+    setGenerating(false);
   };
 
   const handleScoreClick = (match: CupMatch) => {
     if (match.homeId == null || match.awayId == null) return;
     setSelectedMatch(match);
-  };
-
-  const handleSaveAndComplete = (id: number, data: Partial<CupMatch>) => {
-    updateCupMatch(id, data);
-    completeCupMatch(id);
   };
 
   useEffect(() => {
@@ -159,7 +145,7 @@ export default function KnockoutPage() {
 
           {isAdmin && (
             <>
-              {cup.playoffsGenerated && (
+              {cup.bracketGenerated && (
                 <button
                   onClick={() => {
                     if (confirm("Reset the entire knockout stage?")) {
@@ -172,38 +158,17 @@ export default function KnockoutPage() {
                 </button>
               )}
 
-              {!cup.playoffsGenerated && (
+              {!cup.bracketGenerated && (
                 <button
-                  onClick={handleGeneratePlayoffs}
-                  disabled={generatingPlayoffs || teams.length < 11}
+                  onClick={handleGenerate}
+                  disabled={generating || teams.length < 11}
                   className="btn-primary"
                 >
-                  {generatingPlayoffs ? (
+                  {generating ? (
                     <Loader2 size={14} className="animate-spin" />
                   ) : null}
-                  Generate Playoff Matches
+                  Generate Knockout Stage
                 </button>
-              )}
-
-              {cup.playoffsGenerated && !cup.bracketGenerated && (
-                <button
-                  onClick={handleGenerateBracket}
-                  disabled={generatingBracket || !playoffsCompleted}
-                  className={`btn-primary ${
-                    !playoffsCompleted ? "opacity-50 cursor-not-allowed" : ""
-                  }`}
-                >
-                  {generatingBracket ? (
-                    <Loader2 size={14} className="animate-spin" />
-                  ) : null}
-                  Generate Cup Bracket
-                </button>
-              )}
-
-              {!playoffsCompleted && cup.playoffsGenerated && !cup.bracketGenerated && (
-                <span className="text-xs text-muted">
-                  Enter all playoff results first
-                </span>
               )}
             </>
           )}
@@ -221,29 +186,23 @@ export default function KnockoutPage() {
             automatically for the cup. Teams placed 6th through 11th
             compete in playoff matches for the remaining 3 spots.
           </p>
-          {isAdmin && !cup.playoffsGenerated && (
+          {isAdmin && !cup.bracketGenerated && (
             <button
-              onClick={handleGeneratePlayoffs}
-              disabled={generatingPlayoffs || teams.length < 11}
+              onClick={handleGenerate}
+              disabled={generating || teams.length < 11}
               className="btn-primary mt-6"
             >
-              Generate Playoff Matches
+              {generating ? (
+                <Loader2 size={14} className="animate-spin" />
+              ) : null}
+              Generate Knockout Stage
             </button>
           )}
         </div>
       )}
 
       <div ref={contentRef}>
-        {hasAnyContent && !cup.bracketGenerated && (
-          <CupPlayoffSection
-            matches={playoffMatches}
-            getTeamName={getTeamName}
-            getTeamLogo={getTeamLogo}
-            onScoreClick={handleScoreClick}
-          />
-        )}
-
-        {cup.bracketGenerated && (
+        {hasAnyContent && (
           <>
             {playoffMatches.length > 0 && (
               <CupPlayoffSection

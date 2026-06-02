@@ -13,8 +13,7 @@ import { calculateStandings } from "../logic/standings";
 export interface CupSlice {
   cup: CupState;
 
-  generatePlayoffMatches: () => void;
-  generateCupBracketMatches: () => void;
+  generateKnockoutStage: () => void;
   updateCupMatch: (id: number, data: Partial<CupMatch>) => void;
   completeCupMatch: (id: number) => void;
   resetCup: () => void;
@@ -30,36 +29,18 @@ const initialCupState: CupState = {
 export const createCupSlice: StateCreator<any, [], [], CupSlice> = (set, get) => ({
   cup: { ...initialCupState },
 
-  generatePlayoffMatches: () => {
+  generateKnockoutStage: () => {
     resetCupIdCounter();
     const teams = get().teams;
     const fixtures = get().fixtures;
     if (!teams.length) return;
 
     const standings = calculateStandings(teams, fixtures);
-    const matches = generatePlayoffs(standings);
-    set({
-      cup: {
-        matches,
-        champion: null,
-        playoffsGenerated: true,
-        bracketGenerated: false,
-      },
-    });
-  },
-
-  generateCupBracketMatches: () => {
-    const teams = get().teams;
-    const fixtures = get().fixtures;
-    const currentMatches = get().cup.matches;
-    if (!teams.length) return;
-
-    const standings = calculateStandings(teams, fixtures);
-    const playoffMatches = currentMatches.filter((m: CupMatch) => m.round === "playoff");
+    const playoffMatches = generatePlayoffs(standings);
     const bracketMatches = generateCupBracket(standings, playoffMatches);
     set({
       cup: {
-        matches: [...currentMatches, ...bracketMatches],
+        matches: [...playoffMatches, ...bracketMatches],
         champion: null,
         playoffsGenerated: true,
         bracketGenerated: true,
