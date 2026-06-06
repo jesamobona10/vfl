@@ -16,6 +16,7 @@ export function AppHeader({ onOpenSearch }: AppHeaderProps) {
   const userProfile = useAppStore((s) => s.userProfile);
   const isAdmin = useAppStore((s) => s.isAdmin);
   const isPlayer = userProfile?.role === "player";
+  const currentOrg = useAppStore((s) => s.currentOrg);
   const logout = useAppStore((s) => s.logout);
   const resetTeams = useAppStore((s) => s.resetTeams);
   const setTeams = useAppStore((s) => s.setTeams);
@@ -125,8 +126,16 @@ export function AppHeader({ onOpenSearch }: AppHeaderProps) {
       <div className="flex items-center gap-3">
         <Shield className="text-brand" size={28} />
         <div>
-          <h1 className="text-lg font-bold text-text">VUNA Football League</h1>
-          <p className="text-xs text-muted">Management System</p>
+          <h1 className="text-lg font-bold text-text">
+            {currentOrg ? currentOrg.name : "VUNA Football League"}
+          </h1>
+          <p className="text-xs text-muted">
+            {currentOrg ? (
+              <><span className="capitalize">{currentOrg.type}</span> &middot; Management System</>
+            ) : (
+              "Management System"
+            )}
+          </p>
         </div>
       </div>
 

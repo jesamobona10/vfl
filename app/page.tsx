@@ -1,130 +1,125 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
 import { useAppStore } from "@/lib/store";
-import { refreshTeamData } from "@/lib/hooks/use-team-data";
-import { MetricCards } from "@/components/dashboard/metric-cards";
-import { LeagueStats } from "@/components/dashboard/league-stats";
-import { UpcomingMatches } from "@/components/dashboard/upcoming-matches";
-import { TopFiveStandings } from "@/components/dashboard/top-five-standings";
-import { PlayerDashboard } from "@/components/player/player-dashboard";
-import { Shield, RefreshCw, Loader2 } from "lucide-react";
-import { GeneratePlayerCredentials } from "@/components/players/generate-player-credentials";
+import { Shield, School, Building2, Users, ArrowRight, Loader2 } from "lucide-react";
 
-export default function DashboardPage() {
-  const teams = useAppStore((s) => s.teams);
-  const players = useAppStore((s) => s.players);
-  const generateFixtures = useAppStore((s) => s.generateFixtures);
+export default function LandingPage() {
+  const router = useRouter();
   const isAdmin = useAppStore((s) => s.isAdmin);
-  const isPlayer = useAppStore((s) => s.userProfile?.role === "player");
+  const userProfile = useAppStore((s) => s.userProfile);
+  const authLoading = useAppStore((s) => s.authLoading);
   const currentTeamAccount = useAppStore((s) => s.currentTeamAccount);
-  const teamDataLoaded = useAppStore((s) => s.teamDataLoaded);
-  const setTeamDataLoaded = useAppStore((s) => s.setTeamDataLoaded);
-  const [fetching, setFetching] = useState(false);
+  const fetchMyOrgs = useAppStore((s) => s.fetchMyOrgs);
+  const myOrgs = useAppStore((s) => s.myOrgs);
+  const [loadingOrgs, setLoadingOrgs] = useState(false);
 
   useEffect(() => {
-    if (currentTeamAccount && !teamDataLoaded && !fetching) {
-      setFetching(true);
-      refreshTeamData().finally(() => setFetching(false));
+    if (!authLoading && isAdmin) {
+      router.replace("/admin");
     }
-  }, [currentTeamAccount, teamDataLoaded, fetching]);
+  }, [authLoading, isAdmin, router]);
 
-  const teamId = currentTeamAccount?.teamId;
-  const team = teams.find((t) => t.id === teamId);
-  const teamPlayerCount = teamId
-    ? players.filter((p) => p.teamId === teamId).length
-    : 0;
+  useEffect(() => {
+    if (!authLoading && userProfile && !isAdmin) {
+      setLoadingOrgs(true);
+      fetchMyOrgs().finally(() => setLoadingOrgs(false));
+    }
+  }, [authLoading, userProfile, isAdmin, fetchMyOrgs]);
 
-  if (currentTeamAccount && !teamDataLoaded) {
+  useEffect(() => {
+    if (loadingOrgs || authLoading) return;
+    if (myOrgs.length === 1 && currentTeamAccount) {
+      router.replace(`/org/${myOrgs[0].slug}/dashboard`);
+    } else if (myOrgs.length > 0 && !isAdmin) {
+      router.replace(`/org/${myOrgs[0].slug}/dashboard`);
+    }
+  }, [myOrgs, loadingOrgs, authLoading, currentTeamAccount, isAdmin, router]);
+
+  if (authLoading || loadingOrgs) {
     return (
-      <div className="flex items-center justify-center py-20">
+      <div className="min-h-screen flex items-center justify-center bg-bg">
+        <div className="animate-spin w-6 h-6 border-2 border-brand border-t-transparent rounded-full" />
+      </div>
+    );
+  }
+
+  if (isAdmin || userProfile) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-bg">
         <Loader2 size={28} className="animate-spin text-muted" />
       </div>
     );
   }
 
-  if (isPlayer) {
-    return <PlayerDashboard />;
-  }
+  const orgTypes = [
+    {
+      type: "school",
+      label: "School",
+      icon: School,
+      desc: "Multiple teams, intra-school & inter-school competitions",
+      color: "text-emerald-500",
+      bg: "bg-emerald-500/10",
+    },
+    {
+      type: "academy",
+      label: "Football Academy",
+      icon: Building2,
+      desc: "Age-group teams, tournament participation, player development",
+      color: "text-blue-500",
+      bg: "bg-blue-500/10",
+    },
+    {
+      type: "club",
+      label: "Amateur Club",
+      icon: Users,
+      desc: "Independent club with league, cup, and friendly matches",
+      color: "text-violet-500",
+      bg: "bg-violet-500/10",
+    },
+  ];
 
   return (
-    <div>
-      <div className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between mb-6">
-        <div>
-          <p className="text-sm text-muted">
-            {currentTeamAccount ? "Team Dashboard" : "Season Control"}
-          </p>
-          <h1 className="text-2xl font-bold">
-            {currentTeamAccount
-              ? `${currentTeamAccount.name}`
-              : "Dashboard"}
+    <div className="min-h-screen bg-bg">
+      <div className="max-w-4xl mx-auto px-4 py-16 sm:py-24">
+        <div className="text-center mb-12">
+          <Shield className="mx-auto text-brand" size={56} />
+          <h1 className="text-3xl sm:text-4xl font-bold mt-6 text-text">
+            VUNA Football Management
           </h1>
+          <p className="text-muted mt-3 text-lg max-w-xl mx-auto">
+            Manage your school, academy, or club — leagues, cups, player stats, and live scores.
+          </p>
         </div>
-        <div className="flex items-center gap-2 shrink-0">
-          {currentTeamAccount && (
-            <button
-              onClick={async () => {
-                setTeamDataLoaded(false);
-                setFetching(true);
-                await refreshTeamData();
-                setFetching(false);
-              }}
-              disabled={fetching}
-              className="btn-ghost text-sm"
-            >
-              <RefreshCw size={16} className={fetching ? "animate-spin" : ""} />
-              Refresh
-            </button>
-          )}
-          {isAdmin && (
-            <button
-              onClick={() => generateFixtures(teams)}
-              disabled={teams.length < 2}
-              className="btn-primary"
-            >
-              <RefreshCw size={16} />
-              Generate Fixtures
-            </button>
-          )}
-        </div>
-      </div>
 
-      {currentTeamAccount && team && (
-        <>
-          <div className="card p-5 mb-6 flex items-center gap-4">
-            {team.logo ? (
-              <img
-                src={team.logo}
-                alt={team.name}
-                className="w-14 h-14 rounded-full object-cover"
-              />
-            ) : (
-              <div className="w-14 h-14 rounded-full bg-surface-2 flex items-center justify-center">
-                <Shield size={24} className="text-muted" />
+        <div className="grid gap-4 sm:grid-cols-3 mb-8">
+          {orgTypes.map(({ type, label, icon: Icon, desc, color, bg }) => (
+            <button
+              key={type}
+              onClick={() => router.push(`/auth/register?type=${type}`)}
+              className="card p-6 text-left hover:border-brand transition-colors group"
+            >
+              <div className={`w-12 h-12 rounded-full ${bg} flex items-center justify-center mb-4`}>
+                <Icon size={24} className={color} />
               </div>
-            )}
-            <div>
-              <h2 className="text-xl font-bold">{team.name}</h2>
-              <p className="text-sm text-muted">Rating: {team.rating.toFixed(1)}</p>
-            </div>
-          </div>
-          <div className="mb-6">
-            <GeneratePlayerCredentials
-              scope="team"
-              teamId={teamId}
-              teamName={team.name}
-              playerCount={teamPlayerCount}
-            />
-          </div>
-        </>
-      )}
+              <h3 className="font-bold text-lg text-text">{label}</h3>
+              <p className="text-sm text-muted mt-1">{desc}</p>
+              <div className="flex items-center gap-1 text-sm font-medium text-brand mt-4 opacity-0 group-hover:opacity-100 transition-opacity">
+                Get started <ArrowRight size={14} />
+              </div>
+            </button>
+          ))}
+        </div>
 
-      <div className="space-y-6">
-        <MetricCards />
-        {isAdmin && <LeagueStats />}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          <UpcomingMatches />
-          <TopFiveStandings />
+        <div className="text-center">
+          <p className="text-muted text-sm mb-4">Already have an account?</p>
+          <button
+            onClick={() => router.push("/auth/login")}
+            className="btn-primary px-8"
+          >
+            Sign In
+          </button>
         </div>
       </div>
     </div>

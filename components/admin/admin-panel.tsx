@@ -26,11 +26,12 @@ import {
   Eye,
   EyeOff,
   FileDown,
+  Building2,
 } from "lucide-react";
 import type { Team, Player } from "@/lib/types";
 import { GeneratePlayerCredentials } from "@/components/players/generate-player-credentials";
 
-type AdminTab = "teams" | "players" | "fixtures" | "database" | "accounts" | "import";
+type AdminTab = "teams" | "players" | "fixtures" | "database" | "accounts" | "import" | "orgs";
 
 function PlayerManager() {
   const isAdmin = useAppStore((s) => s.isAdmin);
@@ -623,10 +624,60 @@ function TeamAccountManager() {
   );
 }
 
+function OrgManager() {
+  const [orgs, setOrgs] = useState<{ id: string; name: string; slug: string; type: string; created_at: string }[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    fetch("/api/org/my-orgs")
+      .then((r) => r.json())
+      .then((d) => setOrgs(d.orgs || []))
+      .catch(() => {})
+      .finally(() => setLoading(false));
+  }, []);
+
+  if (loading) {
+    return <div className="flex justify-center py-12"><Loader2 size={24} className="animate-spin text-muted" /></div>;
+  }
+
+  const handleViewOrg = (slug: string) => {
+    window.open(`/org/${slug}/dashboard`, "_blank");
+  };
+
+  return (
+    <div className="space-y-4">
+      <h3 className="text-lg font-bold">Organizations</h3>
+      <p className="text-sm text-muted">All registered organizations across the platform.</p>
+
+      {orgs.length === 0 ? (
+        <p className="text-sm text-muted text-center py-8">No organizations registered yet.</p>
+      ) : (
+        <div className="space-y-2">
+          {orgs.map((org) => (
+            <div key={org.id} className="card px-4 py-3 flex items-center gap-3">
+              <Building2 size={18} className="text-muted shrink-0" />
+              <div className="flex-1 min-w-0">
+                <p className="text-sm font-medium truncate">{org.name}</p>
+                <p className="text-xs text-muted truncate">
+                  {org.slug} &middot; <span className="capitalize">{org.type}</span>
+                </p>
+              </div>
+              <button onClick={() => handleViewOrg(org.slug)} className="btn-ghost text-xs">
+                View
+              </button>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
 export function AdminPanel() {
-  const [tab, setTab] = useState<AdminTab>("fixtures");
+  const [tab, setTab] = useState<AdminTab>("orgs");
 
   const adminTabs: { key: AdminTab; label: string; icon: typeof Shield }[] = [
+    { key: "orgs", label: "Organizations", icon: Building2 },
     { key: "fixtures", label: "Fixtures & Scores", icon: Calendar },
     { key: "teams", label: "Teams", icon: Users },
     { key: "players", label: "Players", icon: UserCog },
@@ -660,6 +711,7 @@ export function AdminPanel() {
         })}
       </div>
 
+      {tab === "orgs" && <OrgManager />}
       {tab === "teams" && <TeamForm />}
       {tab === "players" && <PlayerManager />}
       {tab === "fixtures" && <FixtureManager />}

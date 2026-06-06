@@ -13,10 +13,20 @@ import {
   BarChart3,
   Radio,
   Swords,
+  LayoutList,
 } from "lucide-react";
 
-const tabs = [
-  { href: "/", label: "Dashboard", icon: LayoutDashboard },
+interface Tab {
+  href: string;
+  label: string;
+  icon: typeof LayoutDashboard;
+  adminOnly?: boolean;
+  orgOnly?: boolean;
+}
+
+const tabs: Tab[] = [
+  { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
+  { href: "/competitions", label: "Competitions", icon: LayoutList, orgOnly: true },
   { href: "/live", label: "Live", icon: Radio },
   { href: "/fixtures", label: "Fixtures", icon: Calendar },
   { href: "/knockout", label: "Knockout", icon: Swords },
@@ -35,22 +45,35 @@ export function TabNav() {
   const isAdmin = useAppStore((s) => s.isAdmin);
   const currentTeamAccount = useAppStore((s) => s.currentTeamAccount);
   const isPlayer = useAppStore((s) => s.userProfile?.role === "player");
+  const currentOrg = useAppStore((s) => s.currentOrg);
+
+  const isOrgRoute = pathname.startsWith("/org/") && currentOrg;
+  const orgSlug = currentOrg?.slug;
 
   return (
     <nav className="bg-surface border-b border-line px-6">
       <div className="flex gap-1 overflow-x-auto">
         {tabs.map((tab) => {
           if (tab.adminOnly && !isAdmin) return null;
+          if (tab.orgOnly && !isOrgRoute) return null;
           if (isPlayer && playerAccountHidden.has(tab.href)) return null;
           if (currentTeamAccount && teamAccountHidden.has(tab.href)) return null;
-          const active = pathname === tab.href;
+
+          const resolvedHref = isOrgRoute && orgSlug
+            ? `/org/${orgSlug}${tab.href === "/dashboard" ? "/dashboard" : tab.href}`
+            : tab.href;
+
+          const isActive = tab.href === "/competitions"
+            ? pathname.startsWith(resolvedHref + "/") || pathname === resolvedHref
+            : pathname === resolvedHref;
+
           const Icon = tab.icon;
           return (
             <Link
               key={tab.href}
-              href={tab.href}
+              href={resolvedHref}
               className={`flex items-center gap-2 px-4 py-3 text-sm font-medium border-b-2 transition-colors whitespace-nowrap ${
-                active
+                isActive
                   ? "border-brand text-brand"
                   : "border-transparent text-muted hover:text-text hover:border-line"
               }`}

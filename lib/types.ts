@@ -201,6 +201,21 @@ export interface OrgMember {
   created_at: string;
 }
 
+export type CompetitionType = "league" | "cup" | "friendly";
+export type CompetitionStatus = "draft" | "active" | "completed";
+
+export interface Competition {
+  id: string;
+  organization_id: string;
+  name: string;
+  type: CompetitionType;
+  season: string | null;
+  status: CompetitionStatus;
+  settings: Record<string, unknown>;
+  created_at: string;
+  created_by: string | null;
+}
+
 export interface CupState {
   matches: CupMatch[];
   champion: number | null;

@@ -148,8 +148,10 @@ export function LoginForm() {
               {loading ? "Signing in..." : "Sign In"}
             </button>
             <p className="text-center text-xs text-muted">
-              Contact your league administrator if you don&apos;t have an
-              account.
+              Don&apos;t have an account?{" "}
+              <a href="/auth/register" className="text-brand hover:underline">
+                Register your organization
+              </a>
             </p>
           </form>
         ) : mode === "player" ? (

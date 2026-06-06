@@ -13,22 +13,24 @@ export default function OrgLayout({ children }: { children: React.ReactNode }) {
   const currentOrg = useAppStore((s) => s.currentOrg);
   const fetchOrgBySlug = useAppStore((s) => s.fetchOrgBySlug);
   const setCurrentOrg = useAppStore((s) => s.setCurrentOrg);
-  const initialized = useRef(false);
+  const lastSlug = useRef<string | null>(null);
   const [isSearchOpen, setSearchOpen] = useState(false);
 
   useEffect(() => {
-    if (!initialized.current && slug) {
-      initialized.current = true;
+    if (!slug) return;
+    if (slug !== lastSlug.current) {
+      lastSlug.current = slug;
+      setCurrentOrg(null);
       fetchOrgBySlug(slug);
     }
-  }, [slug, fetchOrgBySlug]);
+  }, [slug, fetchOrgBySlug, setCurrentOrg]);
 
   useEffect(() => {
     return () => {
       setCurrentOrg(null);
-      initialized.current = false;
+      lastSlug.current = null;
     };
-  }, [slug, setCurrentOrg]);
+  }, [setCurrentOrg]);
 
   if (!currentOrg) {
     return (

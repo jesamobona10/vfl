@@ -12,8 +12,10 @@ import type { CupSlice } from "./cup-slice";
 import { createCupSlice } from "./cup-slice";
 import type { OrgSlice } from "./org-slice";
 import { createOrgSlice } from "./org-slice";
+import type { CompetitionSlice } from "./competition-slice";
+import { createCompetitionSlice } from "./competition-slice";
 
-export type AppStore = AuthSlice & TeamsSlice & FixturesSlice & PlayersSlice & CupSlice & OrgSlice;
+export type AppStore = AuthSlice & TeamsSlice & FixturesSlice & PlayersSlice & CupSlice & OrgSlice & CompetitionSlice;
 
 export const useAppStore = create<AppStore>()(
   persist(
@@ -24,6 +26,7 @@ export const useAppStore = create<AppStore>()(
       ...createPlayersSlice(...a),
       ...createCupSlice(...a),
       ...createOrgSlice(...a),
+      ...createCompetitionSlice(...a),
     }),
     {
       name: "vfl-app-state",
