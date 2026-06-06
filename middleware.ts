@@ -19,7 +19,7 @@ function isPlayerAllowedPage(pathname: string): boolean {
 function isPlayerAllowedApi(pathname: string, method: string): boolean {
   if (pathname.startsWith("/api/public/")) return true;
   if (pathname === "/api/auth/session" && method === "GET") return true;
-  if (pathname === "/api/auth/logout" && (method === "POST" || method === "GET")) return true;
+  if (    pathname === "/api/auth/logout" && (method === "POST" || method === "GET")) return true;
   if (pathname === "/api/fixtures" && method === "GET") return true;
   if (pathname === "/api/players" && method === "GET") return true;
   if (/^\/api\/players\/\d+$/.test(pathname) && method === "GET") return true;
@@ -43,6 +43,14 @@ async function resolveAccountKind(
     .eq("id", userId)
     .maybeSingle();
   if (player) return "player";
+
+  const { data: orgMember } = await supabase
+    .from("organization_members")
+    .select("id")
+    .eq("user_id", userId)
+    .maybeSingle();
+  if (orgMember) return "admin";
+
   return "unknown";
 }
 
@@ -85,6 +93,8 @@ export async function middleware(request: NextRequest) {
   const isPublicApi =
     pathname === "/api/auth/admin-signup" ||
     pathname === "/api/auth/admin-login" ||
+    pathname === "/api/auth/session" ||
+    pathname === "/api/auth/logout" ||
     pathname === "/api/auth/org-login" ||
     pathname === "/api/auth/team-login" ||
     pathname === "/api/auth/player-login" ||
