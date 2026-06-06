@@ -25,6 +25,8 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   const isPlayer = userProfile?.role === "player";
   const isAuthenticated = currentTeamAccount !== null || isAdmin || isPlayer;
 
+  const isOrgRoute = pathname.startsWith("/org/");
+
   useEffect(() => {
     initializeAuth();
   }, [initializeAuth]);
@@ -45,7 +47,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   }
 
   if (!isAuthenticated) {
-    if (isPublicPath) {
+    if (isPublicPath || isOrgRoute) {
       return <>{children}</>;
     }
     return (
@@ -53,6 +55,10 @@ export function AppShell({ children }: { children: React.ReactNode }) {
         <LoginForm />
       </div>
     );
+  }
+
+  if (isOrgRoute) {
+    return <>{children}</>;
   }
 
   return (

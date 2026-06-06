@@ -180,6 +180,27 @@ export interface CupMatch {
   playoffPairing?: string;
 }
 
+export type OrgType = "school" | "academy" | "club";
+export type OrgRole = "owner" | "admin" | "coach" | "player";
+
+export interface Organization {
+  id: string;
+  name: string;
+  slug: string;
+  type: OrgType;
+  logo_url?: string;
+  settings?: Record<string, unknown>;
+  created_at: string;
+}
+
+export interface OrgMember {
+  id: string;
+  organization_id: string;
+  user_id: string;
+  role: OrgRole;
+  created_at: string;
+}
+
 export interface CupState {
   matches: CupMatch[];
   champion: number | null;

@@ -10,8 +10,10 @@ import type { PlayersSlice } from "./players-slice";
 import { createPlayersSlice } from "./players-slice";
 import type { CupSlice } from "./cup-slice";
 import { createCupSlice } from "./cup-slice";
+import type { OrgSlice } from "./org-slice";
+import { createOrgSlice } from "./org-slice";
 
-export type AppStore = AuthSlice & TeamsSlice & FixturesSlice & PlayersSlice & CupSlice;
+export type AppStore = AuthSlice & TeamsSlice & FixturesSlice & PlayersSlice & CupSlice & OrgSlice;
 
 export const useAppStore = create<AppStore>()(
   persist(
@@ -21,6 +23,7 @@ export const useAppStore = create<AppStore>()(
       ...createFixturesSlice(...a),
       ...createPlayersSlice(...a),
       ...createCupSlice(...a),
+      ...createOrgSlice(...a),
     }),
     {
       name: "vfl-app-state",
@@ -29,6 +32,7 @@ export const useAppStore = create<AppStore>()(
         fixtures: state.fixtures,
         players: state.players,
         cup: state.cup,
+        currentOrg: state.currentOrg,
       }),
       onRehydrateStorage: () => (state) => {
         if (!state) return;
