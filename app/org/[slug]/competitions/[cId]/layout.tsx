@@ -1,7 +1,6 @@
 "use client";
 
-import { useEffect } from "react";
-import { useAppStore } from "@/lib/store";
+import { useCompetition } from "@/lib/hooks/use-competitions";
 import { useParams, usePathname } from "next/navigation";
 import Link from "next/link";
 import { Calendar, Trophy, Swords, Settings, Loader2 } from "lucide-react";
@@ -34,16 +33,9 @@ export default function CompetitionLayout({
   const pathname = usePathname();
   const slug = params.slug as string;
   const cId = params.cId as string;
-  const currentCompetition = useAppStore((s) => s.currentCompetition);
-  const fetchCompetition = useAppStore((s) => s.fetchCompetition);
+  const { data: currentCompetition, isLoading } = useCompetition(cId);
 
-  useEffect(() => {
-    if (cId) {
-      fetchCompetition(cId);
-    }
-  }, [cId, fetchCompetition]);
-
-  if (!currentCompetition) {
+  if (isLoading || !currentCompetition) {
     return (
       <div className="flex items-center justify-center py-20">
         <Loader2 size={24} className="animate-spin text-muted" />

@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { useAppStore } from "@/lib/store";
+import { useCompetition, useUpdateCompetition, useGenerateFixtures, useGenerateKnockout } from "@/lib/hooks/use-competitions";
 import { useParams } from "next/navigation";
 import { Calendar, Swords, Loader2, Check, AlertCircle } from "lucide-react";
 
@@ -14,18 +14,18 @@ const statusOptions: { value: string; label: string }[] = [
 export default function CompetitionSettingsPage() {
   const params = useParams();
   const cId = params.cId as string;
-  const slug = params.slug as string;
-  const currentCompetition = useAppStore((s) => s.currentCompetition);
-  const fetchCompetition = useAppStore((s) => s.fetchCompetition);
+  const { data: currentCompetition, isLoading } = useCompetition(cId);
+  const updateMutation = useUpdateCompetition();
+  const generateFixturesMutation = useGenerateFixtures();
+  const generateKnockoutMutation = useGenerateKnockout();
 
   const [status, setStatus] = useState<"draft" | "active" | "completed">(currentCompetition?.status ?? "draft");
-  const [updating, setUpdating] = useState(false);
   const [message, setMessage] = useState<{
     type: "success" | "error";
     text: string;
   } | null>(null);
 
-  if (!currentCompetition) {
+  if (isLoading || !currentCompetition) {
     return (
       <div className="flex items-center justify-center py-20">
         <Loader2 size={24} className="animate-spin text-muted" />
@@ -34,76 +34,35 @@ export default function CompetitionSettingsPage() {
   }
 
   const handleStatusChange = async () => {
-    setUpdating(true);
     setMessage(null);
-    try {
-      const res = await fetch(`/api/competitions/${cId}`, {
-        method: "PUT",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ status }),
-      });
-      if (!res.ok) {
-        const data = await res.json();
-        throw new Error(data.error || "Failed to update status");
+    updateMutation.mutate(
+      { id: cId, status },
+      {
+        onSuccess: () => setMessage({ type: "success", text: "Status updated successfully." }),
+        onError: (err) => setMessage({ type: "error", text: err instanceof Error ? err.message : "Something went wrong" }),
       }
-      setMessage({ type: "success", text: "Status updated successfully." });
-      fetchCompetition(cId);
-    } catch (err: unknown) {
-      setMessage({
-        type: "error",
-        text: err instanceof Error ? err.message : "Something went wrong",
-      });
-    } finally {
-      setUpdating(false);
-    }
+    );
   };
 
   const handleGenerateFixtures = async () => {
-    setUpdating(true);
     setMessage(null);
-    try {
-      const res = await fetch(`/api/competitions/${cId}/generate-fixtures`, {
-        method: "POST",
-      });
-      if (!res.ok) {
-        const data = await res.json();
-        throw new Error(data.error || "Failed to generate fixtures");
-      }
-      setMessage({ type: "success", text: "Fixtures generated successfully." });
-    } catch (err: unknown) {
-      setMessage({
-        type: "error",
-        text: err instanceof Error ? err.message : "Something went wrong",
-      });
-    } finally {
-      setUpdating(false);
-    }
+    generateFixturesMutation.mutate(cId, {
+      onSuccess: () => setMessage({ type: "success", text: "Fixtures generated successfully." }),
+      onError: (err) => setMessage({ type: "error", text: err instanceof Error ? err.message : "Something went wrong" }),
+    });
   };
 
   const handleGenerateKnockout = async () => {
-    setUpdating(true);
     setMessage(null);
-    try {
-      const res = await fetch(`/api/competitions/${cId}/generate-knockout`, {
-        method: "POST",
-      });
-      if (!res.ok) {
-        const data = await res.json();
-        throw new Error(data.error || "Failed to generate knockout");
-      }
-      setMessage({ type: "success", text: "Knockout stage generated successfully." });
-    } catch (err: unknown) {
-      setMessage({
-        type: "error",
-        text: err instanceof Error ? err.message : "Something went wrong",
-      });
-    } finally {
-      setUpdating(false);
-    }
+    generateKnockoutMutation.mutate(cId, {
+      onSuccess: () => setMessage({ type: "success", text: "Knockout stage generated successfully." }),
+      onError: (err) => setMessage({ type: "error", text: err instanceof Error ? err.message : "Something went wrong" }),
+    });
   };
 
   const isLeague = currentCompetition.type === "league";
   const canGenerateFixtures = isLeague && (status === "draft" || status === "active");
+  const pending = updateMutation.isPending || generateFixturesMutation.isPending || generateKnockoutMutation.isPending;
 
   return (
     <div className="max-w-xl space-y-6">
@@ -155,10 +114,10 @@ export default function CompetitionSettingsPage() {
           </div>
           <button
             onClick={handleStatusChange}
-            disabled={updating || status === currentCompetition.status}
+            disabled={pending || status === currentCompetition.status}
             className="btn-primary flex items-center gap-2"
           >
-            {updating ? <Loader2 size={14} className="animate-spin" /> : <Check size={14} />}
+            {pending ? <Loader2 size={14} className="animate-spin" /> : <Check size={14} />}
             Update
           </button>
         </div>
@@ -172,10 +131,10 @@ export default function CompetitionSettingsPage() {
           </p>
           <button
             onClick={handleGenerateFixtures}
-            disabled={updating}
+            disabled={pending}
             className="btn-primary flex items-center gap-2"
           >
-            {updating ? (
+            {pending ? (
               <Loader2 size={14} className="animate-spin" />
             ) : (
               <Calendar size={14} />
@@ -192,10 +151,10 @@ export default function CompetitionSettingsPage() {
         </p>
         <button
           onClick={handleGenerateKnockout}
-          disabled={updating}
+          disabled={pending}
           className="btn-primary flex items-center gap-2"
         >
-          {updating ? (
+          {pending ? (
             <Loader2 size={14} className="animate-spin" />
           ) : (
             <Swords size={14} />

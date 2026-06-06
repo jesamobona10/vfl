@@ -1,7 +1,9 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { useAppStore } from "@/lib/store";
+import { useOrg } from "@/lib/hooks/use-org";
+import { useCompetitions } from "@/lib/hooks/use-competitions";
 import { MetricCards } from "@/components/dashboard/metric-cards";
 import { LeagueStats } from "@/components/dashboard/league-stats";
 import { UpcomingMatches } from "@/components/dashboard/upcoming-matches";
@@ -14,7 +16,9 @@ import { useParams, useRouter } from "next/navigation";
 export default function OrgDashboardPage() {
   const params = useParams();
   const router = useRouter();
-  const currentOrg = useAppStore((s) => s.currentOrg);
+  const slug = params.slug as string;
+  const { data: currentOrg } = useOrg(slug);
+  const { data: competitions = [] } = useCompetitions(currentOrg?.id);
   const teams = useAppStore((s) => s.teams);
   const players = useAppStore((s) => s.players);
   const isAdmin = useAppStore((s) => s.isAdmin);
@@ -22,22 +26,7 @@ export default function OrgDashboardPage() {
   const currentTeamAccount = useAppStore((s) => s.currentTeamAccount);
   const teamDataLoaded = useAppStore((s) => s.teamDataLoaded);
   const setTeamDataLoaded = useAppStore((s) => s.setTeamDataLoaded);
-  const competitions = useAppStore((s) => s.competitions);
-  const fetchCompetitions = useAppStore((s) => s.fetchCompetitions);
   const [fetching, setFetching] = useState(false);
-
-  useEffect(() => {
-    if (currentOrg) {
-      fetchCompetitions(currentOrg.id);
-    }
-  }, [currentOrg, fetchCompetitions]);
-
-  useEffect(() => {
-    if (currentTeamAccount && !teamDataLoaded && !fetching) {
-      setFetching(true);
-      refreshTeamData().finally(() => setFetching(false));
-    }
-  }, [currentTeamAccount, teamDataLoaded, fetching]);
 
   const teamId = currentTeamAccount?.teamId;
   const team = teams.find((t) => t.id === teamId);

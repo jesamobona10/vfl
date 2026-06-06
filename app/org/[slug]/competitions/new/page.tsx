@@ -1,15 +1,17 @@
 "use client";
 
 import { useState } from "react";
-import { useAppStore } from "@/lib/store";
+import { useQueryClient } from "@tanstack/react-query";
+import { useOrg } from "@/lib/hooks/use-org";
 import { useParams, useRouter } from "next/navigation";
 import { ArrowLeft, Loader2, AlertCircle } from "lucide-react";
 
 export default function NewCompetitionPage() {
   const params = useParams();
   const router = useRouter();
+  const queryClient = useQueryClient();
   const slug = params.slug as string;
-  const currentOrg = useAppStore((s) => s.currentOrg);
+  const { data: currentOrg } = useOrg(slug);
 
   const [name, setName] = useState("");
   const [type, setType] = useState<"league" | "cup" | "friendly">("league");
@@ -48,6 +50,7 @@ export default function NewCompetitionPage() {
       }
       const data = await res.json();
       const compId = data.competition?.id;
+      queryClient.invalidateQueries({ queryKey: ["competitions"] });
       if (compId) {
         router.push(`/org/${slug}/competitions/${compId}`);
       } else {

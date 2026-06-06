@@ -47,7 +47,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   }
 
   if (!isAuthenticated) {
-    if (isPublicPath) {
+    if (isPublicPath || pathname.startsWith("/auth/")) {
       return <>{children}</>;
     }
     return (

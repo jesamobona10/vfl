@@ -1,9 +1,9 @@
 "use client";
 
-import { useEffect } from "react";
-import { useAppStore } from "@/lib/store";
+import { useOrg } from "@/lib/hooks/use-org";
+import { useCompetitions } from "@/lib/hooks/use-competitions";
 import type { Competition } from "@/lib/types";
-import { useParams, useRouter } from "next/navigation";
+import { useParams } from "next/navigation";
 import { Trophy, Plus, Loader2, Swords, Users } from "lucide-react";
 
 const typeConfig: Record<string, { label: string; icon: React.ReactNode }> = {
@@ -20,19 +20,11 @@ const statusColors: Record<string, string> = {
 
 export default function CompetitionsPage() {
   const params = useParams();
-  const router = useRouter();
   const slug = params.slug as string;
-  const currentOrg = useAppStore((s) => s.currentOrg);
-  const competitions = useAppStore((s) => s.competitions);
-  const fetchCompetitions = useAppStore((s) => s.fetchCompetitions);
+  const { data: currentOrg } = useOrg(slug);
+  const { data: competitions = [], isLoading } = useCompetitions(currentOrg?.id);
 
-  useEffect(() => {
-    if (currentOrg?.id) {
-      fetchCompetitions(currentOrg.id);
-    }
-  }, [currentOrg?.id, fetchCompetitions]);
-
-  if (!competitions) {
+  if (isLoading) {
     return (
       <div className="flex items-center justify-center py-20">
         <Loader2 size={24} className="animate-spin text-muted" />

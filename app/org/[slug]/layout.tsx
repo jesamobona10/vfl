@@ -1,8 +1,8 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useState } from "react";
 import { useParams } from "next/navigation";
-import { useAppStore } from "@/lib/store";
+import { useOrg } from "@/lib/hooks/use-org";
 import { AppHeader } from "@/components/layout/app-header";
 import { TabNav } from "@/components/layout/tab-nav";
 import { SearchModal } from "@/components/search/search-modal";
@@ -10,29 +10,10 @@ import { SearchModal } from "@/components/search/search-modal";
 export default function OrgLayout({ children }: { children: React.ReactNode }) {
   const params = useParams();
   const slug = params.slug as string;
-  const currentOrg = useAppStore((s) => s.currentOrg);
-  const fetchOrgBySlug = useAppStore((s) => s.fetchOrgBySlug);
-  const setCurrentOrg = useAppStore((s) => s.setCurrentOrg);
-  const lastSlug = useRef<string | null>(null);
+  const { data: currentOrg, isLoading } = useOrg(slug);
   const [isSearchOpen, setSearchOpen] = useState(false);
 
-  useEffect(() => {
-    if (!slug) return;
-    if (slug !== lastSlug.current) {
-      lastSlug.current = slug;
-      setCurrentOrg(null);
-      fetchOrgBySlug(slug);
-    }
-  }, [slug, fetchOrgBySlug, setCurrentOrg]);
-
-  useEffect(() => {
-    return () => {
-      setCurrentOrg(null);
-      lastSlug.current = null;
-    };
-  }, [setCurrentOrg]);
-
-  if (!currentOrg) {
+  if (isLoading || !currentOrg) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-bg">
         <div className="animate-spin w-6 h-6 border-2 border-brand border-t-transparent rounded-full" />

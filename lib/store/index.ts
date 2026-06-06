@@ -35,7 +35,6 @@ export const useAppStore = create<AppStore>()(
         fixtures: state.fixtures,
         players: state.players,
         cup: state.cup,
-        currentOrg: state.currentOrg,
       }),
       onRehydrateStorage: () => (state) => {
         if (!state) return;
