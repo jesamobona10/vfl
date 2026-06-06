@@ -40,6 +40,15 @@ export default function RegisterPage() {
         setError(data.error);
       } else {
         setCreatedOrg({ name: data.org.name, slug: data.org.slug });
+        const loginRes = await fetch("/api/auth/org-login", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ email, password }),
+        });
+        if (loginRes.ok) {
+          router.push(`/org/${data.org.slug}/dashboard`);
+          return;
+        }
         setStep("done");
       }
     } catch {

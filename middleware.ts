@@ -85,6 +85,7 @@ export async function middleware(request: NextRequest) {
   const isPublicApi =
     pathname === "/api/auth/admin-signup" ||
     pathname === "/api/auth/admin-login" ||
+    pathname === "/api/auth/org-login" ||
     pathname === "/api/auth/team-login" ||
     pathname === "/api/auth/player-login" ||
     pathname === "/api/auth/player-register" ||

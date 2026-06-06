@@ -69,6 +69,27 @@ export async function GET() {
       });
     }
 
+    const { data: membership } = await supabase
+      .from("organization_members")
+      .select("organization_id, role, organizations(name, slug, type)")
+      .eq("user_id", session.user.id)
+      .maybeSingle();
+
+    if (membership) {
+      const org = membership.organizations as unknown as { name: string; slug: string; type: string };
+      return json({
+        authenticated: true,
+        role: "org_admin",
+        profile: {
+          id: session.user.id,
+          role: "org_admin",
+          displayName: org.name,
+          orgRole: membership.role,
+          org: { id: membership.organization_id, name: org.name, slug: org.slug, type: org.type },
+        },
+      });
+    }
+
     return json({ authenticated: false });
   } catch (error) {
     logApiError("session_lookup_error", error);

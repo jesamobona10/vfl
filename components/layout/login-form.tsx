@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import { useAppStore } from "@/lib/store";
 import { Shield, User, LogIn, AlertCircle, UserCog } from "lucide-react";
 
-type LoginMode = "admin" | "team" | "player";
+type LoginMode = "admin" | "team" | "player" | "org";
 
 export function LoginForm() {
   const [mode, setMode] = useState<LoginMode>("team");
@@ -20,6 +20,7 @@ export function LoginForm() {
   const loginTeamAccount = useAppStore((s) => s.loginTeamAccount);
   const loginAdmin = useAppStore((s) => s.loginAdmin);
   const loginPlayer = useAppStore((s) => s.loginPlayer);
+  const loginOrgAdmin = useAppStore((s) => s.loginOrgAdmin);
 
   const handleTeamLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -49,6 +50,16 @@ export function LoginForm() {
     setLoading(false);
     if (result.error) setError(result.error);
     else router.push("/");
+  };
+
+  const handleOrgLogin = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setError("");
+    setLoading(true);
+    const result = await loginOrgAdmin(adminEmail, adminPassword);
+    setLoading(false);
+    if (result.error) setError(result.error);
+    else if (result.slug) router.push(`/org/${result.slug}/dashboard`);
   };
 
   return (
@@ -105,6 +116,21 @@ export function LoginForm() {
           >
             <Shield size={16} className="inline mr-1" />
             Admin
+          </button>
+          <button
+            type="button"
+            onClick={() => {
+              setMode("org");
+              setError("");
+            }}
+            className={`flex-1 py-2 text-xs sm:text-sm font-medium rounded-md transition-colors ${
+              mode === "org"
+                ? "bg-surface shadow-sm text-text"
+                : "text-muted hover:text-text"
+            }`}
+          >
+            <Shield size={16} className="inline mr-1" />
+            Org
           </button>
         </div>
 
@@ -186,6 +212,45 @@ export function LoginForm() {
               <LogIn size={16} />
               {loading ? "Signing in..." : "Sign In as Player"}
             </button>
+          </form>
+        ) : mode === "org" ? (
+          <form onSubmit={handleOrgLogin} className="space-y-4">
+            <div>
+              <label className="block text-sm font-medium mb-1">Email</label>
+              <input
+                type="email"
+                value={adminEmail}
+                onChange={(e) => setAdminEmail(e.target.value)}
+                className="input"
+                placeholder="admin@example.com"
+                required
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium mb-1">Password</label>
+              <input
+                type="password"
+                value={adminPassword}
+                onChange={(e) => setAdminPassword(e.target.value)}
+                className="input"
+                placeholder="Enter your password"
+                required
+              />
+            </div>
+            <button
+              type="submit"
+              className="btn-primary w-full"
+              disabled={loading}
+            >
+              <Shield size={16} />
+              {loading ? "Signing in..." : "Sign In"}
+            </button>
+            <p className="text-center text-xs text-muted">
+              Don&apos;t have an organization?{" "}
+              <a href="/auth/register" className="text-brand hover:underline">
+                Register your organization
+              </a>
+            </p>
           </form>
         ) : (
           <form onSubmit={handleAdminLogin} className="space-y-4">

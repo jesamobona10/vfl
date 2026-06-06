@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { useAppStore } from "@/lib/store";
 import { refreshAdminData } from "@/lib/hooks/use-team-data";
 import { AppHeader } from "./app-header";
@@ -13,6 +13,7 @@ const publicPaths = new Set(["/live"]);
 
 export function AppShell({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
+  const router = useRouter();
   const currentTeamAccount = useAppStore((s) => s.currentTeamAccount);
   const isAdmin = useAppStore((s) => s.isAdmin);
   const authLoading = useAppStore((s) => s.authLoading);
@@ -23,7 +24,8 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   const [isSearchOpen, setSearchOpen] = useState(false);
   const isPublicPath = publicPaths.has(pathname);
   const isPlayer = userProfile?.role === "player";
-  const isAuthenticated = currentTeamAccount !== null || isAdmin || isPlayer;
+  const isOrgAdmin = userProfile?.role === "org_admin";
+  const isAuthenticated = currentTeamAccount !== null || isAdmin || isPlayer || isOrgAdmin;
 
   const isOrgRoute = pathname.startsWith("/org/");
 
@@ -37,6 +39,15 @@ export function AppShell({ children }: { children: React.ReactNode }) {
       refreshAdminData().finally(() => setFetchingAdminData(false));
     }
   }, [isAdmin, teamDataLoaded, fetchingAdminData]);
+
+  useEffect(() => {
+    if (isOrgAdmin && !isOrgRoute && !authLoading) {
+      const slug = userProfile?.org?.slug;
+      if (slug) {
+        router.replace(`/org/${slug}/dashboard`);
+      }
+    }
+  }, [isOrgAdmin, isOrgRoute, authLoading, userProfile, router]);
 
   if (authLoading) {
     return (
