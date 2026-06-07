@@ -130,7 +130,7 @@ export function LoginForm() {
             }`}
           >
             <Shield size={16} className="inline mr-1" />
-            Org
+            Organization
           </button>
         </div>
 
