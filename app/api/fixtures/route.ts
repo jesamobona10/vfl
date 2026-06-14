@@ -25,7 +25,7 @@ export async function GET() {
       .select("*")
       .order("round")
       .order("id");
-    if (!auth!.isAdmin) {
+    if (!auth!.isAdmin && !auth!.orgMembership) {
       const teamId = auth!.teamAccount?.team_id;
       if (!teamId) return json({ fixtures: [] });
       query = query.or(`home_team_id.eq.${teamId},away_team_id.eq.${teamId}`);

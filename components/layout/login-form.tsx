@@ -29,6 +29,7 @@ export function LoginForm() {
     const result = await loginTeamAccount(username, password);
     setLoading(false);
     if (result.error) setError(result.error);
+    else if (result.slug) router.push(`/org/${result.slug}/dashboard`);
     else router.push("/");
   };
 

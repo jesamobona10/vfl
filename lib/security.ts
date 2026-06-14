@@ -13,10 +13,17 @@ type RateLimitOptions = {
 
 const rateLimitStore = new Map<string, RateLimitEntry>();
 
+export type OrgMembership = {
+  organization_id: string;
+  role: string;
+  slug?: string;
+};
+
 export type AuthContext = {
   userId: string;
   isAdmin: boolean;
   teamAccount: { id: string; team_id: number | null; username?: string | null } | null;
+  orgMembership: OrgMembership | null;
 };
 
 export function getClientIp(request: Request): string {
@@ -156,22 +163,31 @@ export async function getAuthContext(supabase: any): Promise<AuthContext | null>
 
   if (!session?.user?.id) return null;
 
-  const { data: adminUser } = await supabase
-    .from("admin_users")
-    .select("id")
-    .eq("id", session.user.id)
-    .maybeSingle();
+  const [{ data: adminUser }, { data: teamAccount }, { data: orgMember }] = await Promise.all([
+    supabase.from("admin_users").select("id").eq("id", session.user.id).maybeSingle(),
+    supabase.from("team_accounts").select("id, team_id, username").eq("id", session.user.id).maybeSingle(),
+    supabase
+      .from("organization_members")
+      .select("organization_id, role, organizations(slug)")
+      .eq("user_id", session.user.id)
+      .maybeSingle(),
+  ]);
 
-  const { data: teamAccount } = await supabase
-    .from("team_accounts")
-    .select("id, team_id, username")
-    .eq("id", session.user.id)
-    .maybeSingle();
+  let orgMembership: OrgMembership | null = null;
+  if (orgMember) {
+    const orgs = orgMember.organizations as unknown as { slug: string } | null;
+    orgMembership = {
+      organization_id: orgMember.organization_id,
+      role: orgMember.role,
+      slug: orgs?.slug,
+    };
+  }
 
   return {
     userId: session.user.id,
     isAdmin: Boolean(adminUser),
     teamAccount: teamAccount ?? null,
+    orgMembership,
   };
 }
 
@@ -187,5 +203,14 @@ export function requireAuth(auth: AuthContext | null) {
 export function requireAdmin(auth: AuthContext | null) {
   if (!auth) return json({ error: "Unauthorized" }, { status: 401 });
   if (!auth.isAdmin) return json({ error: "Forbidden" }, { status: 403 });
+  return null;
+}
+
+export function requireOrgAdmin(auth: AuthContext | null, orgId: string) {
+  if (!auth) return json({ error: "Unauthorized" }, { status: 401 });
+  if (auth.isAdmin) return null;
+  if (!auth.orgMembership) return json({ error: "Forbidden" }, { status: 403 });
+  if (auth.orgMembership.organization_id !== orgId) return json({ error: "Forbidden" }, { status: 403 });
+  if (!["owner", "admin"].includes(auth.orgMembership.role)) return json({ error: "Forbidden" }, { status: 403 });
   return null;
 }

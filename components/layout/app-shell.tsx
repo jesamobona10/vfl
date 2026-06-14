@@ -11,6 +11,27 @@ import { SearchModal } from "../search/search-modal";
 
 const publicPaths = new Set(["/live"]);
 
+async function refreshOrgData() {
+  const store = useAppStore.getState();
+  try {
+    const [teamsRes, playersRes] = await Promise.all([
+      fetch("/api/teams"),
+      fetch("/api/players"),
+    ]);
+    if (teamsRes.ok) {
+      const data = await teamsRes.json();
+      store.setTeams(data.teams || []);
+    }
+    if (playersRes.ok) {
+      const data = await playersRes.json();
+      store.setPlayers(data.players || []);
+    }
+    store.setTeamDataLoaded(true);
+  } catch {
+    store.setTeamDataLoaded(true);
+  }
+}
+
 export function AppShell({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const router = useRouter();
@@ -21,6 +42,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   const userProfile = useAppStore((s) => s.userProfile);
   const initializeAuth = useAppStore((s) => s.initializeAuth);
   const [fetchingAdminData, setFetchingAdminData] = useState(false);
+  const [fetchingOrgData, setFetchingOrgData] = useState(false);
   const [isSearchOpen, setSearchOpen] = useState(false);
   const isPublicPath = publicPaths.has(pathname);
   const isPlayer = userProfile?.role === "player";
@@ -39,6 +61,13 @@ export function AppShell({ children }: { children: React.ReactNode }) {
       refreshAdminData().finally(() => setFetchingAdminData(false));
     }
   }, [isAdmin, teamDataLoaded, fetchingAdminData]);
+
+  useEffect(() => {
+    if (isOrgAdmin && !teamDataLoaded && !fetchingOrgData && !authLoading) {
+      setFetchingOrgData(true);
+      refreshOrgData().finally(() => setFetchingOrgData(false));
+    }
+  }, [isOrgAdmin, teamDataLoaded, fetchingOrgData, authLoading]);
 
   useEffect(() => {
     if (isOrgAdmin && !isOrgRoute && !authLoading) {

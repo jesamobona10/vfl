@@ -106,6 +106,7 @@ export interface UserProfile {
   username?: string;
   playerId?: number | null;
   orgRole?: string;
+  orgSlug?: string | null;
   org?: { id: string; name: string; slug: string; type: string };
 }
 

@@ -13,7 +13,7 @@ export interface AuthSlice {
   initializeAuth: () => Promise<void>;
   loginAdmin: (email: string, password: string) => Promise<{ error?: string }>;
   loginOrgAdmin: (email: string, password: string) => Promise<{ error?: string; slug?: string }>;
-  loginTeamAccount: (username: string, password: string) => Promise<{ error?: string }>;
+  loginTeamAccount: (username: string, password: string) => Promise<{ error?: string; slug?: string | null }>;
   loginPlayer: (username: string, password: string) => Promise<{ error?: string }>;
   logout: () => Promise<void>;
   setTeamDataLoaded: (v: boolean) => void;
@@ -186,9 +186,10 @@ export const createAuthSlice: StateCreator<any, [], [], AuthSlice> = (set, get) 
           displayName: data.user.displayName,
           teamId: data.user.teamId,
           username: data.user.username,
+          orgSlug: data.user.orgSlug,
         },
       });
-      return {};
+      return { slug: data.user.orgSlug };
     } catch {
       return { error: "Connection error. Please try again." };
     }

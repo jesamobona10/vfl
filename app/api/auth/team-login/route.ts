@@ -40,7 +40,7 @@ export async function POST(request: Request) {
     const sb = createServiceRoleClient();
     const { data: account, error: accountError } = await sb
       .from("team_accounts")
-      .select("id, username, display_name, team_id, role")
+      .select("id, username, display_name, team_id, role, organization_id, organizations(slug)")
       .eq("username", username)
       .single();
 
@@ -69,6 +69,8 @@ export async function POST(request: Request) {
       );
     }
 
+    const org = account.organizations as unknown as { slug: string } | null;
+
     logSecurityEvent("team_login_succeeded", { ip, userId: authData.user.id });
     return json({
       user: {
@@ -77,6 +79,7 @@ export async function POST(request: Request) {
         displayName: account.display_name,
         teamId: account.team_id,
         role: account.role,
+        orgSlug: org?.slug || null,
       },
     });
   } catch (error) {

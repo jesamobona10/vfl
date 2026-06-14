@@ -25,7 +25,7 @@ export async function GET() {
       .from("players")
       .select("*")
       .order("id");
-    if (!auth!.isAdmin) {
+    if (!auth!.isAdmin && !auth!.orgMembership) {
       if (!auth!.teamAccount?.team_id) return json({ players: [] });
       query = query.eq("team_id", auth!.teamAccount.team_id);
     }
