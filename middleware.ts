@@ -89,6 +89,7 @@ export async function middleware(request: NextRequest) {
 
   const isAuthPage = pathname.startsWith("/auth");
   const isAdminPage = pathname.startsWith("/admin");
+  const isOrgPage = pathname.startsWith("/org/");
   const isApiRoute = pathname.startsWith("/api");
   const isPublicApi =
     pathname === "/api/auth/admin-signup" ||
@@ -120,7 +121,7 @@ export async function middleware(request: NextRequest) {
   }
 
   if (!session) {
-    if (isAdminPage || (isApiRoute && !isPublicApi && !isAuthPage)) {
+    if (isAdminPage || isOrgPage || (isApiRoute && !isPublicApi && !isAuthPage)) {
       return secure(NextResponse.json(
         { error: "Unauthorized" },
         { status: 401 }
@@ -156,6 +157,32 @@ export async function middleware(request: NextRequest) {
       const redirectTo =
         accountKind === "player" ? PLAYER_DEFAULT_PAGE : "/";
       return secure(NextResponse.redirect(new URL(redirectTo, request.url)));
+    }
+    return secure(response);
+  }
+
+  if (isOrgPage) {
+    const orgSlugMatch = pathname.match(/^\/org\/([^/]+)/);
+    if (orgSlugMatch) {
+      const orgSlug = orgSlugMatch[1];
+      const { data: membership } = await supabase
+        .from("organization_members")
+        .select("organization_id, organizations(slug)")
+        .eq("user_id", session.user.id)
+        .maybeSingle();
+
+      const isOrgMember = membership && (membership.organizations as any)?.slug === orgSlug;
+      const isSuperAdmin = accountKind === "admin";
+
+      if (!isSuperAdmin && !isOrgMember) {
+        logSecurityEvent("forbidden_org_page", {
+          userId: session.user.id,
+          pathname,
+          orgSlug,
+          accountKind,
+        });
+        return secure(NextResponse.redirect(new URL("/", request.url)));
+      }
     }
     return secure(response);
   }

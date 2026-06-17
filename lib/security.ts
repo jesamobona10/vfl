@@ -214,3 +214,11 @@ export function requireOrgAdmin(auth: AuthContext | null, orgId: string) {
   if (!["owner", "admin"].includes(auth.orgMembership.role)) return json({ error: "Forbidden" }, { status: 403 });
   return null;
 }
+
+export function requireOrgMember(auth: AuthContext | null, orgId: string) {
+  if (!auth) return json({ error: "Unauthorized" }, { status: 401 });
+  if (auth.isAdmin) return null;
+  if (!auth.orgMembership) return json({ error: "Forbidden" }, { status: 403 });
+  if (auth.orgMembership.organization_id !== orgId) return json({ error: "Forbidden" }, { status: 403 });
+  return null;
+}

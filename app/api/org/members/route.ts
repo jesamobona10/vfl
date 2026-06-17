@@ -1,6 +1,6 @@
 import { createClient } from "@/lib/supabase/server";
 import { createServiceRoleClient } from "@/lib/supabase/service-role";
-import { getAuthContext, json, logApiError, requireAuth } from "@/lib/security";
+import { getAuthContext, json, logApiError, logSecurityEvent, requireOrgMember } from "@/lib/security";
 
 export const dynamic = "force-dynamic";
 
@@ -8,13 +8,22 @@ export async function GET(request: Request) {
   try {
     const supabase = await createClient();
     const auth = await getAuthContext(supabase);
-    const authError = requireAuth(auth);
-    if (authError) return authError;
 
     const { searchParams } = new URL(request.url);
     const orgId = searchParams.get("org_id");
     if (!orgId) {
       return json({ error: "org_id query parameter is required." }, { status: 400 });
+    }
+
+    const memberError = requireOrgMember(auth, orgId);
+    if (memberError) {
+      logSecurityEvent("org_members_forbidden", {
+        userId: auth?.userId,
+        orgId,
+        isAdmin: auth?.isAdmin,
+        isMember: auth?.orgMembership?.organization_id === orgId,
+      });
+      return memberError;
     }
 
     const sb = createServiceRoleClient();
@@ -25,7 +34,7 @@ export async function GET(request: Request) {
       .eq("organization_id", orgId);
 
     if (error) {
-      logApiError("org_members_error", error);
+      logApiError("org_members_error", error, { userId: auth!.userId, orgId });
       return json({ error: "Failed to fetch members." }, { status: 500 });
     }
 
