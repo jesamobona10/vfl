@@ -6,7 +6,9 @@ function requireEnv(name: "NEXT_PUBLIC_SUPABASE_URL" | "NEXT_PUBLIC_SUPABASE_ANO
   return value;
 }
 
-export const publicEnv = {
-  supabaseUrl: requireEnv("NEXT_PUBLIC_SUPABASE_URL"),
-  supabaseAnonKey: requireEnv("NEXT_PUBLIC_SUPABASE_ANON_KEY"),
-} as const;
+export function getPublicEnv() {
+  return {
+    supabaseUrl: requireEnv("NEXT_PUBLIC_SUPABASE_URL"),
+    supabaseAnonKey: requireEnv("NEXT_PUBLIC_SUPABASE_ANON_KEY"),
+  } as const;
+}

@@ -1,5 +1,5 @@
 import "server-only";
-import { publicEnv } from "./public";
+import { getPublicEnv } from "./public";
 
 function requireServerEnv(name: "SUPABASE_SERVICE_ROLE_KEY"): string {
   const value = process.env[name];
@@ -9,7 +9,9 @@ function requireServerEnv(name: "SUPABASE_SERVICE_ROLE_KEY"): string {
   return value;
 }
 
-export const serverEnv = {
-  ...publicEnv,
-  supabaseServiceRoleKey: requireServerEnv("SUPABASE_SERVICE_ROLE_KEY"),
-} as const;
+export function getServerEnv() {
+  return {
+    ...getPublicEnv(),
+    supabaseServiceRoleKey: requireServerEnv("SUPABASE_SERVICE_ROLE_KEY"),
+  } as const;
+}

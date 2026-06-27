@@ -1,10 +1,11 @@
 import { createClient } from "@supabase/supabase-js";
-import { publicEnv } from "@/lib/env/public";
+import { getPublicEnv } from "@/lib/env/public";
 
 export function createPublicClient() {
+  const env = getPublicEnv();
   return createClient(
-    publicEnv.supabaseUrl,
-    publicEnv.supabaseAnonKey,
+    env.supabaseUrl,
+    env.supabaseAnonKey,
     {
       auth: {
         autoRefreshToken: false,
