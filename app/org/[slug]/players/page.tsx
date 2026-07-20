@@ -1,13 +1,19 @@
 "use client";
 
+import { useState } from "react";
 import { useAppStore } from "@/lib/store";
 import { PlayerCard } from "@/components/players/player-card";
-import { Users } from "lucide-react";
+import { PlayerModal } from "@/components/players/player-modal";
+import { PlayerProfile } from "@/components/players/player-profile";
+import { Users, Plus } from "lucide-react";
+import type { Player } from "@/lib/types";
 
 export default function OrgPlayersPage() {
   const players = useAppStore((s) => s.players);
   const teams = useAppStore((s) => s.teams);
   const teamName = useAppStore((s) => s.teamName);
+  const [addModalOpen, setAddModalOpen] = useState(false);
+  const [profilePlayer, setProfilePlayer] = useState<Player | null>(null);
 
   const grouped = teams
     .map((team) => ({
@@ -18,11 +24,17 @@ export default function OrgPlayersPage() {
 
   return (
     <div>
-      <div className="mb-6">
-        <h1 className="text-2xl font-bold">Players</h1>
-        <p className="text-sm text-muted">
-          {players.length} player{players.length !== 1 ? "s" : ""} across {grouped.length} team{grouped.length !== 1 ? "s" : ""}
-        </p>
+      <div className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between mb-6">
+        <div>
+          <h1 className="text-2xl font-bold">Players</h1>
+          <p className="text-sm text-muted">
+            {players.length} player{players.length !== 1 ? "s" : ""} across {grouped.length} team{grouped.length !== 1 ? "s" : ""}
+          </p>
+        </div>
+        <button onClick={() => setAddModalOpen(true)} className="btn-primary">
+          <Plus size={16} />
+          Add Player
+        </button>
       </div>
 
       {grouped.length === 0 ? (
@@ -47,16 +59,36 @@ export default function OrgPlayersPage() {
               </div>
               <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-3">
                 {teamPlayers.map((p) => (
-                  <PlayerCard
+                  <button
                     key={p.id}
-                    player={p}
-                    teamName={teamName(p.teamId)}
-                  />
+                    onClick={() => setProfilePlayer(p)}
+                    className="text-left w-full"
+                  >
+                    <PlayerCard
+                      player={p}
+                      teamName={teamName(p.teamId)}
+                    />
+                  </button>
                 ))}
               </div>
             </div>
           ))}
         </div>
+      )}
+
+      {addModalOpen && (
+        <PlayerModal
+          player={null}
+          onClose={() => setAddModalOpen(false)}
+        />
+      )}
+
+      {profilePlayer && (
+        <PlayerProfile
+          player={profilePlayer}
+          teamName={teamName(profilePlayer.teamId)}
+          onClose={() => setProfilePlayer(null)}
+        />
       )}
     </div>
   );

@@ -17,9 +17,11 @@ export function FixtureList() {
   const generateFixtures = useAppStore((s) => s.generateFixtures);
   const reorderMatch = useAppStore((s) => s.reorderMatch);
   const isAdmin = useAppStore((s) => s.isAdmin);
+  const userProfile = useAppStore((s) => s.userProfile);
   const isTeamAccount = useAppStore((s) => s.isTeamAccount);
   const managedId = useAppStore((s) => s.getManagedTeamId)();
 
+  const showAdminFeatures = isAdmin || userProfile?.role === "org_admin";
   const effectiveTeamFilter = isTeamAccount() ? String(managedId) : teamFilter;
   const captureRef = useRef<HTMLDivElement>(null);
 
@@ -53,7 +55,7 @@ export function FixtureList() {
         round={r}
         teamFilter={effectiveTeamFilter}
         statusFilter={statusFilter}
-        onDrop={isAdmin ? handleDrop : () => {}}
+        onDrop={showAdminFeatures ? handleDrop : () => {}}
       />
     ));
 
@@ -67,7 +69,7 @@ export function FixtureList() {
           </p>
         </div>
         <div className="flex flex-wrap items-center gap-3">
-          {isAdmin && (
+          {showAdminFeatures && (
             <button
               onClick={() => generateFixtures(teams)}
               disabled={teams.length < 2}
@@ -111,7 +113,7 @@ export function FixtureList() {
         </div>
       )}
 
-      {isAdmin && (
+      {showAdminFeatures && (
         <div className="flex flex-wrap items-center justify-between gap-3 mb-6">
           <FixtureFilters
             roundFilter={roundFilter}
@@ -125,7 +127,7 @@ export function FixtureList() {
         </div>
       )}
 
-      {isAdmin && (
+      {showAdminFeatures && (
         <div className="mb-6">
           <FixtureCreator />
         </div>
