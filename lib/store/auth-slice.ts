@@ -123,6 +123,7 @@ export const createAuthSlice: StateCreator<any, [], [], AuthSlice> = (set, get) 
           id: data.user.id,
           role: "org_admin",
           displayName: data.user.email,
+          org: data.user.org,
         },
         teamDataLoaded: false,
       });

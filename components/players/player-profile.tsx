@@ -39,7 +39,7 @@ export function PlayerProfile({ player, teamName, onClose }: PlayerProfileProps)
         if (e.target === e.currentTarget) onClose();
       }}
     >
-      <div className="card w-full max-w-lg max-h-[90vh] overflow-y-auto relative">
+      <div className="bg-white rounded-xl w-full max-w-lg max-h-[90vh] overflow-y-auto relative shadow-lg">
         <button
           onClick={onClose}
           className="absolute top-4 right-4 btn-icon z-10"

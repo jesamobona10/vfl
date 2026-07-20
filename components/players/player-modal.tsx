@@ -167,7 +167,7 @@ export function PlayerModal({ player, onClose }: PlayerModalProps) {
 
   return (
     <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50 p-4">
-      <div className="card p-6 w-full max-w-md relative">
+      <div className="bg-white rounded-xl p-6 w-full max-w-md relative shadow-lg">
         <button
           onClick={onClose}
           className="absolute top-4 right-4 btn-icon"
