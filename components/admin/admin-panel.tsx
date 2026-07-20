@@ -2,7 +2,6 @@
 
 import { useState, useEffect, useCallback } from "react";
 import { useAppStore } from "@/lib/store";
-import { MatchEditor } from "./match-editor";
 import { TeamForm } from "../teams/team-form";
 import { DataImporter } from "./data-importer";
 import { DashboardOverview } from "./dashboard-overview";
@@ -13,10 +12,10 @@ import { CompManager } from "./comp-manager";
 import { AuditViewer } from "./audit-viewer";
 import { UsersManager } from "./users-manager";
 import {
-  Wrench,
   AlertCircle,
-  CheckCircle,
-  Info,
+  ChevronDown,
+  ChevronRight,
+  Clock3,
   Users,
   UserCog,
   Calendar,
@@ -166,62 +165,161 @@ function PlayerManager() {
 }
 
 function FixtureManager() {
-  const teams = useAppStore((s) => s.teams);
+  const [expanded, setExpanded] = useState<Set<number>>(new Set());
   const fixtures = useAppStore((s) => s.fixtures);
-  const generateFixtures = useAppStore((s) => s.generateFixtures);
-  const repairFixtures = useAppStore((s) => s.repairFixtures);
-  const repairNotice = useAppStore((s) => s.repairNotice);
-  const setRepairNotice = useAppStore((s) => s.setRepairNotice);
+  const getTeam = useAppStore((s) => s.getTeam);
+  const players = useAppStore((s) => s.players);
 
-  const handleGenerate = () => {
-    if (teams.length < 2) {
-      setRepairNotice("Need at least 2 teams to generate fixtures.");
-      return;
-    }
-    generateFixtures(teams);
-    setRepairNotice("Fixtures generated successfully.");
+  const toggleExpanded = (id: number) => {
+    const next = new Set(expanded);
+    if (next.has(id)) next.delete(id);
+    else next.add(id);
+    setExpanded(next);
   };
 
-  const handleRepair = () => {
-    if (!fixtures.length) return;
-    const result = repairFixtures();
-    if (result.ok) {
-      setRepairNotice(
-        result.changed && result.changed > 0
-          ? `Repaired fixtures: adjusted ${result.changed} match(es).`
-          : "Fixtures already valid. No changes needed."
-      );
-    } else {
-      setRepairNotice(`Repair failed: ${result.reason}.`);
-    }
+  const statusLabel: Record<string, string> = {
+    scheduled: "Scheduled",
+    "in-progress": "In Progress",
+    live: "Live",
+    completed: "Completed",
   };
+
+  const statusTone: Record<string, string> = {
+    scheduled: "bg-surface-2 text-muted",
+    "in-progress": "bg-accent/10 text-accent",
+    live: "bg-brand/10 text-brand",
+    completed: "bg-muted/10 text-muted",
+  };
+
+  const EVENT_ABBR: Record<string, string> = {
+    goal: "G", assist: "A", "own-goal": "OG", yellow: "Y", red: "R",
+    save: "SV", "penalty-save": "PS", "clean-sheet": "CS", motm: "MOTM",
+    error: "ERR", "penalty-conceded": "PC", tackle: "T", interception: "INT",
+    block: "BLK", aerial: "AD", "goal-conceded": "GC", "match-win": "W",
+    "bonus-5-saves": "5+S",
+  };
+
+  if (!fixtures.length) {
+    return (
+      <div className="card p-8 text-center text-muted">
+        <Calendar size={32} className="mx-auto mb-2" />
+        <p>No fixtures have been generated yet.</p>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">
-      <div className="flex flex-wrap items-center gap-3">
-        <button onClick={handleGenerate} disabled={teams.length < 2} className="btn-primary">
-          <Calendar size={16} /> Generate Fixtures
-        </button>
-        <button onClick={handleRepair} disabled={fixtures.length === 0} className="btn-ghost">
-          <Wrench size={16} /> Repair Fixtures
-        </button>
-      </div>
+      <p className="text-sm text-muted">Viewing all fixtures across the platform (read-only).</p>
+      {fixtures.map((round) => (
+        <div key={round.round}>
+          <h3 className="text-sm font-semibold text-muted uppercase tracking-wider mb-2">
+            Round {round.round}
+            {round.byeId != null && (
+              <span className="ml-2 text-xs text-muted font-normal">
+                (bye: {getTeam(round.byeId)?.name || `Team ${round.byeId}`})
+              </span>
+            )}
+          </h3>
+          <div className="space-y-2">
+            {round.matches.map((match) => {
+              const home = getTeam(match.homeId);
+              const away = getTeam(match.awayId);
+              const isOpen = expanded.has(match.id);
 
-      {repairNotice && (
-        <div className={`flex items-center gap-2 px-4 py-3 rounded-lg text-sm ${
-          repairNotice.startsWith("Repair failed")
-            ? "bg-danger/10 text-danger"
-            : repairNotice.includes("No changes") || repairNotice.startsWith("Need")
-            ? "bg-muted/10 text-muted"
-            : "bg-brand/10 text-brand"
-        }`}>
-          {repairNotice.startsWith("Repair failed") ? <AlertCircle size={16} /> :
-           repairNotice.includes("No changes") || repairNotice.startsWith("Need") ? <Info size={16} /> : <CheckCircle size={16} />}
-          {repairNotice}
+              return (
+                <div key={match.id} className="card overflow-hidden">
+                  <button
+                    onClick={() => toggleExpanded(match.id)}
+                    className="w-full flex items-center gap-3 px-5 py-4 hover:bg-surface-2/50 transition-colors text-left"
+                  >
+                    {isOpen ? (
+                      <ChevronDown size={16} className="shrink-0 text-muted" />
+                    ) : (
+                      <ChevronRight size={16} className="shrink-0 text-muted" />
+                    )}
+                    <div className="flex-1 grid grid-cols-[1fr_auto_1fr] items-center gap-3">
+                      <span className="text-sm font-semibold truncate text-right">
+                        {home?.name || "?"}
+                      </span>
+                      <span className="text-lg font-bold text-center tabular-nums">
+                        {match.homeScore != null ? match.homeScore : "-"} – {match.awayScore != null ? match.awayScore : "-"}
+                      </span>
+                      <span className="text-sm font-semibold truncate">
+                        {away?.name || "?"}
+                      </span>
+                    </div>
+                    <span className={`rounded-full px-3 py-1 text-[11px] font-semibold shrink-0 ${statusTone[match.status]}`}>
+                      {statusLabel[match.status] || match.status}
+                    </span>
+                  </button>
+
+                  {isOpen && (
+                    <div className="border-t border-line px-5 py-4 space-y-3">
+                      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 text-sm">
+                        <div>
+                          <span className="text-xs text-muted block">Date</span>
+                          <span>{match.date || "Not set"}</span>
+                        </div>
+                        <div>
+                          <span className="text-xs text-muted block">Time</span>
+                          <span>{match.time || "Not set"}</span>
+                        </div>
+                        <div>
+                          <span className="text-xs text-muted block">Venue</span>
+                          <span>{match.venue || "Not set"}</span>
+                        </div>
+                        <div>
+                          <span className="text-xs text-muted block">Status</span>
+                          <span className="capitalize">{match.status}</span>
+                        </div>
+                      </div>
+
+                      {match.manualEdited && (
+                        <span className="inline-block rounded-full bg-accent/10 text-accent px-2.5 py-1 text-[11px] font-medium">
+                          Manually Edited
+                        </span>
+                      )}
+                      {match.autoAdjusted && (
+                        <span className="inline-block rounded-full bg-brand/10 text-brand px-2.5 py-1 text-[11px] font-medium">
+                          Auto-Adjusted
+                        </span>
+                      )}
+
+                      {match.events.length > 0 && (
+                        <div>
+                          <h4 className="text-xs text-muted uppercase tracking-wider mb-2 font-semibold">
+                            Events ({match.events.length})
+                          </h4>
+                          <div className="flex flex-wrap gap-1.5">
+                            {match.events.map((event, i) => {
+                              const player = players.find((p) => p.id === event.playerId);
+                              return (
+                                <span
+                                  key={i}
+                                  className="inline-flex items-center gap-1 rounded-full bg-surface-2 px-2.5 py-1 text-xs"
+                                >
+                                  <span className="font-mono font-bold text-[10px] uppercase">
+                                    {EVENT_ABBR[event.type] || event.type}
+                                  </span>
+                                  <span>{player?.name || `#${event.playerId}`}</span>
+                                  {event.minute != null && (
+                                    <span className="text-muted">{event.minute}&apos;</span>
+                                  )}
+                                </span>
+                              );
+                            })}
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  )}
+                </div>
+              );
+            })}
+          </div>
         </div>
-      )}
-
-      <MatchEditor />
+      ))}
     </div>
   );
 }
