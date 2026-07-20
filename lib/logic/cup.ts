@@ -1,4 +1,4 @@
-import type { CupMatch, StandingRow, CompletedVia } from "../types";
+import type { CupMatch, CupRound, StandingRow, CompletedVia, Team } from "../types";
 
 let nextId = 1;
 
@@ -181,4 +181,118 @@ export function getChampion(matches: CupMatch[]): number | null {
     return finalMatch.winnerId;
   }
   return null;
+}
+
+export function generateCupBracketFromTeams(teams: Team[]): CupMatch[] {
+  const N = teams.length;
+  if (N < 2) return [];
+
+  const sorted = [...teams].sort((a, b) => (b.rating ?? 0) - (a.rating ?? 0));
+  const B = Math.pow(2, Math.ceil(Math.log2(N)));
+  const byes = B - N;
+  const totalRounds = Math.log2(B);
+
+  const roundLabel = (r: number): CupRound => {
+    if (r === totalRounds) return "final";
+    if (r === totalRounds - 1) return "semi";
+    if (r === totalRounds - 2) return "quarter";
+    return "playoff";
+  };
+
+  const base: CupMatch[] = [];
+
+  const playInTeams = sorted.slice(byes);
+  const firstRoundCount = Math.floor(playInTeams.length / 2);
+
+  const round2Slots: ({ type: "team"; teamId: number } | { type: "match"; matchId: number })[] = [];
+
+  for (let i = 0; i < byes; i++) {
+    round2Slots.push({ type: "team", teamId: sorted[i].id });
+  }
+
+  const firstRoundMatchIds: number[] = [];
+  for (let i = 0; i < firstRoundCount; i++) {
+    const matchId = nextId++;
+    firstRoundMatchIds.push(matchId);
+    base.push({
+      id: matchId,
+      round: roundLabel(1),
+      matchIndex: i,
+      homeId: playInTeams[i].id,
+      awayId: playInTeams[playInTeams.length - 1 - i].id,
+      homeScore: null,
+      awayScore: null,
+      homeETScore: null,
+      awayETScore: null,
+      homePenScore: null,
+      awayPenScore: null,
+      status: "scheduled",
+      winnerId: null,
+      completedVia: null,
+      date: "",
+      time: "",
+      venue: "Veritas Stadium",
+    });
+    round2Slots.push({ type: "match", matchId });
+  }
+
+  if (totalRounds === 1) return base;
+
+  const round2Count = Math.floor(round2Slots.length / 2);
+  const prevMatchIds: number[][] = [firstRoundMatchIds];
+
+  for (let r = 2; r <= totalRounds; r++) {
+    const prevIds = prevMatchIds[prevMatchIds.length - 1] ?? [];
+    const slots = r === 2 ? round2Slots : null;
+    const matchCount = r === 2 ? round2Count : Math.floor(prevIds.length / 2);
+    const currentMatchIds: number[] = [];
+
+    for (let i = 0; i < matchCount; i++) {
+      const matchId = nextId++;
+      currentMatchIds.push(matchId);
+
+      let homeId: number | null = null;
+      let awayId: number | null = null;
+      let homeFromMatchId: number | undefined;
+      let awayFromMatchId: number | undefined;
+
+      if (r === 2 && slots) {
+        const left = slots[i * 2];
+        const right = slots[i * 2 + 1];
+        if (left.type === "team") homeId = left.teamId;
+        else homeFromMatchId = left.matchId;
+        if (right.type === "team") awayId = right.teamId;
+        else awayFromMatchId = right.matchId;
+      } else {
+        homeFromMatchId = prevIds[i * 2];
+        awayFromMatchId = prevIds[i * 2 + 1];
+      }
+
+      base.push({
+        id: matchId,
+        round: roundLabel(r),
+        matchIndex: i,
+        homeId,
+        awayId,
+        homeFromMatchId,
+        awayFromMatchId,
+        homeScore: null,
+        awayScore: null,
+        homeETScore: null,
+        awayETScore: null,
+        homePenScore: null,
+        awayPenScore: null,
+        status: "scheduled",
+        winnerId: null,
+        completedVia: null,
+        date: "",
+        time: "",
+        venue: "Veritas Stadium",
+      });
+    }
+
+    prevMatchIds.push(currentMatchIds);
+  }
+
+  return base;
 }

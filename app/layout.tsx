@@ -6,6 +6,7 @@ import { QueryProvider } from "@/components/providers/query-provider";
 export const metadata: Metadata = {
   title: "VUNA Football League",
   description: "School Football League Management System",
+  icons: { icon: "/icon.svg" },
 };
 
 export default function RootLayout({
