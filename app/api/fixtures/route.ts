@@ -13,19 +13,35 @@ import {
 
 export const dynamic = "force-dynamic";
 
-export async function GET() {
+export async function GET(request: Request) {
   try {
     const supabase = await createClient();
     const auth = await getAuthContext(supabase);
     const authError = requireAuth(auth);
     if (authError) return authError;
 
+    const url = new URL(request.url);
+    const orgId = url.searchParams.get("org_id") || auth!.orgMembership?.organization_id;
+
     let query = supabase
       .from("fixtures")
       .select("*")
       .order("round")
       .order("id");
-    if (!auth!.isAdmin && !auth!.orgMembership) {
+
+    if (orgId) {
+      const { data: orgTeams } = await supabase
+        .from("teams")
+        .select("id")
+        .eq("organization_id", orgId);
+      const teamIds = (orgTeams || []).map((t) => t.id);
+      if (teamIds.length > 0) {
+        const conditions = teamIds.flatMap((id) => [`home_team_id.eq.${id}`, `away_team_id.eq.${id}`]);
+        query = query.or(conditions.join(","));
+      } else {
+        return json({ fixtures: [] });
+      }
+    } else if (!auth!.isAdmin && !auth!.orgMembership) {
       const teamId = auth!.teamAccount?.team_id;
       if (!teamId) return json({ fixtures: [] });
       query = query.or(`home_team_id.eq.${teamId},away_team_id.eq.${teamId}`);

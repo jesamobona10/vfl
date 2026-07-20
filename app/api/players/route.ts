@@ -18,18 +18,30 @@ import {
 
 export const dynamic = "force-dynamic";
 
-export async function GET() {
+export async function GET(request: Request) {
   try {
     const supabase = await createClient();
     const auth = await getAuthContext(supabase);
     const authError = requireAuth(auth);
     if (authError) return authError;
 
+    const url = new URL(request.url);
+    const orgId = url.searchParams.get("org_id") || auth!.orgMembership?.organization_id;
+
     let query = supabase
       .from("players")
-      .select("*")
+      .select("*, teams(organization_id)")
       .order("id");
-    if (!auth!.isAdmin && !auth!.orgMembership) {
+
+    if (orgId) {
+      const { data: orgTeams } = await supabase
+        .from("teams")
+        .select("id")
+        .eq("organization_id", orgId);
+      const teamIds = (orgTeams || []).map((t) => t.id);
+      if (teamIds.length > 0) query = query.in("team_id", teamIds);
+      else return json({ players: [] });
+    } else if (!auth!.isAdmin && !auth!.orgMembership) {
       if (!auth!.teamAccount?.team_id) return json({ players: [] });
       query = query.eq("team_id", auth!.teamAccount.team_id);
     }

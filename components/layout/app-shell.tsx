@@ -11,12 +11,13 @@ import { SearchModal } from "../search/search-modal";
 
 const publicPaths = new Set(["/live"]);
 
-async function refreshOrgData() {
+async function refreshOrgData(orgId?: string) {
   const store = useAppStore.getState();
   try {
+    const params = orgId ? `?org_id=${orgId}` : "";
     const [teamsRes, playersRes] = await Promise.all([
-      fetch("/api/teams"),
-      fetch("/api/players"),
+      fetch(`/api/teams${params}`),
+      fetch(`/api/players${params}`),
     ]);
     if (teamsRes.ok) {
       const data = await teamsRes.json();
@@ -65,9 +66,9 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     if (isOrgAdmin && !teamDataLoaded && !fetchingOrgData && !authLoading) {
       setFetchingOrgData(true);
-      refreshOrgData().finally(() => setFetchingOrgData(false));
+      refreshOrgData(userProfile?.org?.id).finally(() => setFetchingOrgData(false));
     }
-  }, [isOrgAdmin, teamDataLoaded, fetchingOrgData, authLoading]);
+  }, [isOrgAdmin, teamDataLoaded, fetchingOrgData, authLoading, userProfile?.org?.id]);
 
   useEffect(() => {
     if (isOrgAdmin && !isOrgRoute && !authLoading) {

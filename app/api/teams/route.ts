@@ -14,8 +14,9 @@ export const dynamic = "force-dynamic";
 export async function GET(request: Request) {
   try {
     const supabase = await createClient();
+    const auth = await getAuthContext(supabase);
     const url = new URL(request.url);
-    const orgId = url.searchParams.get("org_id");
+    const orgId = url.searchParams.get("org_id") || auth?.orgMembership?.organization_id;
 
     let query = supabase.from("teams").select("*").order("id");
     if (orgId) query = query.eq("organization_id", orgId);

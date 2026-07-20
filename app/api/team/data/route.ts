@@ -26,9 +26,18 @@ export async function GET() {
       return json({ error: "Team account not found." }, { status: 404 });
     }
 
+    const { data: teamRecord } = await sb
+      .from("teams")
+      .select("organization_id")
+      .eq("id", account.team_id)
+      .single();
+
+    const orgId = teamRecord?.organization_id;
+
     const { data: dbTeams } = await sb
       .from("teams")
       .select("*")
+      .eq("organization_id", orgId)
       .order("id");
 
     const teams: Team[] = (dbTeams || []).map((t: any) => ({
@@ -37,6 +46,8 @@ export async function GET() {
       logo: t.logo_url || undefined,
       rating: t.rating ?? 6.0,
     }));
+
+    const dbTeamIds = (dbTeams || []).map((t: any) => t.id);
 
     const { data: dbPlayers } = await sb
       .from("players")
@@ -76,6 +87,7 @@ export async function GET() {
     const { data: dbMatches } = await sb
       .from("fixtures")
       .select("*")
+      .in("home_team_id", dbTeamIds)
       .order("round")
       .order("id");
 
