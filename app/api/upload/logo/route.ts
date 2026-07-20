@@ -10,7 +10,8 @@ import {
   logSecurityEvent,
   rateLimit,
   rateLimitResponse,
-  requireAdmin,
+  requireAuth,
+  requireOrgAdmin,
   sanitizeText,
 } from "@/lib/security";
 
@@ -28,15 +29,8 @@ export async function POST(request: Request) {
   try {
     const supabase = await createClient();
     const auth = await getAuthContext(supabase);
-    const adminError = requireAdmin(auth);
-    if (adminError) return adminError;
-
-    const ip = getClientIp(request);
-    const limited = rateLimit({ key: `upload:logo:${ip}:${auth!.userId}`, limit: 30, windowMs: 60 * 60_000 });
-    if (limited.limited) {
-      logSecurityEvent("logo_upload_rate_limited", { ip, userId: auth!.userId });
-      return rateLimitResponse(limited.resetAt);
-    }
+    const authError = requireAuth(auth);
+    if (authError) return authError;
 
     const formData = await request.formData();
     const file = formData.get("file") as File | null;
@@ -48,6 +42,27 @@ export async function POST(request: Request) {
         { error: "File, teamId, and teamName are required." },
         { status: 400 }
       );
+    }
+
+    const sb = createServiceRoleClient();
+    const { data: team } = await sb
+      .from("teams")
+      .select("organization_id")
+      .eq("id", teamId)
+      .single();
+
+    if (!team?.organization_id) {
+      return json({ error: "Team not found or has no organization." }, { status: 404 });
+    }
+
+    const orgAdminError = requireOrgAdmin(auth, team.organization_id);
+    if (orgAdminError) return orgAdminError;
+
+    const ip = getClientIp(request);
+    const limited = rateLimit({ key: `upload:logo:${ip}:${auth!.userId}`, limit: 30, windowMs: 60 * 60_000 });
+    if (limited.limited) {
+      logSecurityEvent("logo_upload_rate_limited", { ip, userId: auth!.userId });
+      return rateLimitResponse(limited.resetAt);
     }
 
     const allowedMime = ["image/png", "image/jpeg", "image/webp", "image/gif"];
@@ -86,8 +101,6 @@ export async function POST(request: Request) {
     const ext = extByMime[file.type];
     const slug = slugify(sanitizeText(teamName));
     const fileName = `team-${slug}-${teamId}.${ext}`;
-
-    const sb = createServiceRoleClient();
 
     const { error: uploadError } = await sb.storage
       .from("team-logos")

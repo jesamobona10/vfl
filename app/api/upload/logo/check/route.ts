@@ -1,6 +1,6 @@
 import { createClient } from "@/lib/supabase/server";
 import { createServiceRoleClient } from "@/lib/supabase/service-role";
-import { getAuthContext, json, logApiError, requireAdmin } from "@/lib/security";
+import { getAuthContext, json, logApiError, requireAuth } from "@/lib/security";
 
 export const dynamic = "force-dynamic";
 
@@ -8,8 +8,8 @@ export async function GET() {
   try {
     const supabase = await createClient();
     const auth = await getAuthContext(supabase);
-    const adminError = requireAdmin(auth);
-    if (adminError) return adminError;
+    const authError = requireAuth(auth);
+    if (authError) return authError;
 
     const sb = createServiceRoleClient();
     const { data: buckets, error } = await sb.storage.listBuckets();
