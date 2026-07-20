@@ -1,4 +1,5 @@
 import { createClient } from "@/lib/supabase/server";
+import { createServiceRoleClient } from "@/lib/supabase/service-role";
 import {
   asBoolean,
   asInteger,
@@ -113,7 +114,8 @@ export async function POST(request: Request) {
       return json({ error: "Name and position are required." }, { status: 400 });
     }
 
-    const { data, error } = await supabase
+    const sb = createServiceRoleClient();
+    const { data, error } = await sb
       .from("players")
       .insert({
         team_id: teamIdToUse,
