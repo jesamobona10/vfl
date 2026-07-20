@@ -80,7 +80,7 @@ export function SearchModal({ isOpen, onClose }: SearchModalProps) {
             title: t.name,
             subtitle: `${players.filter((p) => p.teamId === t.id).length} players`,
             meta: `Rating: ${t.rating}`,
-            route: "/teams",
+            route: "/admin",
           });
         });
     }
@@ -101,7 +101,7 @@ export function SearchModal({ isOpen, onClose }: SearchModalProps) {
             title: p.name,
             subtitle: `${posLabel(p.position)} - #${p.number} - ${teamName(p.teamId)}`,
             meta: `G:${p.goals} A:${p.assists}`,
-            route: "/players",
+            route: "/admin",
           });
         });
     }
@@ -134,7 +134,7 @@ export function SearchModal({ isOpen, onClose }: SearchModalProps) {
               title: `${home} vs ${away}`,
               subtitle: `Round ${m.round}${m.date ? ` - ${m.date}${m.time ? ` ${m.time}` : ""}` : ""}`,
               meta: score || m.status,
-              route: "/fixtures",
+              route: "/admin",
             });
           });
       }

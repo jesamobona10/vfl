@@ -9,7 +9,6 @@ import {
   Trophy,
   Goal,
 } from "lucide-react";
-import Link from "next/link";
 
 export function MetricCards() {
   const teams = useAppStore((s) => s.teams);
@@ -45,28 +44,24 @@ export function MetricCards() {
         value: teamGoalsScored,
         icon: Goal,
         color: "text-brand",
-        href: "/standings",
       },
       {
         label: "Players",
         value: teamPlayers.length,
         icon: UserCog,
         color: "text-accent",
-        href: "/players",
       },
       {
         label: "Matches",
         value: teamMatches.length,
         icon: Calendar,
         color: "text-blue-500",
-        href: "/fixtures",
       },
       {
         label: "Played",
         value: teamCompleted.length,
         icon: Trophy,
         color: "text-green-500",
-        href: "/standings",
       },
     ];
 
@@ -75,11 +70,7 @@ export function MetricCards() {
         {cards.map((card) => {
           const Icon = card.icon;
           return (
-            <Link
-              key={card.label}
-              href={card.href}
-              className="card p-6 hover:shadow-md transition-shadow"
-            >
+            <div className="card p-6">
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-sm text-muted">{card.label}</p>
@@ -89,7 +80,7 @@ export function MetricCards() {
                 </div>
                 <Icon className={card.color} size={32} />
               </div>
-            </Link>
+            </div>
           );
         })}
       </div>
@@ -102,28 +93,24 @@ export function MetricCards() {
       value: teams.length,
       icon: Users,
       color: "text-brand",
-      href: "/teams",
     },
     {
       label: "Players",
       value: players.length,
       icon: UserCog,
       color: "text-accent",
-      href: "/players",
     },
     {
       label: "Matches",
       value: totalMatches,
       icon: Calendar,
       color: "text-blue-500",
-      href: "/fixtures",
     },
     {
       label: "Completed",
       value: completed,
       icon: Trophy,
       color: "text-green-500",
-      href: "/standings",
     },
   ];
 
@@ -132,11 +119,7 @@ export function MetricCards() {
       {cards.map((card) => {
         const Icon = card.icon;
         return (
-          <Link
-            key={card.label}
-            href={card.href}
-            className="card p-6 hover:shadow-md transition-shadow"
-          >
+          <div className="card p-6">
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm text-muted">{card.label}</p>
@@ -146,7 +129,7 @@ export function MetricCards() {
               </div>
               <Icon className={card.color} size={32} />
             </div>
-          </Link>
+          </div>
         );
       })}
     </div>

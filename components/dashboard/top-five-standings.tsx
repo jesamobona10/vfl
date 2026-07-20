@@ -2,7 +2,6 @@
 
 import { useAppStore } from "@/lib/store";
 import { calculateStandings } from "@/lib/logic/standings";
-import Link from "next/link";
 
 export function TopFiveStandings() {
   const teams = useAppStore((s) => s.teams);
@@ -16,12 +15,6 @@ export function TopFiveStandings() {
     <div className="card">
       <div className="px-5 py-3 border-b border-line flex items-center justify-between">
         <h3 className="text-sm font-semibold">Top 5 Standings</h3>
-        <Link
-          href="/standings"
-          className="text-xs text-brand hover:underline"
-        >
-          Full table &rarr;
-        </Link>
       </div>
       <div className="overflow-x-auto">
         <table className="w-full text-sm">

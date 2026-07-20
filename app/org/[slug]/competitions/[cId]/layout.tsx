@@ -3,7 +3,7 @@
 import { useCompetition } from "@/lib/hooks/use-competitions";
 import { useParams, usePathname } from "next/navigation";
 import Link from "next/link";
-import { Calendar, Trophy, Swords, Settings, Loader2 } from "lucide-react";
+import { Calendar, Trophy, Settings, Loader2 } from "lucide-react";
 
 const typeLabels: Record<string, string> = {
   league: "League",
@@ -20,7 +20,6 @@ const statusColors: Record<string, string> = {
 const tabs = [
   { href: "fixtures", label: "Fixtures", icon: Calendar, showFor: null },
   { href: "standings", label: "Standings", icon: Trophy, showFor: "league" },
-  { href: "knockout", label: "Knockout", icon: Swords, showFor: null },
   { href: "settings", label: "Settings", icon: Settings, showFor: null },
 ];
 

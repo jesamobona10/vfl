@@ -5,11 +5,10 @@ import { usePathname, useRouter } from "next/navigation";
 import { useAppStore } from "@/lib/store";
 import { refreshAdminData } from "@/lib/hooks/use-team-data";
 import { AppHeader } from "./app-header";
-import { TabNav } from "./tab-nav";
 import { LoginForm } from "./login-form";
 import { SearchModal } from "../search/search-modal";
 
-const publicPaths = new Set(["/live"]);
+const publicPaths: Set<string> = new Set();
 
 async function refreshOrgData(orgId?: string) {
   const store = useAppStore.getState();
@@ -105,7 +104,6 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   return (
     <div className="min-h-screen bg-bg">
       <AppHeader onOpenSearch={() => setSearchOpen(true)} />
-      <TabNav />
       <main className="max-w-7xl mx-auto px-4 sm:px-6 py-6">{children}</main>
       <SearchModal isOpen={isSearchOpen} onClose={() => setSearchOpen(false)} />
     </div>

@@ -1,9 +1,9 @@
 "use client";
 
 import { useState } from "react";
-import { useCompetition, useUpdateCompetition, useGenerateFixtures, useGenerateKnockout } from "@/lib/hooks/use-competitions";
+import { useCompetition, useUpdateCompetition, useGenerateFixtures } from "@/lib/hooks/use-competitions";
 import { useParams } from "next/navigation";
-import { Calendar, Swords, Loader2, Check, AlertCircle } from "lucide-react";
+import { Calendar, Loader2, Check, AlertCircle } from "lucide-react";
 
 const statusOptions: { value: string; label: string }[] = [
   { value: "draft", label: "Draft" },
@@ -17,7 +17,6 @@ export default function CompetitionSettingsPage() {
   const { data: currentCompetition, isLoading } = useCompetition(cId);
   const updateMutation = useUpdateCompetition();
   const generateFixturesMutation = useGenerateFixtures();
-  const generateKnockoutMutation = useGenerateKnockout();
 
   const [status, setStatus] = useState<"draft" | "active" | "completed">(currentCompetition?.status ?? "draft");
   const [message, setMessage] = useState<{
@@ -52,17 +51,9 @@ export default function CompetitionSettingsPage() {
     });
   };
 
-  const handleGenerateKnockout = async () => {
-    setMessage(null);
-    generateKnockoutMutation.mutate(cId, {
-      onSuccess: () => setMessage({ type: "success", text: "Knockout stage generated successfully." }),
-      onError: (err) => setMessage({ type: "error", text: err instanceof Error ? err.message : "Something went wrong" }),
-    });
-  };
-
   const isLeague = currentCompetition.type === "league";
   const canGenerateFixtures = isLeague && (status === "draft" || status === "active");
-  const pending = updateMutation.isPending || generateFixturesMutation.isPending || generateKnockoutMutation.isPending;
+  const pending = updateMutation.isPending || generateFixturesMutation.isPending;
 
   return (
     <div className="max-w-xl space-y-6">
@@ -143,25 +134,6 @@ export default function CompetitionSettingsPage() {
           </button>
         </div>
       )}
-
-      <div className="card p-6 space-y-4">
-        <h2 className="text-lg font-semibold">Knockout Stage</h2>
-        <p className="text-sm text-muted">
-          Generate or regenerate the knockout bracket for this competition.
-        </p>
-        <button
-          onClick={handleGenerateKnockout}
-          disabled={pending}
-          className="btn-primary flex items-center gap-2"
-        >
-          {pending ? (
-            <Loader2 size={14} className="animate-spin" />
-          ) : (
-            <Swords size={14} />
-          )}
-          Generate Knockout
-        </button>
-      </div>
 
       {message && (
         <div

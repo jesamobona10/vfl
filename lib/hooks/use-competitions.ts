@@ -69,19 +69,3 @@ export function useGenerateFixtures() {
   });
 }
 
-export function useGenerateKnockout() {
-  const queryClient = useQueryClient();
-
-  return useMutation({
-    mutationFn: (competitionId: string) =>
-      fetch(`/api/competitions/${competitionId}/generate-knockout`, {
-        method: "POST",
-      }).then((res) => {
-        if (!res.ok) throw new Error("Failed to generate knockout");
-        return res.json();
-      }),
-    onSuccess: (_data, competitionId) => {
-      queryClient.invalidateQueries({ queryKey: ["competition", competitionId] });
-    },
-  });
-}
