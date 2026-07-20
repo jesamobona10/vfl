@@ -1,20 +1,28 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { useParams } from "next/navigation";
 import { useAppStore } from "@/lib/store";
+import { useOrg } from "@/lib/hooks/use-org";
 import { TeamCard } from "./team-card";
-import { RotateCcw, AlertCircle, Plus, Trash2, Shield } from "lucide-react";
+import { RotateCcw, AlertCircle, Plus, Trash2, Shield, Loader2 } from "lucide-react";
 import type { Team } from "@/lib/types";
 
 export function TeamForm() {
+  const params = useParams();
+  const slug = params.slug as string;
+  const { data: currentOrg } = useOrg(slug);
+
   const [newTeamName, setNewTeamName] = useState("");
   const [adminError, setAdminError] = useState("");
   const [showAddForm, setShowAddForm] = useState(false);
+  const [loadingTeams, setLoadingTeams] = useState(true);
   const teams = useAppStore((s) => s.teams);
   const players = useAppStore((s) => s.players);
   const isTeamAccount = useAppStore((s) => s.isTeamAccount);
   const getManagedTeamId = useAppStore((s) => s.getManagedTeamId);
   const resetTeams = useAppStore((s) => s.resetTeams);
+  const setTeams = useAppStore((s) => s.setTeams);
   const setFixtures = useAppStore((s) => s.setFixtures);
   const deleteAllPlayers = useAppStore((s) => s.deleteAllPlayers);
   const addTeam = useAppStore((s) => s.addTeam);
@@ -23,6 +31,18 @@ export function TeamForm() {
 
   const isTeam = isTeamAccount();
   const managedId = getManagedTeamId();
+
+  useEffect(() => {
+    if (!currentOrg?.id) return;
+    setLoadingTeams(true);
+    fetch(`/api/teams?org_id=${currentOrg.id}`)
+      .then((r) => r.json())
+      .then((data) => {
+        if (data.teams) setTeams(data.teams);
+      })
+      .catch(() => {})
+      .finally(() => setLoadingTeams(false));
+  }, [currentOrg?.id, setTeams]);
 
   const visibleTeams = isTeam
     ? teams.filter((t) => t.id === managedId)
@@ -50,13 +70,17 @@ export function TeamForm() {
   const handleAdd = async () => {
     const name = newTeamName.trim();
     if (!name) return;
+    if (!currentOrg?.id) {
+      setAdminError("Organization not loaded.");
+      return;
+    }
     setAdminError("");
 
     try {
       const res = await fetch("/api/teams", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ name, rating: 6.0 }),
+        body: JSON.stringify({ name, organization_id: currentOrg.id, rating: 6.0 }),
       });
       const payload = await res.json();
       if (!res.ok) {
@@ -182,7 +206,11 @@ export function TeamForm() {
         </div>
       )}
 
-      {visibleTeams.length === 0 ? (
+      {loadingTeams ? (
+        <div className="flex items-center justify-center py-20">
+          <Loader2 size={24} className="animate-spin text-muted" />
+        </div>
+      ) : visibleTeams.length === 0 ? (
         <div className="card p-12 text-center text-muted">
           <Shield size={48} className="mx-auto mb-4 opacity-20" />
           <p className="text-lg font-medium">No teams yet</p>

@@ -5,19 +5,22 @@ import {
   json,
   logApiError,
   parseJsonObject,
-  requireAdmin,
+  requireOrgAdmin,
   sanitizeText,
 } from "@/lib/security";
 
 export const dynamic = "force-dynamic";
 
-export async function GET() {
+export async function GET(request: Request) {
   try {
     const supabase = await createClient();
-    const { data, error } = await supabase
-      .from("teams")
-      .select("*")
-      .order("id");
+    const url = new URL(request.url);
+    const orgId = url.searchParams.get("org_id");
+
+    let query = supabase.from("teams").select("*").order("id");
+    if (orgId) query = query.eq("organization_id", orgId);
+
+    const { data, error } = await query;
 
     if (error) {
       logApiError("teams_list_failed", error);
@@ -34,23 +37,29 @@ export async function POST(request: Request) {
   try {
     const supabase = await createClient();
     const auth = await getAuthContext(supabase);
-    const adminError = requireAdmin(auth);
-    if (adminError) return adminError;
-
     const parsed = await parseJsonObject(request);
     if (parsed.error) return json({ error: parsed.error }, { status: 400 });
 
     const name = asString(parsed.data!.name, 80);
     if (!name) return json({ error: "Team name is required." }, { status: 400 });
 
+    const organization_id = asString(parsed.data!.organization_id, 64);
+    if (!organization_id) return json({ error: "Organization ID is required." }, { status: 400 });
+
+    const orgAdminError = requireOrgAdmin(auth, organization_id);
+    if (orgAdminError) return orgAdminError;
+
     const { data, error } = await supabase
       .from("teams")
-      .insert({ name: sanitizeText(name) })
+      .insert({ name: sanitizeText(name), organization_id })
       .select()
       .single();
 
     if (error) {
       logApiError("team_create_failed", error, { userId: auth!.userId });
+      if (error.code === "23505") {
+        return json({ error: "A team with this name already exists." }, { status: 409 });
+      }
       return json({ error: "Unable to create team." }, { status: 400 });
     }
     return json({ team: data });
