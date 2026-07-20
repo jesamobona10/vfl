@@ -8,7 +8,6 @@ import {
   json,
   logApiError,
   logSecurityEvent,
-  ownsTeam,
   parseJsonObject,
   rateLimit,
   rateLimitResponse,
@@ -78,9 +77,26 @@ export async function POST(request: Request) {
     if (parsed.error) return json({ error: parsed.error }, { status: 400 });
 
     let teamIdToUse = asInteger(parsed.data!.team_id ?? parsed.data!.teamId, 1);
-    if (!auth!.isAdmin) teamIdToUse = auth!.teamAccount?.team_id ?? null;
+    if (auth!.isAdmin) {
+      // super admin can create for any team
+    } else if (auth!.orgMembership) {
+      // org admin must use the passed team_id and it must belong to their org
+      if (!teamIdToUse) return json({ error: "Team is required." }, { status: 400 });
+      const { data: team } = await supabase
+        .from("teams")
+        .select("organization_id")
+        .eq("id", teamIdToUse)
+        .single();
+      if (!team || team.organization_id !== auth!.orgMembership.organization_id) {
+        return json({ error: "Forbidden" }, { status: 403 });
+      }
+    } else if (auth!.teamAccount?.team_id) {
+      teamIdToUse = auth!.teamAccount.team_id;
+    } else {
+      return json({ error: "Forbidden" }, { status: 403 });
+    }
 
-    if (!teamIdToUse || !ownsTeam(auth!, teamIdToUse)) {
+    if (!teamIdToUse) {
       return json({ error: "Forbidden" }, { status: 403 });
     }
 
