@@ -5,6 +5,13 @@ import { useAppStore } from "@/lib/store";
 import { MatchEditor } from "./match-editor";
 import { TeamForm } from "../teams/team-form";
 import { DataImporter } from "./data-importer";
+import { DashboardOverview } from "./dashboard-overview";
+import { OrgManager } from "./org-manager";
+import { AdminTeamManager } from "./team-manager";
+import { AdminPlayerManager } from "./player-manager";
+import { CompManager } from "./comp-manager";
+import { AuditViewer } from "./audit-viewer";
+import { UsersManager } from "./users-manager";
 import {
   Wrench,
   AlertCircle,
@@ -27,11 +34,14 @@ import {
   EyeOff,
   FileDown,
   Building2,
+  LayoutDashboard,
+  Trophy,
+  ScrollText,
 } from "lucide-react";
 import type { Team, Player } from "@/lib/types";
 import { GeneratePlayerCredentials } from "@/components/players/generate-player-credentials";
 
-type AdminTab = "teams" | "players" | "fixtures" | "database" | "accounts" | "import" | "orgs";
+type AdminTab = "dashboard" | "orgs" | "teams" | "players" | "competitions" | "fixtures" | "users" | "audit" | "database" | "import";
 
 function PlayerManager() {
   const isAdmin = useAppStore((s) => s.isAdmin);
@@ -624,76 +634,30 @@ function TeamAccountManager() {
   );
 }
 
-function OrgManager() {
-  const [orgs, setOrgs] = useState<{ id: string; name: string; slug: string; type: string; created_at: string }[]>([]);
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    fetch("/api/org/my-orgs")
-      .then((r) => r.json())
-      .then((d) => setOrgs(d.orgs || []))
-      .catch(() => {})
-      .finally(() => setLoading(false));
-  }, []);
-
-  if (loading) {
-    return <div className="flex justify-center py-12"><Loader2 size={24} className="animate-spin text-muted" /></div>;
-  }
-
-  const handleViewOrg = (slug: string) => {
-    window.open(`/org/${slug}/dashboard`, "_blank");
-  };
-
-  return (
-    <div className="space-y-4">
-      <h3 className="text-lg font-bold">Organizations</h3>
-      <p className="text-sm text-muted">All registered organizations across the platform.</p>
-
-      {orgs.length === 0 ? (
-        <p className="text-sm text-muted text-center py-8">No organizations registered yet.</p>
-      ) : (
-        <div className="space-y-2">
-          {orgs.map((org) => (
-            <div key={org.id} className="card px-4 py-3 flex items-center gap-3">
-              <Building2 size={18} className="text-muted shrink-0" />
-              <div className="flex-1 min-w-0">
-                <p className="text-sm font-medium truncate">{org.name}</p>
-                <p className="text-xs text-muted truncate">
-                  {org.slug} &middot; <span className="capitalize">{org.type}</span>
-                </p>
-              </div>
-              <button onClick={() => handleViewOrg(org.slug)} className="btn-ghost text-xs">
-                View
-              </button>
-            </div>
-          ))}
-        </div>
-      )}
-    </div>
-  );
-}
-
 export function AdminPanel() {
-  const [tab, setTab] = useState<AdminTab>("orgs");
+  const [tab, setTab] = useState<AdminTab>("dashboard");
 
   const adminTabs: { key: AdminTab; label: string; icon: typeof Shield }[] = [
+    { key: "dashboard", label: "Dashboard", icon: LayoutDashboard },
     { key: "orgs", label: "Organizations", icon: Building2 },
-    { key: "fixtures", label: "Fixtures & Scores", icon: Calendar },
     { key: "teams", label: "Teams", icon: Users },
     { key: "players", label: "Players", icon: UserCog },
-    { key: "accounts", label: "Team Accounts", icon: KeyRound },
+    { key: "competitions", label: "Competitions", icon: Trophy },
+    { key: "fixtures", label: "Fixtures", icon: Calendar },
+    { key: "users", label: "Users", icon: KeyRound },
+    { key: "audit", label: "Audit", icon: ScrollText },
     { key: "database", label: "Database", icon: Database },
-    { key: "import", label: "Import Data", icon: FileDown },
+    { key: "import", label: "Import", icon: FileDown },
   ];
 
   return (
     <div>
       <div className="flex flex-col gap-1 mb-6">
         <h1 className="text-2xl font-bold">Admin Panel</h1>
-        <p className="text-sm text-muted">Full league management</p>
+        <p className="text-sm text-muted">Full system management</p>
       </div>
 
-      <div className="flex gap-1 bg-surface-2 rounded-lg p-1 mb-6 w-fit overflow-x-auto">
+      <div className="flex gap-1 bg-surface-2 rounded-lg p-1 mb-6 overflow-x-auto">
         {adminTabs.map((t) => {
           const Icon = t.icon;
           return (
@@ -711,11 +675,14 @@ export function AdminPanel() {
         })}
       </div>
 
+      {tab === "dashboard" && <DashboardOverview />}
       {tab === "orgs" && <OrgManager />}
-      {tab === "teams" && <TeamForm />}
-      {tab === "players" && <PlayerManager />}
+      {tab === "teams" && <AdminTeamManager />}
+      {tab === "players" && <AdminPlayerManager />}
+      {tab === "competitions" && <CompManager />}
       {tab === "fixtures" && <FixtureManager />}
-      {tab === "accounts" && <TeamAccountManager />}
+      {tab === "users" && <UsersManager />}
+      {tab === "audit" && <AuditViewer />}
       {tab === "database" && <DatabaseManager />}
       {tab === "import" && <DataImporter />}
     </div>
