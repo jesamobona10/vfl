@@ -12,7 +12,7 @@ interface PlayerHeroProps {
     rating: number;
     captain: boolean;
   };
-  team: { name: string; logo: string | null; rating: number } | null;
+  team: { name: string; logo_url: string | null; rating: number } | null;
 }
 
 export function PlayerHero({ player, team }: PlayerHeroProps) {
@@ -55,8 +55,8 @@ export function PlayerHero({ player, team }: PlayerHeroProps) {
           <span className="font-semibold text-sm">{player.rating.toFixed(1)}</span>
           <span className="text-xs text-muted">rating</span>
         </div>
-        {team?.logo && (
-          <img src={team.logo} alt={team.name} className="w-10 h-10 rounded-full object-cover" />
+        {team?.logo_url && (
+          <img src={team.logo_url} alt={team.name} className="w-10 h-10 rounded-full object-cover" />
         )}
       </div>
     </div>

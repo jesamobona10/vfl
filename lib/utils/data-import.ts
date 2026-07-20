@@ -83,11 +83,12 @@ export function buildImportPlan(
   const finalTeams: Team[] = source.teams.map((src) => {
     const newId = mappingMap.get(src.id)!;
     const existingTeam = internalTeams.find((t) => t.id === newId && t.name.toLowerCase().trim() === src.name.toLowerCase().trim());
-    const existingLogo = existingTeam?.logo;
+    const existingLogo = existingTeam?.logo_url;
     return {
-      ...src,
       id: newId,
-      logo: src.logo || existingLogo,
+      name: src.name,
+      rating: (src as any).rating ?? 6.0,
+      logo_url: (src as any).logo || existingLogo || undefined,
     };
   });
 

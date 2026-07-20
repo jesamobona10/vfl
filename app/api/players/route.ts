@@ -4,10 +4,14 @@ import {
   asInteger,
   asString,
   getAuthContext,
+  getClientIp,
   json,
   logApiError,
+  logSecurityEvent,
   ownsTeam,
   parseJsonObject,
+  rateLimit,
+  rateLimitResponse,
   requireAuth,
   sanitizeText,
 } from "@/lib/security";
@@ -45,10 +49,18 @@ export async function GET() {
 
 export async function POST(request: Request) {
   try {
+    const ip = getClientIp(request);
+
     const supabase = await createClient();
     const auth = await getAuthContext(supabase);
     const authError = requireAuth(auth);
     if (authError) return authError;
+
+    const limited = rateLimit({ key: `players:create:${ip}:${auth!.userId}`, limit: 30, windowMs: 60 * 60_000 });
+    if (limited.limited) {
+      logSecurityEvent("player_create_rate_limited", { ip, userId: auth!.userId });
+      return rateLimitResponse(limited.resetAt);
+    }
 
     const parsed = await parseJsonObject(request);
     if (parsed.error) return json({ error: parsed.error }, { status: 400 });

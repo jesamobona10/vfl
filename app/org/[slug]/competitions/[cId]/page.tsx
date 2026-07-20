@@ -5,5 +5,5 @@ export default function CompetitionIndexPage({
 }: {
   params: { slug: string; cId: string };
 }) {
-  redirect(`/org/${params.slug}/dashboard`);
+  redirect(`/org/${params.slug}/competitions/${params.cId}/fixtures`);
 }

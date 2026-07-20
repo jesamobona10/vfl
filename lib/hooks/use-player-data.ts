@@ -30,12 +30,12 @@ export interface PlayerData {
     rating: number;
     matchRatings: Record<string, number>;
   };
-  team: { name: string; logo: string | null; rating: number } | null;
+  team: { name: string; logo_url: string | null; rating: number } | null;
   teamFixtures: any[];
   allFixtures: any[];
   matchEvents: any[];
   allPlayers: any[];
-  standings: { id: number; name: string; logo: string | null; goals: number; wins: number; rating: number }[];
+  standings: { id: number; name: string; logo_url: string | null; goals: number; wins: number; rating: number }[];
 }
 
 export function usePlayerData() {

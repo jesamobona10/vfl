@@ -24,8 +24,8 @@ export const createCompetitionSlice: StateCreator<any, [], [], CompetitionSlice>
       if (!res.ok) return;
       const data = await res.json();
       set({ competitions: data.competitions || [] });
-    } catch {
-      // silently fail
+    } catch (error) {
+      console.error("fetchCompetitions failed:", error);
     }
   },
 
@@ -37,7 +37,8 @@ export const createCompetitionSlice: StateCreator<any, [], [], CompetitionSlice>
       const comp: Competition = data.competition;
       set({ currentCompetition: comp });
       return comp;
-    } catch {
+    } catch (error) {
+      console.error("fetchCompetition failed:", error);
       return null;
     }
   },

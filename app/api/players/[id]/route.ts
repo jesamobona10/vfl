@@ -27,6 +27,7 @@ export async function PUT(
     const auth = await getAuthContext(supabase);
     const authError = requireAuth(auth);
     if (authError) return authError;
+    const authed = auth!;
 
     const parsed = await parseJsonObject(request);
     if (parsed.error) return json({ error: parsed.error }, { status: 400 });
@@ -43,7 +44,7 @@ export async function PUT(
     }
 
     // If team account, ensure the player belongs to their managed team before allowing updates
-    if (!ownsTeam(auth!, existingPlayer.team_id)) {
+    if (!ownsTeam(authed, existingPlayer.team_id)) {
       return json({ error: "Forbidden" }, { status: 403 });
     }
 
@@ -57,9 +58,9 @@ export async function PUT(
     if (position) update.position = sanitizeText(position);
     if (jerseyNumber !== null) update.jersey_number = jerseyNumber;
     if (isCaptain !== null) update.is_captain = isCaptain;
-    if (auth!.isAdmin && teamId !== null) {
+    if (authed.isAdmin && teamId !== null) {
       update.team_id = teamId;
-    } else if (!auth!.isAdmin && teamId !== null && teamId !== existingPlayer.team_id) {
+    } else if (!authed.isAdmin && teamId !== null && teamId !== existingPlayer.team_id) {
       return json({ error: "Forbidden" }, { status: 403 });
     }
 
@@ -84,7 +85,7 @@ export async function PUT(
       .single();
 
     if (error) {
-      logApiError("player_update_failed", error, { userId: auth!.userId, playerId });
+      logApiError("player_update_failed", error, { userId: authed.userId, playerId });
       return json({ error: "Unable to update player." }, { status: 400 });
     }
     // If team changed, insert a transfer audit record
@@ -96,8 +97,8 @@ export async function PUT(
           player_id: playerId,
           from_team_id: oldTeam,
           to_team_id: newTeam,
-          performed_by: auth!.userId,
-          performed_by_role: auth!.isAdmin ? "admin" : "team_account",
+          performed_by: authed.userId,
+          performed_by_role: authed.isAdmin ? "admin" : "team_account",
         });
       }
     } catch (e) {
@@ -114,7 +115,7 @@ export async function PUT(
         player_name: existingPlayer?.name ?? null,
         from_team_id: oldTeam,
         to_team_id: newTeam,
-        performed_by: auth!.userId,
+        performed_by: authed.userId,
       };
       if (oldTeam) {
         await supabase.from("notifications").insert({
@@ -150,6 +151,7 @@ export async function DELETE(
     const auth = await getAuthContext(supabase);
     const adminError = requireAdmin(auth);
     if (adminError) return adminError;
+    const authed = auth!;
 
     const playerId = asInteger(params.id, 1);
     if (!playerId) return json({ error: "Invalid player id." }, { status: 400 });
@@ -160,7 +162,7 @@ export async function DELETE(
       .eq("id", playerId);
 
     if (error) {
-      logApiError("player_delete_failed", error, { userId: auth!.userId, playerId });
+      logApiError("player_delete_failed", error, { userId: authed.userId, playerId });
       return json({ error: "Unable to delete player." }, { status: 400 });
     }
     return json({ success: true });

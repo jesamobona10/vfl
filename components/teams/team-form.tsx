@@ -68,7 +68,7 @@ export function TeamForm() {
         id: payload.team.id,
         name: payload.team.name,
         rating: payload.team.rating ?? 6.0,
-        logo: payload.team.logo_url || undefined,
+        logo_url: payload.team.logo_url || undefined,
       };
       addTeam(newTeam);
       setNewTeamName("");

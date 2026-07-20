@@ -134,9 +134,9 @@ export function MatchEditor() {
               <div className="grid gap-3">
                 <div className="flex items-center justify-between gap-3 px-3 py-2 rounded-3xl border border-line bg-surface shadow-sm">
                   <div className="flex items-center gap-2 min-w-0">
-                    {home?.logo && (
+                    {home?.logo_url && (
                       <img
-                        src={home.logo}
+                        src={home.logo_url}
                         alt={home.name}
                         className="w-8 h-8 rounded object-cover shrink-0"
                       />
@@ -176,9 +176,9 @@ export function MatchEditor() {
                     <span className="text-sm font-semibold truncate">
                       {away?.name || "?"}
                     </span>
-                    {away?.logo && (
+                    {away?.logo_url && (
                       <img
-                        src={away.logo}
+                        src={away.logo_url}
                         alt={away.name}
                         className="w-8 h-8 rounded object-cover shrink-0"
                       />

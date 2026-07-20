@@ -25,7 +25,7 @@ interface Tab {
 }
 
 const tabs: Tab[] = [
-  { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
+  { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard, orgOnly: true },
   { href: "/competitions", label: "Competitions", icon: LayoutList, orgOnly: true },
   { href: "/live", label: "Live", icon: Radio },
   { href: "/fixtures", label: "Fixtures", icon: Calendar },

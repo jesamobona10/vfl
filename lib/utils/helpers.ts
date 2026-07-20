@@ -48,7 +48,7 @@ export interface Team {
   id: number;
   name: string;
   color?: string;
-  logo?: string;
+  logo_url?: string;
 }
 
 export function teamName(id: number, teams: Team[]): string {
@@ -56,11 +56,11 @@ export function teamName(id: number, teams: Team[]): string {
 }
 
 export function teamBadge(team: Team | undefined, useLogo: boolean): string {
-  if (useLogo && team?.logo) {
-    return `<img src="${escapeAttribute(team.logo)}" alt="${escapeAttribute(team.name)}" class="team-logo-inline" aria-hidden="true">`;
+  if (useLogo && team?.logo_url) {
+    return `<img src="${escapeAttribute(team.logo_url)}" alt="${escapeAttribute(team.name)}" class="team-logo-inline" aria-hidden="true">`;
   }
-  return team?.logo
-    ? `<img src="${escapeAttribute(team.logo)}" alt="${escapeAttribute(team.name)}" class="team-logo-inline" aria-hidden="true">`
+  return team?.logo_url
+    ? `<img src="${escapeAttribute(team.logo_url)}" alt="${escapeAttribute(team.name)}" class="team-logo-inline" aria-hidden="true">`
     : `<span aria-hidden="true" style="display:inline-block;width:12px;height:12px;border-radius:50%;background:${team?.color || "#ccc"};margin-right:8px"></span>`;
 }
 

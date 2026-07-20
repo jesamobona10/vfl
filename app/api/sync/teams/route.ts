@@ -1,6 +1,20 @@
 import { createClient } from "@/lib/supabase/server";
 import { createServiceRoleClient } from "@/lib/supabase/service-role";
-import { asString, getAuthContext, json, logApiError, parseJsonObject, requireAdmin, sanitizeText } from "@/lib/security";
+import {
+  asString,
+  getAuthContext,
+  getClientIp,
+  json,
+  logApiError,
+  logSecurityEvent,
+  parseJsonObject,
+  rateLimit,
+  rateLimitResponse,
+  requireAdmin,
+  sanitizeText,
+} from "@/lib/security";
+
+const MAX_SYNC_SIZE = 500;
 
 export const dynamic = "force-dynamic";
 
@@ -11,6 +25,13 @@ export async function POST(request: Request) {
     const adminError = requireAdmin(auth);
     if (adminError) return adminError;
 
+    const ip = getClientIp(request);
+    const limited = rateLimit({ key: `sync:teams:${ip}`, limit: 10, windowMs: 60 * 60_000 });
+    if (limited.limited) {
+      logSecurityEvent("sync_teams_rate_limited", { ip, userId: auth!.userId });
+      return rateLimitResponse(limited.resetAt);
+    }
+
     const parsed = await parseJsonObject(request);
     if (parsed.error) return json({ error: parsed.error }, { status: 400 });
     const teams = parsed.data!.teams;
@@ -18,6 +39,13 @@ export async function POST(request: Request) {
     if (!teams || !Array.isArray(teams)) {
       return json(
         { error: "Teams array is required." },
+        { status: 400 }
+      );
+    }
+
+    if (teams.length > MAX_SYNC_SIZE) {
+      return json(
+        { error: `Too many teams. Maximum is ${MAX_SYNC_SIZE}.` },
         { status: 400 }
       );
     }

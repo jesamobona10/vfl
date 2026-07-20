@@ -59,8 +59,13 @@ export function verifyFixtures(
   const appearances = new Map(teams.map((team) => [team.id, 0]));
   const byes = new Map(teams.map((team) => [team.id, 0]));
 
-  if (fixtures.length !== 11) {
-    errors.push(`Expected 11 rounds, found ${fixtures.length}.`);
+  const expectedRounds = teams.length - 1;
+  const expectedMatchesPerRound = Math.floor(teams.length / 2);
+  const expectedAppearances = expectedRounds;
+  const expectedByes = 1;
+
+  if (fixtures.length !== expectedRounds) {
+    errors.push(`Expected ${expectedRounds} rounds, found ${fixtures.length}.`);
   }
 
   if (matches.length !== expectedMatches) {
@@ -69,8 +74,8 @@ export function verifyFixtures(
 
   fixtures.forEach((round) => {
     const roundTeams = new Set<number>();
-    if (round.matches.length !== 5) {
-      errors.push(`Round ${round.round} should contain 5 matches.`);
+    if (round.matches.length !== expectedMatchesPerRound) {
+      errors.push(`Round ${round.round} should contain ${expectedMatchesPerRound} matches.`);
     }
     round.matches.forEach((match) => {
       [match.homeId, match.awayId].forEach((teamId) => {
@@ -106,13 +111,13 @@ export function verifyFixtures(
   });
 
   teams.forEach((team) => {
-    if (appearances.get(team.id) !== 10) {
+    if (appearances.get(team.id) !== expectedAppearances) {
       errors.push(
-        `${team.name} plays ${appearances.get(team.id)} matches instead of 10.`
+        `${team.name} plays ${appearances.get(team.id)} matches instead of ${expectedAppearances}.`
       );
     }
-    if (byes.get(team.id) !== 1) {
-      errors.push(`${team.name} has ${byes.get(team.id)} byes instead of 1.`);
+    if (byes.get(team.id) !== expectedByes) {
+      errors.push(`${team.name} has ${byes.get(team.id)} byes instead of ${expectedByes}.`);
     }
   });
 

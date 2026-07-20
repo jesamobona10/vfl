@@ -1,6 +1,23 @@
 import { createClient } from "@/lib/supabase/server";
 import { createServiceRoleClient } from "@/lib/supabase/service-role";
-import { asInteger, asOptionalString, asString, getAuthContext, json, logApiError, parseJsonObject, requireAdmin, sanitizeText } from "@/lib/security";
+import {
+  asInteger,
+  asOptionalString,
+  asString,
+  getAuthContext,
+  getClientIp,
+  json,
+  logApiError,
+  logSecurityEvent,
+  parseJsonObject,
+  rateLimit,
+  rateLimitResponse,
+  requireAdmin,
+  sanitizeText,
+} from "@/lib/security";
+
+const MAX_ROUNDS = 100;
+const MAX_MATCHES = 1000;
 
 export const dynamic = "force-dynamic";
 
@@ -10,6 +27,13 @@ export async function POST(request: Request) {
     const auth = await getAuthContext(supabase);
     const adminError = requireAdmin(auth);
     if (adminError) return adminError;
+
+    const ip = getClientIp(request);
+    const limited = rateLimit({ key: `sync:fixtures:${ip}`, limit: 10, windowMs: 60 * 60_000 });
+    if (limited.limited) {
+      logSecurityEvent("sync_fixtures_rate_limited", { ip, userId: auth!.userId });
+      return rateLimitResponse(limited.resetAt);
+    }
 
     const parsed = await parseJsonObject(request);
     if (parsed.error) return json({ error: parsed.error }, { status: 400 });
@@ -26,11 +50,19 @@ export async function POST(request: Request) {
       );
     }
 
+    if (fixtures.length > MAX_ROUNDS) {
+      return json(
+        { error: `Too many fixture rounds. Maximum is ${MAX_ROUNDS}.` },
+        { status: 400 }
+      );
+    }
+
     const sb = createServiceRoleClient();
 
     const allMatches: any[] = [];
     for (const round of fixtures) {
       for (const match of round.matches ?? []) {
+        if (allMatches.length >= MAX_MATCHES) break;
         const localHomeId = match.homeId ?? match.home_team_id;
         const localAwayId = match.awayId ?? match.away_team_id;
         const id = match.id != null ? Math.trunc(Number(match.id)) : undefined;

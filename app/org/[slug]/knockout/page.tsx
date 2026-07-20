@@ -28,7 +28,7 @@ export default function OrgKnockoutPage() {
     teams.find((t) => t.id === id)?.name || `Team ${id}`;
 
   const getTeamLogo = (id: number) =>
-    teams.find((t) => t.id === id)?.logo;
+    teams.find((t) => t.id === id)?.logo_url;
 
   const playoffMatches = cup.matches.filter((m) => m.round === "playoff");
   const bracketMatches = cup.matches.filter((m) => m.round !== "playoff");

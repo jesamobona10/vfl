@@ -27,8 +27,8 @@ export const createOrgSlice: StateCreator<any, [], [], OrgSlice> = (set) => ({
       if (!res.ok) return;
       const data = await res.json();
       set({ myOrgs: data.orgs || [] });
-    } catch {
-      // silently fail
+    } catch (error) {
+      console.error("fetchMyOrgs failed:", error);
     }
   },
 
@@ -44,7 +44,8 @@ export const createOrgSlice: StateCreator<any, [], [], OrgSlice> = (set) => ({
       const org: Organization = data.org;
       set({ currentOrg: org, orgLoading: false });
       return org;
-    } catch {
+    } catch (error) {
+      console.error("fetchOrgBySlug failed:", error);
       set({ orgLoading: false });
       return null;
     }
@@ -52,12 +53,12 @@ export const createOrgSlice: StateCreator<any, [], [], OrgSlice> = (set) => ({
 
   fetchOrgMembers: async (orgId) => {
     try {
-      const res = await fetch(`/api/org/${orgId}/members`);
+      const res = await fetch(`/api/org/members?org_id=${orgId}`);
       if (!res.ok) return;
       const data = await res.json();
       set({ orgMembers: data.members || [] });
-    } catch {
-      // silently fail
+    } catch (error) {
+      console.error("fetchOrgMembers failed:", error);
     }
   },
 });

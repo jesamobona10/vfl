@@ -81,9 +81,9 @@ export default function OrgDashboardPage() {
       {currentTeamAccount && team && (
         <>
           <div className="card p-5 mb-6 flex items-center gap-4">
-            {team.logo ? (
+            {team.logo_url ? (
               <img
-                src={team.logo}
+                src={team.logo_url}
                 alt={team.name}
                 className="w-14 h-14 rounded-full object-cover"
               />

@@ -4,8 +4,12 @@ import {
   asInteger,
   asString,
   getAuthContext,
+  getClientIp,
   json,
   logApiError,
+  logSecurityEvent,
+  rateLimit,
+  rateLimitResponse,
   requireAdmin,
   sanitizeText,
 } from "@/lib/security";
@@ -26,6 +30,13 @@ export async function POST(request: Request) {
     const auth = await getAuthContext(supabase);
     const adminError = requireAdmin(auth);
     if (adminError) return adminError;
+
+    const ip = getClientIp(request);
+    const limited = rateLimit({ key: `upload:logo:${ip}:${auth!.userId}`, limit: 30, windowMs: 60 * 60_000 });
+    if (limited.limited) {
+      logSecurityEvent("logo_upload_rate_limited", { ip, userId: auth!.userId });
+      return rateLimitResponse(limited.resetAt);
+    }
 
     const formData = await request.formData();
     const file = formData.get("file") as File | null;

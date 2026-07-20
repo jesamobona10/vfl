@@ -1,8 +1,9 @@
 export interface Team {
   id: number;
   name: string;
-  logo?: string;
+  logo_url?: string;
   rating: number;
+  organization_id?: string;
   points?: number;
   played?: number;
   won?: number;
@@ -41,6 +42,8 @@ export interface MatchEvent {
 export interface Match {
   id: number;
   round: number;
+  home_team_id?: number;
+  away_team_id?: number;
   homeId: number;
   awayId: number;
   homeScore: number | null;

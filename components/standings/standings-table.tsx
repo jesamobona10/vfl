@@ -206,9 +206,9 @@ export function StandingsTable() {
                   <span className="flex items-center gap-2">
                     {(() => {
                       const t = teams.find((tt) => tt.id === team.id);
-                      return t?.logo ? (
+                      return t?.logo_url ? (
                         <img
-                          src={t.logo}
+                          src={t.logo_url}
                           alt=""
                           className="w-5 h-5 rounded-full object-cover"
                         />

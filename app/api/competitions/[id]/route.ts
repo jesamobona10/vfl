@@ -1,6 +1,17 @@
 import { createClient } from "@/lib/supabase/server";
 import { createServiceRoleClient } from "@/lib/supabase/service-role";
-import { getAuthContext, json, logApiError, logSecurityEvent, requireOrgAdmin, requireOrgMember } from "@/lib/security";
+import {
+  asString,
+  getAuthContext,
+  json,
+  logApiError,
+  logSecurityEvent,
+  parseJsonObject,
+  requireOrgAdmin,
+  requireOrgMember,
+} from "@/lib/security";
+
+const ALLOWED_UPDATE_FIELDS = ["name", "type", "season", "status", "settings"] as const;
 
 export const dynamic = "force-dynamic";
 
@@ -83,11 +94,34 @@ export async function PUT(
       return adminError;
     }
 
-    const body = await request.json();
+    const parsed = await parseJsonObject(request);
+    if (parsed.error) return json({ error: parsed.error }, { status: 400 });
+
+    const update: Record<string, unknown> = {};
+    for (const field of ALLOWED_UPDATE_FIELDS) {
+      if (parsed.data![field] !== undefined) {
+        const value = parsed.data![field];
+        if (field === "type" && !["league", "cup", "friendly"].includes(value as string)) {
+          return json({ error: "type must be league, cup, or friendly." }, { status: 400 });
+        }
+        if (field === "status" && !["draft", "active", "completed"].includes(value as string)) {
+          return json({ error: "status must be draft, active, or completed." }, { status: 400 });
+        }
+        if (field === "season") {
+          update.season = asString(value as string, 20) || null;
+        } else {
+          update[field] = value;
+        }
+      }
+    }
+
+    if (Object.keys(update).length === 0) {
+      return json({ error: "No valid fields to update." }, { status: 400 });
+    }
 
     const { data: updated, error: updateError } = await sb
       .from("competitions")
-      .update(body)
+      .update(update)
       .eq("id", params.id)
       .select()
       .single();

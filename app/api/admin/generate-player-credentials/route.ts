@@ -78,9 +78,6 @@ export async function POST(request: Request) {
       credentials: result.credentials.filter((c) => c.password),
     });
   } catch (error) {
-    // #region agent log
-    fetch('http://127.0.0.1:7409/ingest/19ec32a5-cd69-46fe-ae7b-1b83ed4ff67e',{method:'POST',headers:{'Content-Type':'application/json','X-Debug-Session-Id':'305156'},body:JSON.stringify({sessionId:'305156',hypothesisId:'H1-H5',location:'app/api/admin/generate-player-credentials/route.ts:catch',message:'generate credentials failed',data:{error:error instanceof Error?error.message:'unknown'},timestamp:Date.now()})}).catch(()=>{});
-    // #endregion
     logApiError("generate_player_credentials_admin_error", error);
     return json({ error: "Unable to generate player credentials." }, { status: 500 });
   }

@@ -3,5 +3,10 @@ node_modules/
 out/
 .env.local
 .env
+.env.*.local
 *.tsbuildinfo
 next-env.d.ts
+*.pem
+*.key
+
+agent-skills

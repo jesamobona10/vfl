@@ -120,7 +120,7 @@ export function TeamCard({ team, index, isManaged, showAdmin, onDelete }: TeamCa
   };
 
   const handleLogoComplete = (url: string) => {
-    updateTeam(team.id, { logo: url });
+    updateTeam(team.id, { logo_url: url });
   };
 
   return (
@@ -151,7 +151,7 @@ export function TeamCard({ team, index, isManaged, showAdmin, onDelete }: TeamCa
       <div className="p-5 flex flex-col items-center">
         <div className="mb-4">
           <ImageUpload
-            currentUrl={team.logo}
+            currentUrl={team.logo_url}
             teamId={team.id}
             teamName={team.name}
             onUploadComplete={handleLogoComplete}

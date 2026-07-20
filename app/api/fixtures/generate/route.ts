@@ -1,11 +1,18 @@
 import { createClient } from "@/lib/supabase/server";
 import { generateRoundRobinFixtures } from "@/lib/logic/round-robin";
-import { getAuthContext, json, logApiError, requireAdmin } from "@/lib/security";
+import { getAuthContext, getClientIp, json, logApiError, logSecurityEvent, rateLimit, rateLimitResponse, requireAdmin } from "@/lib/security";
 
 export const dynamic = "force-dynamic";
 
-export async function POST() {
+export async function POST(request: Request) {
   try {
+    const ip = getClientIp(request);
+    const limited = rateLimit({ key: `fixtures:generate:${ip}`, limit: 5, windowMs: 60 * 60_000 });
+    if (limited.limited) {
+      logSecurityEvent("fixtures_generate_rate_limited", { ip });
+      return rateLimitResponse(limited.resetAt);
+    }
+
     const supabase = await createClient();
     const auth = await getAuthContext(supabase);
     const adminError = requireAdmin(auth);

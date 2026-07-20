@@ -82,9 +82,6 @@ export async function generatePlayerCredentialsForScope(options: {
   }
 
   const { data: players, error: playersError } = await query;
-  // #region agent log
-  fetch('http://127.0.0.1:7409/ingest/19ec32a5-cd69-46fe-ae7b-1b83ed4ff67e',{method:'POST',headers:{'Content-Type':'application/json','X-Debug-Session-Id':'305156'},body:JSON.stringify({sessionId:'305156',hypothesisId:'H1-H3',location:'lib/player-credentials.ts:players-query',message:'players loaded for credential generation',data:{scope,teamId:teamId??null,playerCount:(players||[]).length,playersError:playersError?.message??null},timestamp:Date.now()})}).catch(()=>{});
-  // #endregion
   if (playersError) {
     throw new Error("Unable to load players.");
   }
@@ -252,14 +249,7 @@ export async function generatePlayerCredentialsForScope(options: {
       scope,
       players_affected: affected,
     });
-    // #region agent log
-    fetch('http://127.0.0.1:7409/ingest/19ec32a5-cd69-46fe-ae7b-1b83ed4ff67e',{method:'POST',headers:{'Content-Type':'application/json','X-Debug-Session-Id':'305156'},body:JSON.stringify({sessionId:'305156',hypothesisId:'H2',location:'lib/player-credentials.ts:audit-log',message:'credential_generation_logs insert',data:{affected,logError:logError?.message??null},timestamp:Date.now()})}).catch(()=>{});
-    // #endregion
   }
-
-  // #region agent log
-  fetch('http://127.0.0.1:7409/ingest/19ec32a5-cd69-46fe-ae7b-1b83ed4ff67e',{method:'POST',headers:{'Content-Type':'application/json','X-Debug-Session-Id':'305156'},body:JSON.stringify({sessionId:'305156',hypothesisId:'H4-H5',location:'lib/player-credentials.ts:complete',message:'credential generation finished',data:{created,regenerated,skipped,failed,total:rows.length},timestamp:Date.now()})}).catch(()=>{});
-  // #endregion
 
   return { credentials, created, regenerated, skipped, failed };
 }

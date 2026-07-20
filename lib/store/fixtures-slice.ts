@@ -174,7 +174,6 @@ export const createFixturesSlice: StateCreator<
         const updated = { ...m };
         const isTeamLocked =
           updated.status === "completed" ||
-          updated.status === "scheduled" ||
           updated.status === "in-progress" ||
           updated.status === "live" ||
           updated.manualEdited;

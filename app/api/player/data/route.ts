@@ -23,7 +23,7 @@ export async function GET() {
 
     const { data: player } = await supabase
       .from("players")
-      .select("*, teams(name, logo, rating)")
+      .select("*, teams(name, logo_url, rating)")
       .eq("id", playerId)
       .single();
 
@@ -34,7 +34,7 @@ export async function GET() {
     const { data: rawFixtures } = await supabase
       .from("fixtures")
       .select("*")
-      .or(`home_id.eq.${teamId},away_id.eq.${teamId}`)
+      .or(`home_team_id.eq.${teamId},away_team_id.eq.${teamId}`)
       .order("round")
       .order("date")
       .order("time");
@@ -53,7 +53,7 @@ export async function GET() {
 
     const { data: allPlayers } = await supabase
       .from("players")
-      .select("*, teams(name, logo)")
+      .select("*, teams(name, logo_url)")
       .order("goals", { ascending: false });
 
     const standings = computeStandings(allPlayers || []);
@@ -105,8 +105,8 @@ function normalizeFixture(f: any) {
   return {
     id: f.id,
     round: f.round,
-    homeId: f.home_id,
-    awayId: f.away_id,
+    homeId: f.home_team_id,
+    awayId: f.away_team_id,
     homeScore: f.home_score,
     awayScore: f.away_score,
     status: f.status,
@@ -132,7 +132,7 @@ function normalizePlayer(p: any) {
     saves: p.saves,
     cleanSheets: p.clean_sheets,
     teamName: team?.name || "Unknown",
-    teamLogo: team?.logo || null,
+    teamLogo: team?.logo_url || null,
   };
 }
 
@@ -145,7 +145,7 @@ function computeStandings(players: any[]) {
       teamMap.set(tid, {
         id: tid,
         name: team?.name || "Unknown",
-        logo: team?.logo || null,
+        logo: team?.logo_url || null,
         goals: 0,
         wins: 0,
         rating: team?.rating || 0,
