@@ -7,8 +7,8 @@ import { Pencil, Trash2, Crown } from "lucide-react";
 interface PlayerCardProps {
   player: Player;
   teamName: string;
-  onEdit: (player: Player) => void;
-  onDelete: (id: number) => void;
+  onEdit?: (player: Player) => void;
+  onDelete?: (id: number) => void;
 }
 
 export function PlayerCard({
@@ -103,20 +103,24 @@ export function PlayerCard({
       </div>
 
       <div className="flex gap-1 shrink-0">
-        <button
-          onClick={() => onEdit(player)}
-          className="btn-icon"
-          title="Edit player"
-        >
-          <Pencil size={14} />
-        </button>
-        <button
-          onClick={() => onDelete(player.id)}
-          className="btn-icon text-danger"
-          title="Delete player"
-        >
-          <Trash2 size={14} />
-        </button>
+        {onEdit && (
+          <button
+            onClick={() => onEdit(player)}
+            className="btn-icon"
+            title="Edit player"
+          >
+            <Pencil size={14} />
+          </button>
+        )}
+        {onDelete && (
+          <button
+            onClick={() => onDelete(player.id)}
+            className="btn-icon text-danger"
+            title="Delete player"
+          >
+            <Trash2 size={14} />
+          </button>
+        )}
       </div>
     </div>
   );
