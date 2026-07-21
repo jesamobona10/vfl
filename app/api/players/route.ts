@@ -1,5 +1,6 @@
 import { createClient } from "@/lib/supabase/server";
 import { createServiceRoleClient } from "@/lib/supabase/service-role";
+import type { Player } from "@/lib/types";
 import {
   asBoolean,
   asInteger,
@@ -30,7 +31,7 @@ export async function GET(request: Request) {
 
     let query = supabase
       .from("players")
-      .select("*, teams(organization_id)")
+      .select("*")
       .order("id");
 
     if (orgId) {
@@ -52,7 +53,37 @@ export async function GET(request: Request) {
       logApiError("players_list_failed", error, { userId: auth!.userId });
       return json({ error: "Unable to load players." }, { status: 500 });
     }
-    return json({ players: data });
+
+    const players: Player[] = (data || []).map((p: any) => ({
+      id: p.id,
+      teamId: p.team_id,
+      name: p.name,
+      position: p.position as Player["position"],
+      number: p.jersey_number || 0,
+      goals: p.goals ?? 0,
+      assists: p.assists ?? 0,
+      ownGoals: 0,
+      yellowCards: p.yellow_cards ?? 0,
+      redCards: p.red_cards ?? 0,
+      saves: p.saves ?? 0,
+      penaltySaves: 0,
+      cleanSheets: p.clean_sheets ?? 0,
+      motm: 0,
+      tackles: p.tackles ?? 0,
+      interceptions: 0,
+      blocks: 0,
+      aerialDuelsWon: 0,
+      errorsLeadingToGoal: 0,
+      penaltiesConceded: 0,
+      goalsConceded: 0,
+      matchWins: 0,
+      bonus5Saves: 0,
+      captain: p.is_captain ?? false,
+      rating: p.rating ?? 6.0,
+      matchRatings: {},
+    }));
+
+    return json({ players });
   } catch (error) {
     logApiError("players_list_error", error);
     return json({ error: "Internal server error." }, { status: 500 });
