@@ -4,16 +4,13 @@ import { useState } from "react";
 import { useAppStore } from "@/lib/store";
 import { PlayerCard } from "@/components/players/player-card";
 import { PlayerModal } from "@/components/players/player-modal";
-import { PlayerProfile } from "@/components/players/player-profile";
 import { Users, Plus } from "lucide-react";
-import type { Player } from "@/lib/types";
 
 export default function OrgPlayersPage() {
   const players = useAppStore((s) => s.players);
   const teams = useAppStore((s) => s.teams);
   const teamName = useAppStore((s) => s.teamName);
   const [addModalOpen, setAddModalOpen] = useState(false);
-  const [profilePlayer, setProfilePlayer] = useState<Player | null>(null);
 
   const grouped = teams
     .map((team) => ({
@@ -59,16 +56,11 @@ export default function OrgPlayersPage() {
               </div>
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3">
                 {teamPlayers.map((p) => (
-                  <button
+                  <PlayerCard
                     key={p.id}
-                    onClick={() => setProfilePlayer(p)}
-                    className="text-left w-full"
-                  >
-                    <PlayerCard
-                      player={p}
-                      teamName={teamName(p.teamId)}
-                    />
-                  </button>
+                    player={p}
+                    teamName={teamName(p.teamId)}
+                  />
                 ))}
               </div>
             </div>
@@ -80,14 +72,6 @@ export default function OrgPlayersPage() {
         <PlayerModal
           player={null}
           onClose={() => setAddModalOpen(false)}
-        />
-      )}
-
-      {profilePlayer && (
-        <PlayerProfile
-          player={profilePlayer}
-          teamName={teamName(profilePlayer.teamId)}
-          onClose={() => setProfilePlayer(null)}
         />
       )}
     </div>
