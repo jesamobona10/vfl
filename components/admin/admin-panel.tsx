@@ -763,7 +763,7 @@ export function AdminPanel() {
               key={t.key}
               onClick={() => setTab(t.key)}
               className={`flex items-center gap-2 px-4 py-2 text-sm font-medium rounded-md transition-colors whitespace-nowrap ${
-                tab === t.key ? "bg-surface shadow-sm text-text" : "text-muted hover:text-text"
+                tab === t.key ? "bg-brand-dark text-white" : "text-muted hover:text-text"
               }`}
             >
               <Icon size={16} />
