@@ -206,7 +206,7 @@ export function TeamCard({ team, index, isManaged, showAdmin, onDelete }: TeamCa
 
       {showDetails && (
         <div className="fixed inset-0 bg-black/40 z-50 flex items-center justify-center p-4">
-          <div className="bg-surface w-full max-w-2xl rounded-xl shadow-xl overflow-hidden">
+          <div className="bg-white w-full max-w-2xl rounded-xl shadow-xl overflow-hidden">
             <div className="px-6 py-4 border-b border-line flex items-center justify-between">
               <div>
                 <h3 className="text-lg font-semibold">{team.name} Overview</h3>

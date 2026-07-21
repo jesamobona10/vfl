@@ -289,7 +289,7 @@ export function PlayerModal({ player, onClose }: PlayerModalProps) {
         </form>
         {showConfirm && (
           <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-60">
-            <div className="card p-6 max-w-sm">
+            <div className="card bg-white p-6 max-w-sm">
               <h3 className="font-bold mb-2">Confirm Transfer</h3>
               <p className="mb-4 text-sm">
                 You're about to transfer this player from <strong>{teams.find(t=>String(t.id)===originalTeamId)?.name || 'Unknown'}</strong> to <strong>{teams.find(t=>String(t.id)===teamId)?.name || 'Unknown'}</strong>.
