@@ -39,7 +39,7 @@ export function OrgNav({ orgSlug }: { orgSlug: string }) {
               href={resolvedHref}
               className={`flex items-center gap-2 px-4 py-3 text-sm font-medium border-b-2 transition-colors whitespace-nowrap ${
                 isActive
-                  ? "border-brand text-brand"
+                  ? "border-brand-dark bg-brand-dark text-white"
                   : "border-transparent text-muted hover:text-text hover:border-line"
               }`}
             >
