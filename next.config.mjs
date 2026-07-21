@@ -15,13 +15,6 @@ const nextConfig = {
           { key: "Permissions-Policy", value: "camera=(), microphone=(), geolocation=()" },
         ],
       },
-      {
-        source: "/api/flyers/:path*",
-        headers: [
-          { key: "X-Frame-Options", value: "SAMEORIGIN" },
-          { key: "Access-Control-Allow-Origin", value: "*" },
-        ],
-      },
     ];
   },
   images: {

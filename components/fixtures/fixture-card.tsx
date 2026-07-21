@@ -4,6 +4,7 @@ import { useRef, useState } from "react";
 import type { Match, Team } from "@/lib/types";
 import { matchMeta, titleCase } from "@/lib/utils/helpers";
 import { GripVertical, ImageIcon } from "lucide-react";
+import { MatchFlyer } from "@/components/flyers/match-flyer";
 
 interface FixtureCardProps {
   match: Match;
@@ -22,6 +23,7 @@ export function FixtureCard({
 }: FixtureCardProps) {
   const [isDragging, setIsDragging] = useState(false);
   const [isDragOver, setIsDragOver] = useState(false);
+  const [showFlyer, setShowFlyer] = useState(false);
   const dragData = useRef<{ matchId: number } | null>(null);
 
   const statusColors: Record<string, string> = {
@@ -135,7 +137,7 @@ export function FixtureCard({
         <button
           onClick={(e) => {
             e.stopPropagation();
-            window.open(`/api/flyers/${match.id}`, "_blank");
+            setShowFlyer(true);
           }}
           className="btn-icon shrink-0"
           title="Generate match flyer"
@@ -143,6 +145,15 @@ export function FixtureCard({
           <ImageIcon size={14} />
         </button>
       </div>
+
+      {showFlyer && (
+        <MatchFlyer
+          match={match}
+          homeTeam={homeTeam}
+          awayTeam={awayTeam}
+          onClose={() => setShowFlyer(false)}
+        />
+      )}
     </article>
   );
 }
