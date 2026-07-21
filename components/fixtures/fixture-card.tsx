@@ -3,7 +3,7 @@
 import { useRef, useState } from "react";
 import type { Match, Team } from "@/lib/types";
 import { matchMeta, titleCase } from "@/lib/utils/helpers";
-import { GripVertical } from "lucide-react";
+import { GripVertical, ImageIcon } from "lucide-react";
 
 interface FixtureCardProps {
   match: Match;
@@ -130,7 +130,19 @@ export function FixtureCard({
         </div>
       </div>
 
-      <p className="text-xs text-muted truncate">{matchMeta(match)}</p>
+      <div className="flex items-center justify-between">
+        <p className="text-xs text-muted truncate">{matchMeta(match)}</p>
+        <button
+          onClick={(e) => {
+            e.stopPropagation();
+            window.open(`/api/flyers/${match.id}`, "_blank");
+          }}
+          className="btn-icon shrink-0"
+          title="Generate match flyer"
+        >
+          <ImageIcon size={14} />
+        </button>
+      </div>
     </article>
   );
 }

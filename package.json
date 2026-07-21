@@ -12,6 +12,7 @@
     "@supabase/ssr": "^0.10.3",
     "@tanstack/react-query": "^5.101.0",
     "@vercel/analytics": "^2.0.1",
+    "@vercel/og": "^0.11.1",
     "clsx": "^2.1.0",
     "html2canvas": "^1.4.1",
     "jspdf": "^4.2.1",
@@ -19,6 +20,8 @@
     "next": "^14.1.0",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
+    "satori": "^0.28.1",
+    "sharp": "^0.35.3",
     "uuid": "^14.0.0",
     "zustand": "^4.5.0"
   },
@@ -32,5 +35,9 @@
     "postcss": "^8.4.33",
     "tailwindcss": "^3.4.1",
     "typescript": "^5.3.3"
+  },
+  "allowScripts": {
+    "sharp@0.34.5": true,
+    "core-js@3.49.0": true
   }
 }
