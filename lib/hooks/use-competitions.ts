@@ -1,5 +1,5 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import type { Competition } from "@/lib/types";
+import type { Competition, Season } from "@/lib/types";
 
 async function fetchJson<T>(url: string): Promise<T> {
   const res = await fetch(url);
@@ -26,6 +26,81 @@ export function useCompetition(id: string | undefined) {
         (d) => d.competition
       ),
     enabled: !!id,
+  });
+}
+
+export function useSeasons(competitionId: string | undefined) {
+  return useQuery({
+    queryKey: ["seasons", competitionId],
+    queryFn: () =>
+      fetchJson<{ seasons: Season[] }>(
+        `/api/competitions/${competitionId}/seasons`
+      ).then((d) => d.seasons),
+    enabled: !!competitionId,
+  });
+}
+
+export function useSeason(seasonId: string | undefined) {
+  return useQuery({
+    queryKey: ["season", seasonId],
+    queryFn: () =>
+      fetchJson<{ season: Season }>(`/api/seasons/${seasonId}`).then(
+        (d) => d.season
+      ),
+    enabled: !!seasonId,
+  });
+}
+
+export function useCreateSeason() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: ({
+      competitionId,
+      name,
+      start_date,
+      end_date,
+    }: {
+      competitionId: string;
+      name: string;
+      start_date?: string;
+      end_date?: string;
+    }) =>
+      fetch(`/api/competitions/${competitionId}/seasons`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ name, start_date, end_date }),
+      }).then((res) => {
+        if (!res.ok) throw new Error("Failed to create season");
+        return res.json();
+      }),
+    onSuccess: (_data, variables) => {
+      queryClient.invalidateQueries({ queryKey: ["seasons", variables.competitionId] });
+    },
+  });
+}
+
+export function useUpdateSeason() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: ({
+      id,
+      competitionId,
+      ...data
+    }: { id: string; competitionId: string } & Record<string, unknown>) =>
+      fetch(`/api/seasons/${id}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(data),
+      }).then((res) => {
+        if (!res.ok) throw new Error("Failed to update season");
+        return res.json();
+      }),
+    onSuccess: (_data, variables) => {
+      queryClient.invalidateQueries({ queryKey: ["seasons", variables.competitionId] });
+      queryClient.invalidateQueries({ queryKey: ["season", variables.id] });
+    },
   });
 }
 

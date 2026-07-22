@@ -1,10 +1,12 @@
 "use client";
 
-import { useCompetition } from "@/lib/hooks/use-competitions";
+import { useCompetition, useSeasons } from "@/lib/hooks/use-competitions";
 import { useParams, usePathname } from "next/navigation";
 import Link from "next/link";
 import { Calendar, Trophy, Settings } from "lucide-react";
 import { PageSkeleton } from "@/components/shared/skeleton";
+import { SeasonSelector } from "@/components/competitions/season-selector";
+import { useState, useEffect } from "react";
 
 const typeLabels: Record<string, string> = {
   league: "League",
@@ -34,6 +36,15 @@ export default function CompetitionLayout({
   const slug = params.slug as string;
   const cId = params.cId as string;
   const { data: currentCompetition, isLoading } = useCompetition(cId);
+  const { data: seasons = [] } = useSeasons(currentCompetition?.id);
+  const [selectedSeasonId, setSelectedSeasonId] = useState<string | null>(null);
+
+  const currentSeason = seasons.find((s) => s.is_current);
+  useEffect(() => {
+    if (!selectedSeasonId && currentSeason) {
+      setSelectedSeasonId(currentSeason.id);
+    }
+  }, [currentSeason?.id]);
 
   if (isLoading || !currentCompetition) {
     return (
@@ -66,9 +77,18 @@ export default function CompetitionLayout({
             </span>
           </div>
           <h1 className="text-2xl font-bold truncate">{currentCompetition.name}</h1>
-          {currentCompetition.season && (
-            <p className="text-sm text-muted">Season: {currentCompetition.season}</p>
-          )}
+          <div className="flex items-center gap-3">
+            {seasons.length > 0 && (
+              <SeasonSelector
+                seasons={seasons}
+                selectedSeasonId={selectedSeasonId}
+                onSeasonChange={setSelectedSeasonId}
+              />
+            )}
+            {currentCompetition.season && (
+              <span className="text-sm text-muted">{currentCompetition.season}</span>
+            )}
+          </div>
         </div>
       </div>
 

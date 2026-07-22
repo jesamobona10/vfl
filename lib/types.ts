@@ -223,6 +223,19 @@ export interface Competition {
   created_by: string | null;
 }
 
+export type SeasonStatus = "upcoming" | "active" | "completed";
+
+export interface Season {
+  id: string;
+  competition_id: string;
+  name: string;
+  start_date: string | null;
+  end_date: string | null;
+  status: SeasonStatus;
+  is_current: boolean;
+  created_at: string;
+}
+
 export interface CupState {
   matches: CupMatch[];
   champion: number | null;

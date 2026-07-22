@@ -7,7 +7,7 @@ import type { Team, FixtureRound, Match } from "@/lib/types";
 export const dynamic = "force-dynamic";
 
 export async function POST(
-  _request: Request,
+  request: Request,
   { params }: { params: { id: string } }
 ) {
   try {
@@ -42,6 +42,14 @@ export async function POST(
       return json({ error: "Fixtures can only be generated for league competitions." }, { status: 400 });
     }
 
+    let seasonId: string | null = null;
+    try {
+      const body = await request.json();
+      seasonId = body.season_id || null;
+    } catch {
+      // body is optional, proceed without season_id
+    }
+
     const { data: dbTeams } = await sb
       .from("teams")
       .select("*")
@@ -63,6 +71,7 @@ export async function POST(
       for (const match of round.matches) {
         fixtureInserts.push({
           competition_id: params.id,
+          season_id: seasonId,
           round: match.round,
           home_team_id: match.homeId,
           away_team_id: match.awayId,
