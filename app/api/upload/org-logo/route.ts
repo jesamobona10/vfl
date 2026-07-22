@@ -10,7 +10,7 @@ import {
   rateLimit,
   rateLimitResponse,
   requireAuth,
-  requireAdmin,
+  requireOrgAdmin,
   sanitizeText,
 } from "@/lib/security";
 
@@ -42,16 +42,6 @@ export async function POST(request: Request) {
     const authError = requireAuth(auth);
     if (authError) return authError;
 
-    const adminError = requireAdmin(auth);
-    if (adminError) return adminError;
-
-    const ip = getClientIp(request);
-    const limited = rateLimit({ key: `upload:org-logo:${ip}:${auth!.userId}`, limit: 30, windowMs: 60 * 60_000 });
-    if (limited.limited) {
-      logSecurityEvent("org_logo_upload_rate_limited", { ip, userId: auth!.userId });
-      return rateLimitResponse(limited.resetAt);
-    }
-
     const formData = await request.formData();
     const file = formData.get("file") as File | null;
     const orgId = asString(formData.get("orgId"), 36);
@@ -62,6 +52,16 @@ export async function POST(request: Request) {
         { error: "File, orgId, and orgName are required." },
         { status: 400 }
       );
+    }
+
+    const orgAdminError = requireOrgAdmin(auth, orgId);
+    if (orgAdminError) return orgAdminError;
+
+    const ip = getClientIp(request);
+    const limited = rateLimit({ key: `upload:org-logo:${ip}:${auth!.userId}`, limit: 30, windowMs: 60 * 60_000 });
+    if (limited.limited) {
+      logSecurityEvent("org_logo_upload_rate_limited", { ip, userId: auth!.userId });
+      return rateLimitResponse(limited.resetAt);
     }
 
     const allowedMime = ["image/png", "image/jpeg", "image/webp", "image/gif"];

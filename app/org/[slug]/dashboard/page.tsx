@@ -1,6 +1,7 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useRef } from "react";
+import { useQueryClient } from "@tanstack/react-query";
 import { useAppStore } from "@/lib/store";
 import { useOrg } from "@/lib/hooks/use-org";
 import { useCompetitions } from "@/lib/hooks/use-competitions";
@@ -9,7 +10,7 @@ import { LeagueStats } from "@/components/dashboard/league-stats";
 import { UpcomingMatches } from "@/components/dashboard/upcoming-matches";
 import { TopFiveStandings } from "@/components/dashboard/top-five-standings";
 import { PlayerDashboard } from "@/components/player/player-dashboard";
-import { Shield, RefreshCw, Loader2, Trophy, Swords, Users, Plus, ArrowRight } from "lucide-react";
+import { Shield, RefreshCw, Loader2, Trophy, Swords, Users, Plus, ArrowRight, Upload } from "lucide-react";
 import { GeneratePlayerCredentials } from "@/components/players/generate-player-credentials";
 import { useParams, useRouter } from "next/navigation";
 
@@ -17,6 +18,7 @@ export default function OrgDashboardPage() {
   const params = useParams();
   const router = useRouter();
   const slug = params.slug as string;
+  const queryClient = useQueryClient();
   const { data: currentOrg } = useOrg(slug);
   const { data: competitions = [] } = useCompetitions(currentOrg?.id);
   const teams = useAppStore((s) => s.teams);
@@ -27,6 +29,28 @@ export default function OrgDashboardPage() {
   const teamDataLoaded = useAppStore((s) => s.teamDataLoaded);
   const setTeamDataLoaded = useAppStore((s) => s.setTeamDataLoaded);
   const [fetching, setFetching] = useState(false);
+  const [orgLogoUploading, setOrgLogoUploading] = useState(false);
+  const [orgLogoUrl, setOrgLogoUrl] = useState<string | null>(null);
+  const orgLogoInputRef = useRef<HTMLInputElement>(null);
+
+  const handleOrgLogoUpload = async (file: File) => {
+    if (!file.type.startsWith("image/")) { alert("Please select an image file."); return; }
+    if (file.size > 2 * 1024 * 1024) { alert("File too large. Max 2MB."); return; }
+    if (!currentOrg) return;
+    setOrgLogoUploading(true);
+    try {
+      const formData = new FormData();
+      formData.append("file", file);
+      formData.append("orgId", currentOrg.id);
+      formData.append("orgName", currentOrg.name);
+      const res = await fetch("/api/upload/org-logo", { method: "POST", body: formData });
+      const data = await res.json();
+      if (data.error) { alert(data.error); return; }
+      setOrgLogoUrl(data.url);
+      queryClient.invalidateQueries({ queryKey: ["org", slug] });
+    } catch { alert("Upload failed."); }
+    finally { setOrgLogoUploading(false); }
+  };
 
   const teamId = currentTeamAccount?.teamId;
   const team = teams.find((t) => t.id === teamId);
@@ -49,15 +73,48 @@ export default function OrgDashboardPage() {
   return (
     <div>
       <div className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between mb-6">
-        <div>
-          <p className="text-sm text-muted">
-            {currentOrg?.name || "Organization"}
-          </p>
-          <h1 className="text-2xl font-bold">
-            {currentTeamAccount
-              ? `${currentTeamAccount.name}`
-              : "Dashboard"}
-          </h1>
+        <div className="flex items-center gap-4">
+          {!currentTeamAccount && (
+            <div className="relative shrink-0">
+              <div
+                onClick={() => orgLogoInputRef.current?.click()}
+                className="w-16 h-16 rounded-xl bg-surface-2 flex items-center justify-center overflow-hidden border border-line cursor-pointer hover:opacity-80 transition-opacity"
+              >
+                {(orgLogoUrl || currentOrg?.logo_url) ? (
+                  <img src={orgLogoUrl || currentOrg!.logo_url!} alt="Org logo" className="w-full h-full object-cover" />
+                ) : (
+                  <Shield size={28} className="text-muted/40" />
+                )}
+                {orgLogoUploading && (
+                  <div className="absolute inset-0 bg-black/40 flex items-center justify-center rounded-xl">
+                    <Loader2 size={18} className="animate-spin text-white" />
+                  </div>
+                )}
+              </div>
+              <input ref={orgLogoInputRef} type="file" accept="image/*" onChange={(e) => {
+                const file = e.target.files?.[0];
+                if (file) handleOrgLogoUpload(file);
+              }} className="hidden" />
+              <button
+                onClick={() => orgLogoInputRef.current?.click()}
+                disabled={orgLogoUploading}
+                className="absolute -bottom-1 -right-1 w-6 h-6 rounded-full bg-brand text-white flex items-center justify-center shadow-md hover:bg-brand-dark transition-colors"
+                title="Upload logo"
+              >
+                <Upload size={12} />
+              </button>
+            </div>
+          )}
+          <div>
+            <p className="text-sm text-muted">
+              {currentTeamAccount ? "" : (currentOrg?.name || "Organization")}
+            </p>
+            <h1 className="text-2xl font-bold">
+              {currentTeamAccount
+                ? `${currentTeamAccount.name}`
+                : "Dashboard"}
+            </h1>
+          </div>
         </div>
         <div className="flex items-center gap-2 shrink-0">
           {currentTeamAccount && (

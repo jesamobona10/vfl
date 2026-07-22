@@ -218,6 +218,7 @@ export interface Competition {
   season: string | null;
   status: CompetitionStatus;
   settings: Record<string, unknown>;
+  logo_url?: string;
   created_at: string;
   created_by: string | null;
 }

@@ -10,7 +10,7 @@ import {
   rateLimit,
   rateLimitResponse,
   requireAuth,
-  requireAdmin,
+  requireOrgAdmin,
   sanitizeText,
 } from "@/lib/security";
 
@@ -41,16 +41,6 @@ export async function POST(request: Request) {
     const auth = await getAuthContext(supabase);
     const authError = requireAuth(auth);
     if (authError) return authError;
-
-    const adminError = requireAdmin(auth);
-    if (adminError) return adminError;
-
-    const ip = getClientIp(request);
-    const limited = rateLimit({ key: `upload:comp-logo:${ip}:${auth!.userId}`, limit: 30, windowMs: 60 * 60_000 });
-    if (limited.limited) {
-      logSecurityEvent("comp_logo_upload_rate_limited", { ip, userId: auth!.userId });
-      return rateLimitResponse(limited.resetAt);
-    }
 
     const formData = await request.formData();
     const file = formData.get("file") as File | null;
@@ -95,12 +85,22 @@ export async function POST(request: Request) {
 
     const { data: comp } = await sb
       .from("competitions")
-      .select("id")
+      .select("id, organization_id")
       .eq("id", compId)
       .maybeSingle();
 
     if (!comp) {
       return json({ error: "Competition not found." }, { status: 404 });
+    }
+
+    const orgAdminError = requireOrgAdmin(auth, comp.organization_id);
+    if (orgAdminError) return orgAdminError;
+
+    const ip = getClientIp(request);
+    const limited = rateLimit({ key: `upload:comp-logo:${ip}:${auth!.userId}`, limit: 30, windowMs: 60 * 60_000 });
+    if (limited.limited) {
+      logSecurityEvent("comp_logo_upload_rate_limited", { ip, userId: auth!.userId });
+      return rateLimitResponse(limited.resetAt);
     }
 
     const bucketError = await ensureBucket(sb);

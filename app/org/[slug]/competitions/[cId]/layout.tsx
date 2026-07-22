@@ -47,23 +47,28 @@ export default function CompetitionLayout({
 
   return (
     <div className="space-y-6">
-      <div className="flex flex-col gap-2">
-        <div className="flex items-center gap-2 text-sm text-muted">
-          <span className="uppercase tracking-wider text-xs">
-            {typeLabels[currentCompetition.type] ?? "Competition"}
-          </span>
-          <span
-            className={`text-[11px] font-medium px-2 py-0.5 rounded-full ${
-              statusColors[currentCompetition.status] ?? statusColors.draft
-            }`}
-          >
-            {currentCompetition.status}
-          </span>
-        </div>
-        <h1 className="text-2xl font-bold">{currentCompetition.name}</h1>
-        {currentCompetition.season && (
-          <p className="text-sm text-muted">Season: {currentCompetition.season}</p>
+      <div className="flex items-start gap-4">
+        {currentCompetition.logo_url && (
+          <img src={currentCompetition.logo_url} alt={currentCompetition.name} className="w-14 h-14 rounded-xl object-cover shrink-0" />
         )}
+        <div className="flex flex-col gap-2 min-w-0">
+          <div className="flex items-center gap-2 text-sm text-muted">
+            <span className="uppercase tracking-wider text-xs">
+              {typeLabels[currentCompetition.type] ?? "Competition"}
+            </span>
+            <span
+              className={`text-[11px] font-medium px-2 py-0.5 rounded-full ${
+                statusColors[currentCompetition.status] ?? statusColors.draft
+              }`}
+            >
+              {currentCompetition.status}
+            </span>
+          </div>
+          <h1 className="text-2xl font-bold truncate">{currentCompetition.name}</h1>
+          {currentCompetition.season && (
+            <p className="text-sm text-muted">Season: {currentCompetition.season}</p>
+          )}
+        </div>
       </div>
 
       <nav className="flex gap-1 border-b border-line overflow-x-auto">
