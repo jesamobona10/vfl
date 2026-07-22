@@ -24,12 +24,33 @@ function slugify(name: string): string {
     .slice(0, 60);
 }
 
+async function ensureBucket(sb: ReturnType<typeof createServiceRoleClient>): Promise<string | null> {
+  const { data: buckets } = await sb.storage.listBuckets();
+  if (buckets?.some((b) => b.name === "org-logos")) return null;
+  const { error } = await sb.storage.createBucket("org-logos", {
+    public: true,
+    fileSizeLimit: 2 * 1024 * 1024,
+    allowedMimeTypes: ["image/png", "image/jpeg", "image/webp", "image/gif"],
+  });
+  return error ? "Unable to create storage bucket." : null;
+}
+
 export async function POST(request: Request) {
   try {
     const supabase = await createClient();
     const auth = await getAuthContext(supabase);
     const authError = requireAuth(auth);
     if (authError) return authError;
+
+    const adminError = requireAdmin(auth);
+    if (adminError) return adminError;
+
+    const ip = getClientIp(request);
+    const limited = rateLimit({ key: `upload:org-logo:${ip}:${auth!.userId}`, limit: 30, windowMs: 60 * 60_000 });
+    if (limited.limited) {
+      logSecurityEvent("org_logo_upload_rate_limited", { ip, userId: auth!.userId });
+      return rateLimitResponse(limited.resetAt);
+    }
 
     const formData = await request.formData();
     const file = formData.get("file") as File | null;
@@ -41,27 +62,6 @@ export async function POST(request: Request) {
         { error: "File, orgId, and orgName are required." },
         { status: 400 }
       );
-    }
-
-    const sb = createServiceRoleClient();
-    const { data: org } = await sb
-      .from("organizations")
-      .select("id")
-      .eq("id", orgId)
-      .single();
-
-    if (!org) {
-      return json({ error: "Organization not found." }, { status: 404 });
-    }
-
-    const adminError = requireAdmin(auth);
-    if (adminError) return adminError;
-
-    const ip = getClientIp(request);
-    const limited = rateLimit({ key: `upload:org-logo:${ip}:${auth!.userId}`, limit: 30, windowMs: 60 * 60_000 });
-    if (limited.limited) {
-      logSecurityEvent("org_logo_upload_rate_limited", { ip, userId: auth!.userId });
-      return rateLimitResponse(limited.resetAt);
     }
 
     const allowedMime = ["image/png", "image/jpeg", "image/webp", "image/gif"];
@@ -91,6 +91,24 @@ export async function POST(request: Request) {
       return json({ error: "Invalid image file." }, { status: 400 });
     }
 
+    const sb = createServiceRoleClient();
+
+    const { data: org } = await sb
+      .from("organizations")
+      .select("id")
+      .eq("id", orgId)
+      .maybeSingle();
+
+    if (!org) {
+      return json({ error: "Organization not found." }, { status: 404 });
+    }
+
+    const bucketError = await ensureBucket(sb);
+    if (bucketError) {
+      logApiError("org_logo_bucket_error", bucketError, { userId: auth!.userId, orgId });
+      return json({ error: bucketError }, { status: 500 });
+    }
+
     const extByMime: Record<string, string> = {
       "image/png": "png",
       "image/jpeg": "jpg",
@@ -110,7 +128,7 @@ export async function POST(request: Request) {
 
     if (uploadError) {
       logApiError("org_logo_upload_failed", uploadError, { userId: auth!.userId, orgId });
-      return json({ error: "Unable to upload logo." }, { status: 500 });
+      return json({ error: "Unable to upload logo. Storage bucket may need configuration." }, { status: 500 });
     }
 
     const { data: urlData } = sb.storage
@@ -131,7 +149,7 @@ export async function POST(request: Request) {
 
     return json({ url: publicUrl });
   } catch (err) {
-    logApiError("org_logo_upload_error", err);
+    logApiError("org_logo_upload_error", err, { error: err instanceof Error ? err.message : String(err), stack: err instanceof Error ? err.stack : undefined });
     return json({ error: "Internal server error." }, { status: 500 });
   }
 }
