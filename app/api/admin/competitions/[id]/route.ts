@@ -42,6 +42,7 @@ export async function PUT(request: Request, { params }: { params: { id: string }
     }
     if (parsed.data!.season !== undefined) update.season = parsed.data!.season || null;
     if (parsed.data!.organization_id !== undefined) update.organization_id = parsed.data!.organization_id;
+    if (parsed.data!.logo_url !== undefined) update.logo_url = parsed.data!.logo_url;
 
     if (Object.keys(update).length === 0) return json({ error: "No valid fields to update." }, { status: 400 });
 

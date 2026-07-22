@@ -162,7 +162,9 @@ export function AdminPlayerManager() {
         <div className="space-y-1">
           {players.map((p) => (
             <div key={p.id} className="card px-4 py-2 flex items-center gap-3 text-sm">
-              <UserCog size={16} className="text-muted shrink-0" />
+              <div className="w-7 h-7 rounded-full bg-gradient-to-br from-brand to-brand-dark flex items-center justify-center text-xs font-bold text-white shrink-0">
+                {p.name.charAt(0).toUpperCase()}
+              </div>
               <span className="w-8 text-muted text-xs">#{p.number}</span>
               <span className="font-medium flex-1">{p.name}</span>
               <span className="text-xs text-muted w-10">{p.position}</span>

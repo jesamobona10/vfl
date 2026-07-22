@@ -1,7 +1,7 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
-import { Building2, Plus, Edit2, Trash2, X, Check, Loader2, AlertCircle, Users } from "lucide-react";
+import { useState, useEffect, useCallback, useRef } from "react";
+import { Building2, Plus, Edit2, Trash2, X, Check, Loader2, AlertCircle, Users, Upload, Image as ImageIcon } from "lucide-react";
 
 interface OrgRow {
   id: string;
@@ -38,6 +38,10 @@ export function OrgManager() {
   const [formName, setFormName] = useState("");
   const [formType, setFormType] = useState("school");
   const [formSlug, setFormSlug] = useState("");
+
+  const [logoUploading, setLogoUploading] = useState(false);
+  const [editingLogoUrl, setEditingLogoUrl] = useState<string | null>(null);
+  const logoInputRef = useRef<HTMLInputElement>(null);
 
   const [memberFormOrgId, setMemberFormOrgId] = useState<string | null>(null);
   const [memberUserId, setMemberUserId] = useState("");
@@ -161,6 +165,23 @@ export function OrgManager() {
     } catch { setError("Failed to change role."); }
   };
 
+  const handleLogoUpload = async (orgId: string, orgName: string, file: File) => {
+    if (!file.type.startsWith("image/")) { alert("Please select an image file."); return; }
+    if (file.size > 2 * 1024 * 1024) { alert("File too large. Max 2MB."); return; }
+    setLogoUploading(true);
+    try {
+      const formData = new FormData();
+      formData.append("file", file);
+      formData.append("orgId", orgId);
+      formData.append("orgName", orgName);
+      const res = await fetch("/api/upload/org-logo", { method: "POST", body: formData });
+      const data = await res.json();
+      if (data.error) { alert(data.error); return; }
+      setEditingLogoUrl(data.url);
+    } catch { alert("Upload failed."); }
+    finally { setLogoUploading(false); }
+  };
+
   if (loading) return <div className="flex justify-center py-12"><Loader2 size={24} className="animate-spin text-muted" /></div>;
 
   return (
@@ -189,6 +210,28 @@ export function OrgManager() {
             </select>
             <input value={formSlug} onChange={(e) => setFormSlug(e.target.value.toLowerCase().replace(/[^a-z0-9-]/g, ""))} className="input text-sm" placeholder="slug (e.g. my-school)" required />
           </div>
+          {editingOrg && (
+            <div className="flex items-center gap-3 pt-1">
+              <div
+                className="w-14 h-14 rounded-xl bg-surface-2 flex items-center justify-center overflow-hidden border border-line cursor-pointer"
+                onClick={() => logoInputRef.current?.click()}
+              >
+                {(editingLogoUrl || editingOrg.logo_url) ? (
+                  <img src={editingLogoUrl || editingOrg.logo_url!} alt="Logo" className="w-full h-full object-cover" />
+                ) : (
+                  <ImageIcon size={22} className="text-muted/40" />
+                )}
+              </div>
+              <input ref={logoInputRef} type="file" accept="image/*" onChange={(e) => {
+                const file = e.target.files?.[0];
+                if (file && editingOrg) handleLogoUpload(editingOrg.id, editingOrg.name, file);
+              }} className="hidden" />
+              <button type="button" onClick={() => logoInputRef.current?.click()} disabled={logoUploading} className="btn-ghost text-xs">
+                {logoUploading ? <Loader2 size={12} className="animate-spin" /> : <Upload size={12} />}
+                {editingOrg.logo_url || editingLogoUrl ? "Change Logo" : "Upload Logo"}
+              </button>
+            </div>
+          )}
           <div className="flex gap-2">
             <button type="submit" disabled={submitting || !formName || !formSlug} className="btn-primary text-sm">
               {submitting ? <Loader2 size={14} className="animate-spin" /> : <Check size={14} />}
@@ -206,7 +249,11 @@ export function OrgManager() {
           {orgs.map((org) => (
             <div key={org.id}>
               <div className="card px-4 py-3 flex items-center gap-3">
-                <Building2 size={18} className="text-muted shrink-0" />
+                {org.logo_url ? (
+                  <img src={org.logo_url} alt={org.name} className="w-8 h-8 rounded-lg object-cover shrink-0" />
+                ) : (
+                  <Building2 size={18} className="text-muted shrink-0" />
+                )}
                 <div className="flex-1 min-w-0">
                   <p className="text-sm font-medium truncate">{org.name}</p>
                   <p className="text-xs text-muted">

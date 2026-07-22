@@ -150,7 +150,11 @@ export function AdminTeamManager() {
         <div className="space-y-1">
           {filteredTeams.map((team) => (
             <div key={team.id} className="card px-4 py-2.5 flex items-center gap-3 text-sm">
-              <Users size={16} className="text-muted shrink-0" />
+              {team.logo_url ? (
+                <img src={team.logo_url} alt={team.name} className="w-7 h-7 rounded object-cover shrink-0" />
+              ) : (
+                <Users size={16} className="text-muted shrink-0" />
+              )}
               <span className="font-medium flex-1">{team.name}</span>
               <span className="text-xs text-muted w-32 truncate">
                 <Building2 size={12} className="inline mr-1" />

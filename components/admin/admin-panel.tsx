@@ -147,6 +147,9 @@ function PlayerManager() {
           const team = teams.find((t) => t.id === p.teamId);
           return (
             <div key={p.id} className="card px-4 py-2 flex items-center gap-3 text-sm">
+              <div className="w-7 h-7 rounded-full bg-gradient-to-br from-brand to-brand-dark flex items-center justify-center text-xs font-bold text-white shrink-0">
+                {p.name.charAt(0).toUpperCase()}
+              </div>
               <span className="w-8 text-muted text-xs">#{p.number}</span>
               <span className="font-medium flex-1">{p.name}</span>
               <span className="text-xs text-muted w-10">{p.position}</span>
@@ -165,17 +168,50 @@ function PlayerManager() {
 }
 
 function FixtureManager() {
-  const [expanded, setExpanded] = useState<Set<number>>(new Set());
-  const fixtures = useAppStore((s) => s.fixtures);
-  const getTeam = useAppStore((s) => s.getTeam);
-  const players = useAppStore((s) => s.players);
+  const [data, setData] = useState<{
+    organizations: Array<{
+      id: string;
+      name: string;
+      slug: string;
+      logo_url?: string;
+      rounds: Array<{
+        round: number;
+        byeId: number | null;
+        matches: Array<{
+          id: number;
+          round: number;
+          homeId: number;
+          awayId: number;
+          homeScore: number | null;
+          awayScore: number | null;
+          status: string;
+          date: string;
+          time: string;
+          venue: string;
+          events: Array<{ type: string; playerId: number; minute: number | null; teamId: number }>;
+          homeTeamName: string;
+          awayTeamName: string;
+          homeTeamLogo?: string;
+          awayTeamLogo?: string;
+        }>;
+      }>;
+    }>;
+  } | null>(null);
+  const [expandedMatch, setExpandedMatch] = useState<number | null>(null);
+  const [expandedOrg, setExpandedOrg] = useState<string | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
 
-  const toggleExpanded = (id: number) => {
-    const next = new Set(expanded);
-    if (next.has(id)) next.delete(id);
-    else next.add(id);
-    setExpanded(next);
-  };
+  useEffect(() => {
+    fetch("/api/admin/fixtures")
+      .then((r) => r.json())
+      .then((d) => {
+        if (d.error) setError(d.error);
+        else setData(d);
+      })
+      .catch(() => setError("Failed to load fixtures."))
+      .finally(() => setLoading(false));
+  }, []);
 
   const statusLabel: Record<string, string> = {
     scheduled: "Scheduled",
@@ -191,15 +227,11 @@ function FixtureManager() {
     completed: "bg-muted/10 text-muted",
   };
 
-  const EVENT_ABBR: Record<string, string> = {
-    goal: "G", assist: "A", "own-goal": "OG", yellow: "Y", red: "R",
-    save: "SV", "penalty-save": "PS", "clean-sheet": "CS", motm: "MOTM",
-    error: "ERR", "penalty-conceded": "PC", tackle: "T", interception: "INT",
-    block: "BLK", aerial: "AD", "goal-conceded": "GC", "match-win": "W",
-    "bonus-5-saves": "5+S",
-  };
+  if (loading) return <div className="flex justify-center py-12"><Loader2 size={24} className="animate-spin text-muted" /></div>;
 
-  if (!fixtures.length) {
+  if (error) return <p className="text-sm text-danger text-center py-8">{error}</p>;
+
+  if (!data?.organizations?.length) {
     return (
       <div className="card p-8 text-center text-muted">
         <Calendar size={32} className="mx-auto mb-2" />
@@ -211,113 +243,103 @@ function FixtureManager() {
   return (
     <div className="space-y-6">
       <p className="text-sm text-muted">Viewing all fixtures across the platform (read-only).</p>
-      {fixtures.map((round) => (
-        <div key={round.round}>
-          <h3 className="text-sm font-semibold text-muted uppercase tracking-wider mb-2">
-            Round {round.round}
-            {round.byeId != null && (
-              <span className="ml-2 text-xs text-muted font-normal">
-                (bye: {getTeam(round.byeId)?.name || `Team ${round.byeId}`})
-              </span>
+      {data.organizations.map((org) => (
+        <div key={org.id} className="card overflow-hidden">
+          <button
+            onClick={() => setExpandedOrg(expandedOrg === org.id ? null : org.id)}
+            className="w-full flex items-center gap-3 px-5 py-4 hover:bg-surface-2/50 transition-colors text-left"
+          >
+            {expandedOrg === org.id ? (
+              <ChevronDown size={16} className="shrink-0 text-muted" />
+            ) : (
+              <ChevronRight size={16} className="shrink-0 text-muted" />
             )}
-          </h3>
-          <div className="space-y-2">
-            {round.matches.map((match) => {
-              const home = getTeam(match.homeId);
-              const away = getTeam(match.awayId);
-              const isOpen = expanded.has(match.id);
+            {org.logo_url ? (
+              <img src={org.logo_url} alt={org.name} className="w-8 h-8 rounded-lg object-cover shrink-0" />
+            ) : (
+              <Building2 size={18} className="text-muted shrink-0" />
+            )}
+            <div className="flex-1 min-w-0">
+              <span className="text-sm font-semibold">{org.name}</span>
+              <span className="text-xs text-muted ml-2">
+                {org.rounds.length} round{org.rounds.length !== 1 ? "s" : ""}
+              </span>
+            </div>
+          </button>
 
-              return (
-                <div key={match.id} className="card overflow-hidden">
-                  <button
-                    onClick={() => toggleExpanded(match.id)}
-                    className="w-full flex items-center gap-3 px-5 py-4 hover:bg-surface-2/50 transition-colors text-left"
-                  >
-                    {isOpen ? (
-                      <ChevronDown size={16} className="shrink-0 text-muted" />
-                    ) : (
-                      <ChevronRight size={16} className="shrink-0 text-muted" />
+          {expandedOrg === org.id && (
+            <div className="border-t border-line px-5 py-4 space-y-5">
+              {org.rounds.map((round) => (
+                <div key={round.round}>
+                  <h4 className="text-sm font-semibold text-muted uppercase tracking-wider mb-2">
+                    Round {round.round}
+                    {round.byeId != null && (
+                      <span className="ml-2 text-xs text-muted font-normal">
+                        (bye: {round.matches.find((m) => m.homeId === round.byeId)?.homeTeamName || round.matches.find((m) => m.awayId === round.byeId)?.awayTeamName || `Team ${round.byeId}`})
+                      </span>
                     )}
-                    <div className="flex-1 grid grid-cols-[1fr_auto_1fr] items-center gap-3">
-                      <span className="text-sm font-semibold truncate text-right">
-                        {home?.name || "?"}
-                      </span>
-                      <span className="text-lg font-bold text-center tabular-nums">
-                        {match.homeScore != null ? match.homeScore : "-"} – {match.awayScore != null ? match.awayScore : "-"}
-                      </span>
-                      <span className="text-sm font-semibold truncate">
-                        {away?.name || "?"}
-                      </span>
-                    </div>
-                    <span className={`rounded-full px-3 py-1 text-[11px] font-semibold shrink-0 ${statusTone[match.status]}`}>
-                      {statusLabel[match.status] || match.status}
-                    </span>
-                  </button>
-
-                  {isOpen && (
-                    <div className="border-t border-line px-5 py-4 space-y-3">
-                      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 text-sm">
-                        <div>
-                          <span className="text-xs text-muted block">Date</span>
-                          <span>{match.date || "Not set"}</span>
-                        </div>
-                        <div>
-                          <span className="text-xs text-muted block">Time</span>
-                          <span>{match.time || "Not set"}</span>
-                        </div>
-                        <div>
-                          <span className="text-xs text-muted block">Venue</span>
-                          <span>{match.venue || "Not set"}</span>
-                        </div>
-                        <div>
-                          <span className="text-xs text-muted block">Status</span>
-                          <span className="capitalize">{match.status}</span>
-                        </div>
-                      </div>
-
-                      {match.manualEdited && (
-                        <span className="inline-block rounded-full bg-accent/10 text-accent px-2.5 py-1 text-[11px] font-medium">
-                          Manually Edited
-                        </span>
-                      )}
-                      {match.autoAdjusted && (
-                        <span className="inline-block rounded-full bg-brand/10 text-brand px-2.5 py-1 text-[11px] font-medium">
-                          Auto-Adjusted
-                        </span>
-                      )}
-
-                      {match.events.length > 0 && (
-                        <div>
-                          <h4 className="text-xs text-muted uppercase tracking-wider mb-2 font-semibold">
-                            Events ({match.events.length})
-                          </h4>
-                          <div className="flex flex-wrap gap-1.5">
-                            {match.events.map((event, i) => {
-                              const player = players.find((p) => p.id === event.playerId);
-                              return (
-                                <span
-                                  key={i}
-                                  className="inline-flex items-center gap-1 rounded-full bg-surface-2 px-2.5 py-1 text-xs"
-                                >
-                                  <span className="font-mono font-bold text-[10px] uppercase">
-                                    {EVENT_ABBR[event.type] || event.type}
-                                  </span>
-                                  <span>{player?.name || `#${event.playerId}`}</span>
-                                  {event.minute != null && (
-                                    <span className="text-muted">{event.minute}&apos;</span>
-                                  )}
-                                </span>
-                              );
-                            })}
+                  </h4>
+                  <div className="space-y-2">
+                    {round.matches.map((match) => (
+                      <div key={match.id} className="card overflow-hidden">
+                        <button
+                          onClick={() => setExpandedMatch(expandedMatch === match.id ? null : match.id)}
+                          className="w-full flex items-center gap-3 px-4 py-3 hover:bg-surface-2/50 transition-colors text-left"
+                        >
+                          {expandedMatch === match.id ? (
+                            <ChevronDown size={14} className="shrink-0 text-muted" />
+                          ) : (
+                            <ChevronRight size={14} className="shrink-0 text-muted" />
+                          )}
+                          <div className="flex-1 grid grid-cols-[1fr_auto_1fr] items-center gap-2">
+                            <div className="flex items-center gap-2 justify-end">
+                              {match.homeTeamLogo && <img src={match.homeTeamLogo} alt="" className="w-5 h-5 rounded object-cover" />}
+                              <span className="text-sm font-semibold truncate">{match.homeTeamName}</span>
+                            </div>
+                            <span className="text-base font-bold text-center tabular-nums">
+                              {match.homeScore != null ? match.homeScore : "-"} – {match.awayScore != null ? match.awayScore : "-"}
+                            </span>
+                            <div className="flex items-center gap-2">
+                              <span className="text-sm font-semibold truncate">{match.awayTeamName}</span>
+                              {match.awayTeamLogo && <img src={match.awayTeamLogo} alt="" className="w-5 h-5 rounded object-cover" />}
+                            </div>
                           </div>
-                        </div>
-                      )}
-                    </div>
-                  )}
+                          <span className={`rounded-full px-2.5 py-0.5 text-[11px] font-semibold shrink-0 ${statusTone[match.status]}`}>
+                            {statusLabel[match.status] || match.status}
+                          </span>
+                        </button>
+
+                        {expandedMatch === match.id && (
+                          <div className="border-t border-line px-4 py-3 space-y-2">
+                            <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 text-sm">
+                              <div><span className="text-xs text-muted block">Date</span><span>{match.date || "Not set"}</span></div>
+                              <div><span className="text-xs text-muted block">Time</span><span>{match.time || "Not set"}</span></div>
+                              <div><span className="text-xs text-muted block">Venue</span><span>{match.venue || "Not set"}</span></div>
+                              <div><span className="text-xs text-muted block">Status</span><span className="capitalize">{match.status}</span></div>
+                            </div>
+                            {match.events.length > 0 && (
+                              <div>
+                                <h5 className="text-xs text-muted uppercase tracking-wider mb-1 font-semibold">Events ({match.events.length})</h5>
+                                <div className="flex flex-wrap gap-1">
+                                  {match.events.map((event, i) => (
+                                    <span key={i} className="inline-flex items-center gap-1 rounded-full bg-surface-2 px-2 py-0.5 text-xs">
+                                      <span className="font-mono font-bold text-[10px] uppercase">{event.type.slice(0, 3).toUpperCase()}</span>
+                                      <span>#{event.playerId}</span>
+                                      {event.minute != null && <span className="text-muted">{event.minute}&apos;</span>}
+                                    </span>
+                                  ))}
+                                </div>
+                              </div>
+                            )}
+                          </div>
+                        )}
+                      </div>
+                    ))}
+                  </div>
                 </div>
-              );
-            })}
-          </div>
+              ))}
+            </div>
+          )}
         </div>
       ))}
     </div>

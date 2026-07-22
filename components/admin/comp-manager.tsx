@@ -1,7 +1,7 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
-import { Trophy, Plus, Edit2, Trash2, X, Check, Loader2, AlertCircle, Building2, Calendar, Swords } from "lucide-react";
+import { useState, useEffect, useCallback, useRef } from "react";
+import { Trophy, Plus, Edit2, Trash2, X, Check, Loader2, AlertCircle, Building2, Calendar, Swords, Upload, Image as ImageIcon } from "lucide-react";
 
 interface CompRow {
   id: string;
@@ -11,6 +11,7 @@ interface CompRow {
   season: string | null;
   status: string;
   created_at: string;
+  logo_url?: string;
   fixtureCount: number;
   cupMatchCount: number;
   organizations?: { name: string; slug: string } | null;
@@ -27,6 +28,10 @@ export function CompManager() {
   const [showForm, setShowForm] = useState(false);
   const [editingComp, setEditingComp] = useState<CompRow | null>(null);
   const [submitting, setSubmitting] = useState(false);
+
+  const [logoUploading, setLogoUploading] = useState(false);
+  const [editingLogoUrl, setEditingLogoUrl] = useState<string | null>(null);
+  const logoInputRef = useRef<HTMLInputElement>(null);
 
   const [formName, setFormName] = useState("");
   const [formOrgId, setFormOrgId] = useState("");
@@ -100,6 +105,23 @@ export function CompManager() {
     } catch { setError("Failed to delete."); }
   };
 
+  const handleLogoUpload = async (comp: CompRow, file: File) => {
+    if (!file.type.startsWith("image/")) { alert("Please select an image file."); return; }
+    if (file.size > 2 * 1024 * 1024) { alert("File too large. Max 2MB."); return; }
+    setLogoUploading(true);
+    try {
+      const formData = new FormData();
+      formData.append("file", file);
+      formData.append("compId", comp.id);
+      formData.append("compName", comp.name);
+      const res = await fetch("/api/upload/comp-logo", { method: "POST", body: formData });
+      const data = await res.json();
+      if (data.error) { alert(data.error); return; }
+      setEditingLogoUrl(data.url);
+    } catch { alert("Upload failed."); }
+    finally { setLogoUploading(false); }
+  };
+
   const statusColor = (s: string) => {
     if (s === "active") return "text-green-400";
     if (s === "completed") return "text-blue-400";
@@ -152,6 +174,28 @@ export function CompManager() {
               </select>
             )}
           </div>
+          {editingComp && (
+            <div className="flex items-center gap-3 pt-1">
+              <div
+                className="w-14 h-14 rounded-xl bg-surface-2 flex items-center justify-center overflow-hidden border border-line cursor-pointer"
+                onClick={() => logoInputRef.current?.click()}
+              >
+                {(editingLogoUrl || editingComp.logo_url) ? (
+                  <img src={editingLogoUrl || editingComp.logo_url!} alt="Logo" className="w-full h-full object-cover" />
+                ) : (
+                  <ImageIcon size={22} className="text-muted/40" />
+                )}
+              </div>
+              <input ref={logoInputRef} type="file" accept="image/*" onChange={(e) => {
+                const file = e.target.files?.[0];
+                if (file && editingComp) handleLogoUpload(editingComp, file);
+              }} className="hidden" />
+              <button type="button" onClick={() => logoInputRef.current?.click()} disabled={logoUploading} className="btn-ghost text-xs">
+                {logoUploading ? <Loader2 size={12} className="animate-spin" /> : <Upload size={12} />}
+                {editingComp.logo_url || editingLogoUrl ? "Change Logo" : "Upload Logo"}
+              </button>
+            </div>
+          )}
           <div className="flex gap-2">
             <button type="submit" disabled={submitting || !formName || (!editingComp && !formOrgId)} className="btn-primary text-sm">
               {submitting ? <Loader2 size={14} className="animate-spin" /> : <Check size={14} />}
@@ -168,7 +212,11 @@ export function CompManager() {
         <div className="space-y-1">
           {comps.map((comp) => (
             <div key={comp.id} className="card px-4 py-2.5 flex items-center gap-3 text-sm">
-              <Trophy size={16} className="text-muted shrink-0" />
+              {comp.logo_url ? (
+                <img src={comp.logo_url} alt={comp.name} className="w-7 h-7 rounded object-cover shrink-0" />
+              ) : (
+                <Trophy size={16} className="text-muted shrink-0" />
+              )}
               <span className="font-medium flex-1">{comp.name}</span>
               <span className="text-xs text-muted w-28 truncate">
                 <Building2 size={12} className="inline mr-1" />
