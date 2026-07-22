@@ -1,6 +1,6 @@
 import { createClient } from "@/lib/supabase/server";
 import { createServiceRoleClient } from "@/lib/supabase/service-role";
-import { getAuthContext, json, logApiError, parseJsonObject, requireAdmin, sanitizeText } from "@/lib/security";
+import { getAuthContext, getClientIp, json, logApiError, logSecurityEvent, parseJsonObject, rateLimit, rateLimitResponse, requireAdmin, sanitizeText } from "@/lib/security";
 
 export const dynamic = "force-dynamic";
 
@@ -10,6 +10,13 @@ export async function PUT(request: Request, { params }: { params: { id: string }
     const auth = await getAuthContext(supabase);
     const adminError = requireAdmin(auth);
     if (adminError) return adminError;
+
+    const ip = getClientIp(request);
+    const limited = rateLimit({ key: `admin:competitions:update:${ip}:${auth!.userId}`, limit: 60, windowMs: 60 * 60_000 });
+    if (limited.limited) {
+      logSecurityEvent("admin_competition_update_rate_limited", { ip, userId: auth!.userId });
+      return rateLimitResponse(limited.resetAt);
+    }
 
     const parsed = await parseJsonObject(request);
     if (parsed.error) return json({ error: parsed.error }, { status: 400 });
@@ -30,7 +37,7 @@ export async function PUT(request: Request, { params }: { params: { id: string }
       update.type = parsed.data!.type;
     }
     if (parsed.data!.status !== undefined) {
-      if (!["draft", "active", "completed"].includes(parsed.data!.status as string)) return json({ error: "Invalid status." }, { status: 400 });
+      if (!["draft", "active", "completed", "archived"].includes(parsed.data!.status as string)) return json({ error: "Invalid status." }, { status: 400 });
       update.status = parsed.data!.status;
     }
     if (parsed.data!.season !== undefined) update.season = parsed.data!.season || null;
@@ -51,12 +58,19 @@ export async function PUT(request: Request, { params }: { params: { id: string }
   }
 }
 
-export async function DELETE(_request: Request, { params }: { params: { id: string } }) {
+export async function DELETE(request: Request, { params }: { params: { id: string } }) {
   try {
     const supabase = await createClient();
     const auth = await getAuthContext(supabase);
     const adminError = requireAdmin(auth);
     if (adminError) return adminError;
+
+    const ip = getClientIp(request);
+    const limited = rateLimit({ key: `admin:competitions:delete:${ip}:${auth!.userId}`, limit: 60, windowMs: 60 * 60_000 });
+    if (limited.limited) {
+      logSecurityEvent("admin_competition_delete_rate_limited", { ip, userId: auth!.userId });
+      return rateLimitResponse(limited.resetAt);
+    }
 
     const sb = createServiceRoleClient();
     const { data: comp } = await sb.from("competitions").select("id").eq("id", params.id).single();

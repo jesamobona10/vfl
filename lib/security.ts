@@ -74,6 +74,28 @@ export function json(data: unknown, init?: ResponseInit) {
   return response;
 }
 
+export async function writeAuditEvent(
+  event_type: string,
+  userId: string,
+  organization_id?: string,
+  metadata?: Record<string, unknown>
+) {
+  try {
+    const { createServiceRoleClient } = await import("@/lib/supabase/service-role");
+    const sb = createServiceRoleClient();
+    await sb.from("auth_audit_logs").insert({
+      user_id: userId,
+      event_type,
+      organization_id: organization_id || null,
+      ip_address: (metadata?.ip as string) || null,
+      user_agent: (metadata?.user_agent as string) || null,
+      metadata: metadata || {},
+    });
+  } catch {
+    // Audit write failures are non-critical; don't throw
+  }
+}
+
 export function logSecurityEvent(
   event: string,
   details: Record<string, unknown> = {}
@@ -222,5 +244,14 @@ export function requireOrgMember(auth: AuthContext | null, orgId: string) {
   if (auth.isAdmin) return null;
   if (!auth.orgMembership) return json({ error: "Forbidden" }, { status: 403 });
   if (auth.orgMembership.organization_id !== orgId) return json({ error: "Forbidden" }, { status: 403 });
+  return null;
+}
+
+export function requireOrgOwner(auth: AuthContext | null, orgId: string) {
+  if (!auth) return json({ error: "Unauthorized" }, { status: 401 });
+  if (auth.isAdmin) return null;
+  if (!auth.orgMembership) return json({ error: "Forbidden" }, { status: 403 });
+  if (auth.orgMembership.organization_id !== orgId) return json({ error: "Forbidden" }, { status: 403 });
+  if (auth.orgMembership.role !== "owner") return json({ error: "Only org owners can perform this action." }, { status: 403 });
   return null;
 }

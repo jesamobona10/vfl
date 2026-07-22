@@ -23,13 +23,14 @@ export async function GET() {
 
     const { data: player } = await supabase
       .from("players")
-      .select("*, teams(name, logo_url, rating)")
+      .select("*, teams(name, logo_url, rating, organization_id)")
       .eq("id", playerId)
       .single();
 
     if (!player) return json({ error: "Player not found" }, { status: 404 });
 
     const teamId = player.team_id;
+    const organizationId = player.teams?.organization_id;
 
     const { data: rawFixtures } = await supabase
       .from("fixtures")
@@ -39,22 +40,42 @@ export async function GET() {
       .order("date")
       .order("time");
 
-    const { data: allFixtures } = await supabase
-      .from("fixtures")
-      .select("*")
-      .order("round")
-      .order("date")
-      .order("time");
+    let teamIdsInOrg: number[] = [];
+    if (organizationId) {
+      const { data: orgTeams } = await supabase
+        .from("teams")
+        .select("id")
+        .eq("organization_id", organizationId);
+      teamIdsInOrg = (orgTeams || []).map((t) => t.id);
+    }
+
+    let allFixtures: any[] = [];
+    if (teamIdsInOrg.length > 0) {
+      const conditions = teamIdsInOrg.flatMap((id) => [`home_team_id.eq.${id}`, `away_team_id.eq.${id}`]);
+      const { data } = await supabase
+        .from("fixtures")
+        .select("*")
+        .or(conditions.join(","))
+        .order("round")
+        .order("date")
+        .order("time");
+      allFixtures = data || [];
+    }
 
     const { data: matchEvents } = await supabase
       .from("match_events")
       .select("*")
       .eq("player_id", playerId);
 
-    const { data: allPlayers } = await supabase
-      .from("players")
-      .select("*, teams(name, logo_url)")
-      .order("goals", { ascending: false });
+    let allPlayers: any[] = [];
+    if (teamIdsInOrg.length > 0) {
+      const { data } = await supabase
+        .from("players")
+        .select("*, teams(name, logo_url)")
+        .in("team_id", teamIdsInOrg)
+        .order("goals", { ascending: false });
+      allPlayers = data || [];
+    }
 
     const standings = computeStandings(allPlayers || []);
 

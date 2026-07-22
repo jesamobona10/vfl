@@ -1,6 +1,6 @@
 import { createClient } from "@/lib/supabase/server";
 import { createServiceRoleClient } from "@/lib/supabase/service-role";
-import { getAuthContext, json, logApiError, parseJsonObject, requireAdmin, sanitizeText } from "@/lib/security";
+import { getAuthContext, getClientIp, json, logApiError, logSecurityEvent, parseJsonObject, rateLimit, rateLimitResponse, requireAdmin, sanitizeText } from "@/lib/security";
 
 export const dynamic = "force-dynamic";
 
@@ -43,6 +43,13 @@ export async function POST(request: Request) {
     const auth = await getAuthContext(supabase);
     const adminError = requireAdmin(auth);
     if (adminError) return adminError;
+
+    const ip = getClientIp(request);
+    const limited = rateLimit({ key: `admin:orgs:create:${ip}:${auth!.userId}`, limit: 60, windowMs: 60 * 60_000 });
+    if (limited.limited) {
+      logSecurityEvent("admin_org_create_rate_limited", { ip, userId: auth!.userId });
+      return rateLimitResponse(limited.resetAt);
+    }
 
     const parsed = await parseJsonObject(request);
     if (parsed.error) return json({ error: parsed.error }, { status: 400 });

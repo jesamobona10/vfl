@@ -30,6 +30,26 @@ export async function GET() {
       return json({ notifications: data });
     }
 
+    if (auth!.orgMembership) {
+      const { data: orgTeams } = await supabase
+        .from("teams")
+        .select("id")
+        .eq("organization_id", auth!.orgMembership.organization_id);
+      const teamIds = (orgTeams || []).map((t) => t.id);
+      if (teamIds.length === 0) return json({ notifications: [] });
+      const { data, error } = await supabase
+        .from("notifications")
+        .select("*")
+        .in("team_id", teamIds)
+        .order("created_at", { ascending: false })
+        .limit(50);
+      if (error) {
+        logApiError("notifications_org_list_failed", error, { userId: auth!.userId });
+        return json({ error: "Unable to load notifications." }, { status: 400 });
+      }
+      return json({ notifications: data });
+    }
+
     const teamId = auth!.teamAccount?.team_id ?? null;
     if (!teamId) return json({ notifications: [] });
     const { data, error } = await supabase
@@ -68,9 +88,19 @@ export async function PATCH(request: Request) {
 
     let query = supabase.from("notifications").update({ is_read: true }).in("id", ids);
     if (!auth!.isAdmin) {
-      const teamId = auth!.teamAccount?.team_id;
-      if (!teamId) return json({ error: "Forbidden" }, { status: 403 });
-      query = query.eq("team_id", teamId);
+      if (auth!.orgMembership) {
+        const { data: orgTeams } = await supabase
+          .from("teams")
+          .select("id")
+          .eq("organization_id", auth!.orgMembership.organization_id);
+        const teamIds = (orgTeams || []).map((t) => t.id);
+        if (teamIds.length > 0) query = query.in("team_id", teamIds);
+        else return json({ error: "Forbidden" }, { status: 403 });
+      } else {
+        const teamId = auth!.teamAccount?.team_id;
+        if (!teamId) return json({ error: "Forbidden" }, { status: 403 });
+        query = query.eq("team_id", teamId);
+      }
     }
 
     const { error } = await query;

@@ -3,10 +3,13 @@ import { createServiceRoleClient } from "@/lib/supabase/service-role";
 import {
   asString,
   getAuthContext,
+  getClientIp,
   json,
   logApiError,
   logSecurityEvent,
   parseJsonObject,
+  rateLimit,
+  rateLimitResponse,
   requireOrgAdmin,
   requireOrgMember,
 } from "@/lib/security";
@@ -73,16 +76,6 @@ export async function PUT(
       return json({ error: "Competition not found." }, { status: 404 });
     }
 
-    const memberError = requireOrgMember(auth, competition.organization_id);
-    if (memberError) {
-      logSecurityEvent("competition_get_forbidden", {
-        userId: auth.userId,
-        competitionId: params.id,
-        organizationId: competition.organization_id,
-      });
-      return memberError;
-    }
-
     const adminError = requireOrgAdmin(auth, competition.organization_id);
     if (adminError) {
       logSecurityEvent("competition_update_forbidden", {
@@ -92,6 +85,13 @@ export async function PUT(
         isAdmin: auth.isAdmin,
       });
       return adminError;
+    }
+
+    const ip = getClientIp(request);
+    const limited = rateLimit({ key: `competitions:update:${ip}:${auth.userId}`, limit: 60, windowMs: 60 * 60_000 });
+    if (limited.limited) {
+      logSecurityEvent("competition_update_rate_limited", { ip, userId: auth.userId });
+      return rateLimitResponse(limited.resetAt);
     }
 
     const parsed = await parseJsonObject(request);
@@ -104,8 +104,8 @@ export async function PUT(
         if (field === "type" && !["league", "cup", "friendly"].includes(value as string)) {
           return json({ error: "type must be league, cup, or friendly." }, { status: 400 });
         }
-        if (field === "status" && !["draft", "active", "completed"].includes(value as string)) {
-          return json({ error: "status must be draft, active, or completed." }, { status: 400 });
+        if (field === "status" && !["draft", "active", "completed", "archived"].includes(value as string)) {
+          return json({ error: "status must be draft, active, completed, or archived." }, { status: 400 });
         }
         if (field === "season") {
           update.season = asString(value as string, 20) || null;

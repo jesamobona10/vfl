@@ -1,4 +1,4 @@
-import { createPublicClient } from "@/lib/supabase/public";
+import { createServiceRoleClient } from "@/lib/supabase/service-role";
 import { sortMatchesByDateTime } from "@/lib/utils/helpers";
 import { json, logApiError } from "@/lib/security";
 
@@ -6,7 +6,7 @@ export const dynamic = "force-dynamic";
 
 export async function GET() {
   try {
-    const sb = createPublicClient();
+    const sb = createServiceRoleClient();
 
     const { data: teams, error: teamsError } = await sb
       .from("teams")

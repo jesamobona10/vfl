@@ -88,12 +88,20 @@ export function CsvImport() {
             ) : (
               <AlertCircle size={18} className="shrink-0 mt-0.5" />
             )}
-            <div
-              className="text-sm"
-              dangerouslySetInnerHTML={{
-                __html: feedback.message,
-              }}
-            />
+            <div className="text-sm">
+              <p>{feedback.message.split("<br>")[0]}</p>
+              {feedback.message.includes("&bull;") && (
+                <ul className="list-disc pl-4 mt-1">
+                  {feedback.message
+                    .split("<br>")
+                    .slice(1)
+                    .filter((l) => l)
+                    .map((line, i) => (
+                      <li key={i}>{line.replace(/&bull; /g, "")}</li>
+                    ))}
+                </ul>
+              )}
+            </div>
             <button
               onClick={() => setFeedback(null)}
               className="shrink-0 ml-2"

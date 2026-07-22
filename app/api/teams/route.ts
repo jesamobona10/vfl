@@ -2,9 +2,13 @@ import { createClient } from "@/lib/supabase/server";
 import {
   asString,
   getAuthContext,
+  getClientIp,
   json,
   logApiError,
+  logSecurityEvent,
   parseJsonObject,
+  rateLimit,
+  rateLimitResponse,
   requireOrgAdmin,
   sanitizeText,
 } from "@/lib/security";
@@ -38,6 +42,14 @@ export async function POST(request: Request) {
   try {
     const supabase = await createClient();
     const auth = await getAuthContext(supabase);
+
+    const ip = getClientIp(request);
+    const limited = rateLimit({ key: `teams:create:${ip}:${auth?.userId || "anon"}`, limit: 60, windowMs: 60 * 60_000 });
+    if (limited.limited) {
+      logSecurityEvent("team_create_rate_limited", { ip, userId: auth?.userId });
+      return rateLimitResponse(limited.resetAt);
+    }
+
     const parsed = await parseJsonObject(request);
     if (parsed.error) return json({ error: parsed.error }, { status: 400 });
 

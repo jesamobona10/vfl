@@ -5,9 +5,13 @@ import {
   asOptionalString,
   asString,
   getAuthContext,
+  getClientIp,
   json,
   logApiError,
+  logSecurityEvent,
   parseJsonObject,
+  rateLimit,
+  rateLimitResponse,
   requireAdmin,
   requireOrgAdmin,
   sanitizeText,
@@ -25,6 +29,13 @@ export async function PUT(
     const adminError = requireAdmin(auth);
     if (adminError) return adminError;
     const authed = auth!;
+
+    const ip = getClientIp(request);
+    const limited = rateLimit({ key: `fixtures:update:${ip}:${authed.userId}`, limit: 60, windowMs: 60 * 60_000 });
+    if (limited.limited) {
+      logSecurityEvent("fixture_update_rate_limited", { ip, userId: authed.userId });
+      return rateLimitResponse(limited.resetAt);
+    }
 
     const fixtureId = asInteger(params.id, 1);
     if (!fixtureId) return json({ error: 'Invalid fixture id.' }, { status: 400 });
@@ -127,7 +138,7 @@ export async function PUT(
 }
 
 export async function DELETE(
-  _request: Request,
+  request: Request,
   { params }: { params: { id: string } }
 ) {
   try {
@@ -136,6 +147,13 @@ export async function DELETE(
     const adminError = requireAdmin(auth);
     if (adminError) return adminError;
     const authed = auth!;
+
+    const ip = getClientIp(request);
+    const limited = rateLimit({ key: `fixtures:delete:${ip}:${authed.userId}`, limit: 60, windowMs: 60 * 60_000 });
+    if (limited.limited) {
+      logSecurityEvent("fixture_delete_rate_limited", { ip, userId: authed.userId });
+      return rateLimitResponse(limited.resetAt);
+    }
 
     const fixtureId = asInteger(params.id, 1);
     if (!fixtureId) return json({ error: 'Invalid fixture id.' }, { status: 400 });

@@ -1,6 +1,6 @@
 import { createClient } from "@/lib/supabase/server";
 import { createServiceRoleClient } from "@/lib/supabase/service-role";
-import { getAuthContext, json, logApiError, requireAuth } from "@/lib/security";
+import { getAuthContext, json, logApiError, logSecurityEvent, requireAuth, requireOrgAdmin } from "@/lib/security";
 import { generateRoundRobinFixtures } from "@/lib/logic/round-robin";
 import type { Team, FixtureRound, Match } from "@/lib/types";
 
@@ -26,6 +26,16 @@ export async function POST(
 
     if (!competition) {
       return json({ error: "Competition not found." }, { status: 404 });
+    }
+
+    const adminError = requireOrgAdmin(auth, competition.organization_id);
+    if (adminError) {
+      logSecurityEvent("fixture_generate_forbidden", {
+        userId: auth?.userId,
+        competitionId: params.id,
+        organizationId: competition.organization_id,
+      });
+      return adminError;
     }
 
     if (competition.type !== "league") {

@@ -44,18 +44,6 @@ export async function POST(request: Request) {
 
     const sb = createServiceRoleClient();
 
-    const { count } = await sb
-      .from("admin_users")
-      .select("id", { count: "exact", head: true });
-
-    if (count && count > 0) {
-      logSecurityEvent("blocked_extra_admin_signup", { ip, email });
-      return json(
-        { error: "Admin already exists. Use login instead." },
-        { status: 409 }
-      );
-    }
-
     const { data: authUser, error: createError } = await sb.auth.admin.createUser({
       email,
       password: password as string,
@@ -73,6 +61,13 @@ export async function POST(request: Request) {
 
     if (insertError) {
       await sb.auth.admin.deleteUser(authUser.user.id);
+      if (insertError.code === "23505") {
+        logSecurityEvent("blocked_extra_admin_signup", { ip, email });
+        return json(
+          { error: "Admin already exists. Use login instead." },
+          { status: 409 }
+        );
+      }
       logApiError("admin_signup_insert_failed", insertError, { ip, email });
       return json({ error: "Unable to create admin account." }, { status: 500 });
     }
