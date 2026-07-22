@@ -3,7 +3,7 @@
 import { useRef, useState } from "react";
 import html2canvas from "html2canvas";
 import type { Match, Team } from "@/lib/types";
-import { Loader2 } from "lucide-react";
+
 
 interface MatchFlyerProps {
   match: Match;
@@ -211,7 +211,7 @@ export function MatchFlyer({ match, homeTeam, awayTeam, onClose }: MatchFlyerPro
             className="btn-primary flex-1 justify-center text-sm"
           >
             {capturing ? (
-              <><Loader2 size={14} className="animate-spin" /> Generating...</>
+              <> <span className="block w-4 h-4 bg-surface-2 rounded animate-pulse" /> Generating...</>
             ) : (
               "Download Flyer"
             )}

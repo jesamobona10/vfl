@@ -3,7 +3,8 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useAppStore } from "@/lib/store";
-import { Shield, School, Building2, Users, ArrowRight, Loader2 } from "lucide-react";
+import { Shield, School, Building2, Users, ArrowRight } from "lucide-react";
+import { Skeleton } from "@/components/shared/skeleton";
 
 export default function LandingPage() {
   const router = useRouter();
@@ -40,7 +41,7 @@ export default function LandingPage() {
   if (authLoading || loadingOrgs) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-bg">
-        <div className="animate-spin w-6 h-6 border-2 border-brand border-t-transparent rounded-full" />
+        <div className="w-6 h-6 bg-surface-2 rounded-lg animate-pulse" />
       </div>
     );
   }
@@ -48,7 +49,7 @@ export default function LandingPage() {
   if (isAdmin || userProfile) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-bg">
-        <Loader2 size={28} className="animate-spin text-muted" />
+        <Skeleton className="w-7 h-7" />
       </div>
     );
   }

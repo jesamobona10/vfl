@@ -4,7 +4,7 @@ import { useState } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import { useOrg } from "@/lib/hooks/use-org";
 import { useParams, useRouter } from "next/navigation";
-import { ArrowLeft, Loader2, AlertCircle } from "lucide-react";
+import { ArrowLeft, AlertCircle } from "lucide-react";
 
 export default function NewCompetitionPage() {
   const params = useParams();
@@ -135,7 +135,7 @@ export default function NewCompetitionPage() {
           disabled={submitting}
           className="btn-primary w-full flex items-center justify-center gap-2"
         >
-          {submitting ? <Loader2 size={16} className="animate-spin" /> : null}
+          {submitting ? <span className="block w-4 h-4 bg-surface-2 rounded animate-pulse" /> : null}
           {submitting ? "Creating..." : "Create Competition"}
         </button>
       </form>

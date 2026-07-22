@@ -4,7 +4,8 @@ import { useState, useRef } from "react";
 import { useCompetition, useUpdateCompetition, useGenerateFixtures } from "@/lib/hooks/use-competitions";
 import { useQueryClient } from "@tanstack/react-query";
 import { useParams } from "next/navigation";
-import { Calendar, Loader2, Check, AlertCircle, Upload, Image as ImageIcon } from "lucide-react";
+import { Calendar, Check, AlertCircle, Upload, Image as ImageIcon } from "lucide-react";
+import { SkeletonForm } from "@/components/shared/skeleton";
 
 const statusOptions: { value: string; label: string }[] = [
   { value: "draft", label: "Draft" },
@@ -52,7 +53,7 @@ export default function CompetitionSettingsPage() {
   if (isLoading || !currentCompetition) {
     return (
       <div className="flex items-center justify-center py-20">
-        <Loader2 size={24} className="animate-spin text-muted" />
+        <SkeletonForm fields={5} />
       </div>
     );
   }
@@ -99,7 +100,7 @@ export default function CompetitionSettingsPage() {
               )}
               {compLogoUploading && (
                 <div className="absolute inset-0 bg-black/40 flex items-center justify-center rounded-xl">
-                  <Loader2 size={20} className="animate-spin text-white" />
+                  <span className="block w-5 h-5 bg-surface-2 rounded animate-pulse" />
                 </div>
               )}
             </div>
@@ -117,7 +118,7 @@ export default function CompetitionSettingsPage() {
             disabled={compLogoUploading}
             className="btn-ghost text-sm"
           >
-            {compLogoUploading ? <Loader2 size={14} className="animate-spin" /> : <Upload size={14} />}
+            {compLogoUploading ? <span className="block w-4 h-4 bg-surface-2 rounded animate-pulse" /> : <Upload size={14} />}
             {logoDisplayUrl ? "Change" : "Upload"}
           </button>
         </div>
@@ -174,7 +175,7 @@ export default function CompetitionSettingsPage() {
             disabled={pending || status === currentCompetition.status}
             className="btn-primary flex items-center gap-2"
           >
-            {pending ? <Loader2 size={14} className="animate-spin" /> : <Check size={14} />}
+            {pending ? <span className="block w-4 h-4 bg-surface-2 rounded animate-pulse" /> : <Check size={14} />}
             Update
           </button>
         </div>
@@ -192,7 +193,7 @@ export default function CompetitionSettingsPage() {
             className="btn-primary flex items-center gap-2"
           >
             {pending ? (
-              <Loader2 size={14} className="animate-spin" />
+              <span className="block w-4 h-4 bg-surface-2 rounded animate-pulse" />
             ) : (
               <Calendar size={14} />
             )}

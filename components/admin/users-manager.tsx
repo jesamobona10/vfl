@@ -1,7 +1,8 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
-import { Shield, Loader2, AlertCircle, KeyRound, Users } from "lucide-react";
+import { Shield, AlertCircle, KeyRound, Users } from "lucide-react";
+import { SkeletonList } from "@/components/shared/skeleton";
 
 export function UsersManager() {
   const [tab, setTab] = useState<"admins" | "teams" | "players">("admins");
@@ -37,7 +38,7 @@ function AdminUsersList() {
       .finally(() => setLoading(false));
   }, []);
 
-  if (loading) return <div className="flex justify-center py-8"><Loader2 size={20} className="animate-spin text-muted" /></div>;
+  if (loading) return <SkeletonList items={3} />;
 
   return (
     <div className="card p-4 space-y-3">
@@ -59,7 +60,7 @@ function TeamAccountsList() {
       .finally(() => setLoading(false));
   }, []);
 
-  if (loading) return <div className="flex justify-center py-8"><Loader2 size={20} className="animate-spin text-muted" /></div>;
+  if (loading) return <SkeletonList items={3} />;
 
   return (
     <div className="space-y-2">
@@ -91,7 +92,7 @@ function PlayerCredsList() {
       .finally(() => setLoading(false));
   }, []);
 
-  if (loading) return <div className="flex justify-center py-8"><Loader2 size={20} className="animate-spin text-muted" /></div>;
+  if (loading) return <SkeletonList items={3} />;
 
   return (
     <div className="space-y-2">

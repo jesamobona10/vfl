@@ -5,7 +5,7 @@ import { useAppStore } from "@/lib/store";
 import { parseImportFile, buildImportPlan } from "@/lib/utils/data-import";
 import { refreshTeamData } from "@/lib/hooks/use-team-data";
 import Notifications from "@/components/notifications/notifications";
-import { Search, Download, Upload, RotateCcw, LogOut, Shield, RefreshCw, Loader2, Sun, Moon } from "lucide-react";
+import { Search, Download, Upload, RotateCcw, LogOut, Shield, RefreshCw, Sun, Moon } from "lucide-react";
 
 interface AppHeaderProps {
   onOpenSearch: () => void;
@@ -169,7 +169,7 @@ export function AppHeader({ onOpenSearch }: AppHeaderProps) {
               className="btn-icon"
               title={importing ? "Importing & syncing..." : "Import data"}
             >
-              {importing ? <Loader2 size={18} className="animate-spin" /> : <Upload size={18} />}
+              {importing ? <span className="block w-4 h-4 bg-surface-2 rounded animate-pulse" /> : <Upload size={18} />}
             </button>
             <button
               onClick={handleReset}

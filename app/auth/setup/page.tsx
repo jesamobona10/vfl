@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { Shield, AlertCircle, CheckCircle, Loader2 } from "lucide-react";
+import { Shield, AlertCircle, CheckCircle } from "lucide-react";
 
 export default function SetupPage() {
   const router = useRouter();
@@ -103,7 +103,7 @@ export default function SetupPage() {
             >
               {loading ? (
                 <>
-                  <Loader2 size={16} className="animate-spin" />
+                  <span className="block w-4 h-4 bg-surface-2 rounded animate-pulse" />
                   Creating...
                 </>
               ) : (

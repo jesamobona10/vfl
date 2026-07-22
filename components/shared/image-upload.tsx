@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { Upload, Loader2, Image as ImageIcon, AlertTriangle } from "lucide-react";
+import { Upload, Image as ImageIcon, AlertTriangle } from "lucide-react";
 
 interface ImageUploadProps {
   currentUrl?: string;
@@ -106,7 +106,7 @@ export function ImageUpload({ currentUrl, teamId, teamName, onUploadComplete }: 
       >
         {uploading ? (
           <>
-            <Loader2 size={12} className="animate-spin" />
+            <span className="block w-3 h-3 bg-surface-2 rounded animate-pulse" />
             Uploading...
           </>
         ) : (

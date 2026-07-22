@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { Shield, AlertCircle, Check, Loader2, School, Building2, Users } from "lucide-react";
+import { Shield, AlertCircle, Check, School, Building2, Users } from "lucide-react";
 import type { OrgType } from "@/lib/types";
 
 type Step = "choose-type" | "details" | "done";
@@ -165,7 +165,7 @@ export default function RegisterPage() {
                 className="btn-primary w-full"
                 disabled={loading || !orgName || !email || !password}
               >
-                {loading ? <Loader2 size={16} className="animate-spin" /> : null}
+                {loading ? <span className="block w-4 h-4 bg-surface-2 rounded animate-pulse" /> : null}
                 {loading ? "Creating..." : "Create Organization"}
               </button>
             </form>

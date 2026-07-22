@@ -15,8 +15,20 @@ export default function OrgLayout({ children }: { children: React.ReactNode }) {
 
   if (isLoading || !currentOrg) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-bg">
-        <div className="animate-spin w-6 h-6 border-2 border-brand border-t-transparent rounded-full" />
+      <div className="min-h-screen space-y-4 p-6 bg-bg">
+        <div className="flex items-center gap-3 mb-6">
+          <div className="w-8 h-8 bg-surface-2 rounded-lg animate-pulse" />
+          <div className="space-y-2 flex-1">
+            <div className="h-5 w-48 bg-surface-2 rounded animate-pulse" />
+            <div className="h-3 w-28 bg-surface-2 rounded animate-pulse" />
+          </div>
+        </div>
+        <div className="flex gap-2">
+          {Array.from({ length: 4 }).map((_, i) => (
+            <div key={i} className="h-8 w-24 bg-surface-2 rounded-lg animate-pulse" />
+          ))}
+        </div>
+        <div className="h-64 bg-surface-2 rounded-xl animate-pulse" />
       </div>
     );
   }

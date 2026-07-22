@@ -1,6 +1,7 @@
 import type { StateCreator } from "zustand";
 import type { Player, Team, ImportResult } from "../types";
 import { parseCSVPlayers } from "../utils/csv";
+import { updatePlayerRatings, updateTeamRatings } from "../logic/ratings";
 
 export interface PlayersSlice {
   players: Player[];
@@ -69,8 +70,8 @@ export const createPlayersSlice: StateCreator<
   getAllPlayers: () => getPlayers(get),
 
   recalculateRatings: () => {
-    set({
-      players: getPlayers(get).map((p) => ({ ...p })),
-    });
+    const players = getPlayers(get).map((p) => ({ ...p }));
+    updatePlayerRatings(players);
+    set({ players });
   },
 });

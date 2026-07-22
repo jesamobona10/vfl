@@ -1,7 +1,8 @@
 "use client";
 
 import { useState, useEffect, useCallback, useRef } from "react";
-import { Trophy, Plus, Edit2, Trash2, X, Check, Loader2, AlertCircle, Building2, Calendar, Swords, Upload, Image as ImageIcon } from "lucide-react";
+import { Trophy, Plus, Edit2, Trash2, X, Check, AlertCircle, Building2, Calendar, Swords, Upload, Image as ImageIcon } from "lucide-react";
+import { SkeletonTable } from "@/components/shared/skeleton";
 
 interface CompRow {
   id: string;
@@ -128,7 +129,7 @@ export function CompManager() {
     return "text-muted";
   };
 
-  if (loading) return <div className="flex justify-center py-12"><Loader2 size={24} className="animate-spin text-muted" /></div>;
+  if (loading) return <SkeletonTable rows={5} cols={5} />;
 
   return (
     <div className="space-y-4">
@@ -191,14 +192,14 @@ export function CompManager() {
                 if (file && editingComp) handleLogoUpload(editingComp, file);
               }} className="hidden" />
               <button type="button" onClick={() => logoInputRef.current?.click()} disabled={logoUploading} className="btn-ghost text-xs">
-                {logoUploading ? <Loader2 size={12} className="animate-spin" /> : <Upload size={12} />}
+                {logoUploading ? <span className="block w-3 h-3 bg-surface-2 rounded animate-pulse" /> : <Upload size={12} />}
                 {editingComp.logo_url || editingLogoUrl ? "Change Logo" : "Upload Logo"}
               </button>
             </div>
           )}
           <div className="flex gap-2">
             <button type="submit" disabled={submitting || !formName || (!editingComp && !formOrgId)} className="btn-primary text-sm">
-              {submitting ? <Loader2 size={14} className="animate-spin" /> : <Check size={14} />}
+              {submitting ? <span className="block w-4 h-4 bg-surface-2 rounded animate-pulse" /> : <Check size={14} />}
               {editingComp ? "Update" : "Create"}
             </button>
             <button type="button" onClick={resetForm} className="btn-ghost text-sm">Cancel</button>

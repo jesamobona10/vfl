@@ -1,7 +1,8 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
-import { Shield, Loader2, AlertCircle } from "lucide-react";
+import { Shield, AlertCircle } from "lucide-react";
+import { SkeletonList } from "@/components/shared/skeleton";
 
 interface AuditLog {
   id: number;
@@ -43,7 +44,7 @@ export function AuditViewer() {
 
   useEffect(() => { fetchLogs(); }, [fetchLogs]);
 
-  if (loading) return <div className="flex justify-center py-12"><Loader2 size={24} className="animate-spin text-muted" /></div>;
+  if (loading) return <SkeletonList items={4} />;
 
   return (
     <div className="space-y-6">

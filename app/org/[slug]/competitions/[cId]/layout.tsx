@@ -3,7 +3,8 @@
 import { useCompetition } from "@/lib/hooks/use-competitions";
 import { useParams, usePathname } from "next/navigation";
 import Link from "next/link";
-import { Calendar, Trophy, Settings, Loader2 } from "lucide-react";
+import { Calendar, Trophy, Settings } from "lucide-react";
+import { PageSkeleton } from "@/components/shared/skeleton";
 
 const typeLabels: Record<string, string> = {
   league: "League",
@@ -37,7 +38,7 @@ export default function CompetitionLayout({
   if (isLoading || !currentCompetition) {
     return (
       <div className="flex items-center justify-center py-20">
-        <Loader2 size={24} className="animate-spin text-muted" />
+        <PageSkeleton />
       </div>
     );
   }

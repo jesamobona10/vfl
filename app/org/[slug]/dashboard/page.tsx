@@ -10,7 +10,8 @@ import { LeagueStats } from "@/components/dashboard/league-stats";
 import { UpcomingMatches } from "@/components/dashboard/upcoming-matches";
 import { TopFiveStandings } from "@/components/dashboard/top-five-standings";
 import { PlayerDashboard } from "@/components/player/player-dashboard";
-import { Shield, RefreshCw, Loader2, Trophy, Swords, Users, Plus, ArrowRight, Upload } from "lucide-react";
+import { Shield, RefreshCw, Trophy, Swords, Users, Plus, ArrowRight, Upload } from "lucide-react";
+import { DashboardSkeleton } from "@/components/shared/skeleton";
 import { GeneratePlayerCredentials } from "@/components/players/generate-player-credentials";
 import { useParams, useRouter } from "next/navigation";
 
@@ -61,7 +62,7 @@ export default function OrgDashboardPage() {
   if (currentTeamAccount && !teamDataLoaded) {
     return (
       <div className="flex items-center justify-center py-20">
-        <Loader2 size={28} className="animate-spin text-muted" />
+        <DashboardSkeleton />
       </div>
     );
   }
@@ -87,7 +88,7 @@ export default function OrgDashboardPage() {
                 )}
                 {orgLogoUploading && (
                   <div className="absolute inset-0 bg-black/40 flex items-center justify-center rounded-xl">
-                    <Loader2 size={18} className="animate-spin text-white" />
+                    <span className="block w-4 h-4 bg-surface-2 rounded animate-pulse" />
                   </div>
                 )}
               </div>

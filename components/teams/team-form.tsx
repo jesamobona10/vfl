@@ -5,7 +5,8 @@ import { useParams } from "next/navigation";
 import { useAppStore } from "@/lib/store";
 import { useOrg } from "@/lib/hooks/use-org";
 import { TeamCard } from "./team-card";
-import { RotateCcw, AlertCircle, Plus, Trash2, Shield, Loader2 } from "lucide-react";
+import { RotateCcw, AlertCircle, Plus, Trash2, Shield } from "lucide-react";
+import { SkeletonForm } from "@/components/shared/skeleton";
 import type { Team } from "@/lib/types";
 
 export function TeamForm() {
@@ -208,7 +209,7 @@ export function TeamForm() {
 
       {loadingTeams ? (
         <div className="flex items-center justify-center py-20">
-          <Loader2 size={24} className="animate-spin text-muted" />
+          <SkeletonForm fields={4} />
         </div>
       ) : visibleTeams.length === 0 ? (
         <div className="card p-12 text-center text-muted">

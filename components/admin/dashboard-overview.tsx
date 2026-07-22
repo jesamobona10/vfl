@@ -1,7 +1,8 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Building2, Users, UserCog, Calendar, Trophy, Swords, Loader2 } from "lucide-react";
+import { Building2, Users, UserCog, Calendar, Trophy, Swords } from "lucide-react";
+import { DashboardSkeleton } from "@/components/shared/skeleton";
 
 interface Stats {
   organizations: number;
@@ -28,7 +29,7 @@ export function DashboardOverview() {
   }, []);
 
   if (loading) {
-    return <div className="flex justify-center py-20"><Loader2 size={24} className="animate-spin text-muted" /></div>;
+    return <DashboardSkeleton />;
   }
 
   if (!stats) return <p className="text-sm text-muted text-center py-8">Failed to load stats.</p>;

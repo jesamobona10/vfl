@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { KeyRound, Loader2, FileDown, AlertCircle, CheckCircle } from "lucide-react";
+import { KeyRound, FileDown, AlertCircle, CheckCircle } from "lucide-react";
 import type { GeneratedPlayerCredential } from "@/lib/player-credentials";
 
 type Props = {
@@ -148,7 +148,7 @@ export function GeneratePlayerCredentials({
         >
           {loading ? (
             <>
-              <Loader2 size={16} className="animate-spin" /> Generating...
+              <span className="block w-4 h-4 bg-surface-2 rounded animate-pulse" /> Generating...
             </>
           ) : (
             <>

@@ -4,7 +4,8 @@ import { useOrg } from "@/lib/hooks/use-org";
 import { useCompetitions } from "@/lib/hooks/use-competitions";
 import type { Competition } from "@/lib/types";
 import { useParams } from "next/navigation";
-import { Trophy, Plus, Loader2, Swords, Users } from "lucide-react";
+import { Trophy, Plus, Swords, Users } from "lucide-react";
+import { PageSkeleton } from "@/components/shared/skeleton";
 
 const typeConfig: Record<string, { label: string; icon: React.ReactNode }> = {
   league: { label: "League", icon: <Trophy size={16} /> },
@@ -27,7 +28,7 @@ export default function CompetitionsPage() {
   if (isLoading) {
     return (
       <div className="flex items-center justify-center py-20">
-        <Loader2 size={24} className="animate-spin text-muted" />
+        <PageSkeleton />
       </div>
     );
   }

@@ -27,7 +27,6 @@ import {
   X,
   Database,
   Upload,
-  Loader2,
   KeyRound,
   Eye,
   EyeOff,
@@ -36,7 +35,9 @@ import {
   LayoutDashboard,
   Trophy,
   ScrollText,
+  Search,
 } from "lucide-react";
+import { PageSkeleton } from "@/components/shared/skeleton";
 import type { Team, Player } from "@/lib/types";
 import { GeneratePlayerCredentials } from "@/components/players/generate-player-credentials";
 
@@ -197,6 +198,7 @@ function FixtureManager() {
       }>;
     }>;
   } | null>(null);
+  const [searchQuery, setSearchQuery] = useState("");
   const [expandedMatch, setExpandedMatch] = useState<number | null>(null);
   const [expandedOrg, setExpandedOrg] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
@@ -227,7 +229,27 @@ function FixtureManager() {
     completed: "bg-muted/10 text-muted",
   };
 
-  if (loading) return <div className="flex justify-center py-12"><Loader2 size={24} className="animate-spin text-muted" /></div>;
+  const filteredOrgs = data?.organizations
+    .map((org) => {
+      if (!searchQuery.trim()) return org;
+      const q = searchQuery.toLowerCase();
+      const orgMatch = org.name.toLowerCase().includes(q);
+      const filteredRounds = org.rounds
+        .map((round) => ({
+          ...round,
+          matches: round.matches.filter(
+            (m) =>
+              orgMatch ||
+              m.homeTeamName.toLowerCase().includes(q) ||
+              m.awayTeamName.toLowerCase().includes(q)
+          ),
+        }))
+        .filter((round) => orgMatch || round.matches.length > 0);
+      return { ...org, rounds: filteredRounds };
+    })
+    .filter((org) => searchQuery.trim() ? org.rounds.length > 0 : true) || [];
+
+  if (loading) return <PageSkeleton />;
 
   if (error) return <p className="text-sm text-danger text-center py-8">{error}</p>;
 
@@ -243,7 +265,17 @@ function FixtureManager() {
   return (
     <div className="space-y-6">
       <p className="text-sm text-muted">Viewing all fixtures across the platform (read-only).</p>
-      {data.organizations.map((org) => (
+      <div className="relative">
+        <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted" />
+        <input
+          type="text"
+          value={searchQuery}
+          onChange={(e) => setSearchQuery(e.target.value)}
+          placeholder="Search by team or organization..."
+          className="input w-full pl-9 text-sm"
+        />
+      </div>
+      {filteredOrgs.map((org) => (
         <div key={org.id} className="card overflow-hidden">
           <button
             onClick={() => setExpandedOrg(expandedOrg === org.id ? null : org.id)}
@@ -463,7 +495,7 @@ function DatabaseManager() {
             )}
           </div>
           <button onClick={syncTeams} disabled={syncing !== null} className="btn-primary text-sm">
-            {syncing === "teams" ? <Loader2 size={14} className="animate-spin" /> : <Upload size={14} />}
+            {syncing === "teams" ? <span className="block w-4 h-4 bg-surface-2 rounded animate-pulse" /> : <Upload size={14} />}
             {syncing === "teams" ? " Syncing..." : " Sync"}
           </button>
         </div>
@@ -479,7 +511,7 @@ function DatabaseManager() {
             )}
           </div>
           <button onClick={syncPlayers} disabled={syncing !== null} className="btn-primary text-sm">
-            {syncing === "players" ? <Loader2 size={14} className="animate-spin" /> : <Upload size={14} />}
+            {syncing === "players" ? <span className="block w-4 h-4 bg-surface-2 rounded animate-pulse" /> : <Upload size={14} />}
             {syncing === "players" ? " Syncing..." : " Sync"}
           </button>
         </div>
@@ -495,7 +527,7 @@ function DatabaseManager() {
             )}
           </div>
           <button onClick={syncFixtures} disabled={syncing !== null} className="btn-primary text-sm">
-            {syncing === "fixtures" ? <Loader2 size={14} className="animate-spin" /> : <Upload size={14} />}
+            {syncing === "fixtures" ? <span className="block w-4 h-4 bg-surface-2 rounded animate-pulse" /> : <Upload size={14} />}
             {syncing === "fixtures" ? " Syncing..." : " Sync"}
           </button>
         </div>
@@ -591,13 +623,7 @@ function TeamAccountManager() {
     }
   };
 
-  if (loading) {
-    return (
-      <div className="flex items-center justify-center py-12">
-        <Loader2 size={24} className="animate-spin text-muted" />
-      </div>
-    );
-  }
+  if (loading) return <PageSkeleton />;
 
   return (
     <div className="space-y-6">
@@ -706,7 +732,7 @@ function TeamAccountManager() {
             >
               {creating ? (
                 <>
-                  <Loader2 size={16} className="animate-spin" /> Creating...
+                  <span className="block w-4 h-4 bg-surface-2 rounded animate-pulse" /> Creating...
                 </>
               ) : (
                 <>

@@ -10,7 +10,8 @@ import { PlayerPerformanceChart } from "./player-performance-chart";
 import { PlayerMatchHistory } from "./player-match-history";
 import { PlayerBadges } from "./player-badges";
 import { PlayerLeaderboards } from "./player-leaderboards";
-import { Loader2, AlertCircle } from "lucide-react";
+import { AlertCircle } from "lucide-react";
+import { DashboardSkeleton } from "@/components/shared/skeleton";
 
 interface UpcomingMatch {
   id: number;
@@ -48,7 +49,7 @@ export function PlayerDashboard() {
   if (loading && !data) {
     return (
       <div className="flex items-center justify-center py-20">
-        <Loader2 size={28} className="animate-spin text-muted" />
+        <DashboardSkeleton />
       </div>
     );
   }

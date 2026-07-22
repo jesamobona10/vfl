@@ -11,7 +11,6 @@ import {
   AlertCircle,
   ArrowRight,
   Download,
-  Loader2,
   X,
   Shield,
   Users,
@@ -225,7 +224,7 @@ export function DataImporter() {
           </div>
           {syncStatus === "syncing" && (
             <div className="flex items-center gap-2 text-sm text-muted">
-              <Loader2 size={14} className="animate-spin" />
+              <span className="block w-4 h-4 bg-surface-2 rounded animate-pulse" />
               {syncMessage}
             </div>
           )}
@@ -419,7 +418,7 @@ export function DataImporter() {
             >
               {importing ? (
                 <>
-                  <Loader2 size={16} className="animate-spin" /> Importing...
+                  <span className="block w-4 h-4 bg-surface-2 rounded animate-pulse" /> Importing...
                 </>
               ) : (
                 <>

@@ -1,7 +1,8 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
-import { Users, Plus, Edit2, Trash2, X, Check, Loader2, AlertCircle, Building2 } from "lucide-react";
+import { Users, Plus, Edit2, Trash2, X, Check, AlertCircle, Building2 } from "lucide-react";
+import { SkeletonTable } from "@/components/shared/skeleton";
 
 interface TeamRow {
   id: number;
@@ -97,7 +98,7 @@ export function AdminTeamManager() {
 
   const filteredTeams = filterOrg ? teams : teams;
 
-  if (loading) return <div className="flex justify-center py-12"><Loader2 size={24} className="animate-spin text-muted" /></div>;
+  if (loading) return <SkeletonTable rows={4} cols={4} />;
 
   return (
     <div className="space-y-4">
@@ -136,7 +137,7 @@ export function AdminTeamManager() {
           </div>
           <div className="flex gap-2">
             <button type="submit" disabled={submitting || !formName || !formOrgId} className="btn-primary text-sm">
-              {submitting ? <Loader2 size={14} className="animate-spin" /> : <Check size={14} />}
+              {submitting ? <span className="block w-4 h-4 bg-surface-2 rounded animate-pulse" /> : <Check size={14} />}
               {editingTeam ? "Update" : "Create"}
             </button>
             <button type="button" onClick={resetForm} className="btn-ghost text-sm">Cancel</button>

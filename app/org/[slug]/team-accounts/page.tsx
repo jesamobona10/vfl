@@ -4,7 +4,8 @@ import { useState, useEffect } from "react";
 import { useParams } from "next/navigation";
 import { useAppStore } from "@/lib/store";
 import { useOrg } from "@/lib/hooks/use-org";
-import { Loader2, Plus, UserCog, Key, Check, AlertCircle, Eye, EyeOff } from "lucide-react";
+import { Plus, UserCog, Key, Check, AlertCircle, Eye, EyeOff } from "lucide-react";
+import { SkeletonList } from "@/components/shared/skeleton";
 
 interface TeamAccount {
   id: string;
@@ -157,7 +158,7 @@ export default function OrgTeamAccountsPage() {
             disabled={creating || !selectedTeamId || password.length < 12}
             className="btn-primary flex items-center gap-2"
           >
-            {creating ? <Loader2 size={14} className="animate-spin" /> : <UserCog size={14} />}
+            {creating ? <span className="block w-4 h-4 bg-surface-2 rounded animate-pulse" /> : <UserCog size={14} />}
             {creating ? "Creating..." : "Create Account"}
           </button>
         </div>
@@ -208,7 +209,7 @@ export default function OrgTeamAccountsPage() {
 
       {loading ? (
         <div className="flex items-center justify-center py-20">
-          <Loader2 size={24} className="animate-spin text-muted" />
+          <SkeletonList items={4} />
         </div>
       ) : accounts.length === 0 ? (
         <div className="card p-12 text-center text-muted">

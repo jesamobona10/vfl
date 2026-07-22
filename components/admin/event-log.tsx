@@ -111,6 +111,7 @@ export function EventLog({
         [field]: ((player[field] as number) || 0) + 1,
       });
     }
+    useAppStore.getState().recalculateRatings();
   };
 
   const handleRemoveEvent = (index: number) => {
@@ -129,6 +130,7 @@ export function EventLog({
         [field]: Math.max(0, ((player[field] as number) || 0) - 1),
       });
     }
+    useAppStore.getState().recalculateRatings();
   };
 
   return (

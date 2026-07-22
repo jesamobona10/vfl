@@ -1,7 +1,9 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
-import { UserCog, Plus, Edit2, Trash2, X, Check, Loader2, AlertCircle, Building2, Users } from "lucide-react";
+import { UserCog, Plus, Edit2, Trash2, X, Check, AlertCircle, Building2, Users, RefreshCw } from "lucide-react";
+import { SkeletonTable } from "@/components/shared/skeleton";
+import { useAppStore } from "@/lib/store";
 
 interface PlayerRow {
   id: number;
@@ -103,15 +105,20 @@ export function AdminPlayerManager() {
     } catch { setError("Failed to delete."); }
   };
 
-  if (loading) return <div className="flex justify-center py-12"><Loader2 size={24} className="animate-spin text-muted" /></div>;
+  if (loading) return <SkeletonTable rows={5} cols={6} />;
 
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between">
         <h3 className="text-lg font-bold">Players</h3>
-        <button onClick={() => { resetForm(); setShowForm(true); }} className="btn-primary text-sm">
-          <Plus size={14} /> Add Player
-        </button>
+        <div className="flex items-center gap-2">
+          <button onClick={() => useAppStore.getState().recalculateRatings()} className="btn-ghost text-sm">
+            <RefreshCw size={14} /> Recalculate Ratings
+          </button>
+          <button onClick={() => { resetForm(); setShowForm(true); }} className="btn-primary text-sm">
+            <Plus size={14} /> Add Player
+          </button>
+        </div>
       </div>
 
       <div className="flex flex-wrap items-center gap-2">
@@ -148,7 +155,7 @@ export function AdminPlayerManager() {
           </div>
           <div className="flex gap-2">
             <button type="submit" disabled={submitting || !formName || !formTeamId} className="btn-primary text-sm">
-              {submitting ? <Loader2 size={14} className="animate-spin" /> : <Check size={14} />}
+              {submitting ? <span className="block w-4 h-4 bg-surface-2 rounded animate-pulse" /> : <Check size={14} />}
               {editingPlayer ? "Update" : "Create"}
             </button>
             <button type="button" onClick={resetForm} className="btn-ghost text-sm">Cancel</button>

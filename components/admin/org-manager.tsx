@@ -1,7 +1,8 @@
 "use client";
 
 import { useState, useEffect, useCallback, useRef } from "react";
-import { Building2, Plus, Edit2, Trash2, X, Check, Loader2, AlertCircle, Users, Upload, Image as ImageIcon } from "lucide-react";
+import { Building2, Plus, Edit2, Trash2, X, Check, AlertCircle, Users, Upload, Image as ImageIcon } from "lucide-react";
+import { SkeletonTable, SkeletonList } from "@/components/shared/skeleton";
 
 interface OrgRow {
   id: string;
@@ -182,7 +183,7 @@ export function OrgManager() {
     finally { setLogoUploading(false); }
   };
 
-  if (loading) return <div className="flex justify-center py-12"><Loader2 size={24} className="animate-spin text-muted" /></div>;
+  if (loading) return <SkeletonTable rows={4} cols={4} />;
 
   return (
     <div className="space-y-4">
@@ -227,14 +228,14 @@ export function OrgManager() {
                 if (file && editingOrg) handleLogoUpload(editingOrg.id, editingOrg.name, file);
               }} className="hidden" />
               <button type="button" onClick={() => logoInputRef.current?.click()} disabled={logoUploading} className="btn-ghost text-xs">
-                {logoUploading ? <Loader2 size={12} className="animate-spin" /> : <Upload size={12} />}
+                {logoUploading ? <span className="block w-3 h-3 bg-surface-2 rounded animate-pulse" /> : <Upload size={12} />}
                 {editingOrg.logo_url || editingLogoUrl ? "Change Logo" : "Upload Logo"}
               </button>
             </div>
           )}
           <div className="flex gap-2">
             <button type="submit" disabled={submitting || !formName || !formSlug} className="btn-primary text-sm">
-              {submitting ? <Loader2 size={14} className="animate-spin" /> : <Check size={14} />}
+              {submitting ? <span className="block w-4 h-4 bg-surface-2 rounded animate-pulse" /> : <Check size={14} />}
               {editingOrg ? "Update" : "Create"}
             </button>
             <button type="button" onClick={resetForm} className="btn-ghost text-sm">Cancel</button>
@@ -290,14 +291,14 @@ export function OrgManager() {
                         <option value="owner">Owner</option><option value="admin">Admin</option><option value="coach">Coach</option><option value="player">Player</option>
                       </select>
                       <button onClick={() => handleAddMember(org.id)} disabled={memberSubmitting || !memberUserId.trim()} className="btn-primary text-xs">
-                        {memberSubmitting ? <Loader2 size={12} className="animate-spin" /> : <Check size={12} />} Add
+                        {memberSubmitting ? <span className="block w-3 h-3 bg-surface-2 rounded animate-pulse" /> : <Check size={12} />} Add
                       </button>
                       <button onClick={() => setMemberFormOrgId(null)} className="btn-ghost text-xs"><X size={12} /></button>
                     </div>
                   )}
 
                   {membersLoading === org.id ? (
-                    <div className="flex justify-center py-4"><Loader2 size={16} className="animate-spin text-muted" /></div>
+                    <SkeletonList items={3} />
                   ) : !members[org.id]?.length ? (
                     <p className="text-xs text-muted text-center py-4">No members.</p>
                   ) : (
