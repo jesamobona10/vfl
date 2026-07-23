@@ -103,7 +103,7 @@ export default function CompetitionLayout({
             return (
               <Link
                 key={tab.href}
-                href={`${basePath}/${tab.href}`}
+                href={`${basePath}/${tab.href}${selectedSeasonId ? `?seasonId=${selectedSeasonId}` : ""}`}
                 className={`flex items-center gap-2 px-4 py-3 text-sm font-medium border-b-2 transition-colors shrink-0 ${
                   isActive
                     ? "border-brand text-brand"

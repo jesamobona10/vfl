@@ -5,7 +5,7 @@ import { useAppStore } from "@/lib/store";
 import { FixtureFilters } from "./fixture-filters";
 import { FixtureCreator } from "./fixture-creator";
 import { FixtureRoundPanel } from "./fixture-round";
-import { RefreshCw, Calendar } from "lucide-react";
+import { Calendar } from "lucide-react";
 
 export function FixtureList() {
   const [roundFilter, setRoundFilter] = useState("all");
@@ -13,8 +13,6 @@ export function FixtureList() {
   const [statusFilter, setStatusFilter] = useState("all");
 
   const fixtures = useAppStore((s) => s.fixtures);
-  const teams = useAppStore((s) => s.teams);
-  const generateFixtures = useAppStore((s) => s.generateFixtures);
   const reorderMatch = useAppStore((s) => s.reorderMatch);
   const isAdmin = useAppStore((s) => s.isAdmin);
   const userProfile = useAppStore((s) => s.userProfile);
@@ -68,18 +66,6 @@ export function FixtureList() {
           <p className="text-sm text-muted">
             Calendar and Team Views
           </p>
-        </div>
-        <div className="flex flex-wrap items-center gap-3">
-          {showAdminFeatures && (
-            <button
-              onClick={() => generateFixtures(teams)}
-              disabled={teams.length < 2}
-              className="btn-primary"
-            >
-              <RefreshCw size={16} />
-              Generate Fixtures
-            </button>
-          )}
         </div>
       </div>
 

@@ -7,45 +7,91 @@ import { useParams } from "next/navigation";
 import { FixtureList } from "@/components/fixtures/fixture-list";
 import { MatchEditor } from "@/components/admin/match-editor";
 import { BulkScoreEntry } from "@/components/fixtures/bulk-score-entry";
-import { RefreshCw, Save, Pencil, Eye, Table2 } from "lucide-react";
+import { RefreshCw, Save, Pencil, Eye, Table2, AlertCircle } from "lucide-react";
+
+interface CompOption {
+  id: string;
+  name: string;
+  type: string;
+}
 
 export default function OrgFixturesPage() {
   const params = useParams();
   const slug = params.slug as string;
   const { data: currentOrg } = useOrg(slug);
   const teams = useAppStore((s) => s.teams);
-  const generateFixtures = useAppStore((s) => s.generateFixtures);
   const fixtures = useAppStore((s) => s.fixtures);
+  const setFixtures = useAppStore((s) => s.setFixtures);
   const isAdmin = useAppStore((s) => s.isAdmin);
+
   const [viewMode, setViewMode] = useState<"view" | "edit" | "table">("view");
   const [generating, setGenerating] = useState(false);
   const [saving, setSaving] = useState(false);
-  const [dbFixtureCount, setDbFixtureCount] = useState<number | null>(null);
-  const hasDbFixtures = dbFixtureCount !== null && dbFixtureCount > 0;
+  const [loadingDb, setLoadingDb] = useState(true);
+  const [comps, setComps] = useState<CompOption[]>([]);
+  const [selectedCompId, setSelectedCompId] = useState<string>("");
+  const [error, setError] = useState("");
 
   useEffect(() => {
     if (!currentOrg?.id) return;
+    setLoadingDb(true);
     fetch(`/api/competitions?org_id=${currentOrg.id}`)
       .then((r) => r.json())
       .then((data) => {
-        const comps = data.competitions || [];
-        const total = comps.reduce((sum: number, c: any) => sum + (c.fixtureCount || 0), 0);
-        setDbFixtureCount(total);
+        const list: CompOption[] = (data.competitions || []).filter(
+          (c: any) => c.type === "league"
+        );
+        setComps(list);
+        const params = list.length === 1
+          ? `?competition_id=${list[0].id}`
+          : "";
+        return fetch(`/api/organizations/${slug}/fixtures${params}`);
       })
-      .catch(() => setDbFixtureCount(0));
+      .then((r) => r.json())
+      .then((d) => {
+        if (d.fixtures?.length) {
+          setFixtures(d.fixtures);
+        }
+      })
+      .catch(() => {})
+      .finally(() => setLoadingDb(false));
   }, [currentOrg?.id]);
 
-  const handleGenerate = () => {
+  const handleGenerate = async () => {
     if (teams.length < 2) return;
     setGenerating(true);
-    setTimeout(() => {
-      generateFixtures(teams);
+    setError("");
+    try {
+      const body: Record<string, string> = {};
+      if (selectedCompId) body.competition_id = selectedCompId;
+      const res = await fetch(`/api/organizations/${slug}/generate-fixtures`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(body),
+      });
+      const data = await res.json();
+      if (data.error) { setError(data.error); return; }
+
+      const params = selectedCompId
+        ? `?competition_id=${selectedCompId}`
+        : "";
+      const fres = await fetch(
+        `/api/organizations/${slug}/fixtures${params}`
+      );
+      const fd = await fres.json();
+      if (fd.fixtures?.length) {
+        setFixtures(fd.fixtures);
+      }
+    } catch {
+      setError("Failed to generate fixtures.");
+    } finally {
       setGenerating(false);
-    }, 100);
+    }
   };
 
   const handleSaveToDb = async () => {
     setSaving(true);
+    setError("");
     try {
       const res = await fetch("/api/sync/fixtures", {
         method: "POST",
@@ -53,16 +99,57 @@ export default function OrgFixturesPage() {
         body: JSON.stringify({ fixtures }),
       });
       const data = await res.json();
-      if (data.error) { alert(data.error); return; }
-      setDbFixtureCount(fixtures.reduce((sum, r) => sum + r.matches.length, 0));
-      alert("Fixtures saved to database successfully.");
-    } catch { alert("Failed to save fixtures."); }
-    finally { setSaving(false); }
+      if (data.error) { setError(data.error); return; }
+
+      const params = selectedCompId
+        ? `?competition_id=${selectedCompId}`
+        : "";
+      const fres = await fetch(
+        `/api/organizations/${slug}/fixtures${params}`
+      );
+      const fd = await fres.json();
+      if (fd.fixtures?.length) {
+        setFixtures(fd.fixtures);
+      }
+    } catch {
+      setError("Failed to save fixtures.");
+    } finally {
+      setSaving(false);
+    }
   };
+
+  const hasFixtures = fixtures.length > 0;
 
   return (
     <div>
-      {isAdmin && fixtures.length > 0 && (
+      {error && (
+        <div className="flex items-center gap-2 mb-4 px-4 py-3 bg-danger/10 text-danger text-sm rounded-lg border border-danger/20">
+          <AlertCircle size={16} />
+          {error}
+        </div>
+      )}
+
+      {isAdmin && comps.length > 0 && (
+        <div className="flex items-center gap-3 mb-4">
+          <label className="text-sm text-muted whitespace-nowrap">
+            Competition:
+          </label>
+          <select
+            value={selectedCompId}
+            onChange={(e) => setSelectedCompId(e.target.value)}
+            className="input text-sm max-w-xs"
+          >
+            <option value="">All teams (no competition)</option>
+            {comps.map((c) => (
+              <option key={c.id} value={c.id}>
+                {c.name}
+              </option>
+            ))}
+          </select>
+        </div>
+      )}
+
+      {isAdmin && hasFixtures && (
         <div className="flex items-center justify-end gap-2 mb-4">
           <button
             onClick={() => setViewMode("view")}
@@ -89,8 +176,16 @@ export default function OrgFixturesPage() {
         <>
           <MatchEditor />
           <div className="mt-4 flex justify-center">
-            <button onClick={handleSaveToDb} disabled={saving} className="btn-primary">
-              {saving ? <span className="block w-4 h-4 bg-surface-2 rounded animate-pulse" /> : <Save size={16} />}
+            <button
+              onClick={handleSaveToDb}
+              disabled={saving}
+              className="btn-primary"
+            >
+              {saving ? (
+                <span className="block w-4 h-4 bg-surface-2 rounded animate-pulse" />
+              ) : (
+                <Save size={16} />
+              )}
               Save to Database
             </button>
           </div>
@@ -99,8 +194,16 @@ export default function OrgFixturesPage() {
         <>
           <BulkScoreEntry />
           <div className="mt-4 flex justify-center">
-            <button onClick={handleSaveToDb} disabled={saving} className="btn-primary">
-              {saving ? <span className="block w-4 h-4 bg-surface-2 rounded animate-pulse" /> : <Save size={16} />}
+            <button
+              onClick={handleSaveToDb}
+              disabled={saving}
+              className="btn-primary"
+            >
+              {saving ? (
+                <span className="block w-4 h-4 bg-surface-2 rounded animate-pulse" />
+              ) : (
+                <Save size={16} />
+              )}
               Save to Database
             </button>
           </div>
@@ -108,18 +211,25 @@ export default function OrgFixturesPage() {
       ) : (
         <>
           <FixtureList />
-          {fixtures.length === 0 && !hasDbFixtures && (
+          {!hasFixtures && !loadingDb && (
             <div className="mt-4 text-center">
-              <button onClick={handleGenerate} disabled={generating || teams.length < 2} className="btn-primary">
-                {generating ? <span className="block w-4 h-4 bg-surface-2 rounded animate-pulse" /> : <RefreshCw size={16} />}
+              <button
+                onClick={handleGenerate}
+                disabled={generating || teams.length < 2}
+                className="btn-primary"
+              >
+                {generating ? (
+                  <span className="block w-4 h-4 bg-surface-2 rounded animate-pulse" />
+                ) : (
+                  <RefreshCw size={16} />
+                )}
                 Generate Fixtures
               </button>
-              {teams.length < 2 && <p className="text-sm text-muted mt-2">Need at least 2 teams to generate fixtures.</p>}
-            </div>
-          )}
-          {fixtures.length === 0 && hasDbFixtures && (
-            <div className="mt-4 text-center">
-              <p className="text-sm text-muted">Fixtures have already been generated and saved to the database.</p>
+              {teams.length < 2 && (
+                <p className="text-sm text-muted mt-2">
+                  Need at least 2 teams to generate fixtures.
+                </p>
+              )}
             </div>
           )}
         </>
