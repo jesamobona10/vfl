@@ -2,7 +2,8 @@
 
 import { useState } from "react";
 import { useAppStore } from "@/lib/store";
-import { Check, Trophy } from "lucide-react";
+import { Check } from "lucide-react";
+import { TimeInput } from "../shared/time-input";
 
 export function BulkScoreEntry() {
   const fixtures = useAppStore((s) => s.fixtures);
@@ -14,6 +15,14 @@ export function BulkScoreEntry() {
   const handleScoreChange = (matchId: number, field: "homeScore" | "awayScore", value: string) => {
     const num = value === "" ? null : Math.max(0, Math.min(99, Number(value) || 0));
     updateMatch(matchId, field, num);
+  };
+
+  const handleDateChange = (matchId: number, value: string) => {
+    updateMatch(matchId, "date", value || null);
+  };
+
+  const handleTimeChange = (matchId: number, value: string) => {
+    updateMatch(matchId, "time", value || null);
   };
 
   const saveRound = (round: number) => {
@@ -60,6 +69,8 @@ export function BulkScoreEntry() {
                     <th className="text-left py-2 pr-2">Home</th>
                     <th className="text-center py-2 px-2 w-32">Score</th>
                     <th className="text-right py-2 pl-2">Away</th>
+                    <th className="text-center py-2 px-2 w-28">Date</th>
+                    <th className="text-center py-2 px-2 w-20">Time</th>
                     <th className="text-center py-2 px-2 w-20">Status</th>
                   </tr>
                 </thead>
@@ -103,6 +114,20 @@ export function BulkScoreEntry() {
                             <span className="font-medium truncate">{away?.name || "?"}</span>
                             {away?.logo_url && <img src={away.logo_url} alt="" className="w-5 h-5 rounded object-cover shrink-0" />}
                           </div>
+                        </td>
+                        <td className="py-2 px-2 text-center">
+                          <input
+                            type="date"
+                            value={match.date || ""}
+                            onChange={(e) => handleDateChange(match.id, e.target.value)}
+                            className="input text-xs py-1 w-28 text-center"
+                          />
+                        </td>
+                        <td className="py-2 px-2 text-center">
+                          <TimeInput
+                            value={match.time || ""}
+                            onChange={(val) => handleTimeChange(match.id, val)}
+                          />
                         </td>
                         <td className="py-2 px-2 text-center">
                           <span className={`text-[11px] font-semibold px-2 py-0.5 rounded-full ${

@@ -1,8 +1,9 @@
 "use client";
 
 import { useState, useEffect, useCallback, useRef } from "react";
-import { Trophy, Plus, Edit2, Trash2, X, Check, AlertCircle, Building2, Calendar, Swords, Upload, Image as ImageIcon } from "lucide-react";
+import { Trophy, Plus, Edit2, Trash2, X, Check, AlertCircle, Building2, Calendar, Swords, Upload, Image as ImageIcon, ChevronDown, ChevronRight } from "lucide-react";
 import { SkeletonTable } from "@/components/shared/skeleton";
+import type { Season } from "@/lib/types";
 
 interface CompRow {
   id: string;
@@ -16,6 +17,15 @@ interface CompRow {
   fixtureCount: number;
   cupMatchCount: number;
   organizations?: { name: string; slug: string } | null;
+}
+
+interface SeasonRow {
+  id: string;
+  name: string;
+  status: string;
+  is_current: boolean;
+  start_date: string | null;
+  end_date: string | null;
 }
 
 interface OrgSummary { id: string; name: string; }
@@ -39,6 +49,14 @@ export function CompManager() {
   const [formType, setFormType] = useState("league");
   const [formSeason, setFormSeason] = useState("");
   const [formStatus, setFormStatus] = useState("draft");
+
+  const [seasons, setSeasons] = useState<SeasonRow[]>([]);
+  const [seasonsOpen, setSeasonsOpen] = useState(false);
+  const [seasonsLoading, setSeasonsLoading] = useState(false);
+  const [showNewSeasonForm, setShowNewSeasonForm] = useState(false);
+  const [newSeasonName, setNewSeasonName] = useState("");
+  const [newSeasonStart, setNewSeasonStart] = useState("");
+  const [newSeasonEnd, setNewSeasonEnd] = useState("");
 
   const fetchComps = useCallback(async () => {
     try {
@@ -104,6 +122,73 @@ export function CompManager() {
       if (!res.ok) { const d = await res.json(); setError(d.error || "Delete failed."); return; }
       fetchComps();
     } catch { setError("Failed to delete."); }
+  };
+
+  const fetchSeasons = useCallback(async (competitionId: string) => {
+    setSeasonsLoading(true);
+    try {
+      const res = await fetch(`/api/competitions/${competitionId}/seasons`);
+      const data = await res.json();
+      if (res.ok) setSeasons(data.seasons || []);
+    } catch {}
+    finally { setSeasonsLoading(false); }
+  }, []);
+
+  const openEditWithSeasons = async (comp: CompRow) => {
+    openEdit(comp);
+    setSeasonsOpen(false);
+    await fetchSeasons(comp.id);
+  };
+
+  const handleCreateSeason = async () => {
+    if (!editingComp || !newSeasonName.trim()) return;
+    setError("");
+    try {
+      const res = await fetch(`/api/competitions/${editingComp.id}/seasons`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          name: newSeasonName.trim(),
+          start_date: newSeasonStart || null,
+          end_date: newSeasonEnd || null,
+        }),
+      });
+      const data = await res.json();
+      if (!res.ok) { setError(data.error || "Failed to create season."); return; }
+      setNewSeasonName("");
+      setNewSeasonStart("");
+      setNewSeasonEnd("");
+      setShowNewSeasonForm(false);
+      await fetchSeasons(editingComp.id);
+    } catch { setError("Failed to create season."); }
+  };
+
+  const handleActivateSeason = async (season: SeasonRow) => {
+    if (!editingComp) return;
+    setError("");
+    try {
+      const res = await fetch(`/api/seasons/${season.id}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ is_current: true, status: "active" }),
+      });
+      if (!res.ok) { const d = await res.json(); setError(d.error || "Failed to activate season."); return; }
+      await fetchSeasons(editingComp.id);
+    } catch { setError("Failed to activate season."); }
+  };
+
+  const handleCompleteSeason = async (season: SeasonRow) => {
+    if (!editingComp) return;
+    setError("");
+    try {
+      const res = await fetch(`/api/seasons/${season.id}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ status: "completed", is_current: false }),
+      });
+      if (!res.ok) { const d = await res.json(); setError(d.error || "Failed to complete season."); return; }
+      await fetchSeasons(editingComp.id);
+    } catch { setError("Failed to complete season."); }
   };
 
   const handleLogoUpload = async (comp: CompRow, file: File) => {
@@ -197,6 +282,69 @@ export function CompManager() {
               </button>
             </div>
           )}
+          {editingComp && (
+            <div className="border-t border-line pt-4 mt-2 space-y-3">
+              <button
+                type="button"
+                onClick={() => setSeasonsOpen(!seasonsOpen)}
+                className="flex items-center gap-2 text-sm font-semibold text-muted"
+              >
+                {seasonsOpen ? <ChevronDown size={14} /> : <ChevronRight size={14} />}
+                Seasons ({seasons.length})
+              </button>
+              {seasonsOpen && (
+                <div className="space-y-2">
+                  {seasons.length === 0 && !seasonsLoading && (
+                    <p className="text-xs text-muted">No seasons yet.</p>
+                  )}
+                  {seasonsLoading && <p className="text-xs text-muted">Loading...</p>}
+                  {seasons.map((s) => (
+                    <div key={s.id} className="flex items-center justify-between p-2 rounded bg-surface-2 text-xs">
+                      <div className="flex items-center gap-2 min-w-0">
+                        <span className={`px-1.5 py-0.5 rounded-full font-medium ${
+                          s.status === "active" ? "bg-green-500/20 text-green-400" :
+                          s.status === "completed" ? "bg-blue-500/20 text-blue-400" :
+                          "bg-gray-500/20 text-gray-300"
+                        }`}>{s.status}</span>
+                        <span className="font-medium truncate">{s.name}</span>
+                        {s.is_current && <span className="text-brand text-[10px] font-semibold">(Current)</span>}
+                      </div>
+                      <div className="flex items-center gap-1 shrink-0">
+                        {s.status !== "active" && s.status !== "completed" && (
+                          <button type="button" onClick={() => handleActivateSeason(s)} className="btn-ghost text-[11px] py-0.5 px-1.5">Activate</button>
+                        )}
+                        {s.status === "active" && (
+                          <button type="button" onClick={() => handleCompleteSeason(s)} className="btn-ghost text-[11px] py-0.5 px-1.5 text-danger">Complete</button>
+                        )}
+                      </div>
+                    </div>
+                  ))}
+                  <button
+                    type="button"
+                    onClick={() => setShowNewSeasonForm(!showNewSeasonForm)}
+                    className="btn-ghost text-xs"
+                  >
+                    <Plus size={12} /> New Season
+                  </button>
+                  {showNewSeasonForm && (
+                    <div className="space-y-2 p-3 rounded-lg bg-surface-2">
+                      <input value={newSeasonName} onChange={(e) => setNewSeasonName(e.target.value)} className="input text-xs py-1" placeholder="Season name (e.g. 2025/2026)" />
+                      <div className="grid grid-cols-2 gap-2">
+                        <input type="date" value={newSeasonStart} onChange={(e) => setNewSeasonStart(e.target.value)} className="input text-xs py-1" />
+                        <input type="date" value={newSeasonEnd} onChange={(e) => setNewSeasonEnd(e.target.value)} className="input text-xs py-1" />
+                      </div>
+                      <div className="flex gap-2">
+                        <button type="button" onClick={handleCreateSeason} disabled={!newSeasonName.trim()} className="btn-primary text-xs py-1 px-2">
+                          <Check size={12} /> Create
+                        </button>
+                        <button type="button" onClick={() => { setShowNewSeasonForm(false); setNewSeasonName(""); }} className="btn-ghost text-xs py-1 px-2">Cancel</button>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
+          )}
           <div className="flex gap-2">
             <button type="submit" disabled={submitting || !formName || (!editingComp && !formOrgId)} className="btn-primary text-sm">
               {submitting ? <span className="block w-4 h-4 bg-surface-2 rounded animate-pulse" /> : <Check size={14} />}
@@ -228,7 +376,7 @@ export function CompManager() {
               <span className="text-xs text-muted">{comp.season || "—"}</span>
               <span className="text-xs text-muted flex items-center gap-1"><Calendar size={10} />{comp.fixtureCount}</span>
               <span className="text-xs text-muted flex items-center gap-1"><Swords size={10} />{comp.cupMatchCount}</span>
-              <button onClick={() => openEdit(comp)} className="btn-ghost text-xs"><Edit2 size={12} /></button>
+              <button onClick={() => openEditWithSeasons(comp)} className="btn-ghost text-xs"><Edit2 size={12} /></button>
               <button onClick={() => handleDelete(comp)} className="btn-ghost text-xs text-danger"><Trash2 size={12} /></button>
             </div>
           ))}

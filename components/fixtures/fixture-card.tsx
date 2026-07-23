@@ -4,7 +4,7 @@ import { useRef, useState } from "react";
 import type { Match, Team } from "@/lib/types";
 import { useAppStore } from "@/lib/store";
 import { matchMeta, titleCase } from "@/lib/utils/helpers";
-import { GripVertical, ImageIcon, Calendar } from "lucide-react";
+import { GripVertical, ImageIcon } from "lucide-react";
 import { MatchFlyer } from "@/components/flyers/match-flyer";
 
 interface FixtureCardProps {
@@ -25,8 +25,6 @@ export function FixtureCard({
   const [isDragging, setIsDragging] = useState(false);
   const [isDragOver, setIsDragOver] = useState(false);
   const [showFlyer, setShowFlyer] = useState(false);
-  const [showPostpone, setShowPostpone] = useState(false);
-  const [postponeDays, setPostponeDays] = useState(1);
   const dragData = useRef<{ matchId: number } | null>(null);
 
   const statusColors: Record<string, string> = {
@@ -73,17 +71,6 @@ export function FixtureCard({
     if (sourceId && sourceId !== match.id) {
       onDrop(sourceId, match.id);
     }
-  };
-
-  const handlePostpone = () => {
-    if (postponeDays < 1 || postponeDays > 365) return;
-    const newDate = new Date(match.date || new Date());
-    newDate.setDate(newDate.getDate() + postponeDays);
-    const formatted = newDate.toISOString().split("T")[0];
-    useAppStore.getState().updateMatch(match.id, "date", formatted);
-    useAppStore.getState().updateMatch(match.id, "manualEdited", true);
-    setShowPostpone(false);
-    setPostponeDays(1);
   };
 
   const showScore =
@@ -143,40 +130,6 @@ export function FixtureCard({
       <div className="flex items-center justify-between">
         <p className="text-xs text-muted truncate">{matchMeta(match)}</p>
         <div className="flex items-center gap-1">
-          {match.status !== "completed" && (
-            <div className="relative">
-              <button
-                onClick={(e) => {
-                  e.stopPropagation();
-                  setShowPostpone(!showPostpone);
-                }}
-                className="btn-icon shrink-0"
-                title="Postpone match"
-              >
-                <Calendar size={14} />
-              </button>
-              {showPostpone && (
-                <div className="absolute right-0 bottom-full mb-2 z-10 bg-surface border border-line rounded-xl p-3 shadow-lg min-w-[180px]" onClick={(e) => e.stopPropagation()}>
-                  <p className="text-xs font-medium text-muted mb-2">Postpone by</p>
-                  <div className="flex items-center gap-2">
-                    <input
-                      type="number"
-                      min={1}
-                      max={365}
-                      value={postponeDays}
-                      onChange={(e) => setPostponeDays(Math.max(1, Math.min(365, Number(e.target.value) || 1)))}
-                      className="input text-sm w-16 text-center"
-                    />
-                    <span className="text-xs text-muted">days</span>
-                  </div>
-                  <div className="flex gap-2 mt-2">
-                    <button onClick={handlePostpone} className="btn-primary text-xs py-1 px-3">Apply</button>
-                    <button onClick={() => setShowPostpone(false)} className="btn-ghost text-xs py-1 px-3">Cancel</button>
-                  </div>
-                </div>
-              )}
-            </div>
-          )}
           {showFlyer && (
             <MatchFlyer
               match={match}

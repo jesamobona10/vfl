@@ -25,18 +25,22 @@ export async function POST(request: Request) {
   try {
     const supabase = await createClient();
     const auth = await getAuthContext(supabase);
-    const adminError = requireAdmin(auth);
-    if (adminError) return adminError;
+    if (!auth) return json({ error: "Unauthorized" }, { status: 401 });
+
+    if (!auth.isAdmin && !auth.orgMembership) {
+      return json({ error: "Forbidden" }, { status: 403 });
+    }
 
     const ip = getClientIp(request);
     const limited = rateLimit({ key: `sync:fixtures:${ip}`, limit: 10, windowMs: 60 * 60_000 });
     if (limited.limited) {
-      logSecurityEvent("sync_fixtures_rate_limited", { ip, userId: auth!.userId });
+      logSecurityEvent("sync_fixtures_rate_limited", { ip, userId: auth.userId });
       return rateLimitResponse(limited.resetAt);
     }
 
     const parsed = await parseJsonObject(request);
     if (parsed.error) return json({ error: parsed.error }, { status: 400 });
+
     const fixtures = parsed.data!.fixtures;
     const teamIdMap =
       parsed.data!.teamIdMap && typeof parsed.data!.teamIdMap === "object"
@@ -44,17 +48,11 @@ export async function POST(request: Request) {
         : {};
 
     if (!fixtures || !Array.isArray(fixtures)) {
-      return json(
-        { error: "Fixtures array is required." },
-        { status: 400 }
-      );
+      return json({ error: "Fixtures array is required." }, { status: 400 });
     }
 
     if (fixtures.length > MAX_ROUNDS) {
-      return json(
-        { error: `Too many fixture rounds. Maximum is ${MAX_ROUNDS}.` },
-        { status: 400 }
-      );
+      return json({ error: `Too many fixture rounds. Maximum is ${MAX_ROUNDS}.` }, { status: 400 });
     }
 
     const sb = createServiceRoleClient();
@@ -88,10 +86,7 @@ export async function POST(request: Request) {
     }
 
     if (allMatches.length === 0) {
-      return json(
-        { error: "No matches found in fixtures data." },
-        { status: 400 }
-      );
+      return json({ error: "No matches found in fixtures data." }, { status: 400 });
     }
 
     const { error: insertError } = await sb.from("fixtures").upsert(allMatches, {
@@ -100,17 +95,11 @@ export async function POST(request: Request) {
     });
 
     if (insertError) {
-      logApiError("sync_fixtures_upsert_failed", insertError, { userId: auth!.userId });
+      logApiError("sync_fixtures_upsert_failed", insertError, { userId: auth.userId });
       return json({ error: "Unable to sync fixtures." }, { status: 500 });
     }
 
-    const { data: synced } = await sb
-      .from("fixtures")
-      .select("*")
-      .order("round")
-      .order("date")
-      .order("time")
-      .order("id");
+    const { data: synced } = await sb.from("fixtures").select("*").order("round").order("date").order("time").order("id");
 
     return json({ success: true, fixtures: synced });
   } catch (error) {
