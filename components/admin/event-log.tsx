@@ -94,17 +94,19 @@ export function EventLog({
       alert("Select a player first.");
       return;
     }
-    const newEvent: MatchEvent = {
-      playerId: Number(playerId),
-      type: eventType,
-    };
-    const updatedEvents = [...events, newEvent];
-    updateMatch(match.id, "events", updatedEvents);
-
     const store = useAppStore.getState();
     const player = store.players.find(
       (p) => p.id === Number(playerId)
     );
+    const teamId = player?.teamId ?? (homePlayers.some((p) => p.id === Number(playerId)) ? match.homeId : match.awayId);
+    const newEvent: MatchEvent = {
+      playerId: Number(playerId),
+      type: eventType,
+      teamId,
+    };
+    const updatedEvents = [...events, newEvent];
+    updateMatch(match.id, "events", updatedEvents);
+
     if (player) {
       const field = STAT_FIELD[eventType];
       updatePlayer(Number(playerId), {

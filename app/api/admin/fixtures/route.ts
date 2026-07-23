@@ -77,6 +77,18 @@ export async function GET(request: Request) {
       return json({ error: "Failed to load fixtures." }, { status: 500 });
     }
 
+    const fixtureIds = (fixtures || []).map((m) => m.id);
+    const { data: dbEvents } = await sb
+      .from("match_events")
+      .select("*")
+      .in("match_id", fixtureIds);
+
+    const eventsByMatch = new Map<number, any[]>();
+    for (const ev of dbEvents || []) {
+      if (!eventsByMatch.has(ev.match_id)) eventsByMatch.set(ev.match_id, []);
+      eventsByMatch.get(ev.match_id)!.push(ev);
+    }
+
     const { data: orgs } = await sb
       .from("organizations")
       .select("id, name, slug, logo_url");
@@ -89,6 +101,13 @@ export async function GET(request: Request) {
       const orgId = m.home?.organization_id;
       if (!orgId) continue;
 
+      const matchEvents = (eventsByMatch.get(m.id) || []).map((ev: any) => ({
+        playerId: ev.player_id,
+        type: ev.event_type,
+        minute: ev.minute,
+        teamId: ev.team_id,
+      }));
+
       const match: MatchEvent = {
         id: m.id,
         round: m.round,
@@ -100,7 +119,7 @@ export async function GET(request: Request) {
         date: m.date || "",
         time: m.time || "",
         venue: m.venue || "",
-        events: [],
+        events: matchEvents,
         homeTeamName: m.home?.name || "?",
         awayTeamName: m.away?.name || "?",
         homeTeamLogo: m.home?.logo_url || undefined,

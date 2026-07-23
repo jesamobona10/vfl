@@ -17,6 +17,18 @@ interface FixtureCardProps {
   onDrop: (matchId: number, targetId: number) => void;
 }
 
+const EVENT_ABBR: Record<string, string> = {
+  goal: "G", assist: "A", "own-goal": "OG", yellow: "Y", red: "R",
+};
+
+const EVENT_COLOR: Record<string, string> = {
+  goal: "bg-brand/20 text-brand",
+  assist: "bg-accent/20 text-accent",
+  "own-goal": "bg-muted/20 text-muted",
+  yellow: "bg-yellow-500/20 text-yellow-400",
+  red: "bg-danger/20 text-danger",
+};
+
 export function FixtureCard({
   match,
   label,
@@ -30,6 +42,11 @@ export function FixtureCard({
   const [showFlyer, setShowFlyer] = useState(false);
   const dragData = useRef<{ matchId: number } | null>(null);
   const updateMatch = useAppStore((s) => s.updateMatch);
+  const updatePlayer = useAppStore((s) => s.updatePlayer);
+  const players = useAppStore((s) => s.players);
+
+  const [statsPlayerId, setStatsPlayerId] = useState("");
+  const [statsEventType, setStatsEventType] = useState("goal");
 
   const statusColors: Record<string, string> = {
     scheduled: "bg-muted/20 text-muted",
@@ -38,8 +55,7 @@ export function FixtureCard({
     live: "bg-danger/20 text-danger",
   };
 
-  const statusColor =
-    statusColors[match.status] || "bg-muted/20 text-muted";
+  const statusColor = statusColors[match.status] || "bg-muted/20 text-muted";
 
   const handleDragStart = (e: React.DragEvent) => {
     dragData.current = { matchId: match.id };
@@ -64,23 +80,99 @@ export function FixtureCard({
     setIsDragOver(true);
   };
 
-  const handleDragLeave = () => {
-    setIsDragOver(false);
-  };
+  const handleDragLeave = () => setIsDragOver(false);
 
   const handleDrop = (e: React.DragEvent) => {
     e.preventDefault();
     setIsDragOver(false);
     const sourceId = Number(e.dataTransfer.getData("text/plain"));
-    if (sourceId && sourceId !== match.id) {
-      onDrop(sourceId, match.id);
-    }
+    if (sourceId && sourceId !== match.id) onDrop(sourceId, match.id);
   };
 
   const showScore =
     match.status === "completed" ||
     match.status === "in-progress" ||
     match.status === "live";
+
+  const events = match.events || [];
+  const eventGoals = events.filter((e) => e.type === "goal" || e.type === "own-goal");
+  const eventCards = events.filter((e) => e.type === "yellow" || e.type === "red");
+  const eventAssists = events.filter((e) => e.type === "assist");
+
+  const homePlayers = players.filter((p) => p.teamId === match.homeId);
+  const awayPlayers = players.filter((p) => p.teamId === match.awayId);
+
+  const handleAddEvent = () => {
+    if (!statsPlayerId) return;
+    const newEvent = {
+      playerId: Number(statsPlayerId),
+      type: statsEventType,
+    };
+    const updatedEvents = [...events, newEvent];
+    updateMatch(match.id, "events", updatedEvents);
+
+    const player = players.find((p) => p.id === Number(statsPlayerId));
+    if (player) {
+      const STAT_FIELD: Record<string, string> = {
+        goal: "goals", assist: "assists", "own-goal": "ownGoals",
+        yellow: "yellowCards", red: "redCards",
+      };
+      const field = STAT_FIELD[statsEventType];
+      if (field) {
+        updatePlayer(Number(statsPlayerId), {
+          [field]: ((player as any)[field] || 0) + 1,
+        });
+      }
+    }
+    useAppStore.getState().recalculateRatings();
+    setStatsPlayerId("");
+    setStatsEventType("goal");
+  };
+
+  const handleRemoveEvent = (index: number) => {
+    const event = events[index];
+    if (!event) return;
+    const updatedEvents = events.filter((_, i) => i !== index);
+    updateMatch(match.id, "events", updatedEvents);
+
+    const player = players.find((p) => p.id === event.playerId);
+    if (player) {
+      const STAT_FIELD: Record<string, string> = {
+        goal: "goals", assist: "assists", "own-goal": "ownGoals",
+        yellow: "yellowCards", red: "redCards",
+      };
+      const field = STAT_FIELD[event.type];
+      if (field) {
+        updatePlayer(event.playerId, {
+          [field]: Math.max(0, ((player as any)[field] || 0) - 1),
+        });
+      }
+    }
+    useAppStore.getState().recalculateRatings();
+  };
+
+  const getPlayerName = (playerId: number) => {
+    const p = players.find((pl) => pl.id === playerId);
+    return p?.name || "Unknown";
+  };
+
+  const renderEventBadge = (event: typeof events[0], i: number) => {
+    const color = EVENT_COLOR[event.type] || "bg-muted/20 text-muted";
+    return (
+      <span key={i} className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-medium ${color}`}>
+        <span className="font-semibold">{EVENT_ABBR[event.type] || event.type}</span>
+        {getPlayerName(event.playerId)}
+        {editable && (
+          <button
+            onClick={(e) => { e.stopPropagation(); handleRemoveEvent(events.indexOf(event)); }}
+            className="ml-0.5 hover:text-danger leading-none"
+          >
+            &times;
+          </button>
+        )}
+      </span>
+    );
+  };
 
   return (
     <article
@@ -136,9 +228,7 @@ export function FixtureCard({
           <span className="font-semibold truncate">{homeTeam?.name || "Unknown"}</span>
           {homeTeam?.logo_url && <img src={homeTeam.logo_url} alt="" className="w-6 h-6 rounded object-cover shrink-0" />}
         </div>
-        <div className="text-center text-xs text-muted uppercase tracking-[0.2em]">
-          vs
-        </div>
+        <div className="text-center text-xs text-muted uppercase tracking-[0.2em]">vs</div>
         <div className="min-w-0 text-left flex items-center gap-2">
           {awayTeam?.logo_url && <img src={awayTeam.logo_url} alt="" className="w-6 h-6 rounded object-cover shrink-0" />}
           <span className="font-semibold truncate">{awayTeam?.name || "Unknown"}</span>
@@ -147,7 +237,7 @@ export function FixtureCard({
 
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2 min-w-0">
-          {editable && (
+          {editable ? (
             <input
               type="text"
               value={match.venue || ""}
@@ -156,8 +246,9 @@ export function FixtureCard({
               placeholder="Venue"
               onClick={(e) => e.stopPropagation()}
             />
+          ) : (
+            <p className="text-xs text-muted truncate">{matchMeta(match)}</p>
           )}
-          {!editable && <p className="text-xs text-muted truncate">{matchMeta(match)}</p>}
         </div>
         <div className="flex items-center gap-1">
           {showFlyer && (
@@ -169,10 +260,7 @@ export function FixtureCard({
             />
           )}
           <button
-            onClick={(e) => {
-              e.stopPropagation();
-              setShowFlyer(true);
-            }}
+            onClick={(e) => { e.stopPropagation(); setShowFlyer(true); }}
             className="btn-icon shrink-0"
             title="Generate match flyer"
           >
@@ -180,6 +268,49 @@ export function FixtureCard({
           </button>
         </div>
       </div>
+
+      {editable && (
+        <div className="flex flex-wrap items-end gap-2 pt-1 border-t border-line">
+          <div className="flex-1 min-w-[140px]">
+            <select
+              value={statsPlayerId}
+              onChange={(e) => setStatsPlayerId(e.target.value)}
+              className="input text-xs py-1"
+            >
+              <option value="">Player</option>
+              {[...homePlayers, ...awayPlayers].map((p) => (
+                <option key={p.id} value={p.id}>
+                  {p.name}
+                </option>
+              ))}
+            </select>
+          </div>
+          <select
+            value={statsEventType}
+            onChange={(e) => setStatsEventType(e.target.value)}
+            className="input text-xs py-1 w-24"
+          >
+            <option value="goal">Goal</option>
+            <option value="assist">Assist</option>
+            <option value="own-goal">OG</option>
+            <option value="yellow">Yellow</option>
+            <option value="red">Red</option>
+          </select>
+          <button
+            onClick={handleAddEvent}
+            disabled={!statsPlayerId}
+            className="btn-primary text-xs py-1"
+          >
+            Add
+          </button>
+        </div>
+      )}
+
+      {(eventGoals.length > 0 || eventCards.length > 0 || eventAssists.length > 0) && (
+        <div className="flex flex-wrap gap-1 pt-1 border-t border-line">
+          {[...eventGoals, ...eventAssists, ...eventCards].map((event, i) => renderEventBadge(event, i))}
+        </div>
+      )}
     </article>
   );
 }

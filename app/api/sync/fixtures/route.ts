@@ -99,6 +99,53 @@ export async function POST(request: Request) {
       return json({ error: "Unable to sync fixtures." }, { status: 500 });
     }
 
+    const fixtureIds = allMatches.map((m) => m.id);
+
+    const allEvents: any[] = [];
+    for (const round of fixtures) {
+      for (const match of round.matches ?? []) {
+        if (!match.events?.length) continue;
+        const localHomeId = match.homeId ?? match.home_team_id;
+        const localAwayId = match.awayId ?? match.away_team_id;
+        const id = match.id != null ? Math.trunc(Number(match.id)) : undefined;
+        if (id == null) continue;
+        for (const event of match.events) {
+          allEvents.push({
+            match_id: id,
+            player_id: event.playerId,
+            team_id: event.teamId ?? null,
+            event_type: event.type,
+            minute: event.minute ?? null,
+          });
+        }
+      }
+    }
+
+    if (allEvents.length > 0 && fixtureIds.length > 0) {
+      const missingTeamIds = allEvents.filter((e) => !e.team_id).map((e) => e.player_id);
+      if (missingTeamIds.length > 0) {
+        const { data: eventPlayers } = await sb
+          .from("players")
+          .select("id, team_id")
+          .in("id", missingTeamIds);
+        const playerTeamMap = new Map((eventPlayers || []).map((p: any) => [p.id, p.team_id]));
+        for (const event of allEvents) {
+          if (!event.team_id) {
+            event.team_id = playerTeamMap.get(event.player_id) || null;
+          }
+        }
+      }
+
+      const validEvents = allEvents.filter((e) => e.team_id);
+      if (validEvents.length > 0) {
+        await sb.from("match_events").delete().in("match_id", fixtureIds);
+        const { error: eventsError } = await sb.from("match_events").insert(validEvents);
+        if (eventsError) {
+          logApiError("sync_fixtures_events_insert_error", eventsError);
+        }
+      }
+    }
+
     const { data: synced } = await sb.from("fixtures").select("*").order("round").order("date").order("time").order("id");
 
     return json({ success: true, fixtures: synced });

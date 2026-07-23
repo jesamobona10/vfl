@@ -7,7 +7,7 @@ import { useParams } from "next/navigation";
 import { FixtureList } from "@/components/fixtures/fixture-list";
 import { MatchEditor } from "@/components/admin/match-editor";
 import { BulkScoreEntry } from "@/components/fixtures/bulk-score-entry";
-import { RefreshCw, Save, Pencil, Eye, Table2, AlertCircle } from "lucide-react";
+import { RefreshCw, Save, Pencil, Eye, Table2, AlertCircle, Trash2 } from "lucide-react";
 
 interface CompOption {
   id: string;
@@ -27,6 +27,7 @@ export default function OrgFixturesPage() {
   const [viewMode, setViewMode] = useState<"view" | "edit" | "table">("view");
   const [generating, setGenerating] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [resetting, setResetting] = useState(false);
   const [loadingDb, setLoadingDb] = useState(true);
   const [comps, setComps] = useState<CompOption[]>([]);
   const [selectedCompId, setSelectedCompId] = useState<string>("");
@@ -118,6 +119,28 @@ export default function OrgFixturesPage() {
     }
   };
 
+  const handleReset = async () => {
+    if (!window.confirm("Delete all fixtures? This cannot be undone.")) return;
+    setResetting(true);
+    setError("");
+    try {
+      const body: Record<string, string> = {};
+      if (selectedCompId) body.competition_id = selectedCompId;
+      const res = await fetch(`/api/organizations/${slug}/delete-fixtures`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(body),
+      });
+      const data = await res.json();
+      if (data.error) { setError(data.error); return; }
+      setFixtures([]);
+    } catch {
+      setError("Failed to delete fixtures.");
+    } finally {
+      setResetting(false);
+    }
+  };
+
   const hasFixtures = fixtures.length > 0;
 
   return (
@@ -150,25 +173,39 @@ export default function OrgFixturesPage() {
       )}
 
       {isAdmin && hasFixtures && (
-        <div className="flex items-center justify-end gap-2 mb-4">
+        <div className="flex items-center justify-between gap-2 mb-4">
           <button
-            onClick={() => setViewMode("view")}
-            className={`btn-sm flex items-center gap-1.5 ${viewMode === "view" ? "btn-primary" : "btn-ghost"}`}
+            onClick={handleReset}
+            disabled={resetting}
+            className="btn-sm flex items-center gap-1.5 text-danger border border-danger/30 hover:bg-danger/10"
           >
-            <Eye size={14} /> View
+            {resetting ? (
+              <span className="block w-4 h-4 bg-surface-2 rounded animate-pulse" />
+            ) : (
+              <Trash2 size={14} />
+            )}
+            Reset Fixtures
           </button>
-          <button
-            onClick={() => setViewMode("table")}
-            className={`btn-sm flex items-center gap-1.5 ${viewMode === "table" ? "btn-primary" : "btn-ghost"}`}
-          >
-            <Table2 size={14} /> Table
-          </button>
-          <button
-            onClick={() => setViewMode("edit")}
-            className={`btn-sm flex items-center gap-1.5 ${viewMode === "edit" ? "btn-primary" : "btn-ghost"}`}
-          >
-            <Pencil size={14} /> Edit
-          </button>
+          <div className="flex items-center gap-2">
+            <button
+              onClick={() => setViewMode("view")}
+              className={`btn-sm flex items-center gap-1.5 ${viewMode === "view" ? "btn-primary" : "btn-ghost"}`}
+            >
+              <Eye size={14} /> View
+            </button>
+            <button
+              onClick={() => setViewMode("table")}
+              className={`btn-sm flex items-center gap-1.5 ${viewMode === "table" ? "btn-primary" : "btn-ghost"}`}
+            >
+              <Table2 size={14} /> Table
+            </button>
+            <button
+              onClick={() => setViewMode("edit")}
+              className={`btn-sm flex items-center gap-1.5 ${viewMode === "edit" ? "btn-primary" : "btn-ghost"}`}
+            >
+              <Pencil size={14} /> Edit
+            </button>
+          </div>
         </div>
       )}
 
