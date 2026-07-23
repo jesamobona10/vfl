@@ -6,12 +6,14 @@ import { useAppStore } from "@/lib/store";
 import { matchMeta, titleCase } from "@/lib/utils/helpers";
 import { GripVertical, ImageIcon } from "lucide-react";
 import { MatchFlyer } from "@/components/flyers/match-flyer";
+import { TimeInput } from "../shared/time-input";
 
 interface FixtureCardProps {
   match: Match;
   label: string;
   homeTeam: Team | undefined;
   awayTeam: Team | undefined;
+  editable?: boolean;
   onDrop: (matchId: number, targetId: number) => void;
 }
 
@@ -20,12 +22,14 @@ export function FixtureCard({
   label,
   homeTeam,
   awayTeam,
+  editable,
   onDrop,
 }: FixtureCardProps) {
   const [isDragging, setIsDragging] = useState(false);
   const [isDragOver, setIsDragOver] = useState(false);
   const [showFlyer, setShowFlyer] = useState(false);
   const dragData = useRef<{ matchId: number } | null>(null);
+  const updateMatch = useAppStore((s) => s.updateMatch);
 
   const statusColors: Record<string, string> = {
     scheduled: "bg-muted/20 text-muted",
@@ -106,6 +110,20 @@ export function FixtureCard({
           <div className="rounded-full bg-surface-2 px-3 py-1 text-sm font-semibold text-text">
             {match.homeScore}-{match.awayScore}
           </div>
+        ) : editable ? (
+          <div className="flex items-center gap-1.5">
+            <input
+              type="date"
+              value={match.date || ""}
+              onChange={(e) => updateMatch(match.id, "date", e.target.value || null)}
+              className="input text-xs py-1 w-32 text-center"
+              onClick={(e) => e.stopPropagation()}
+            />
+            <TimeInput
+              value={match.time || ""}
+              onChange={(val) => updateMatch(match.id, "time", val)}
+            />
+          </div>
         ) : (
           <div className="rounded-full bg-surface-2 px-3 py-1 text-sm text-muted">
             {match.time || match.date || "TBA"}
@@ -128,7 +146,19 @@ export function FixtureCard({
       </div>
 
       <div className="flex items-center justify-between">
-        <p className="text-xs text-muted truncate">{matchMeta(match)}</p>
+        <div className="flex items-center gap-2 min-w-0">
+          {editable && (
+            <input
+              type="text"
+              value={match.venue || ""}
+              onChange={(e) => updateMatch(match.id, "venue", e.target.value)}
+              className="input text-xs py-1 w-40"
+              placeholder="Venue"
+              onClick={(e) => e.stopPropagation()}
+            />
+          )}
+          {!editable && <p className="text-xs text-muted truncate">{matchMeta(match)}</p>}
+        </div>
         <div className="flex items-center gap-1">
           {showFlyer && (
             <MatchFlyer

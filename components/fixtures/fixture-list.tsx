@@ -55,6 +55,7 @@ export function FixtureList() {
         round={r}
         teamFilter={effectiveTeamFilter}
         statusFilter={statusFilter}
+        editable={showAdminFeatures}
         onDrop={showAdminFeatures ? handleDrop : () => {}}
       />
     ));

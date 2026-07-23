@@ -9,6 +9,7 @@ interface FixtureRoundPanelProps {
   round: FixtureRound;
   teamFilter: string;
   statusFilter: string;
+  editable?: boolean;
   onDrop: (matchId: number, targetId: number) => void;
 }
 
@@ -16,6 +17,7 @@ export function FixtureRoundPanel({
   round,
   teamFilter,
   statusFilter,
+  editable,
   onDrop,
 }: FixtureRoundPanelProps) {
   const teams = useAppStore((s) => s.teams);
@@ -57,6 +59,7 @@ export function FixtureRoundPanel({
             label={`Match ${match.id}`}
             homeTeam={getTeam(match.homeId)}
             awayTeam={getTeam(match.awayId)}
+            editable={editable}
             onDrop={onDrop}
           />
         ))}
