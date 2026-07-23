@@ -217,7 +217,7 @@ export function SearchModal({ isOpen, onClose }: SearchModalProps) {
         if (e.target === e.currentTarget) onClose();
       }}
     >
-      <div className="card bg-white w-full max-w-2xl max-h-[70vh] flex flex-col relative">
+      <div className="card w-full max-w-2xl max-h-[70vh] flex flex-col relative">
         <div className="flex items-center gap-3 p-4 border-b border-line">
           <Search size={20} className="text-muted shrink-0" />
           <input

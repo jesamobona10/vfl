@@ -61,7 +61,7 @@ export function CupMatchModal({
 
   return (
     <div className="fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4">
-      <div className="bg-white border border-line rounded-2xl shadow-2xl w-full max-w-md p-6 space-y-5">
+      <div className="bg-surface border border-line rounded-2xl shadow-2xl w-full max-w-md p-6 space-y-5">
         <div className="flex items-center justify-between">
           <h3 className="text-lg font-bold text-text">Match Result</h3>
           <button onClick={onClose} className="btn-icon">

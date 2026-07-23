@@ -25,7 +25,6 @@ import {
   Save,
   Edit2,
   X,
-  Database,
   Upload,
   KeyRound,
   Eye,
@@ -41,7 +40,7 @@ import { PageSkeleton } from "@/components/shared/skeleton";
 import type { Team, Player } from "@/lib/types";
 import { GeneratePlayerCredentials } from "@/components/players/generate-player-credentials";
 
-type AdminTab = "dashboard" | "orgs" | "teams" | "players" | "competitions" | "fixtures" | "users" | "audit" | "database" | "import";
+type AdminTab = "dashboard" | "orgs" | "teams" | "players" | "competitions" | "fixtures" | "users" | "audit" | "import";
 
 function PlayerManager() {
   const isAdmin = useAppStore((s) => s.isAdmin);
@@ -378,164 +377,6 @@ function FixtureManager() {
   );
 }
 
-function DatabaseManager() {
-  const teams = useAppStore((s) => s.teams);
-  const players = useAppStore((s) => s.players);
-  const fixtures = useAppStore((s) => s.fixtures);
-  const [syncing, setSyncing] = useState<string | null>(null);
-  const [results, setResults] = useState<Record<string, string | null>>({});
-  const [teamIdMap, setTeamIdMap] = useState<Record<string, number> | null>(null);
-
-  const syncTeams = async () => {
-    setSyncing("teams");
-    setResults((r) => ({ ...r, teams: null }));
-    try {
-      const res = await fetch("/api/sync/teams", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ teams }),
-      });
-      const data = await res.json();
-      if (data.error) {
-        setResults((r) => ({ ...r, teams: data.error }));
-      } else {
-        const store = useAppStore.getState();
-        store.setTeams(data.teams);
-
-        const curPlayers = store.players;
-        const remappedPlayers = curPlayers.map((p) => ({
-          ...p,
-          teamId: data.idMap[p.teamId] ?? p.teamId,
-        }));
-        store.setPlayers(remappedPlayers);
-
-        const curFixtures = store.fixtures;
-        const remappedFixtures = curFixtures.map((r) => ({
-          ...r,
-          matches: r.matches.map((m) => ({
-            ...m,
-            homeId: data.idMap[m.homeId] ?? m.homeId,
-            awayId: data.idMap[m.awayId] ?? m.awayId,
-          })),
-        }));
-        store.setFixtures(remappedFixtures);
-
-        setTeamIdMap(data.idMap);
-        setResults((r) => ({ ...r, teams: `Synced ${data.teams?.length || 0} teams.` }));
-      }
-    } catch {
-      setResults((r) => ({ ...r, teams: "Sync failed." }));
-    } finally {
-      setSyncing(null);
-    }
-  };
-
-  const syncPlayers = async () => {
-    setSyncing("players");
-    setResults((r) => ({ ...r, players: null }));
-    try {
-      const res = await fetch("/api/sync/players", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ players, teamIdMap }),
-      });
-      const data = await res.json();
-      if (data.error) {
-        setResults((r) => ({ ...r, players: data.error }));
-      } else {
-        setResults((r) => ({ ...r, players: `Synced ${data.players?.length || 0} players.` }));
-      }
-    } catch {
-      setResults((r) => ({ ...r, players: "Sync failed." }));
-    } finally {
-      setSyncing(null);
-    }
-  };
-
-  const syncFixtures = async () => {
-    setSyncing("fixtures");
-    setResults((r) => ({ ...r, fixtures: null }));
-    try {
-      const res = await fetch("/api/sync/fixtures", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ fixtures, teamIdMap }),
-      });
-      const data = await res.json();
-      if (data.error) {
-        setResults((r) => ({ ...r, fixtures: data.error }));
-      } else {
-        setResults((r) => ({ ...r, fixtures: `Synced ${data.fixtures?.length || 0} matches.` }));
-      }
-    } catch {
-      setResults((r) => ({ ...r, fixtures: "Sync failed." }));
-    } finally {
-      setSyncing(null);
-    }
-  };
-
-  return (
-    <div className="space-y-6">
-      <div>
-        <h3 className="text-lg font-bold mb-1">Sync to Database</h3>
-        <p className="text-sm text-muted mb-4">
-          Upload your current in-app data to the Supabase database.
-        </p>
-      </div>
-
-      <div className="grid gap-4">
-        <div className="card p-4 flex items-center justify-between">
-          <div>
-            <h4 className="font-semibold">Teams</h4>
-            <p className="text-xs text-muted">{teams.length} teams ready</p>
-            {results.teams && (
-              <p className={`text-xs mt-1 ${results.teams.startsWith("Synced") ? "text-brand" : "text-danger"}`}>
-                {results.teams}
-              </p>
-            )}
-          </div>
-          <button onClick={syncTeams} disabled={syncing !== null} className="btn-primary text-sm">
-            {syncing === "teams" ? <span className="block w-4 h-4 bg-surface-2 rounded animate-pulse" /> : <Upload size={14} />}
-            {syncing === "teams" ? " Syncing..." : " Sync"}
-          </button>
-        </div>
-
-        <div className="card p-4 flex items-center justify-between">
-          <div>
-            <h4 className="font-semibold">Players</h4>
-            <p className="text-xs text-muted">{players.length} players ready</p>
-            {results.players && (
-              <p className={`text-xs mt-1 ${results.players.startsWith("Synced") ? "text-brand" : "text-danger"}`}>
-                {results.players}
-              </p>
-            )}
-          </div>
-          <button onClick={syncPlayers} disabled={syncing !== null} className="btn-primary text-sm">
-            {syncing === "players" ? <span className="block w-4 h-4 bg-surface-2 rounded animate-pulse" /> : <Upload size={14} />}
-            {syncing === "players" ? " Syncing..." : " Sync"}
-          </button>
-        </div>
-
-        <div className="card p-4 flex items-center justify-between">
-          <div>
-            <h4 className="font-semibold">Fixtures</h4>
-            <p className="text-xs text-muted">{fixtures.length} rounds ready</p>
-            {results.fixtures && (
-              <p className={`text-xs mt-1 ${results.fixtures.startsWith("Synced") ? "text-brand" : "text-danger"}`}>
-                {results.fixtures}
-              </p>
-            )}
-          </div>
-          <button onClick={syncFixtures} disabled={syncing !== null} className="btn-primary text-sm">
-            {syncing === "fixtures" ? <span className="block w-4 h-4 bg-surface-2 rounded animate-pulse" /> : <Upload size={14} />}
-            {syncing === "fixtures" ? " Syncing..." : " Sync"}
-          </button>
-        </div>
-      </div>
-    </div>
-  );
-}
-
 interface TeamAccountRow {
   id: string;
   username: string;
@@ -792,7 +633,6 @@ export function AdminPanel() {
     { key: "fixtures", label: "Fixtures", icon: Calendar },
     { key: "users", label: "Users", icon: KeyRound },
     { key: "audit", label: "Audit", icon: ScrollText },
-    { key: "database", label: "Database", icon: Database },
     { key: "import", label: "Import", icon: FileDown },
   ];
 
@@ -829,7 +669,6 @@ export function AdminPanel() {
       {tab === "fixtures" && <FixtureManager />}
       {tab === "users" && <UsersManager />}
       {tab === "audit" && <AuditViewer />}
-      {tab === "database" && <DatabaseManager />}
       {tab === "import" && <DataImporter />}
     </div>
   );

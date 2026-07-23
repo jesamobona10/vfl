@@ -206,7 +206,7 @@ export function TeamCard({ team, index, isManaged, showAdmin, onDelete }: TeamCa
 
       {showDetails && (
         <div className="fixed inset-0 bg-black/40 z-50 flex items-center justify-center p-4">
-          <div className="bg-white w-full max-w-2xl rounded-xl shadow-xl overflow-hidden">
+          <div className="bg-surface w-full max-w-2xl rounded-xl shadow-xl overflow-hidden">
             <div className="px-6 py-4 border-b border-line flex items-center justify-between">
               <div>
                 <h3 className="text-lg font-semibold">{team.name} Overview</h3>
@@ -314,7 +314,7 @@ export function TeamCard({ team, index, isManaged, showAdmin, onDelete }: TeamCa
                                           const initials = player ? player.name.split(" ").map(n => n[0]).slice(0,2).join("") : (slot ? slot.label.split(" ").map(n=>n[0]).slice(0,2).join("") : "");
                                           return (
                                             <div key={slot ? slot.slotId : `empty-${roleLabel}-${idx}`} className="flex flex-col items-center text-center">
-                                              <div className="w-12 h-12 rounded-full bg-white/90 flex items-center justify-center text-xs font-semibold text-text ring-1 ring-white/40">
+                                              <div className="w-12 h-12 rounded-full bg-surface/90 flex items-center justify-center text-xs font-semibold text-text ring-1 ring-line">
                                                 <div>
                                                   <div className="text-sm">{player ? player.number : ""}</div>
                                                   <div className="text-[11px]">{initials}</div>
@@ -343,7 +343,7 @@ export function TeamCard({ team, index, isManaged, showAdmin, onDelete }: TeamCa
                                             const initials = p ? p.name.split(" ").map(n => n[0]).slice(0,2).join("") : gkSlots[0].label.split(" ").map(n=>n[0]).slice(0,2).join("");
                                             return (
                                               <div className="flex flex-col items-center">
-                                                <div className="w-14 h-14 rounded-full bg-white/90 flex items-center justify-center text-sm font-semibold text-text ring-1 ring-white/40">
+                                                <div className="w-14 h-14 rounded-full bg-surface/90 flex items-center justify-center text-sm font-semibold text-text ring-1 ring-line">
                                                   <div>
                                                     <div className="text-sm">{p ? p.number : ""}</div>
                                                     <div className="text-[11px]">{initials}</div>
