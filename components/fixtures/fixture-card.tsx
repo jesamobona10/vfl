@@ -203,7 +203,30 @@ export function FixtureCard({
             {match.homeScore}-{match.awayScore}
           </div>
         ) : editable ? (
-          <div className="flex items-center gap-1.5">
+          <div className="flex items-center gap-2 flex-wrap">
+            <div className="flex items-center gap-1">
+              <input
+                type="number"
+                min={0}
+                max={99}
+                value={match.homeScore ?? ""}
+                onChange={(e) => updateMatch(match.id, "homeScore", e.target.value)}
+                className="input text-sm py-1 w-12 text-center font-bold"
+                placeholder="H"
+                onClick={(e) => e.stopPropagation()}
+              />
+              <span className="text-muted font-bold">-</span>
+              <input
+                type="number"
+                min={0}
+                max={99}
+                value={match.awayScore ?? ""}
+                onChange={(e) => updateMatch(match.id, "awayScore", e.target.value)}
+                className="input text-sm py-1 w-12 text-center font-bold"
+                placeholder="A"
+                onClick={(e) => e.stopPropagation()}
+              />
+            </div>
             <input
               type="date"
               value={match.date || ""}

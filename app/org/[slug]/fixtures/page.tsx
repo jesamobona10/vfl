@@ -1,13 +1,13 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useAppStore } from "@/lib/store";
 import { useOrg } from "@/lib/hooks/use-org";
 import { useParams } from "next/navigation";
 import { FixtureList } from "@/components/fixtures/fixture-list";
 import { MatchEditor } from "@/components/admin/match-editor";
 import { BulkScoreEntry } from "@/components/fixtures/bulk-score-entry";
-import { RefreshCw, Save, Pencil, Eye, Table2, AlertCircle, Trash2, Lock } from "lucide-react";
+import { RefreshCw, Pencil, Eye, Table2, AlertCircle, Trash2, Lock } from "lucide-react";
 
 interface CompOption {
   id: string;
@@ -23,15 +23,18 @@ export default function OrgFixturesPage() {
   const fixtures = useAppStore((s) => s.fixtures);
   const setFixtures = useAppStore((s) => s.setFixtures);
   const isAdmin = useAppStore((s) => s.isAdmin);
+  const userProfile = useAppStore((s) => s.userProfile);
+  const isOrgAdmin = isAdmin || userProfile?.role === "org_admin";
 
   const [viewMode, setViewMode] = useState<"view" | "edit" | "table">("view");
   const [generating, setGenerating] = useState(false);
-  const [saving, setSaving] = useState(false);
   const [resetting, setResetting] = useState(false);
   const [loadingDb, setLoadingDb] = useState(true);
   const [comps, setComps] = useState<CompOption[]>([]);
   const [selectedCompId, setSelectedCompId] = useState<string>("");
   const [error, setError] = useState("");
+  const autoSaveTimer = useRef<ReturnType<typeof setTimeout>>();
+  const prevFixturesRef = useRef("");
 
   useEffect(() => {
     if (!currentOrg?.id) return;
@@ -52,19 +55,64 @@ export default function OrgFixturesPage() {
       .then((d) => {
         if (d.fixtures?.length) {
           setFixtures(d.fixtures);
+          prevFixturesRef.current = JSON.stringify(d.fixtures);
         }
       })
       .catch(() => {})
       .finally(() => setLoadingDb(false));
   }, [currentOrg?.id]);
 
+  useEffect(() => {
+    if (!fixtures.length || !currentOrg?.id) return;
+    const serialized = JSON.stringify(fixtures);
+    if (serialized === prevFixturesRef.current) return;
+    prevFixturesRef.current = serialized;
+
+    if (autoSaveTimer.current) clearTimeout(autoSaveTimer.current);
+    autoSaveTimer.current = setTimeout(async () => {
+      try {
+        await fetch("/api/sync/fixtures", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ fixtures }),
+        });
+      } catch {
+        // silent
+      }
+    }, 1500);
+    return () => { if (autoSaveTimer.current) clearTimeout(autoSaveTimer.current); };
+  }, [fixtures]);
+
   const handleGenerate = async () => {
     if (teams.length < 2) return;
     setGenerating(true);
     setError("");
     try {
+      let seasonId: string | null = null;
+      if (selectedCompId) {
+        const seasonsRes = await fetch(`/api/competitions/${selectedCompId}/seasons`);
+        const seasonsData = await seasonsRes.json();
+        const existingSeasons: { id: string; is_current: boolean; status: string; name: string }[] = seasonsData.seasons || [];
+        const current = existingSeasons.find((s) => s.is_current) || existingSeasons.find((s) => s.status === "active") || existingSeasons[0];
+        if (current) {
+          seasonId = current.id;
+        } else {
+          const createRes = await fetch(`/api/competitions/${selectedCompId}/seasons`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              name: new Date().getFullYear() + " Season",
+              status: "active",
+              is_current: true,
+            }),
+          });
+          const createData = await createRes.json();
+          seasonId = createData.season?.id || null;
+        }
+      }
       const body: Record<string, string> = {};
       if (selectedCompId) body.competition_id = selectedCompId;
+      if (seasonId) body.season_id = seasonId;
       const res = await fetch(`/api/organizations/${slug}/generate-fixtures`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -90,35 +138,6 @@ export default function OrgFixturesPage() {
     }
   };
 
-  const handleSaveToDb = async () => {
-    setSaving(true);
-    setError("");
-    try {
-      const res = await fetch("/api/sync/fixtures", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ fixtures }),
-      });
-      const data = await res.json();
-      if (data.error) { setError(data.error); return; }
-
-      const params = selectedCompId
-        ? `?competition_id=${selectedCompId}`
-        : "";
-      const fres = await fetch(
-        `/api/organizations/${slug}/fixtures${params}`
-      );
-      const fd = await fres.json();
-      if (fd.fixtures?.length) {
-        setFixtures(fd.fixtures);
-      }
-    } catch {
-      setError("Failed to save fixtures.");
-    } finally {
-      setSaving(false);
-    }
-  };
-
   const handleReset = async () => {
     if (!window.confirm("Delete all fixtures? This cannot be undone.")) return;
     setResetting(true);
@@ -134,6 +153,7 @@ export default function OrgFixturesPage() {
       const data = await res.json();
       if (data.error) { setError(data.error); return; }
       setFixtures([]);
+      prevFixturesRef.current = "";
     } catch {
       setError("Failed to delete fixtures.");
     } finally {
@@ -210,41 +230,9 @@ export default function OrgFixturesPage() {
       )}
 
       {viewMode === "edit" && isAdmin ? (
-        <>
-          <MatchEditor />
-          <div className="mt-4 flex justify-center">
-            <button
-              onClick={handleSaveToDb}
-              disabled={saving}
-              className="btn-primary"
-            >
-              {saving ? (
-                <span className="block w-4 h-4 bg-surface-2 rounded animate-pulse" />
-              ) : (
-                <Save size={16} />
-              )}
-              Save to Database
-            </button>
-          </div>
-        </>
+        <MatchEditor />
       ) : viewMode === "table" && isAdmin ? (
-        <>
-          <BulkScoreEntry />
-          <div className="mt-4 flex justify-center">
-            <button
-              onClick={handleSaveToDb}
-              disabled={saving}
-              className="btn-primary"
-            >
-              {saving ? (
-                <span className="block w-4 h-4 bg-surface-2 rounded animate-pulse" />
-              ) : (
-                <Save size={16} />
-              )}
-              Save to Database
-            </button>
-          </div>
-        </>
+        <BulkScoreEntry />
       ) : (
         <>
           <FixtureList />
