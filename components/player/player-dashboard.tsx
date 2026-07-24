@@ -12,6 +12,7 @@ import { PlayerBadges } from "./player-badges";
 import { PlayerLeaderboards } from "./player-leaderboards";
 import { AlertCircle } from "lucide-react";
 import { DashboardSkeleton } from "@/components/shared/skeleton";
+import { CalendarView } from "@/components/calendar/calendar-view";
 
 interface UpcomingMatch {
   id: number;
@@ -121,6 +122,8 @@ export function PlayerDashboard() {
             </div>
           )}
         </div>
+
+        <CalendarView />
       </div>
 
       <PlayerPerformanceChart

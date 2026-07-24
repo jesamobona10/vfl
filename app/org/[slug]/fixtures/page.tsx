@@ -7,7 +7,7 @@ import { useParams } from "next/navigation";
 import { FixtureList } from "@/components/fixtures/fixture-list";
 import { MatchEditor } from "@/components/admin/match-editor";
 import { BulkScoreEntry } from "@/components/fixtures/bulk-score-entry";
-import { RefreshCw, Save, Pencil, Eye, Table2, AlertCircle, Trash2 } from "lucide-react";
+import { RefreshCw, Save, Pencil, Eye, Table2, AlertCircle, Trash2, Lock } from "lucide-react";
 
 interface CompOption {
   id: string;
@@ -248,24 +248,38 @@ export default function OrgFixturesPage() {
       ) : (
         <>
           <FixtureList />
-          {!hasFixtures && !loadingDb && (
+          {!loadingDb && (
             <div className="mt-4 text-center">
-              <button
-                onClick={handleGenerate}
-                disabled={generating || teams.length < 2}
-                className="btn-primary"
-              >
-                {generating ? (
-                  <span className="block w-4 h-4 bg-surface-2 rounded animate-pulse" />
-                ) : (
-                  <RefreshCw size={16} />
-                )}
-                Generate Fixtures
-              </button>
-              {teams.length < 2 && (
-                <p className="text-sm text-muted mt-2">
-                  Need at least 2 teams to generate fixtures.
-                </p>
+              {hasFixtures ? (
+                <div className="space-y-2">
+                  <button disabled className="btn-primary opacity-50 cursor-not-allowed">
+                    <Lock size={16} />
+                    Fixtures Generated
+                  </button>
+                  <p className="text-sm text-muted">
+                    Fixtures are saved and locked. Reset to regenerate.
+                  </p>
+                </div>
+              ) : (
+                <>
+                  <button
+                    onClick={handleGenerate}
+                    disabled={generating || teams.length < 2}
+                    className="btn-primary"
+                  >
+                    {generating ? (
+                      <span className="block w-4 h-4 bg-surface-2 rounded animate-pulse" />
+                    ) : (
+                      <RefreshCw size={16} />
+                    )}
+                    Generate Fixtures
+                  </button>
+                  {teams.length < 2 && (
+                    <p className="text-sm text-muted mt-2">
+                      Need at least 2 teams to generate fixtures.
+                    </p>
+                  )}
+                </>
               )}
             </div>
           )}

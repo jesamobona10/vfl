@@ -9,6 +9,7 @@ import { MetricCards } from "@/components/dashboard/metric-cards";
 import { LeagueStats } from "@/components/dashboard/league-stats";
 import { UpcomingMatches } from "@/components/dashboard/upcoming-matches";
 import { TopFiveStandings } from "@/components/dashboard/top-five-standings";
+import { CalendarView } from "@/components/calendar/calendar-view";
 import { PlayerDashboard } from "@/components/player/player-dashboard";
 import { Shield, RefreshCw, Trophy, Swords, Users, Plus, ArrowRight, Upload } from "lucide-react";
 import { DashboardSkeleton } from "@/components/shared/skeleton";
@@ -167,6 +168,8 @@ export default function OrgDashboardPage() {
       )}
 
       <div className="space-y-6">
+        <CalendarView orgId={currentOrg?.id} />
+
         <div className="card p-5">
           <div className="flex items-center justify-between mb-3">
             <h2 className="text-lg font-bold">Competitions</h2>

@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { Building2, Users, UserCog, Calendar, Trophy, Swords } from "lucide-react";
 import { DashboardSkeleton } from "@/components/shared/skeleton";
+import { CalendarView } from "@/components/calendar/calendar-view";
 
 interface Stats {
   organizations: number;
@@ -62,6 +63,10 @@ export function DashboardOverview() {
             </div>
           );
         })}
+      </div>
+
+      <div className="mt-6">
+        <CalendarView />
       </div>
     </div>
   );
