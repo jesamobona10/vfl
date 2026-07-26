@@ -50,6 +50,50 @@ export async function POST(
       // body is optional, proceed without season_id
     }
 
+    // Resolve season: use explicit season_id, or find/create active season
+    if (seasonId) {
+      const { data: season } = await sb
+        .from("seasons")
+        .select("id")
+        .eq("id", seasonId)
+        .eq("competition_id", params.id)
+        .single();
+      if (!season) {
+        return json({ error: "Specified season does not exist for this competition." }, { status: 400 });
+      }
+    } else {
+      const { data: existingSeason } = await sb
+        .from("seasons")
+        .select("id")
+        .eq("competition_id", params.id)
+        .or("is_current.eq.true,status.eq.active")
+        .order("is_current", { ascending: false })
+        .order("created_at", { ascending: false })
+        .limit(1)
+        .maybeSingle();
+
+      if (existingSeason) {
+        seasonId = existingSeason.id;
+      } else {
+        const year = new Date().getFullYear();
+        const { data: newSeason } = await sb
+          .from("seasons")
+          .insert({
+            competition_id: params.id,
+            name: `${year}/${year + 1} Season`,
+            status: "active",
+            is_current: true,
+          })
+          .select("id")
+          .single();
+
+        if (!newSeason) {
+          return json({ error: "Failed to create season for this competition." }, { status: 500 });
+        }
+        seasonId = newSeason.id;
+      }
+    }
+
     const { data: dbTeams } = await sb
       .from("teams")
       .select("*")
