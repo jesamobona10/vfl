@@ -10,6 +10,7 @@ DECLARE
   v_org_id UUID;
   v_fixture_count INT;
   v_team_ids INT[];
+  rec RECORD;
 BEGIN
   -- 1. LOOK UP THE ORG
   SELECT id INTO v_org_id FROM organizations WHERE slug = v_org_slug;
@@ -28,7 +29,7 @@ BEGIN
     RETURN;
   END IF;
 
-  -- 3. VIEW FIXTURES (summary)
+  -- 3. VIEW FIXTURES
   RAISE NOTICE '====================================================';
   RAISE NOTICE 'FIXTURES FOR ORG: %', v_org_slug;
   RAISE NOTICE '====================================================';
@@ -42,7 +43,7 @@ BEGIN
       f.home_score,
       f.away_score,
       f.status,
-      f.date,
+      f.date::TEXT,
       f.competition_id
     FROM fixtures f
     JOIN teams ht ON ht.id = f.home_team_id
