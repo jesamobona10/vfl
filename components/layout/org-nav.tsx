@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { LayoutDashboard, Calendar, Trophy, Users, Shield, UserCog, Swords } from "lucide-react";
+import { LayoutDashboard, Trophy, Users, Shield, UserCog, Swords } from "lucide-react";
 
 interface OrgTab {
   href: string;
@@ -13,7 +13,6 @@ interface OrgTab {
 const tabs: OrgTab[] = [
   { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
   { href: "/competitions", label: "Competitions", icon: Swords },
-  { href: "/fixtures", label: "Fixtures", icon: Calendar },
   { href: "/standings", label: "Standings", icon: Trophy },
   { href: "/players", label: "Players", icon: Users },
   { href: "/teams", label: "Teams", icon: Shield },
