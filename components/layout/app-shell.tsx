@@ -14,9 +14,10 @@ async function refreshOrgData(orgId?: string) {
   const store = useAppStore.getState();
   try {
     const params = orgId ? `?org_id=${orgId}` : "";
-    const [teamsRes, playersRes] = await Promise.all([
+    const [teamsRes, playersRes, fixturesRes] = await Promise.all([
       fetch(`/api/teams${params}`),
       fetch(`/api/players${params}`),
+      fetch(`/api/fixtures${params}`),
     ]);
     if (teamsRes.ok) {
       const data = await teamsRes.json();
@@ -25,6 +26,10 @@ async function refreshOrgData(orgId?: string) {
     if (playersRes.ok) {
       const data = await playersRes.json();
       store.setPlayers(data.players || []);
+    }
+    if (fixturesRes.ok) {
+      const data = await fixturesRes.json();
+      store.setFixtures(data.fixtures || []);
     }
     store.setTeamDataLoaded(true);
   } catch {

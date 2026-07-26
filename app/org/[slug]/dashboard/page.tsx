@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import { useAppStore } from "@/lib/store";
 import { useOrg } from "@/lib/hooks/use-org";
@@ -34,6 +34,33 @@ export default function OrgDashboardPage() {
   const [orgLogoUploading, setOrgLogoUploading] = useState(false);
   const [orgLogoUrl, setOrgLogoUrl] = useState<string | null>(null);
   const orgLogoInputRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    if (!currentOrg?.id) return;
+    const store = useAppStore.getState();
+    const params = `?org_id=${currentOrg.id}`;
+    Promise.all([
+      fetch(`/api/teams${params}`),
+      fetch(`/api/players${params}`),
+      fetch(`/api/fixtures${params}`),
+    ]).then(async ([teamsRes, playersRes, fixturesRes]) => {
+      if (teamsRes.ok) {
+        const data = await teamsRes.json();
+        store.setTeams(data.teams || []);
+      }
+      if (playersRes.ok) {
+        const data = await playersRes.json();
+        store.setPlayers(data.players || []);
+      }
+      if (fixturesRes.ok) {
+        const data = await fixturesRes.json();
+        store.setFixtures(data.fixtures || []);
+      }
+      store.setTeamDataLoaded(true);
+    }).catch(() => {
+      store.setTeamDataLoaded(true);
+    });
+  }, [slug, currentOrg?.id]);
 
   const handleOrgLogoUpload = async (file: File) => {
     if (!file.type.startsWith("image/")) { alert("Please select an image file."); return; }
