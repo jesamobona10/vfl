@@ -55,6 +55,18 @@ export async function GET(
 
     if (competitionId) {
       query = query.eq("competition_id", competitionId);
+    } else if (seasonId) {
+      // When querying by season without competition, scope to org's competitions
+      const { data: orgComps } = await sb
+        .from("competitions")
+        .select("id")
+        .eq("organization_id", org.id);
+      const compIds = (orgComps || []).map((c) => c.id);
+      if (compIds.length > 0) {
+        query = query.in("competition_id", compIds).eq("season_id", seasonId);
+      } else {
+        return json({ fixtures: [] });
+      }
     } else {
       const teamIds = teams.map((t) => t.id);
       if (teamIds.length > 0) {
@@ -92,6 +104,8 @@ export async function GET(
         time: m.time || "",
         venue: m.venue || "",
         events: [],
+        competition_id: m.competition_id || null,
+        season_id: m.season_id || null,
       };
       if (!grouped.has(m.round)) grouped.set(m.round, []);
       grouped.get(m.round)!.push(match);

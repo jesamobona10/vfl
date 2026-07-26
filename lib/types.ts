@@ -56,6 +56,8 @@ export interface Match {
   events: MatchEvent[];
   manualEdited?: boolean;
   autoAdjusted?: boolean;
+  competition_id?: string | null;
+  season_id?: string | null;
 }
 
 export interface FixtureRound {

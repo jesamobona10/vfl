@@ -81,6 +81,8 @@ export async function POST(request: Request) {
           date: match.date || null,
           time: match.time || null,
           venue: venue ? sanitizeText(venue) : null,
+          competition_id: match.competition_id || match.competitionId || null,
+          season_id: match.season_id || match.seasonId || null,
         });
       }
     }

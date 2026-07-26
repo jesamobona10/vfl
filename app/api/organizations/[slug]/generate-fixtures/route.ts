@@ -40,9 +40,60 @@ export async function POST(
     try {
       const body = await request.json();
       competitionId = body.competition_id || null;
+      // Allow explicit season_id from client
       seasonId = body.season_id || null;
     } catch {
       // body is optional
+    }
+
+    if (!competitionId) {
+      return json({ error: "competition_id is required." }, { status: 400 });
+    }
+
+    // Resolve season: use explicit season_id, or find/create active season for this competition
+    if (seasonId) {
+      const { data: season } = await sb
+        .from("seasons")
+        .select("id")
+        .eq("id", seasonId)
+        .eq("competition_id", competitionId)
+        .single();
+      if (!season) {
+        return json({ error: "Specified season does not exist for this competition." }, { status: 400 });
+      }
+    } else {
+      // Find active season for this competition
+      const { data: existingSeason } = await sb
+        .from("seasons")
+        .select("id")
+        .eq("competition_id", competitionId)
+        .or("is_current.eq.true,status.eq.active")
+        .order("is_current", { ascending: false })
+        .order("created_at", { ascending: false })
+        .limit(1)
+        .single();
+
+      if (existingSeason) {
+        seasonId = existingSeason.id;
+      } else {
+        // Auto-create a season
+        const year = new Date().getFullYear();
+        const { data: newSeason } = await sb
+          .from("seasons")
+          .insert({
+            competition_id: competitionId,
+            name: `${year}/${year + 1} Season`,
+            status: "active",
+            is_current: true,
+          })
+          .select("id")
+          .single();
+
+        if (!newSeason) {
+          return json({ error: "Failed to create season for this competition." }, { status: 500 });
+        }
+        seasonId = newSeason.id;
+      }
     }
 
     const { data: dbTeams } = await sb
@@ -97,6 +148,7 @@ export async function POST(
       success: true,
       roundsCount: rounds.length,
       matchesCount: fixtureInserts.length,
+      season_id: seasonId,
     });
   } catch (error) {
     logApiError("org_generate_fixtures_error", error);

@@ -34,9 +34,11 @@ export async function POST(
     }
 
     let competitionId: string | null = null;
+    let seasonId: string | null = null;
     try {
       const body = await request.json();
       competitionId = body.competition_id || null;
+      seasonId = body.season_id || null;
     } catch {
       // body is optional
     }
@@ -59,6 +61,10 @@ export async function POST(
     } else {
       const conditions = teamIds.map((id) => `home_team_id.eq.${id},away_team_id.eq.${id}`).join(",");
       query = query.or(conditions);
+    }
+
+    if (seasonId) {
+      query = query.eq("season_id", seasonId);
     }
 
     const { data: deleted, error } = await query.select("id");
