@@ -2,9 +2,12 @@ import { createClient } from "@/lib/supabase/server";
 import {
   asInteger,
   getAuthContext,
+  getClientIp,
   json,
   logApiError,
   parseJsonObject,
+  rateLimit,
+  rateLimitResponse,
   requireAuth,
 } from "@/lib/security";
 
@@ -71,6 +74,9 @@ export async function GET() {
 
 export async function PATCH(request: Request) {
   try {
+    const ip = getClientIp(request);
+    const limited = rateLimit({ key: `notifications_mark_read:${ip}`, limit: 30, windowMs: 60_000 });
+    if (limited.limited) return rateLimitResponse(limited.resetAt);
     const supabase = await createClient();
     const auth = await getAuthContext(supabase);
     const authError = requireAuth(auth);

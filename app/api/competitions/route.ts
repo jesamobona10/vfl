@@ -116,6 +116,14 @@ export async function POST(request: Request) {
       return json({ error: "Failed to create competition." }, { status: 500 });
     }
 
+    logSecurityEvent("competition_created", {
+      ip,
+      userId: authed.userId,
+      orgId: organization_id,
+      competitionId: competition.id,
+      name,
+    });
+
     return json({ competition });
   } catch (error) {
     logApiError("competition_create_error", error);

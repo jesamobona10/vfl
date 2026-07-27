@@ -108,6 +108,16 @@ export function logSecurityEvent(
       ...details,
     })
   );
+
+  // Persist to auth_audit_logs (fire-and-forget — never block on audit)
+  const userId = details.userId || details.forgottenUserId;
+  if (typeof userId === "string") {
+    const orgId =
+      (details.orgId || details.organization_id) as string | undefined;
+    void writeAuditEvent(event, userId, orgId, details).catch(() => {
+      /* swallow */
+    });
+  }
 }
 
 export function logApiError(

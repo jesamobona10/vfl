@@ -3,10 +3,13 @@ import { createServiceRoleClient } from "@/lib/supabase/service-role";
 import {
   asString,
   getAuthContext,
+  getClientIp,
   json,
   logApiError,
   logSecurityEvent,
   parseJsonObject,
+  rateLimit,
+  rateLimitResponse,
   requireOrgAdmin,
 } from "@/lib/security";
 
@@ -46,6 +49,9 @@ export async function PUT(
   { params }: { params: { id: string } }
 ) {
   try {
+    const ip = getClientIp(request);
+    const limited = rateLimit({ key: `season_update:${ip}`, limit: 15, windowMs: 60_000 });
+    if (limited.limited) return rateLimitResponse(limited.resetAt);
     const supabase = await createClient();
     const auth = await getAuthContext(supabase);
 

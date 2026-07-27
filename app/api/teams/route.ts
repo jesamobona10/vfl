@@ -75,6 +75,13 @@ export async function POST(request: Request) {
       }
       return json({ error: "Unable to create team." }, { status: 400 });
     }
+    logSecurityEvent("team_created", {
+      ip,
+      userId: auth!.userId,
+      orgId: organization_id,
+      teamId: data.id,
+      teamName: name,
+    });
     return json({ team: data });
   } catch (error) {
     logApiError("team_create_error", error);

@@ -1,6 +1,6 @@
 import { createClient } from "@/lib/supabase/server";
 import { createServiceRoleClient } from "@/lib/supabase/service-role";
-import { getAuthContext, getClientIp, json, logApiError, logSecurityEvent, parseJsonObject, rateLimit, rateLimitResponse, requireAdmin, sanitizeText } from "@/lib/security";
+import { asInteger, getAuthContext, getClientIp, json, logApiError, logSecurityEvent, parseJsonObject, rateLimit, rateLimitResponse, requireAdmin, sanitizeText } from "@/lib/security";
 
 export const dynamic = "force-dynamic";
 
@@ -33,8 +33,8 @@ export async function PUT(request: Request, { params }: { params: { id: string }
       update.name = name;
     }
     if (parsed.data!.rating !== undefined) {
-      const rating = Number(parsed.data!.rating);
-      if (isNaN(rating) || rating < 0 || rating > 10) return json({ error: "Rating must be 0-10." }, { status: 400 });
+      const rating = asInteger(parsed.data!.rating, 0, 10);
+      if (rating === null) return json({ error: "Rating must be 0-10." }, { status: 400 });
       update.rating = rating;
     }
     if (parsed.data!.logo_url !== undefined) update.logo_url = parsed.data!.logo_url;

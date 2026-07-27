@@ -131,6 +131,13 @@ export async function PUT(
       return json({ error: "Failed to update competition." }, { status: 500 });
     }
 
+    logSecurityEvent("competition_updated", {
+      ip: getClientIp(request),
+      userId: auth.userId,
+      orgId: competition.organization_id,
+      competitionId: params.id,
+    });
+
     return json({ competition: updated });
   } catch (error) {
     logApiError("competition_update_error", error);

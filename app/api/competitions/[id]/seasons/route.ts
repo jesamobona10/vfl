@@ -3,10 +3,13 @@ import { createServiceRoleClient } from "@/lib/supabase/service-role";
 import {
   asString,
   getAuthContext,
+  getClientIp,
   json,
   logApiError,
   logSecurityEvent,
   parseJsonObject,
+  rateLimit,
+  rateLimitResponse,
   requireOrgAdmin,
   requireOrgMember,
 } from "@/lib/security";
@@ -58,6 +61,9 @@ export async function POST(
   { params }: { params: { id: string } }
 ) {
   try {
+    const ip = getClientIp(request);
+    const limited = rateLimit({ key: `season_create:${ip}`, limit: 10, windowMs: 60_000 });
+    if (limited.limited) return rateLimitResponse(limited.resetAt);
     const supabase = await createClient();
     const auth = await getAuthContext(supabase);
 
@@ -100,6 +106,14 @@ export async function POST(
       logApiError("season_create_error", error);
       return json({ error: "Failed to create season." }, { status: 500 });
     }
+
+    logSecurityEvent("season_created", {
+      userId: auth!.userId,
+      orgId: competition.organization_id,
+      competitionId: params.id,
+      seasonId: season.id,
+      name,
+    });
 
     return json({ season });
   } catch (error) {

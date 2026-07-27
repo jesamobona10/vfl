@@ -5,9 +5,13 @@ import {
   asOptionalString,
   asString,
   getAuthContext,
+  getClientIp,
   json,
   logApiError,
+  logSecurityEvent,
   parseJsonObject,
+  rateLimit,
+  rateLimitResponse,
   requireAdmin,
   requireOrgAdmin,
   sanitizeText,
@@ -20,6 +24,9 @@ export async function PUT(
   { params }: { params: { id: string } }
 ) {
   try {
+    const ip = getClientIp(request);
+    const limited = rateLimit({ key: `team_update:${ip}`, limit: 20, windowMs: 60_000 });
+    if (limited.limited) return rateLimitResponse(limited.resetAt);
     const supabase = await createClient();
     const auth = await getAuthContext(supabase);
     const adminError = requireAdmin(auth);
@@ -73,6 +80,12 @@ export async function PUT(
       logApiError('team_update_failed', error, { userId: authed.userId, teamId });
       return json({ error: 'Unable to update team.' }, { status: 400 });
     }
+    logSecurityEvent("team_updated", {
+      ip: getClientIp(request),
+      userId: authed.userId,
+      orgId: team.organization_id,
+      teamId,
+    });
     return json({ team: data });
   } catch (error) {
     logApiError('team_update_error', error);
@@ -81,10 +94,13 @@ export async function PUT(
 }
 
 export async function DELETE(
-  _request: Request,
+  request: Request,
   { params }: { params: { id: string } }
 ) {
   try {
+    const ip = getClientIp(request);
+    const limited = rateLimit({ key: `team_delete:${ip}`, limit: 10, windowMs: 60_000 });
+    if (limited.limited) return rateLimitResponse(limited.resetAt);
     const supabase = await createClient();
     const auth = await getAuthContext(supabase);
     const adminError = requireAdmin(auth);
@@ -156,6 +172,12 @@ export async function DELETE(
       logApiError('team_delete_failed', deleteError, { userId: authed.userId, teamId });
       return json({ error: 'Unable to delete team.' }, { status: 400 });
     }
+    logSecurityEvent("team_deleted", {
+      ip: getClientIp(request),
+      userId: authed.userId,
+      orgId: team.organization_id,
+      teamId,
+    });
     return json({ success: true });
   } catch (error) {
     logApiError('team_delete_error', error);

@@ -4,10 +4,13 @@ import {
   asInteger,
   asString,
   getAuthContext,
+  getClientIp,
   json,
   logApiError,
   ownsTeam,
   parseJsonObject,
+  rateLimit,
+  rateLimitResponse,
   requireAdmin,
   requireAuth,
   sanitizeText,
@@ -20,6 +23,9 @@ export async function PUT(
   { params }: { params: { id: string } }
 ) {
   try {
+    const ip = getClientIp(request);
+    const limited = rateLimit({ key: `player_update:${ip}`, limit: 20, windowMs: 60_000 });
+    if (limited.limited) return rateLimitResponse(limited.resetAt);
     const supabase = await createClient();
     const playerId = asInteger(params.id, 1);
     if (!playerId) return json({ error: "Invalid player id." }, { status: 400 });
@@ -143,10 +149,13 @@ export async function PUT(
 }
 
 export async function DELETE(
-  _request: Request,
+  request: Request,
   { params }: { params: { id: string } }
 ) {
   try {
+    const ip = getClientIp(request);
+    const limited = rateLimit({ key: `player_delete:${ip}`, limit: 10, windowMs: 60_000 });
+    if (limited.limited) return rateLimitResponse(limited.resetAt);
     const supabase = await createClient();
     const auth = await getAuthContext(supabase);
     const adminError = requireAdmin(auth);

@@ -56,6 +56,24 @@ async function resolveAccountKind(
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || "https://obiffpnurjtmahfewhgw.supabase.co";
 
+const ALLOWED_ORIGINS = [
+  "https://vfl.league",
+  "http://localhost:3000",
+  process.env.NEXTAUTH_URL,
+].filter(Boolean) as string[];
+
+function addCors(response: NextResponse, request: NextRequest) {
+  const origin = request.headers.get("origin");
+  if (origin && ALLOWED_ORIGINS.includes(origin)) {
+    response.headers.set("Access-Control-Allow-Origin", origin);
+    response.headers.set("Access-Control-Allow-Methods", "GET, POST, PUT, PATCH, DELETE, OPTIONS");
+    response.headers.set("Access-Control-Allow-Headers", "Content-Type, Authorization");
+    response.headers.set("Access-Control-Allow-Credentials", "true");
+    response.headers.set("Vary", "Origin");
+  }
+  return response;
+}
+
 function secure(response: NextResponse) {
   response.headers.set("X-Content-Type-Options", "nosniff");
   response.headers.set("X-Frame-Options", "DENY");
@@ -74,7 +92,18 @@ function secure(response: NextResponse) {
   return response;
 }
 
+/** Apply CORS then security headers in one call. */
+function respond(response: NextResponse, request: NextRequest): NextResponse {
+  addCors(response, request);
+  return secure(response);
+}
+
 export async function middleware(request: NextRequest) {
+  // Handle CORS preflight
+  if (request.method === "OPTIONS") {
+    return addCors(new NextResponse(null, { status: 204 }), request);
+  }
+
   if (
     process.env.NODE_ENV === "production" &&
     request.nextUrl.protocol === "http:" &&
@@ -122,19 +151,19 @@ export async function middleware(request: NextRequest) {
     });
     if (limited.limited) {
       logSecurityEvent("rate_limit_exceeded", { ip, pathname });
-      return secure(rateLimitResponse(limited.resetAt));
+      return respond(rateLimitResponse(limited.resetAt), request);
     }
   }
 
   if (!session) {
     if (isAdminPage || isOrgPage || (isApiRoute && !isPublicApi && !isAuthPage)) {
-      return secure(NextResponse.json(
+      return respond(NextResponse.json(
         { error: "Unauthorized" },
         { status: 401 }
-      ));
+      ), request);
     }
     if (isAuthPage) {
-      return secure(response);
+      return respond(response, request);
     }
     if (
       !isAuthPage &&
@@ -142,13 +171,13 @@ export async function middleware(request: NextRequest) {
       !pathname.startsWith("/_next") &&
       !pathname.startsWith("/favicon")
     ) {
-      return secure(response);
+      return respond(response, request);
     }
-    return secure(response);
+    return respond(response, request);
   }
 
   if (isAuthPage) {
-    return secure(NextResponse.redirect(new URL("/", request.url)));
+    return respond(NextResponse.redirect(new URL("/", request.url)), request);
   }
 
   const accountKind = await resolveAccountKind(supabase, session.user.id);
@@ -162,9 +191,9 @@ export async function middleware(request: NextRequest) {
       });
       const redirectTo =
         accountKind === "player" ? PLAYER_DEFAULT_PAGE : "/";
-      return secure(NextResponse.redirect(new URL(redirectTo, request.url)));
+      return respond(NextResponse.redirect(new URL(redirectTo, request.url)), request);
     }
-    return secure(response);
+    return respond(response, request);
   }
 
   if (isOrgPage) {
@@ -187,10 +216,10 @@ export async function middleware(request: NextRequest) {
           orgSlug,
           accountKind,
         });
-        return secure(NextResponse.redirect(new URL("/", request.url)));
+        return respond(NextResponse.redirect(new URL("/", request.url)), request);
       }
     }
-    return secure(response);
+    return respond(response, request);
   }
 
   if (accountKind === "player") {
@@ -201,8 +230,9 @@ export async function middleware(request: NextRequest) {
           pathname,
           method: request.method,
         });
-        return secure(
-          NextResponse.json({ error: "Forbidden" }, { status: 403 })
+        return respond(
+          NextResponse.json({ error: "Forbidden" }, { status: 403 }),
+          request
         );
       }
     } else if (!isPlayerAllowedPage(pathname)) {
@@ -210,18 +240,19 @@ export async function middleware(request: NextRequest) {
         userId: session.user.id,
         pathname,
       });
-      return secure(
-        NextResponse.redirect(new URL(PLAYER_DEFAULT_PAGE, request.url))
+      return respond(
+        NextResponse.redirect(new URL(PLAYER_DEFAULT_PAGE, request.url)),
+        request
       );
     }
   }
 
   if (accountKind === "unknown" && isApiRoute && !isPublicApi) {
     logSecurityEvent("unknown_account_api", { userId: session.user.id, pathname });
-    return secure(NextResponse.json({ error: "Unauthorized" }, { status: 401 }));
+    return respond(NextResponse.json({ error: "Unauthorized" }, { status: 401 }), request);
   }
 
-  return secure(response);
+  return respond(response, request);
 }
 
 export const config = {

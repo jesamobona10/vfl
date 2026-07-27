@@ -1,6 +1,6 @@
 import { createClient } from "@/lib/supabase/server";
 import { createServiceRoleClient } from "@/lib/supabase/service-role";
-import { getAuthContext, getClientIp, json, logApiError, logSecurityEvent, parseJsonObject, rateLimit, rateLimitResponse, requireAdmin, sanitizeText } from "@/lib/security";
+import { asInteger, getAuthContext, getClientIp, json, logApiError, logSecurityEvent, parseJsonObject, rateLimit, rateLimitResponse, requireAdmin, sanitizeText } from "@/lib/security";
 import type { Player } from "@/lib/types";
 
 export const dynamic = "force-dynamic";
@@ -71,12 +71,12 @@ export async function POST(request: Request) {
     if (parsed.error) return json({ error: parsed.error }, { status: 400 });
 
     const name = sanitizeText(parsed.data!.name as string || "");
-    const team_id = Number(parsed.data!.team_id);
+    const team_id = asInteger(parsed.data!.team_id, 1);
     const position = (parsed.data!.position as string) || "MID";
-    const jersey_number = parsed.data!.jersey_number ? Number(parsed.data!.jersey_number) : null;
+    const jersey_number = asInteger(parsed.data!.jersey_number, 0, 99);
 
     if (!name || name.length > 100) return json({ error: "Player name is required (max 100 chars)." }, { status: 400 });
-    if (!team_id || isNaN(team_id)) return json({ error: "Team ID is required." }, { status: 400 });
+    if (!team_id) return json({ error: "Team ID is required." }, { status: 400 });
     if (!["GK", "DEF", "MID", "ATT"].includes(position)) return json({ error: "Position must be GK, DEF, MID, or ATT." }, { status: 400 });
 
     const sb = createServiceRoleClient();

@@ -1,6 +1,6 @@
 import { createClient } from "@/lib/supabase/server";
 import { createServiceRoleClient } from "@/lib/supabase/service-role";
-import { getAuthContext, json, logApiError, logSecurityEvent, requireAuth, requireOrgAdmin } from "@/lib/security";
+import { getAuthContext, getClientIp, json, logApiError, logSecurityEvent, rateLimit, rateLimitResponse, requireAuth, requireOrgAdmin } from "@/lib/security";
 import { generateRoundRobinFixtures } from "@/lib/logic/round-robin";
 import type { Team, FixtureRound, Match } from "@/lib/types";
 
@@ -11,6 +11,9 @@ export async function POST(
   { params }: { params: { id: string } }
 ) {
   try {
+    const ip = getClientIp(request);
+    const limited = rateLimit({ key: `comp_generate_fixtures:${ip}`, limit: 5, windowMs: 60_000 });
+    if (limited.limited) return rateLimitResponse(limited.resetAt);
     const supabase = await createClient();
     const auth = await getAuthContext(supabase);
     const authError = requireAuth(auth);
@@ -139,6 +142,15 @@ export async function POST(
     }
 
     await sb.from("competitions").update({ status: "active" }).eq("id", params.id);
+
+    logSecurityEvent("fixtures_generated", {
+      userId: auth?.userId,
+      orgId: competition.organization_id,
+      competitionId: params.id,
+      seasonId,
+      roundsCount: rounds.length,
+      matchesCount: fixtureInserts.length,
+    });
 
     return json({
       success: true,

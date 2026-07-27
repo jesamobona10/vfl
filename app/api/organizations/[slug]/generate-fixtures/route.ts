@@ -2,7 +2,7 @@ import { createClient } from "@/lib/supabase/server";
 import { createServiceRoleClient } from "@/lib/supabase/service-role";
 import { generateRoundRobinFixtures } from "@/lib/logic/round-robin";
 import type { Team } from "@/lib/types";
-import { getAuthContext, json, logApiError, logSecurityEvent, requireAuth } from "@/lib/security";
+import { getAuthContext, getClientIp, json, logApiError, logSecurityEvent, rateLimit, rateLimitResponse, requireAuth } from "@/lib/security";
 
 export const dynamic = "force-dynamic";
 
@@ -11,6 +11,9 @@ export async function POST(
   { params }: { params: { slug: string } }
 ) {
   try {
+    const ip = getClientIp(request);
+    const limited = rateLimit({ key: `org_generate_fixtures:${ip}`, limit: 5, windowMs: 60_000 });
+    if (limited.limited) return rateLimitResponse(limited.resetAt);
     const supabase = await createClient();
     const auth = await getAuthContext(supabase);
     const authError = requireAuth(auth);

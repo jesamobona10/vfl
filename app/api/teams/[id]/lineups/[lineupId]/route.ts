@@ -1,6 +1,6 @@
 import { createClient } from "@/lib/supabase/server";
 import type { TeamLineup } from "@/lib/types";
-import { getAuthContext, json, logApiError, ownsTeam, parseJsonObject, sanitizeText } from "@/lib/security";
+import { getAuthContext, getClientIp, json, logApiError, ownsTeam, parseJsonObject, rateLimit, rateLimitResponse, sanitizeText } from "@/lib/security";
 
 export const dynamic = "force-dynamic";
 
@@ -8,6 +8,9 @@ export async function PUT(
   request: Request,
   { params }: { params: { id: string; lineupId: string } }
 ) {
+  const ip = getClientIp(request);
+  const limited = rateLimit({ key: `lineup_update:${ip}`, limit: 20, windowMs: 60_000 });
+  if (limited.limited) return rateLimitResponse(limited.resetAt);
   const teamId = Number(params.id);
   const lineupId = Number(params.lineupId);
 
@@ -81,6 +84,9 @@ export async function DELETE(
   request: Request,
   { params }: { params: { id: string; lineupId: string } }
 ) {
+  const ip = getClientIp(request);
+  const limited = rateLimit({ key: `lineup_delete:${ip}`, limit: 10, windowMs: 60_000 });
+  if (limited.limited) return rateLimitResponse(limited.resetAt);
   const teamId = Number(params.id);
   const lineupId = Number(params.lineupId);
 
