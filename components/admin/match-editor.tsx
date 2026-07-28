@@ -5,8 +5,8 @@ import { useAppStore } from "@/lib/store";
 import { allMatches } from "@/lib/logic/standings";
 import { fixtureIssue } from "@/lib/logic/validation";
 import { matchMeta } from "@/lib/utils/helpers";
-import { EventLog } from "./event-log";
-import { ChevronDown, ChevronRight, AlertCircle, Clock3 } from "lucide-react";
+import { AddEventModal } from "@/components/fixtures/add-event-modal";
+import { ChevronDown, ChevronRight, AlertCircle, Clock3, Plus } from "lucide-react";
 import { TimeInput } from "../shared/time-input";
 
 function teamLocked(match: ReturnType<typeof allMatches>[number]): boolean {
@@ -42,6 +42,7 @@ const EVENT_TYPE_LABELS: Record<string, string> = {
 
 export function MatchEditor() {
   const [expanded, setExpanded] = useState<Set<number>>(new Set());
+  const [eventMatchId, setEventMatchId] = useState<number | null>(null);
 
   const teams = useAppStore((s) => s.teams);
   const fixtures = useAppStore((s) => s.fixtures);
@@ -324,15 +325,59 @@ export function MatchEditor() {
 
                 <hr className="border-line" />
 
-                <EventLog
-                  match={match}
-                  homePlayers={players.filter(
-                    (p) => p.teamId === match.homeId
+                <div className="flex flex-col gap-3">
+                  <div className="flex items-center justify-between">
+                    <h4 className="text-sm font-semibold text-muted uppercase tracking-wider">
+                      Match Events
+                    </h4>
+                    <button
+                      onClick={() => setEventMatchId(match.id)}
+                      className="btn-secondary text-xs py-1 px-3 flex items-center gap-1"
+                    >
+                      <Plus size={12} />
+                      Add Event
+                    </button>
+                  </div>
+
+                  {(match.events || []).length > 0 && (
+                    <div className="space-y-1">
+                      {(match.events || []).map((event, i) => {
+                        const store = useAppStore.getState();
+                        const player = store.players.find(
+                          (p) => p.id === event.playerId
+                        );
+                        const team = player
+                          ? store.getTeam(player.teamId)
+                          : undefined;
+                        return (
+                          <div
+                            key={i}
+                            className="flex items-center justify-between gap-2 px-3 py-1.5 rounded-lg bg-surface-2 text-sm"
+                          >
+                            <span>
+                              <span className="font-medium">
+                                {team?.name?.[0] || "?"}
+                              </span>{" "}
+                              {player?.name || "Unknown"}{" "}
+                              <span className="text-muted text-xs">
+                                {event.type}
+                              </span>
+                            </span>
+                          </div>
+                        );
+                      })}
+                    </div>
                   )}
-                  awayPlayers={players.filter(
-                    (p) => p.teamId === match.awayId
+
+                  {eventMatchId === match.id && (
+                    <AddEventModal
+                      match={match}
+                      homeTeamName={home?.name || "Home"}
+                      awayTeamName={away?.name || "Away"}
+                      onClose={() => setEventMatchId(null)}
+                    />
                   )}
-                />
+                </div>
               </div>
             )}
           </div>

@@ -51,7 +51,7 @@ export function FixtureRoundPanel({
           </span>
         )}
       </div>
-      <div className="p-3 space-y-2">
+      <div className="p-3 grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-3">
         {matchingMatches.map((match) => (
           <FixtureCard
             key={match.id}
