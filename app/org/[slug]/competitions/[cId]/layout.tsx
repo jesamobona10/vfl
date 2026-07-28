@@ -3,7 +3,7 @@
 import { useCompetition, useSeasons } from "@/lib/hooks/use-competitions";
 import { useParams, usePathname } from "next/navigation";
 import Link from "next/link";
-import { Calendar, Trophy, Settings } from "lucide-react";
+import { Calendar, Trophy, Settings, BarChart3 } from "lucide-react";
 import { PageSkeleton } from "@/components/shared/skeleton";
 import { SeasonSelector } from "@/components/competitions/season-selector";
 import { useState, useEffect } from "react";
@@ -23,6 +23,7 @@ const statusColors: Record<string, string> = {
 const tabs = [
   { href: "fixtures", label: "Fixtures", icon: Calendar, showFor: null },
   { href: "standings", label: "Standings", icon: Trophy, showFor: "league" },
+  { href: "stats", label: "Stats", icon: BarChart3, showFor: null },
   { href: "settings", label: "Settings", icon: Settings, showFor: null },
 ];
 

@@ -140,7 +140,7 @@ export function AddEventModal({
     setStep("player");
   };
 
-  const handleSelectPlayer = (playerId: number) => {
+  const handleSelectPlayer = async (playerId: number) => {
     if (!selectedType) return;
 
     const player = players.find((p) => p.id === playerId);
@@ -163,14 +163,35 @@ export function AddEventModal({
       }
     }
     useAppStore.getState().recalculateRatings();
+
+    try {
+      await fetch(`/api/fixtures/${match.id}/events`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ playerId, teamId, type: selectedType }),
+      });
+    } catch {
+      // persist silently
+    }
+
     onClose();
   };
 
-  const handleMarkComplete = () => {
+  const handleMarkComplete = async () => {
     const home = match.homeScore ?? 0;
     const away = match.awayScore ?? 0;
     updateMatch(match.id, "homeScore", home);
     updateMatch(match.id, "awayScore", away);
+    useAppStore.getState().recalculateRatings();
+    try {
+      await fetch(`/api/fixtures/${match.id}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ homeScore: home, awayScore: away, status: "completed" }),
+      });
+    } catch {
+      // persist silently
+    }
     onClose();
   };
 

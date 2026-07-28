@@ -73,5 +73,12 @@ export const createPlayersSlice: StateCreator<
     const players = getPlayers(get).map((p) => ({ ...p }));
     updatePlayerRatings(players);
     set({ players });
+    const state = get();
+    if (state.teams && state.fixtures) {
+      const teams = (state.teams as Team[]).map((t: Team) => ({ ...t }));
+      const allMatchList = (state.fixtures as any[]).flatMap((r: any) => r.matches || []);
+      updateTeamRatings(teams, allMatchList, players);
+      state.setTeams(teams);
+    }
   },
 });

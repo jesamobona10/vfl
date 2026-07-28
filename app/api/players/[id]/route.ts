@@ -1,4 +1,5 @@
 import { createClient } from "@/lib/supabase/server";
+import { createServiceRoleClient } from "@/lib/supabase/service-role";
 import {
   asBoolean,
   asInteger,
@@ -81,6 +82,15 @@ export async function PUT(
 
     if (Object.keys(update).length === 0) {
       return json({ error: "No valid fields to update." }, { status: 400 });
+    }
+
+    if (isCaptain && teamId) {
+      const sb = createServiceRoleClient();
+      await sb
+        .from("players")
+        .update({ is_captain: false })
+        .eq("team_id", teamId)
+        .neq("id", playerId);
     }
 
     const { data, error } = await supabase

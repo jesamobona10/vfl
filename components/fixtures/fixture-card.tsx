@@ -113,6 +113,12 @@ export function FixtureCard({
     }
 
     store.recalculateRatings();
+
+    try {
+      fetch(`/api/events/0?match_id=${match.id}&player_id=${event.playerId}&type=${event.type}`, { method: "DELETE" });
+    } catch {
+      // persist silently
+    }
   };
 
   const getPlayerName = (playerId: number) => {

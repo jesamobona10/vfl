@@ -146,6 +146,14 @@ export async function POST(request: Request) {
     }
 
     const sb = createServiceRoleClient();
+
+    if (isCaptain) {
+      await sb
+        .from("players")
+        .update({ is_captain: false })
+        .eq("team_id", teamIdToUse);
+    }
+
     const { data, error } = await sb
       .from("players")
       .insert({
