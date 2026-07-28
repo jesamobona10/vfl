@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { useAppStore } from "@/lib/store";
 import type { Match, MatchEvent, Player } from "@/lib/types";
-import { X } from "lucide-react";
+import { X, CheckCircle } from "lucide-react";
 
 const EVENT_CATEGORIES = [
   {
@@ -100,6 +100,25 @@ interface AddEventModalProps {
   onClose: () => void;
 }
 
+function updateMatchScore(
+  match: Match,
+  playerTeamId: number,
+  eventType: string
+): { homeScore: number | null; awayScore: number | null } {
+  const home = match.homeScore ?? 0;
+  const away = match.awayScore ?? 0;
+
+  if (eventType === "goal") {
+    if (playerTeamId === match.homeId) return { homeScore: home + 1, awayScore: away };
+    return { homeScore: home, awayScore: away + 1 };
+  }
+  if (eventType === "own-goal") {
+    if (playerTeamId === match.homeId) return { homeScore: home, awayScore: away + 1 };
+    return { homeScore: home + 1, awayScore: away };
+  }
+  return { homeScore: match.homeScore, awayScore: match.awayScore };
+}
+
 export function AddEventModal({
   match,
   homeTeamName,
@@ -131,6 +150,10 @@ export function AddEventModal({
     const events = [...(match.events || []), newEvent];
     updateMatch(match.id, "events", events);
 
+    const score = updateMatchScore(match, teamId, selectedType);
+    updateMatch(match.id, "homeScore", score.homeScore);
+    updateMatch(match.id, "awayScore", score.awayScore);
+
     if (player) {
       const field = STAT_FIELD[selectedType];
       if (field) {
@@ -140,6 +163,14 @@ export function AddEventModal({
       }
     }
     useAppStore.getState().recalculateRatings();
+    onClose();
+  };
+
+  const handleMarkComplete = () => {
+    const home = match.homeScore ?? 0;
+    const away = match.awayScore ?? 0;
+    updateMatch(match.id, "homeScore", home);
+    updateMatch(match.id, "awayScore", away);
     onClose();
   };
 
@@ -261,6 +292,18 @@ export function AddEventModal({
                 No players found for this match.
               </p>
             )}
+          </div>
+        )}
+
+        {match.status !== "completed" && (
+          <div className="flex justify-center pt-2 border-t border-line">
+            <button
+              onClick={handleMarkComplete}
+              className="btn-primary text-sm py-1.5 px-4 flex items-center gap-1.5"
+            >
+              <CheckCircle size={14} />
+              MARK COMPLETED
+            </button>
           </div>
         )}
       </div>

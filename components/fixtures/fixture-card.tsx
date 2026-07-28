@@ -66,6 +66,13 @@ export function FixtureCard({
   const statusColor = statusColors[match.status] || "bg-muted/20 text-muted";
 
   const events = match.events || [];
+  const hasScore = match.homeScore != null || match.awayScore != null;
+  const scoreDisplay =
+    match.homeScore != null && match.awayScore != null
+      ? `${match.homeScore} - ${match.awayScore}`
+      : hasScore
+      ? `${match.homeScore ?? "?"} - ${match.awayScore ?? "?"}`
+      : null;
 
   const handleRemoveEvent = (index: number) => {
     const store = useAppStore.getState();
@@ -87,6 +94,24 @@ export function FixtureCard({
         });
       }
     }
+
+    if (event.type === "goal" || event.type === "own-goal") {
+      const p = store.players.find((pl) => pl.id === event.playerId);
+      const teamId = p?.teamId ?? match.homeId;
+      const isOwnGoal = event.type === "own-goal";
+      const scoringTeam = isOwnGoal
+        ? teamId === match.homeId
+          ? match.awayId
+          : match.homeId
+        : teamId;
+      const currentHome = match.homeScore ?? 0;
+      const currentAway = match.awayScore ?? 0;
+      const newHome = scoringTeam === match.homeId ? Math.max(0, currentHome - 1) : currentHome;
+      const newAway = scoringTeam === match.awayId ? Math.max(0, currentAway - 1) : currentAway;
+      store.updateMatch(match.id, "homeScore", newHome);
+      store.updateMatch(match.id, "awayScore", newAway);
+    }
+
     store.recalculateRatings();
   };
 
@@ -157,7 +182,11 @@ export function FixtureCard({
             )}
           </div>
 
-          <span className="text-xs text-muted uppercase tracking-[0.15em] font-semibold">vs</span>
+          {scoreDisplay ? (
+            <span className="text-lg font-bold tabular-nums">{scoreDisplay}</span>
+          ) : (
+            <span className="text-xs text-muted uppercase tracking-[0.15em] font-semibold">vs</span>
+          )}
 
           <div className="flex items-center gap-3 justify-start min-w-0">
             {awayTeam?.logo_url ? (
