@@ -16,16 +16,6 @@
   --shadow: 0 18px 45px rgba(23, 34, 27, 0.08);
 }
 
-.dark {
-  --bg: 13, 20, 16;
-  --surface: 24, 35, 28;
-  --surface-2: 33, 46, 38;
-  --text: 224, 230, 226;
-  --muted: 127, 143, 132;
-  --line: 42, 58, 48;
-  --shadow: 0 18px 45px rgba(0, 0, 0, 0.5);
-}
-
 body {
   background: rgb(var(--bg));
   color: rgb(var(--text));
