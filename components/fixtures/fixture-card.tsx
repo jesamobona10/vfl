@@ -4,7 +4,6 @@ import { useState } from "react";
 import type { Match, Team } from "@/lib/types";
 import { useAppStore } from "@/lib/store";
 import { titleCase } from "@/lib/utils/helpers";
-import { Plus } from "lucide-react";
 import { AddEventModal } from "./add-event-modal";
 
 interface FixtureCardProps {
@@ -122,7 +121,14 @@ export function FixtureCard({
 
   return (
     <>
-      <article className="flex flex-col gap-3 px-4 py-4 rounded-3xl border border-line bg-surface hover:border-muted/30 transition-all">
+      <article
+        onClick={() => setShowAddEvent(true)}
+        className={`flex flex-col gap-3 px-4 py-4 rounded-3xl border transition-all cursor-pointer ${
+          editable
+            ? "border-line bg-surface hover:border-brand/30 hover:bg-surface-2/30 hover:shadow-sm"
+            : "border-line bg-surface"
+        }`}
+      >
         <div className="flex items-center justify-between gap-3">
           <div className="flex items-center gap-2 text-xs text-muted">
             <span>{label}</span>
@@ -130,6 +136,11 @@ export function FixtureCard({
               {titleCase(match.status)}
             </span>
           </div>
+          {editable && (
+            <span className="text-xs text-muted/40 group-hover:text-muted/60 transition-colors">
+              +
+            </span>
+          )}
         </div>
 
         <div className="grid grid-cols-[1fr_auto_1fr] items-center gap-4">
@@ -162,20 +173,8 @@ export function FixtureCard({
           </div>
         </div>
 
-        {editable && (
-          <div className="flex justify-center">
-            <button
-              onClick={() => setShowAddEvent(true)}
-              className="btn-secondary text-sm py-1.5 px-4 flex items-center gap-1.5"
-            >
-              <Plus size={14} />
-              ADD EVENT
-            </button>
-          </div>
-        )}
-
         {events.length > 0 && (
-          <div className="flex flex-wrap gap-1 pt-1 border-t border-line">
+          <div className="flex flex-wrap gap-1 pt-1 border-t border-line" onClick={(e) => e.stopPropagation()}>
             {events.map((event, i) => renderEventBadge(event, i))}
           </div>
         )}
