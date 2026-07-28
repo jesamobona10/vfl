@@ -154,7 +154,7 @@ export function AddEventModal({
       onClick={onClose}
     >
       <div
-        className="bg-white border border-line rounded-2xl shadow-2xl w-full max-w-md p-6 space-y-4"
+        className="bg-surface border border-line rounded-2xl shadow-2xl w-full max-w-md p-6 space-y-4"
         onClick={(e) => e.stopPropagation()}
       >
         <div className="flex items-center justify-between">
