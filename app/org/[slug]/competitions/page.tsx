@@ -2,9 +2,11 @@
 
 import { useOrg } from "@/lib/hooks/use-org";
 import { useCompetitions } from "@/lib/hooks/use-competitions";
+import { useQueryClient } from "@tanstack/react-query";
 import type { Competition } from "@/lib/types";
-import { useParams } from "next/navigation";
-import { Trophy, Plus, Swords, Users } from "lucide-react";
+import { useParams, useRouter } from "next/navigation";
+import { Trophy, Plus, Swords, Users, Trash2, AlertCircle } from "lucide-react";
+import { useState } from "react";
 import { PageSkeleton } from "@/components/shared/skeleton";
 
 const typeConfig: Record<string, { label: string; icon: React.ReactNode }> = {
@@ -22,8 +24,29 @@ const statusColors: Record<string, string> = {
 export default function CompetitionsPage() {
   const params = useParams();
   const slug = params.slug as string;
+  const router = useRouter();
+  const queryClient = useQueryClient();
   const { data: currentOrg } = useOrg(slug);
   const { data: competitions = [], isLoading } = useCompetitions(currentOrg?.id);
+  const [deletingId, setDeletingId] = useState<string | null>(null);
+  const [error, setError] = useState("");
+
+  const handleDelete = async (comp: Competition) => {
+    if (!confirm(`Delete "${comp.name}" and all its fixtures, cup matches, and seasons? This CANNOT be undone.`)) return;
+    setError("");
+    setDeletingId(comp.id);
+    try {
+      const res = await fetch(`/api/competitions/${comp.id}`, { method: "DELETE" });
+      const d = await res.json();
+      if (d.error) { setError(d.error); return; }
+      queryClient.invalidateQueries({ queryKey: ["competitions", currentOrg?.id] });
+      if (window.location.pathname.includes(comp.id)) router.replace(`/org/${slug}/competitions`);
+    } catch {
+      setError("Failed to delete competition.");
+    } finally {
+      setDeletingId(null);
+    }
+  };
 
   if (isLoading) {
     return (
@@ -61,34 +84,54 @@ export default function CompetitionsPage() {
           </a>
         </div>
       ) : (
+        <>
+        {error && (
+          <div className="flex items-center gap-2 text-sm text-danger bg-danger/10 rounded-lg px-4 py-3">
+            <AlertCircle size={16} /> {error}
+          </div>
+        )}
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
           {competitions.map((comp: Competition) => {
             const cfg = typeConfig[comp.type] ?? typeConfig.league;
             return (
-              <a
-                key={comp.id}
-                href={`/org/${slug}/competitions/${comp.id}`}
-                className="card p-4 hover:border-brand/50 transition-colors block"
-              >
-                <div className="flex items-start justify-between mb-3">
-                  <div className="flex items-center gap-2 text-ink-2">
-                    {cfg.icon}
-                    <span className="text-xs uppercase tracking-wider">{cfg.label}</span>
+              <div key={comp.id} className="relative group">
+                <a
+                  href={`/org/${slug}/competitions/${comp.id}`}
+                  className="card p-4 hover:border-brand/50 transition-colors block"
+                >
+                  <div className="flex items-start justify-between mb-3">
+                    <div className="flex items-center gap-2 text-ink-2">
+                      {cfg.icon}
+                      <span className="text-xs uppercase tracking-wider">{cfg.label}</span>
+                    </div>
+                    <span
+                      className={`text-[11px] font-medium px-2 py-0.5 rounded-full ${statusColors[comp.status] ?? statusColors.draft}`}
+                    >
+                      {comp.status}
+                    </span>
                   </div>
-                  <span
-                    className={`text-[11px] font-medium px-2 py-0.5 rounded-full ${statusColors[comp.status] ?? statusColors.draft}`}
-                  >
-                    {comp.status}
-                  </span>
-                </div>
-                <h3 className="font-semibold text-base mb-1">{comp.name}</h3>
-                {comp.season && (
-                  <p className="text-xs text-ink-2">Season: {comp.season}</p>
-                )}
-              </a>
+                  <h3 className="font-semibold text-base mb-1">{comp.name}</h3>
+                  {comp.season && (
+                    <p className="text-xs text-ink-2">Season: {comp.season}</p>
+                  )}
+                </a>
+                <button
+                  onClick={() => handleDelete(comp)}
+                  disabled={deletingId === comp.id}
+                  className="btn-icon absolute top-2 right-2 text-danger opacity-0 group-hover:opacity-100 hover:opacity-100 transition-opacity"
+                  title="Delete competition"
+                >
+                  {deletingId === comp.id ? (
+                    <span className="block w-3 h-3 bg-surface-2 rounded animate-pulse" />
+                  ) : (
+                    <Trash2 size={15} />
+                  )}
+                </button>
+              </div>
             );
           })}
         </div>
+        </>
       )}
     </div>
   );

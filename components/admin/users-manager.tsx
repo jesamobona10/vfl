@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
-import { Shield, AlertCircle, KeyRound, Users } from "lucide-react";
+import { Shield, AlertCircle, KeyRound, Users, Trash2 } from "lucide-react";
 import { SkeletonList } from "@/components/shared/skeleton";
 
 export function UsersManager() {
@@ -51,8 +51,10 @@ function AdminUsersList() {
 function TeamAccountsList() {
   const [accounts, setAccounts] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const [deletingId, setDeletingId] = useState<string | null>(null);
+  const [error, setError] = useState("");
 
-  useEffect(() => {
+  const fetchAccounts = useCallback(() => {
     fetch("/api/admin/team-accounts")
       .then((r) => r.json())
       .then((d) => setAccounts(d.accounts || []))
@@ -60,10 +62,35 @@ function TeamAccountsList() {
       .finally(() => setLoading(false));
   }, []);
 
+  useEffect(() => {
+    fetchAccounts();
+  }, [fetchAccounts]);
+
+  const handleDelete = async (a: any) => {
+    if (!confirm(`Delete team account "${a.username}"? This CANNOT be undone.`)) return;
+    setError("");
+    setDeletingId(a.id);
+    try {
+      const res = await fetch(`/api/admin/team-accounts/${a.id}`, { method: "DELETE" });
+      const d = await res.json();
+      if (d.error) { setError(d.error); return; }
+      fetchAccounts();
+    } catch {
+      setError("Failed to delete account.");
+    } finally {
+      setDeletingId(null);
+    }
+  };
+
   if (loading) return <SkeletonList items={3} />;
 
   return (
     <div className="space-y-2">
+      {error && (
+        <div className="flex items-center gap-2 text-sm text-danger bg-danger/10 rounded-lg px-4 py-3">
+          <AlertCircle size={16} /> {error}
+        </div>
+      )}
       {accounts.length === 0 ? (
         <p className="text-sm text-muted text-center py-8">No team accounts created yet.</p>
       ) : (
@@ -73,6 +100,18 @@ function TeamAccountsList() {
             <span className="font-medium">{a.username}</span>
             <span className="text-xs text-muted">{a.teams?.name || "—"}</span>
             <span className="text-xs text-muted ml-auto">{new Date(a.created_at).toLocaleDateString()}</span>
+            <button
+              onClick={() => handleDelete(a)}
+              disabled={deletingId === a.id}
+              className="btn-ghost text-xs text-danger"
+              title="Delete account"
+            >
+              {deletingId === a.id ? (
+                <span className="block w-3 h-3 bg-surface-2 rounded animate-pulse" />
+              ) : (
+                <Trash2 size={13} />
+              )}
+            </button>
           </div>
         ))
       )}

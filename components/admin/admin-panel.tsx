@@ -215,6 +215,34 @@ function FixtureManager() {
       .finally(() => setLoading(false));
   }, []);
 
+  const [deletingOrg, setDeletingOrg] = useState<string | null>(null);
+
+  const handleDeleteOrgFixtures = async (org: {
+    id: string;
+    name: string;
+    slug: string;
+  }) => {
+    if (!confirm(`Delete ALL fixtures for "${org.name}"? This CANNOT be undone.`)) return;
+    setDeletingOrg(org.id);
+    try {
+      const res = await fetch(`/api/organizations/${org.slug}/delete-fixtures`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({}),
+      });
+      const d = await res.json();
+      if (d.error) { alert(d.error); return; }
+      const reload = await fetch("/api/admin/fixtures");
+      const data = await reload.json();
+      if (data.error) alert(data.error);
+      else setData(data);
+    } catch {
+      alert("Failed to delete fixtures.");
+    } finally {
+      setDeletingOrg(null);
+    }
+  };
+
   const statusLabel: Record<string, string> = {
     scheduled: "Scheduled",
     "in-progress": "In Progress",
@@ -277,27 +305,41 @@ function FixtureManager() {
       </div>
       {filteredOrgs.map((org) => (
         <div key={org.id} className="card overflow-hidden">
-          <button
-            onClick={() => setExpandedOrg(expandedOrg === org.id ? null : org.id)}
-            className="w-full flex items-center gap-3 px-5 py-4 hover:bg-surface-2/50 transition-colors text-left"
-          >
-            {expandedOrg === org.id ? (
-              <ChevronDown size={16} className="shrink-0 text-muted" />
-            ) : (
-              <ChevronRight size={16} className="shrink-0 text-muted" />
-            )}
-            {org.logo_url ? (
-              <img src={org.logo_url} alt={org.name} className="w-8 h-8 rounded-lg object-cover shrink-0" />
-            ) : (
-              <Building2 size={18} className="text-muted shrink-0" />
-            )}
-            <div className="flex-1 min-w-0">
-              <span className="text-sm font-semibold">{org.name}</span>
-              <span className="text-xs text-muted ml-2">
-                {org.rounds.length} round{org.rounds.length !== 1 ? "s" : ""}
-              </span>
-            </div>
-          </button>
+          <div className="flex items-center">
+            <button
+              onClick={() => setExpandedOrg(expandedOrg === org.id ? null : org.id)}
+              className="flex-1 flex items-center gap-3 px-5 py-4 hover:bg-surface-2/50 transition-colors text-left"
+            >
+              {expandedOrg === org.id ? (
+                <ChevronDown size={16} className="shrink-0 text-muted" />
+              ) : (
+                <ChevronRight size={16} className="shrink-0 text-muted" />
+              )}
+              {org.logo_url ? (
+                <img src={org.logo_url} alt={org.name} className="w-8 h-8 rounded-lg object-cover shrink-0" />
+              ) : (
+                <Building2 size={18} className="text-muted shrink-0" />
+              )}
+              <div className="flex-1 min-w-0">
+                <span className="text-sm font-semibold">{org.name}</span>
+                <span className="text-xs text-muted ml-2">
+                  {org.rounds.length} round{org.rounds.length !== 1 ? "s" : ""}
+                </span>
+              </div>
+            </button>
+            <button
+              onClick={() => handleDeleteOrgFixtures(org)}
+              disabled={deletingOrg === org.id}
+              className="btn-ghost text-xs text-danger shrink-0 mr-4"
+              title="Delete all fixtures for this organization"
+            >
+              {deletingOrg === org.id ? (
+                <span className="block w-3 h-3 bg-surface-2 rounded animate-pulse" />
+              ) : (
+                <Trash2 size={13} />
+              )}
+            </button>
+          </div>
 
           {expandedOrg === org.id && (
             <div className="border-t border-line px-5 py-4 space-y-5">

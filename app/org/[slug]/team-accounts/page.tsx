@@ -4,7 +4,7 @@ import { useState, useEffect } from "react";
 import { useParams } from "next/navigation";
 import { useAppStore } from "@/lib/store";
 import { useOrg } from "@/lib/hooks/use-org";
-import { Plus, UserCog, Key, Check, AlertCircle, Eye, EyeOff } from "lucide-react";
+import { Plus, UserCog, Key, Check, AlertCircle, Eye, EyeOff, Trash2 } from "lucide-react";
 import { SkeletonList } from "@/components/shared/skeleton";
 
 interface TeamAccount {
@@ -32,6 +32,27 @@ export default function OrgTeamAccountsPage() {
   const [message, setMessage] = useState<{ type: "success" | "error"; text: string } | null>(null);
   const [createdAccount, setCreatedAccount] = useState<{ username: string; displayName: string } | null>(null);
   const [showForm, setShowForm] = useState(false);
+  const [deletingId, setDeletingId] = useState<string | null>(null);
+
+  const handleDelete = async (account: TeamAccount) => {
+    if (!confirm(`Delete account "${account.username}"? This CANNOT be undone.`)) return;
+    setMessage(null);
+    setDeletingId(account.id);
+    try {
+      const res = await fetch(`/api/org/team-accounts/${account.id}`, { method: "DELETE" });
+      const data = await res.json();
+      if (!res.ok) {
+        setMessage({ type: "error", text: data.error || "Failed to delete account." });
+        return;
+      }
+      setMessage({ type: "success", text: `Account "${account.username}" deleted.` });
+      fetchAccounts();
+    } catch {
+      setMessage({ type: "error", text: "Failed to delete account." });
+    } finally {
+      setDeletingId(null);
+    }
+  };
 
   const fetchAccounts = async () => {
     if (!currentOrg?.id) return;
@@ -233,9 +254,23 @@ export default function OrgTeamAccountsPage() {
                   <p className="text-xs text-muted font-mono">{account.username}</p>
                 </div>
               </div>
-              <div className="text-right text-xs text-muted">
-                <p>{account.teams?.name || "—"}</p>
-                <p>{new Date(account.created_at).toLocaleDateString()}</p>
+              <div className="flex items-center gap-4">
+                <div className="text-right text-xs text-muted">
+                  <p>{account.teams?.name || "—"}</p>
+                  <p>{new Date(account.created_at).toLocaleDateString()}</p>
+                </div>
+                <button
+                  onClick={() => handleDelete(account)}
+                  disabled={deletingId === account.id}
+                  className="btn-ghost text-xs text-danger"
+                  title="Delete account"
+                >
+                  {deletingId === account.id ? (
+                    <span className="block w-3 h-3 bg-surface-2 rounded animate-pulse" />
+                  ) : (
+                    <Trash2 size={14} />
+                  )}
+                </button>
               </div>
             </div>
           ))}

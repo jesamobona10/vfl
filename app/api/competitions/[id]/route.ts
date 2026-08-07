@@ -12,6 +12,7 @@ import {
   rateLimitResponse,
   requireOrgAdmin,
   requireOrgMember,
+  writeAuditEvent,
 } from "@/lib/security";
 
 const ALLOWED_UPDATE_FIELDS = ["name", "type", "season", "status", "settings"] as const;
@@ -141,6 +142,70 @@ export async function PUT(
     return json({ competition: updated });
   } catch (error) {
     logApiError("competition_update_error", error);
+    return json({ error: "Internal server error." }, { status: 500 });
+  }
+}
+
+export async function DELETE(
+  _request: Request,
+  { params }: { params: { id: string } }
+) {
+  try {
+    const supabase = await createClient();
+    const auth = await getAuthContext(supabase);
+    if (!auth) return json({ error: "Unauthorized" }, { status: 401 });
+
+    const sb = createServiceRoleClient();
+    const { data: competition, error } = await sb
+      .from("competitions")
+      .select("id, name, organization_id")
+      .eq("id", params.id)
+      .single();
+
+    if (error || !competition) {
+      return json({ error: "Competition not found." }, { status: 404 });
+    }
+
+    const adminError = requireOrgAdmin(auth, competition.organization_id);
+    if (adminError) {
+      logSecurityEvent("competition_delete_forbidden", {
+        userId: auth.userId,
+        competitionId: params.id,
+        organizationId: competition.organization_id,
+        isAdmin: auth.isAdmin,
+      });
+      return adminError;
+    }
+
+    const ip = getClientIp(_request);
+    const limited = rateLimit({ key: `competitions:delete:${ip}:${auth.userId}`, limit: 30, windowMs: 60 * 60_000 });
+    if (limited.limited) {
+      logSecurityEvent("competition_delete_rate_limited", { ip, userId: auth.userId });
+      return rateLimitResponse(limited.resetAt);
+    }
+
+    const { error: deleteError } = await sb
+      .from("competitions")
+      .delete()
+      .eq("id", params.id);
+
+    if (deleteError) {
+      logApiError("competition_delete_error", deleteError, { userId: auth.userId, competitionId: params.id });
+      return json({ error: "Failed to delete competition." }, { status: 500 });
+    }
+
+    logSecurityEvent("competition_deleted", {
+      ip,
+      userId: auth.userId,
+      orgId: competition.organization_id,
+      competitionId: params.id,
+      name: competition.name,
+    });
+    writeAuditEvent("competition_deleted", auth.userId, competition.organization_id, { ip, competitionId: params.id, name: competition.name });
+
+    return json({ success: true });
+  } catch (error) {
+    logApiError("competition_delete_error", error);
     return json({ error: "Internal server error." }, { status: 500 });
   }
 }

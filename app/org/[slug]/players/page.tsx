@@ -4,13 +4,37 @@ import { useState } from "react";
 import { useAppStore } from "@/lib/store";
 import { PlayerCard } from "@/components/players/player-card";
 import { PlayerModal } from "@/components/players/player-modal";
-import { Users, Plus } from "lucide-react";
+import { Users, Plus, AlertCircle } from "lucide-react";
+import type { Player } from "@/lib/types";
 
 export default function OrgPlayersPage() {
   const players = useAppStore((s) => s.players);
   const teams = useAppStore((s) => s.teams);
   const teamName = useAppStore((s) => s.teamName);
+  const deletePlayer = useAppStore((s) => s.deletePlayer);
+  const [modalPlayer, setModalPlayer] = useState<Player | null>(null);
   const [addModalOpen, setAddModalOpen] = useState(false);
+  const [error, setError] = useState("");
+
+  const handleEdit = (player: Player) => {
+    setModalPlayer(player);
+    setAddModalOpen(true);
+  };
+
+  const handleDelete = async (id: number) => {
+    const p = players.find((pl) => pl.id === id);
+    if (!p) return;
+    if (!confirm(`Delete player "${p.name}"? This CANNOT be undone.`)) return;
+    setError("");
+    try {
+      const res = await fetch(`/api/players/${id}`, { method: "DELETE" });
+      const d = await res.json();
+      if (d.error) { setError(d.error); return; }
+      deletePlayer(id);
+    } catch {
+      setError("Failed to delete player.");
+    }
+  };
 
   const grouped = teams
     .map((team) => ({
@@ -33,6 +57,12 @@ export default function OrgPlayersPage() {
           Add Player
         </button>
       </div>
+
+      {error && (
+        <div className="flex items-center gap-2 text-sm text-danger bg-danger/10 rounded-lg px-4 py-3 mb-4">
+          <AlertCircle size={16} /> {error}
+        </div>
+      )}
 
       {grouped.length === 0 ? (
         <div className="text-center py-16">
@@ -60,6 +90,8 @@ export default function OrgPlayersPage() {
                     key={p.id}
                     player={p}
                     teamName={teamName(p.teamId)}
+                    onEdit={handleEdit}
+                    onDelete={handleDelete}
                   />
                 ))}
               </div>
@@ -70,8 +102,11 @@ export default function OrgPlayersPage() {
 
       {addModalOpen && (
         <PlayerModal
-          player={null}
-          onClose={() => setAddModalOpen(false)}
+          player={modalPlayer}
+          onClose={() => {
+            setAddModalOpen(false);
+            setModalPlayer(null);
+          }}
         />
       )}
     </div>

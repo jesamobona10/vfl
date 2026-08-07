@@ -12,7 +12,7 @@ import {
   parseJsonObject,
   rateLimit,
   rateLimitResponse,
-  requireAdmin,
+  requireOrgAdmin,
   requireAuth,
   sanitizeText,
 } from "@/lib/security";
@@ -168,12 +168,28 @@ export async function DELETE(
     if (limited.limited) return rateLimitResponse(limited.resetAt);
     const supabase = await createClient();
     const auth = await getAuthContext(supabase);
-    const adminError = requireAdmin(auth);
-    if (adminError) return adminError;
+    const authError = requireAuth(auth);
+    if (authError) return authError;
     const authed = auth!;
 
     const playerId = asInteger(params.id, 1);
     if (!playerId) return json({ error: "Invalid player id." }, { status: 400 });
+
+    const sb = createServiceRoleClient();
+    const { data: player } = await sb
+      .from("players")
+      .select("team_id, teams(organization_id)")
+      .eq("id", playerId)
+      .single();
+
+    if (!player) return json({ error: "Player not found." }, { status: 404 });
+
+    if (!authed.isAdmin) {
+      const orgId = (player.teams as unknown as { organization_id: string } | null)?.organization_id;
+      if (!orgId) return json({ error: "Forbidden" }, { status: 403 });
+      const orgAdminError = requireOrgAdmin(authed, orgId);
+      if (orgAdminError) return orgAdminError;
+    }
 
     const { error } = await supabase
       .from("players")
