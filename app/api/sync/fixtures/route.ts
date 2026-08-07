@@ -1,5 +1,6 @@
 import { createClient } from "@/lib/supabase/server";
 import { createServiceRoleClient } from "@/lib/supabase/service-role";
+import { normalizeTime } from "@/lib/utils/helpers";
 import {
   asInteger,
   asOptionalString,
@@ -79,7 +80,7 @@ export async function POST(request: Request) {
           away_score: match.awayScore ?? match.away_score,
           status,
           date: match.date || null,
-          time: match.time || null,
+          time: normalizeTime(match.time),
           venue: venue ? sanitizeText(venue) : null,
           competition_id: match.competition_id || match.competitionId || null,
           season_id: match.season_id || match.seasonId || null,

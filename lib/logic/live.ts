@@ -125,15 +125,15 @@ export function formatLiveClock(phase: LivePhase): string {
 function parseTimeToMinutes(time: string): number | null {
   if (!time) return null;
   const trimmed = time.trim().toUpperCase();
-  const apMatch = trimmed.match(/^(\d{1,2})(?::(\d{2}))?\s*(AM|PM)$/);
+  const apMatch = trimmed.match(/^(\d{1,2})(?::(\d{2}))?(?::(\d{2}))?\s*(AM|PM)$/);
   if (apMatch) {
     let h = Number(apMatch[1]);
     const m = Number(apMatch[2] || 0);
-    if (apMatch[3] === "PM" && h !== 12) h += 12;
-    if (apMatch[3] === "AM" && h === 12) h = 0;
+    if (apMatch[4] === "PM" && h !== 12) h += 12;
+    if (apMatch[4] === "AM" && h === 12) h = 0;
     return h * 60 + m;
   }
-  const h24Match = trimmed.match(/^(\d{1,2}):(\d{2})$/);
+  const h24Match = trimmed.match(/^(\d{1,2}):(\d{2})(?::(\d{2}))?$/);
   if (h24Match) return Number(h24Match[1]) * 60 + Number(h24Match[2]);
   return null;
 }

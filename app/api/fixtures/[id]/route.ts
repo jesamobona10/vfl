@@ -1,6 +1,7 @@
 
 import { createClient } from '@/lib/supabase/server';
 import { createServiceRoleClient } from '@/lib/supabase/service-role';
+import { normalizeTime } from '@/lib/utils/helpers';
 import {
   asInteger,
   asOptionalString,
@@ -117,7 +118,7 @@ export async function PUT(
       if (!isNaN(parsedLive.getTime())) update.live_started_at = parsedLive.toISOString();
     }
     if (date !== null) update.date = date;
-    if (time !== null) update.time = time;
+    if (time !== null) update.time = normalizeTime(time);
     if (venue !== null) update.venue = venue ? sanitizeText(venue) : null;
     if (update.home_team_id && update.away_team_id && update.home_team_id === update.away_team_id) {
       return json({ error: 'Home and away teams must be different.' }, { status: 400 });
