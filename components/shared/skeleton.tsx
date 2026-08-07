@@ -1,10 +1,7 @@
-export function Skeleton({ className = "" }: { className?: string }) {
-  return (
-    <div
-      className={`animate-pulse bg-surface-2 rounded-lg ${className}`}
-    />
-  );
-}
+import { Skeleton } from "@/components/ui/v-skeleton-8-utils/skeleton";
+import { Pattern } from "@/components/ui/v-skeleton-8";
+
+export { Skeleton };
 
 export function SkeletonCard({ className = "" }: { className?: string }) {
   return (
@@ -66,17 +63,8 @@ export function SkeletonForm({ fields = 3 }: { fields?: number }) {
 
 export function PageSkeleton() {
   return (
-    <div className="space-y-6 p-6">
-      <div className="flex items-center justify-between">
-        <Skeleton className="h-7 w-48" />
-        <Skeleton className="h-9 w-28" />
-      </div>
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        {Array.from({ length: 4 }).map((_, i) => (
-          <SkeletonCard key={i} />
-        ))}
-      </div>
-      <SkeletonCard />
+    <div className="flex items-center justify-center py-10">
+      <Pattern />
     </div>
   );
 }
