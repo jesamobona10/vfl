@@ -15,6 +15,22 @@ interface LiveData {
   upcoming: Match[];
   teams: Team[];
   now: string;
+  diagnostics?: LiveDiagnostic[];
+}
+
+interface LiveDiagnostic {
+  id: number;
+  round: number;
+  match: string;
+  status: string;
+  date: string;
+  time: string;
+  competition_id: string | null;
+  season_id: string | null;
+  kickoff: string | null;
+  tzOffset: number;
+  now: string;
+  reason: string;
 }
 
 export default function LiveEventPage() {
@@ -23,6 +39,7 @@ export default function LiveEventPage() {
   const slug = params.slug as string;
   const cId = params.cId as string;
   const seasonId = searchParams.get("seasonId");
+  const debug = searchParams.get("debug") === "1";
 
   const { data: competition } = useCompetition(cId);
   const teams = useAppStore((s) => s.teams);
@@ -45,6 +62,7 @@ export default function LiveEventPage() {
     const query = new URLSearchParams({ competition_id: cId });
     if (seasonId) query.set("season_id", seasonId);
     query.set("tz", String(new Date().getTimezoneOffset()));
+    if (debug) query.set("debug", "1");
     fetch(`/api/organizations/${slug}/live?${query.toString()}`)
       .then((r) => r.json())
       .then((d) => {
@@ -105,6 +123,47 @@ export default function LiveEventPage() {
       {error && (
         <div className="rounded-xl border border-danger/30 bg-danger/10 px-4 py-3 text-sm text-danger">
           {error}
+        </div>
+      )}
+
+      {debug && data?.diagnostics && (
+        <div className="rounded-xl border border-line bg-surface-2/50 px-4 py-3 space-y-2">
+          <p className="text-xs font-semibold uppercase tracking-widest text-muted">
+            Diagnostics (debug=1)
+          </p>
+          <p className="text-[11px] text-muted">
+            Server now: <code className="text-text">{data.now}</code>
+          </p>
+          <div className="overflow-x-auto">
+            <table className="w-full text-left text-xs">
+              <thead>
+                <tr className="text-muted border-b border-line">
+                  <th className="py-1 pr-3">Match</th>
+                  <th className="py-1 pr-3">Status</th>
+                  <th className="py-1 pr-3">Date/Time</th>
+                  <th className="py-1 pr-3">Kickoff (UTC)</th>
+                  <th className="py-1">Why</th>
+                </tr>
+              </thead>
+              <tbody>
+                {data.diagnostics.map((d) => (
+                  <tr key={d.id} className="border-b border-line/60">
+                    <td className="py-1 pr-3">
+                      R{d.round} · {d.match}
+                    </td>
+                    <td className="py-1 pr-3">{d.status}</td>
+                    <td className="py-1 pr-3 tabular-nums">
+                      {d.date ? d.date : "—"} {d.time ? d.time : "—"}
+                    </td>
+                    <td className="py-1 pr-3 tabular-nums">
+                      {d.kickoff || "—"}
+                    </td>
+                    <td className="py-1 text-warn-500">{d.reason}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
         </div>
       )}
 

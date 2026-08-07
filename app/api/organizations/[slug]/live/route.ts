@@ -3,7 +3,7 @@ import { createServiceRoleClient } from "@/lib/supabase/service-role";
 import type { Match, Team } from "@/lib/types";
 import { sortMatchesByDateTime } from "@/lib/utils/helpers";
 import { getAuthContext, json, logApiError, requireAuth } from "@/lib/security";
-import { isLiveEligible } from "@/lib/logic/live";
+import { isLiveEligible, matchKickoff } from "@/lib/logic/live";
 
 export const dynamic = "force-dynamic";
 
@@ -94,6 +94,12 @@ export async function GET(
     const now = new Date();
     const live: Match[] = [];
     const upcoming: Match[] = [];
+    const debug = url.searchParams.get("debug") === "1";
+    const diagnostics: any[] = [];
+    const teamName = (id: number) => {
+      const t = teams.find((x) => x.id === id);
+      return t?.name || `#${id}`;
+    };
 
     for (const m of dbMatches || []) {
       const match: Match = {
@@ -118,10 +124,54 @@ export async function GET(
         live_started_at: m.live_started_at || null,
       };
 
+      let reason = "";
+      let included = false;
       if (match.status === "live" || match.status === "in-progress") {
-        live.push(match);
-      } else if (isLiveEligible(match, now, 10, 10, tzOffset)) {
-        upcoming.push(match);
+        included = true;
+        reason = "included (live)";
+      } else if (match.status !== "scheduled") {
+        reason = `excluded (status "${match.status}")`;
+      } else if (!match.date || !match.time) {
+        reason = 'excluded (no date/time — set it via the match flyer "Save Date & Time")';
+      } else {
+        const k = matchKickoff(match, tzOffset);
+        if (!k) {
+          reason = `excluded (invalid date/time "${match.date} ${match.time}")`;
+        } else if (isLiveEligible(match, now, 10, 10, tzOffset)) {
+          included = true;
+          reason = "included (upcoming)";
+        } else if (now.getTime() < k.getTime() - 10 * 60_000) {
+          const minsAhead = Math.ceil((k.getTime() - now.getTime()) / 60_000);
+          reason = `excluded (kickoff in ~${minsAhead} min — appears 10 min before)`;
+        } else {
+          reason = "excluded (grace window passed)";
+        }
+      }
+
+      if (included) {
+        if (match.status === "live" || match.status === "in-progress") {
+          live.push(match);
+        } else {
+          upcoming.push(match);
+        }
+      }
+
+      if (debug) {
+        const k = matchKickoff(match, tzOffset);
+        diagnostics.push({
+          id: match.id,
+          round: match.round,
+          match: `${teamName(match.homeId)} vs ${teamName(match.awayId)}`,
+          status: match.status,
+          date: match.date,
+          time: match.time,
+          competition_id: match.competition_id,
+          season_id: match.season_id,
+          kickoff: k ? k.toISOString() : null,
+          tzOffset,
+          now: now.toISOString(),
+          reason,
+        });
       }
     }
 
@@ -130,6 +180,7 @@ export async function GET(
       upcoming: sortMatchesByDateTime(upcoming),
       now: now.toISOString(),
       teams,
+      diagnostics: debug ? diagnostics : undefined,
     });
   } catch (error) {
     logApiError("org_live_error", error);
