@@ -120,11 +120,14 @@ const INITIALS_CSS = `
   }
 `;
 
+const FIXED_VENUE = "School Stadium";
+
 export function MatchFlyer({ match, homeTeam, awayTeam, onClose }: MatchFlyerProps) {
   const flyerRef = useRef<HTMLDivElement>(null);
   const [capturing, setCapturing] = useState(false);
   const [date, setDate] = useState(match.date || "");
   const [time, setTime] = useState(match.time || "");
+  const [venue, setVenue] = useState(match.venue || FIXED_VENUE);
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(Boolean(match.date && match.time));
   const [dirty, setDirty] = useState(false);
@@ -163,7 +166,7 @@ export function MatchFlyer({ match, homeTeam, awayTeam, onClose }: MatchFlyerPro
       const res = await fetch(`/api/fixtures/${match.id}`, {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ date, time }),
+        body: JSON.stringify({ date, time, venue: FIXED_VENUE }),
       });
       const body = await res.json();
       if (!res.ok) {
@@ -172,6 +175,8 @@ export function MatchFlyer({ match, homeTeam, awayTeam, onClose }: MatchFlyerPro
       }
       updateMatch(match.id, "date", date);
       updateMatch(match.id, "time", time);
+      updateMatch(match.id, "venue", FIXED_VENUE);
+      setVenue(FIXED_VENUE);
       setSaved(true);
       setDirty(false);
     } catch {
@@ -259,7 +264,7 @@ export function MatchFlyer({ match, homeTeam, awayTeam, onClose }: MatchFlyerPro
             <div className="flyer-divider" />
             <div className="flyer-date">{date ? formatDate(date) : "Date TBD"}</div>
             <div className="flyer-time">{time || "Time TBD"}</div>
-            <div className="flyer-venue">{match.venue || "Venue TBD"}</div>
+            <div className="flyer-venue">{venue || FIXED_VENUE}</div>
           </div>
         </div>
 
@@ -286,6 +291,17 @@ export function MatchFlyer({ match, homeTeam, awayTeam, onClose }: MatchFlyerPro
               aria-label="Match time"
             />
           </div>
+          <input
+            type="text"
+            value={venue}
+            onChange={() => {}}
+            disabled
+            className="input w-full text-sm py-1.5 disabled:opacity-60 disabled:cursor-not-allowed"
+            aria-label="Match venue"
+          />
+          <p style={{ fontSize: 11, color: "var(--ink-3)", marginTop: -6 }}>
+            Venue is fixed and cannot be changed.
+          </p>
           {canEdit && (
             <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
               <button
