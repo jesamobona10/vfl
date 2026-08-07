@@ -2,13 +2,6 @@
 
 import { useAppStore } from "@/lib/store";
 import { allMatches, completedMatches } from "@/lib/logic/standings";
-import {
-  Users,
-  UserCog,
-  Calendar,
-  Trophy,
-  Goal,
-} from "lucide-react";
 
 export function MetricCards() {
   const teams = useAppStore((s) => s.teams);
@@ -39,99 +32,41 @@ export function MetricCards() {
 
   if (isTeamAccount()) {
     const cards = [
-      {
-        label: "Goals",
-        value: teamGoalsScored,
-        icon: Goal,
-        color: "text-brand",
-      },
-      {
-        label: "Players",
-        value: teamPlayers.length,
-        icon: UserCog,
-        color: "text-accent",
-      },
-      {
-        label: "Matches",
-        value: teamMatches.length,
-        icon: Calendar,
-        color: "text-blue-500",
-      },
-      {
-        label: "Played",
-        value: teamCompleted.length,
-        icon: Trophy,
-        color: "text-green-500",
-      },
+      { label: "Goals", value: teamGoalsScored, sub: "scored this season" },
+      { label: "Players", value: teamPlayers.length, sub: "in squad" },
+      { label: "Matches", value: teamMatches.length, sub: "this season" },
+      { label: "Played", value: teamCompleted.length, sub: "completed" },
     ];
 
     return (
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        {cards.map((card) => {
-          const Icon = card.icon;
-          return (
-            <div className="card p-6">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm text-muted">{card.label}</p>
-                  <p className="text-3xl font-bold mt-1">
-                    {card.value}
-                  </p>
-                </div>
-                <Icon className={card.color} size={32} />
-              </div>
-            </div>
-          );
-        })}
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+        {cards.map((card) => (
+          <div key={card.label} className="metric-card">
+            <div className="metric-label">{card.label}</div>
+            <div className="metric-value">{card.value}</div>
+            <div className="metric-sub">{card.sub}</div>
+          </div>
+        ))}
       </div>
     );
   }
 
   const cards = [
-    {
-      label: "Teams",
-      value: teams.length,
-      icon: Users,
-      color: "text-brand",
-    },
-    {
-      label: "Players",
-      value: players.length,
-      icon: UserCog,
-      color: "text-accent",
-    },
-    {
-      label: "Matches",
-      value: totalMatches,
-      icon: Calendar,
-      color: "text-blue-500",
-    },
-    {
-      label: "Completed",
-      value: completed,
-      icon: Trophy,
-      color: "text-green-500",
-    },
+    { label: "Teams", value: teams.length, sub: "registered teams" },
+    { label: "Players", value: players.length, sub: "registered players" },
+    { label: "Matches", value: totalMatches, sub: "across all competitions" },
+    { label: "Completed", value: completed, sub: "played fixtures" },
   ];
 
   return (
-    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-      {cards.map((card) => {
-        const Icon = card.icon;
-        return (
-          <div className="card p-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-muted">{card.label}</p>
-                <p className="text-3xl font-bold mt-1">
-                  {card.value}
-                </p>
-              </div>
-              <Icon className={card.color} size={32} />
-            </div>
-          </div>
-        );
-      })}
+    <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+      {cards.map((card) => (
+        <div key={card.label} className="metric-card">
+          <div className="metric-label">{card.label}</div>
+          <div className="metric-value">{card.value}</div>
+          <div className="metric-sub">{card.sub}</div>
+        </div>
+      ))}
     </div>
   );
 }

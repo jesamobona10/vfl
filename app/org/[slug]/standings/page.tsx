@@ -4,10 +4,12 @@ import { StandingsTable } from "@/components/standings/standings-table";
 
 export default function OrgStandingsPage() {
   return (
-    <div>
-      <div className="mb-6">
-        <h1 className="text-2xl font-bold">Standings</h1>
-        <p className="text-sm text-muted">League table and positions</p>
+    <div className="space-y-5">
+      <div className="page-head">
+        <div>
+          <p className="page-title">Standings</p>
+          <p className="page-sub">League table and positions</p>
+        </div>
       </div>
       <StandingsTable />
     </div>

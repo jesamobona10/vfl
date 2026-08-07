@@ -14,9 +14,9 @@ const typeConfig: Record<string, { label: string; icon: React.ReactNode }> = {
 };
 
 const statusColors: Record<string, string> = {
-  draft: "bg-gray-500/20 text-gray-300",
-  active: "bg-green-500/20 text-green-400",
-  completed: "bg-blue-500/20 text-blue-400",
+  draft: "bg-surface-2 text-ink-3",
+  active: "bg-live-tint text-live-500",
+  completed: "bg-brand-50 text-brand-700",
 };
 
 export default function CompetitionsPage() {
@@ -34,11 +34,11 @@ export default function CompetitionsPage() {
   }
 
   return (
-    <div className="space-y-6">
-      <div className="flex items-center justify-between">
+    <div className="space-y-5">
+      <div className="page-head">
         <div>
-          <h1 className="text-2xl font-bold">Competitions</h1>
-          <p className="text-sm text-muted">Manage leagues, cups and friendlies</p>
+          <p className="page-title">Competitions</p>
+          <p className="page-sub">Manage leagues, cups and friendlies</p>
         </div>
         {competitions.length > 0 && (
           <a href={`/org/${slug}/competitions/new`} className="btn-primary flex items-center gap-2">
@@ -49,10 +49,10 @@ export default function CompetitionsPage() {
       </div>
 
       {competitions.length === 0 ? (
-        <div className="card p-12 text-center">
-          <Trophy size={48} className="mx-auto text-muted/30 mb-4" />
+        <div className="panel p-12 text-center">
+          <Trophy size={48} className="mx-auto text-ink-3/40 mb-4" />
           <h2 className="text-lg font-semibold mb-1">No competitions yet</h2>
-          <p className="text-sm text-muted max-w-md mx-auto mb-6">
+          <p className="text-sm text-ink-2 max-w-md mx-auto mb-6">
             Create your first competition to get started — a league, cup, or friendly match.
           </p>
           <a href={`/org/${slug}/competitions/new`} className="btn-primary inline-flex items-center gap-2">
@@ -71,7 +71,7 @@ export default function CompetitionsPage() {
                 className="card p-4 hover:border-brand/50 transition-colors block"
               >
                 <div className="flex items-start justify-between mb-3">
-                  <div className="flex items-center gap-2 text-muted">
+                  <div className="flex items-center gap-2 text-ink-2">
                     {cfg.icon}
                     <span className="text-xs uppercase tracking-wider">{cfg.label}</span>
                   </div>
@@ -83,7 +83,7 @@ export default function CompetitionsPage() {
                 </div>
                 <h3 className="font-semibold text-base mb-1">{comp.name}</h3>
                 {comp.season && (
-                  <p className="text-xs text-muted">Season: {comp.season}</p>
+                  <p className="text-xs text-ink-2">Season: {comp.season}</p>
                 )}
               </a>
             );

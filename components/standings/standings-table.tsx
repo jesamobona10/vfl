@@ -116,9 +116,9 @@ export function StandingsTable() {
   }
 
   return (
-    <div className="card overflow-hidden" ref={tableRef}>
-      <div className="px-5 py-3 border-b border-line flex items-center justify-between">
-        <h2 className="font-semibold">Full League Table</h2>
+    <div className="panel" ref={tableRef}>
+      <div className="panel-head">
+        <span className="panel-title">Full League Table</span>
         <div className="relative" ref={menuRef}>
           <button
             onClick={() => setMenuOpen(!menuOpen)}
@@ -156,39 +156,39 @@ export function StandingsTable() {
       <div className="overflow-x-auto">
         <table className="w-full text-sm">
           <thead>
-            <tr className="bg-surface-2 text-muted text-xs uppercase tracking-wider">
-              <th className="text-left px-5 py-3 font-medium">#</th>
-              <th className="text-left px-5 py-3 font-medium">
+            <tr className="text-[10.5px] uppercase tracking-[0.04em] text-ink-3 font-semibold">
+              <th className="text-left px-4 py-2.5 font-semibold border-b border-line">#</th>
+              <th className="text-left px-4 py-2.5 font-semibold border-b border-line">
                 Team
               </th>
-              <th className="text-center px-5 py-3 font-medium">
+              <th className="text-center px-4 py-2.5 font-semibold border-b border-line">
                 Rtg
               </th>
-              <th className="text-center px-5 py-3 font-medium">
+              <th className="text-center px-4 py-2.5 font-semibold border-b border-line">
                 P
               </th>
-              <th className="text-center px-5 py-3 font-medium">
+              <th className="text-center px-4 py-2.5 font-semibold border-b border-line">
                 W
               </th>
-              <th className="text-center px-5 py-3 font-medium">
+              <th className="text-center px-4 py-2.5 font-semibold border-b border-line">
                 D
               </th>
-              <th className="text-center px-5 py-3 font-medium">
+              <th className="text-center px-4 py-2.5 font-semibold border-b border-line">
                 L
               </th>
-              <th className="text-center px-5 py-3 font-medium">
+              <th className="text-center px-4 py-2.5 font-semibold border-b border-line">
                 GF
               </th>
-              <th className="text-center px-5 py-3 font-medium">
+              <th className="text-center px-4 py-2.5 font-semibold border-b border-line">
                 GA
               </th>
-              <th className="text-center px-5 py-3 font-medium">
+              <th className="text-center px-4 py-2.5 font-semibold border-b border-line">
                 GD
               </th>
-              <th className="text-center px-5 py-3 font-medium">
+              <th className="text-center px-4 py-2.5 font-semibold border-b border-line">
                 Pts
               </th>
-              <th className="text-center px-5 py-3 font-medium">
+              <th className="text-center px-4 py-2.5 font-semibold border-b border-line">
                 Form
               </th>
             </tr>
