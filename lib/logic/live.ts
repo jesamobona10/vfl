@@ -150,14 +150,17 @@ export function matchKickoff(match: { date?: string; time?: string }): Date | nu
 }
 
 /**
- * True when a scheduled match should surface in the Live Event tab:
- * its kickoff has arrived and it is still within the grace window.
- * Matches that are already live/in-progress are always eligible.
+ * True when a scheduled match should surface in the Live Event tab.
+ * The match appears `leadMinutes` before its kickoff and stays visible
+ * for `graceMinutes` after kickoff (the grace period covers matches
+ * that run late, e.g. African-time kickoffs). Matches that are already
+ * live/in-progress are always eligible.
  */
 export function isLiveEligible(
   match: Match,
   now: Date | number,
-  graceMinutes = 10
+  graceMinutes = 10,
+  leadMinutes = 10
 ): boolean {
   if (match.status === "live" || match.status === "in-progress") return true;
   if (match.status !== "scheduled") return false;
@@ -165,5 +168,8 @@ export function isLiveEligible(
   if (!kickoff) return false;
   const current = now instanceof Date ? now.getTime() : now;
   const kickoffMs = kickoff.getTime();
-  return current >= kickoffMs && current <= kickoffMs + graceMinutes * MIN_MS;
+  return (
+    current >= kickoffMs - leadMinutes * MIN_MS &&
+    current <= kickoffMs + graceMinutes * MIN_MS
+  );
 }

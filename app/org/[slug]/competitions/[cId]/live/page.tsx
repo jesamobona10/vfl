@@ -6,7 +6,7 @@ import { useAppStore } from "@/lib/store";
 import { useCompetition } from "@/lib/hooks/use-competitions";
 import { LiveMatchCard } from "@/components/live/live-match-card";
 import { PageSkeleton } from "@/components/shared/skeleton";
-import { liveSettings, type LiveClockSettings } from "@/lib/logic/live";
+import { liveSettings, matchKickoff, type LiveClockSettings } from "@/lib/logic/live";
 import { Play, Radio } from "lucide-react";
 import type { Match, Team } from "@/lib/types";
 
@@ -14,6 +14,7 @@ interface LiveData {
   live: Match[];
   upcoming: Match[];
   teams: Team[];
+  now: string;
 }
 
 export default function LiveEventPage() {
@@ -113,7 +114,8 @@ export default function LiveEventPage() {
             No matches are currently live or about to kick off.
           </p>
           <p className="text-sm text-muted/70 mt-1">
-            Scheduled matches appear here automatically within 10 minutes of kickoff.
+            Scheduled matches appear here automatically 10 minutes before
+            kickoff and can be started up to 10 minutes after kickoff.
           </p>
         </div>
       ) : (
@@ -146,12 +148,14 @@ export default function LiveEventPage() {
           {upcoming.length > 0 && (
             <div>
               <h2 className="text-sm font-semibold uppercase tracking-widest text-muted mb-3">
-                About to Kick Off
+                Upcoming
               </h2>
               <div className="grid gap-3">
                 {upcoming.map((match) => {
                   const home = getTeam(match.homeId);
                   const away = getTeam(match.awayId);
+                  const kickoff = matchKickoff(match);
+                  const delayed = kickoff ? new Date(data?.now || Date.now()) > kickoff : false;
                   return (
                     <div
                       key={match.id}
@@ -175,6 +179,11 @@ export default function LiveEventPage() {
                       <div className="flex items-center gap-3">
                         <span className="text-xs text-muted">
                           {match.time ? `Kickoff ${match.time}` : "Kickoff soon"}
+                          {delayed && (
+                            <span className="ml-1.5 inline-flex items-center px-1.5 py-0.5 rounded bg-warn-500/15 text-warn-500 text-[10px] font-semibold uppercase">
+                              Delayed
+                            </span>
+                          )}
                         </span>
                         {canEdit && (
                           <button
