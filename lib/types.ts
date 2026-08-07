@@ -58,6 +58,7 @@ export interface Match {
   autoAdjusted?: boolean;
   competition_id?: string | null;
   season_id?: string | null;
+  live_started_at?: string | null;
 }
 
 export interface FixtureRound {
