@@ -94,8 +94,8 @@ export function PlayerCard({
             {i.label}:{i.value}
           </span>
         ))}
-        <span className="text-yellow-600">Y:{player.yellowCards}</span>
-        <span className="text-danger">R:{player.redCards}</span>
+        <span className="text-warn-500">Y:{player.yellowCards}</span>
+        <span className="text-danger-500">R:{player.redCards}</span>
         <span className="font-semibold text-text">
           {player.rating.toFixed(1)}
         </span>
@@ -156,10 +156,10 @@ export function PlayerCard({
           <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
             {stat("Goals", player.goals, <Goal size={13} className="text-brand" />)}
             {stat("Assists", player.assists, <ChevronRight size={13} className="text-accent" />)}
-            {stat("Yellow Cards", player.yellowCards, <div className="w-2.5 h-3.5 rounded-sm bg-yellow-400" />)}
-            {stat("Red Cards", player.redCards, <div className="w-2.5 h-3.5 rounded-sm bg-red-500" />)}
+            {stat("Yellow Cards", player.yellowCards, <div className="w-2.5 h-3.5 rounded-sm bg-gold-500" />)}
+            {stat("Red Cards", player.redCards, <div className="w-2.5 h-3.5 rounded-sm bg-danger-500" />)}
             {stat("Tackles", player.tackles, <Swords size={13} className="text-muted" />)}
-            {stat("Rating", player.rating.toFixed(1), <Star size={13} className="text-amber-400" />)}
+            {stat("Rating", player.rating.toFixed(1), <Star size={13} className="text-gold-500" />)}
           </div>
 
           {isGK && (
@@ -169,10 +169,10 @@ export function PlayerCard({
               </h4>
               <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
                 {stat("Saves", player.saves, <Shield size={13} className="text-brand" />)}
-                {stat("Clean Sheets", player.cleanSheets, <Trophy size={13} className="text-green-500" />)}
-                {stat("Goals Conceded", player.goalsConceded, <Goal size={13} className="text-danger" />)}
-                {stat("Penalty Saves", player.penaltySaves, <Shield size={13} className="text-accent" />)}
-                {stat("5+ Saves Bonus", player.bonus5Saves, <Star size={13} className="text-amber-400" />)}
+                {stat("Clean Sheets", player.cleanSheets, <Trophy size={13} className="text-live-500" />)}
+                {stat("Goals Conceded", player.goalsConceded, <Goal size={13} className="text-danger-500" />)}
+                {stat("Penalty Saves", player.penaltySaves, <Shield size={13} className="text-gold-500" />)}
+                {stat("5+ Saves Bonus", player.bonus5Saves, <Star size={13} className="text-gold-500" />)}
               </div>
             </>
           )}

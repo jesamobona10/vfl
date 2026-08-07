@@ -146,11 +146,11 @@ export function TeamForm() {
   };
 
   return (
-    <div>
-      <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between mb-6">
+    <div className="space-y-5">
+      <div className="page-head">
         <div>
-          <h1 className="text-2xl font-bold">Team Management</h1>
-          <p className="text-sm text-muted">
+          <p className="page-title">Team Management</p>
+          <p className="page-sub">
             {teams.length} team{teams.length !== 1 ? "s" : ""} &middot; {totalPlayers} player{totalPlayers !== 1 ? "s" : ""}
           </p>
         </div>
@@ -212,8 +212,8 @@ export function TeamForm() {
           <SkeletonForm fields={4} />
         </div>
       ) : visibleTeams.length === 0 ? (
-        <div className="card p-12 text-center text-muted">
-          <Shield size={48} className="mx-auto mb-4 opacity-20" />
+        <div className="panel p-12 text-center text-ink-2">
+          <Shield size={48} className="mx-auto mb-4 text-ink-3/40" />
           <p className="text-lg font-medium">No teams yet</p>
           <p className="text-sm mt-1">Add your first team to get started.</p>
         </div>

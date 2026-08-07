@@ -50,12 +50,11 @@ export default function OrgAuditLogsPage() {
   if (loading) return <SkeletonList items={4} />;
 
   return (
-    <div className="space-y-6">
-      <div className="flex items-center gap-3">
-        <ScrollText className="text-muted" size={24} />
+    <div className="space-y-5">
+      <div className="page-head">
         <div>
-          <h1 className="text-xl font-bold">Audit Logs</h1>
-          <p className="text-sm text-muted">Security events within your organization.</p>
+          <p className="page-title">Audit Logs</p>
+          <p className="page-sub">Security events within your organization.</p>
         </div>
       </div>
 
@@ -84,21 +83,30 @@ export default function OrgAuditLogsPage() {
       )}
 
       {logs.length > 0 ? (
-        <div className="space-y-1">
+        <div className="panel">
           {logs.map((log) => (
-            <div key={log.id} className="card px-4 py-2 flex items-center gap-3 text-xs">
-              <Shield size={14} className="text-muted shrink-0" />
-              <span className="font-medium w-32 truncate">{log.event_type}</span>
-              <span className="text-muted w-36">{new Date(log.created_at).toLocaleString()}</span>
-              <span className="text-muted w-20">{log.ip_address || "\u2014"}</span>
-              {log.metadata && Object.keys(log.metadata).length > 0 && (
-                <span className="text-muted truncate">{JSON.stringify(log.metadata)}</span>
-              )}
+            <div key={log.id} className="activity-item">
+              <Shield size={13} className="text-ink-3 shrink-0 mt-0.5" />
+              <div className="min-w-0 flex-1">
+                <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
+                  <span className="font-medium text-[12.5px]">{log.event_type}</span>
+                  {log.metadata && Object.keys(log.metadata).length > 0 && (
+                    <span className="text-[11px] text-ink-3 truncate">
+                      {JSON.stringify(log.metadata)}
+                    </span>
+                  )}
+                </div>
+                <div className="text-[11px] text-ink-3 mt-0.5">
+                  {new Date(log.created_at).toLocaleString()}
+                  {" · "}
+                  {log.ip_address || "\u2014"}
+                </div>
+              </div>
             </div>
           ))}
         </div>
       ) : (
-        <p className="text-sm text-muted text-center py-8">No audit logs found for this organization.</p>
+        <p className="text-sm text-ink-2 text-center py-8">No audit logs found for this organization.</p>
       )}
     </div>
   );

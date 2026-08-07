@@ -20,11 +20,11 @@ export default function OrgPlayersPage() {
     .filter((g) => g.players.length > 0);
 
   return (
-    <div>
-      <div className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between mb-6">
+    <div className="space-y-5">
+      <div className="page-head">
         <div>
-          <h1 className="text-2xl font-bold">Players</h1>
-          <p className="text-sm text-muted">
+          <p className="page-title">Players</p>
+          <p className="page-sub">
             {players.length} player{players.length !== 1 ? "s" : ""} across {grouped.length} team{grouped.length !== 1 ? "s" : ""}
           </p>
         </div>
@@ -36,8 +36,8 @@ export default function OrgPlayersPage() {
 
       {grouped.length === 0 ? (
         <div className="text-center py-16">
-          <Users size={48} className="mx-auto text-muted/30 mb-4" />
-          <p className="text-muted">No players yet.</p>
+          <Users size={48} className="mx-auto text-ink-3/40 mb-4" />
+          <p className="text-ink-2">No players yet.</p>
         </div>
       ) : (
         <div className="space-y-8">

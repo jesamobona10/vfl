@@ -94,11 +94,11 @@ export default function OrgTeamAccountsPage() {
   );
 
   return (
-    <div>
-      <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between mb-6">
+    <div className="space-y-5">
+      <div className="page-head">
         <div>
-          <h1 className="text-2xl font-bold">Team Accounts</h1>
-          <p className="text-sm text-muted">
+          <p className="page-title">Team Accounts</p>
+          <p className="page-sub">
             {accounts.length} account{accounts.length !== 1 ? "s" : ""}
           </p>
         </div>
@@ -168,7 +168,7 @@ export default function OrgTeamAccountsPage() {
         <div
           className={`flex items-start gap-2 text-sm p-3 rounded-lg mb-6 ${
             message.type === "success"
-              ? "text-green-400 bg-green-500/10"
+              ? "text-live-500 bg-live-tint"
               : "text-danger bg-danger/10"
           }`}
         >
@@ -178,30 +178,30 @@ export default function OrgTeamAccountsPage() {
       )}
 
       {createdAccount && (
-        <div className="card p-6 mb-6 border border-green-500/30 bg-green-500/5 space-y-3">
-          <h3 className="font-semibold flex items-center gap-2 text-green-400">
+        <div className="card p-6 mb-6 border border-live-500/30 bg-live-tint space-y-3">
+          <h3 className="font-semibold flex items-center gap-2 text-live-500">
             <Check size={18} />
             Account Created
           </h3>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-sm">
             <div>
-              <span className="text-muted">Team</span>
+              <span className="text-ink-2">Team</span>
               <p className="font-medium">{createdAccount.displayName}</p>
             </div>
             <div>
-              <span className="text-muted">Username</span>
+              <span className="text-ink-2">Username</span>
               <p className="font-mono font-medium">{createdAccount.username}</p>
             </div>
             <div>
-              <span className="text-muted">Password</span>
-              <p className="font-mono text-muted">(as entered)</p>
+              <span className="text-ink-2">Password</span>
+              <p className="font-mono text-ink-2">(as entered)</p>
             </div>
             <div>
-              <span className="text-muted">Role</span>
+              <span className="text-ink-2">Role</span>
               <p className="font-medium capitalize">Team Account</p>
             </div>
           </div>
-          <p className="text-xs text-muted">
+          <p className="text-xs text-ink-2">
             Share these credentials with the team. They can log in at the login page.
           </p>
         </div>
@@ -212,8 +212,8 @@ export default function OrgTeamAccountsPage() {
           <SkeletonList items={4} />
         </div>
       ) : accounts.length === 0 ? (
-        <div className="card p-12 text-center text-muted">
-          <UserCog size={48} className="mx-auto mb-4 opacity-20" />
+        <div className="panel p-12 text-center text-ink-2">
+          <UserCog size={48} className="mx-auto mb-4 text-ink-3/40" />
           <p className="text-lg font-medium">No team accounts yet</p>
           <p className="text-sm mt-1">Create accounts so teams can log in independently.</p>
         </div>
