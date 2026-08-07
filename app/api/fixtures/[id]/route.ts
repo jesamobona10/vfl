@@ -101,6 +101,7 @@ export async function PUT(
     const date = asOptionalString(parsed.data!.date, 10);
     const time = asOptionalString(parsed.data!.time, 8);
     const venue = asOptionalString(parsed.data!.venue, 120);
+    const liveStartedAt = asOptionalString(parsed.data!.live_started_at, 32);
     if (round !== null) update.round = round;
     if (parsedHomeTeamId !== null) update.home_team_id = parsedHomeTeamId;
     if (parsedAwayTeamId !== null) update.away_team_id = parsedAwayTeamId;
@@ -108,6 +109,10 @@ export async function PUT(
     if (awayScore !== null) update.away_score = awayScore;
     if (status && ['scheduled', 'live', 'in-progress', 'completed', 'postponed'].includes(status)) {
       update.status = status;
+    }
+    if (liveStartedAt !== null) {
+      const parsedLive = new Date(liveStartedAt);
+      if (!isNaN(parsedLive.getTime())) update.live_started_at = parsedLive.toISOString();
     }
     if (date !== null) update.date = date;
     if (time !== null) update.time = time;

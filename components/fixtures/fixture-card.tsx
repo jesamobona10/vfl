@@ -4,7 +4,7 @@ import { useState } from "react";
 import type { Match, Team } from "@/lib/types";
 import { useAppStore } from "@/lib/store";
 import { titleCase } from "@/lib/utils/helpers";
-import { AddEventModal } from "./add-event-modal";
+import { MatchFlyer } from "@/components/flyers/match-flyer";
 
 interface FixtureCardProps {
   match: Match;
@@ -52,7 +52,7 @@ export function FixtureCard({
   editable,
   onDrop,
 }: FixtureCardProps) {
-  const [showAddEvent, setShowAddEvent] = useState(false);
+  const [showFlyer, setShowFlyer] = useState(false);
   const players = useAppStore((s) => s.players);
   const updateMatch = useAppStore((s) => s.updateMatch);
 
@@ -162,7 +162,7 @@ export function FixtureCard({
   return (
     <>
       <article
-        onClick={() => setShowAddEvent(true)}
+        onClick={() => setShowFlyer(true)}
         className={`flex flex-col gap-3 px-4 py-4 rounded-3xl border transition-all cursor-pointer ${
           editable
             ? "border-line bg-surface hover:border-brand/30 hover:bg-surface-2/30 hover:shadow-sm"
@@ -224,12 +224,12 @@ export function FixtureCard({
         )}
       </article>
 
-      {showAddEvent && (
-        <AddEventModal
+      {showFlyer && (
+        <MatchFlyer
           match={match}
-          homeTeamName={homeTeam?.name || "Home"}
-          awayTeamName={awayTeam?.name || "Away"}
-          onClose={() => setShowAddEvent(false)}
+          homeTeam={homeTeam}
+          awayTeam={awayTeam}
+          onClose={() => setShowFlyer(false)}
         />
       )}
     </>

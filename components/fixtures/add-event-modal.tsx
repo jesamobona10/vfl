@@ -98,6 +98,7 @@ interface AddEventModalProps {
   homeTeamName: string;
   awayTeamName: string;
   onClose: () => void;
+  initialMinute?: number;
 }
 
 function updateMatchScore(
@@ -124,6 +125,7 @@ export function AddEventModal({
   homeTeamName,
   awayTeamName,
   onClose,
+  initialMinute,
 }: AddEventModalProps) {
   const [step, setStep] = useState<"type" | "player">("type");
   const [selectedType, setSelectedType] = useState<string | null>(null);
@@ -145,7 +147,8 @@ export function AddEventModal({
 
     const player = players.find((p) => p.id === playerId);
     const teamId = player?.teamId ?? match.homeId;
-    const newEvent: MatchEvent = { playerId, type: selectedType, teamId };
+    const minute = initialMinute;
+    const newEvent: MatchEvent = { playerId, type: selectedType, teamId, minute };
 
     const events = [...(match.events || []), newEvent];
     updateMatch(match.id, "events", events);
@@ -168,7 +171,7 @@ export function AddEventModal({
       await fetch(`/api/fixtures/${match.id}/events`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ playerId, teamId, type: selectedType }),
+        body: JSON.stringify({ playerId, teamId, type: selectedType, minute }),
       });
     } catch {
       // persist silently

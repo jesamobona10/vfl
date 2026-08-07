@@ -3,7 +3,6 @@ import { createServiceRoleClient } from '@/lib/supabase/service-role';
 import {
   asInteger,
   asString,
-  asOptionalString,
   getAuthContext,
   getClientIp,
   json,
@@ -83,7 +82,7 @@ export async function POST(
     const playerId = asInteger(parsed.data!.player_id ?? parsed.data!.playerId, 1);
     const teamId = asInteger(parsed.data!.team_id ?? parsed.data!.teamId, 1);
     const eventType = asString(parsed.data!.type ?? parsed.data!.event_type, 30);
-    const minute = asOptionalString(parsed.data!.minute, 3);
+    const minute = asInteger(parsed.data!.minute, 1, 150);
 
     if (!playerId) return json({ error: 'Player ID is required.' }, { status: 400 });
     if (!teamId) return json({ error: 'Team ID is required.' }, { status: 400 });
