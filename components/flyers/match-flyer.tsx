@@ -3,6 +3,8 @@
 import { useRef, useState } from "react";
 import html2canvas from "html2canvas";
 import type { Match, Team } from "@/lib/types";
+import { useAppStore } from "@/lib/store";
+import { CalendarClock } from "lucide-react";
 
 
 interface MatchFlyerProps {
@@ -121,9 +123,66 @@ const INITIALS_CSS = `
 export function MatchFlyer({ match, homeTeam, awayTeam, onClose }: MatchFlyerProps) {
   const flyerRef = useRef<HTMLDivElement>(null);
   const [capturing, setCapturing] = useState(false);
+  const [date, setDate] = useState(match.date || "");
+  const [time, setTime] = useState(match.time || "");
+  const [saving, setSaving] = useState(false);
+  const [saved, setSaved] = useState(Boolean(match.date && match.time));
+  const [dirty, setDirty] = useState(false);
+  const [error, setError] = useState("");
+
+  const isAdmin = useAppStore((s) => s.isAdmin);
+  const userProfile = useAppStore((s) => s.userProfile);
+  const updateMatch = useAppStore((s) => s.updateMatch);
+
+  const canEdit = isAdmin || userProfile?.role === "org_admin";
+  const hasSchedule = Boolean(date && time);
+  const downloadDisabled = capturing || !hasSchedule || !saved || saving;
+
+  const handleDateChange = (value: string) => {
+    setDate(value);
+    setDirty(true);
+    setSaved(false);
+    setError("");
+  };
+
+  const handleTimeChange = (value: string) => {
+    setTime(value);
+    setDirty(true);
+    setSaved(false);
+    setError("");
+  };
+
+  const handleSave = async () => {
+    if (!date || !time) {
+      setError("Both date and time are required.");
+      return;
+    }
+    setSaving(true);
+    setError("");
+    try {
+      const res = await fetch(`/api/fixtures/${match.id}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ date, time }),
+      });
+      const body = await res.json();
+      if (!res.ok) {
+        setError(body.error || "Unable to save.");
+        return;
+      }
+      updateMatch(match.id, "date", date);
+      updateMatch(match.id, "time", time);
+      setSaved(true);
+      setDirty(false);
+    } catch {
+      setError("Unable to save. Check your connection.");
+    } finally {
+      setSaving(false);
+    }
+  };
 
   const handleDownload = async () => {
-    if (!flyerRef.current) return;
+    if (!flyerRef.current || !hasSchedule || !saved) return;
     setCapturing(true);
     try {
       const canvas = await html2canvas(flyerRef.current, {
@@ -198,22 +257,84 @@ export function MatchFlyer({ match, homeTeam, awayTeam, onClose }: MatchFlyerPro
 
           <div className="flyer-details">
             <div className="flyer-divider" />
-            <div className="flyer-date">{formatDate(match.date)}</div>
-            <div className="flyer-time">{match.time || "Time TBD"}</div>
+            <div className="flyer-date">{date ? formatDate(date) : "Date TBD"}</div>
+            <div className="flyer-time">{time || "Time TBD"}</div>
             <div className="flyer-venue">{match.venue || "Venue TBD"}</div>
           </div>
+        </div>
+
+        <div style={{ padding: "0 32px 20px", display: "flex", flexDirection: "column", gap: 12 }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 8, fontSize: 13, color: "var(--ink-2)", fontWeight: 600 }}>
+            <CalendarClock size={15} />
+            Match Date &amp; Time
+          </div>
+          <div style={{ display: "flex", gap: 8 }}>
+            <input
+              type="date"
+              value={date}
+              onChange={(e) => handleDateChange(e.target.value)}
+              disabled={!canEdit}
+              className="input flex-1 text-sm py-1.5"
+              aria-label="Match date"
+            />
+            <input
+              type="time"
+              value={time}
+              onChange={(e) => handleTimeChange(e.target.value)}
+              disabled={!canEdit}
+              className="input flex-1 text-sm py-1.5"
+              aria-label="Match time"
+            />
+          </div>
+          {canEdit && (
+            <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+              <button
+                onClick={handleSave}
+                disabled={saving || (!dirty && saved)}
+                className="btn-secondary flex-1 justify-center text-sm py-1.5 disabled:opacity-40 disabled:cursor-not-allowed"
+              >
+                {saving ? (
+                  <> <span className="block w-4 h-4 bg-surface-2 rounded animate-pulse" /> Saving...</>
+                ) : saved && !dirty ? (
+                  "Saved"
+                ) : (
+                  "Save Date & Time"
+                )}
+              </button>
+            </div>
+          )}
+          {error && (
+            <p style={{ fontSize: 12, color: "var(--danger-500)" }}>
+              {error}
+            </p>
+          )}
+          {!canEdit && !hasSchedule && (
+            <p style={{ fontSize: 12, color: "var(--warn-500)" }}>
+              Date and time must be set by an admin before this flyer can be downloaded.
+            </p>
+          )}
+          {canEdit && hasSchedule && saved && !dirty && (
+            <p style={{ fontSize: 12, color: "var(--brand-600)" }}>
+              Schedule saved to the database.
+            </p>
+          )}
+          {canEdit && (!hasSchedule || dirty) && (
+            <p style={{ fontSize: 12, color: "var(--warn-500)" }}>
+              Save the date and time before downloading the flyer.
+            </p>
+          )}
         </div>
 
         <div style={{ padding: "0 32px 24px", display: "flex", gap: 8 }}>
           <button
             onClick={handleDownload}
-            disabled={capturing}
-            className="btn-primary flex-1 justify-center text-sm"
+            disabled={downloadDisabled}
+            className="btn-primary flex-1 justify-center text-sm disabled:opacity-40 disabled:cursor-not-allowed"
           >
             {capturing ? (
               <> <span className="block w-4 h-4 bg-surface-2 rounded animate-pulse" /> Generating...</>
             ) : (
-              "Download Flyer"
+              hasSchedule && saved ? "Download Flyer" : "Save Date & Time to Download"
             )}
           </button>
           <button onClick={onClose} className="btn-ghost text-sm">
