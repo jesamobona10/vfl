@@ -1,5 +1,6 @@
 
 import { createClient } from '@/lib/supabase/server';
+import { createServiceRoleClient } from '@/lib/supabase/service-role';
 import {
   asInteger,
   asOptionalString,
@@ -125,7 +126,7 @@ export async function PUT(
       return json({ error: 'No valid fields to update.' }, { status: 400 });
     }
 
-    const { data, error } = await supabase
+    const { data, error } = await createServiceRoleClient()
       .from('fixtures')
       .update(update)
       .eq('id', fixtureId)
