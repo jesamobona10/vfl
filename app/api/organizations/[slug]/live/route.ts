@@ -1,7 +1,6 @@
 import { createClient } from "@/lib/supabase/server";
 import { createServiceRoleClient } from "@/lib/supabase/service-role";
-import type { FixtureRound, Match, Team } from "@/lib/types";
-import { roundByeId } from "@/lib/logic/standings";
+import type { Match, Team } from "@/lib/types";
 import { sortMatchesByDateTime } from "@/lib/utils/helpers";
 import { getAuthContext, json, logApiError, requireAuth } from "@/lib/security";
 import { isLiveEligible } from "@/lib/logic/live";

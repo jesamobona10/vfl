@@ -28,11 +28,17 @@ export const DEFAULT_LIVE_SETTINGS: Required<LiveClockSettings> = {
 
 const MIN_MS = 60_000;
 
+function minutesSetting(value: unknown, fallback: number): number {
+  if (value === null || value === undefined || value === "") return fallback;
+  const n = Number(value);
+  return Number.isFinite(n) && n >= 0 ? n : fallback;
+}
+
 export function liveSettings(competitionSettings?: LiveClockSettings | Record<string, unknown>): Required<LiveClockSettings> {
   const raw = (competitionSettings || {}) as Record<string, unknown>;
   return {
-    halftimeMinutes: Number(raw.halftimeMinutes ?? DEFAULT_LIVE_SETTINGS.halftimeMinutes),
-    stoppageMinutes: Number(raw.stoppageMinutes ?? DEFAULT_LIVE_SETTINGS.stoppageMinutes),
+    halftimeMinutes: minutesSetting(raw.halftimeMinutes, DEFAULT_LIVE_SETTINGS.halftimeMinutes),
+    stoppageMinutes: minutesSetting(raw.stoppageMinutes, DEFAULT_LIVE_SETTINGS.stoppageMinutes),
   };
 }
 
