@@ -138,15 +138,41 @@ function parseTimeToMinutes(time: string): number | null {
   return null;
 }
 
-/** Scheduled kickoff as a Date from match date + time, or null when unset. */
-export function matchKickoff(match: { date?: string; time?: string }): Date | null {
+/**
+ * Scheduled kickoff as a Date from match date + time, or null when unset.
+ *
+ * The stored date + time are wall-clock values (e.g. "12:00 PM" on match
+ * day) entered by an organizer in their local timezone. Since the server
+ * may run in a different zone (e.g. UTC on Vercel), `tzOffsetMinutes`
+ * (the browser's `getTimezoneOffset()`) is used to resolve them to an
+ * absolute instant. When omitted, the kickoff is treated as UTC.
+ */
+export function matchKickoff(
+  match: { date?: string; time?: string },
+  tzOffsetMinutes = 0
+): Date | null {
   if (!match.date || !match.time) return null;
   const mins = parseTimeToMinutes(match.time);
   if (mins === null) return null;
-  const d = new Date(`${match.date}T00:00:00`);
-  if (isNaN(d.getTime())) return null;
-  d.setMinutes(mins);
-  return d;
+  const parts = match.date.split("-").map(Number);
+  if (
+    parts.length !== 3 ||
+    parts.some((n) => !Number.isFinite(n)) ||
+    parts[0] < 1900 ||
+    parts[0] > 2200 ||
+    parts[1] < 1 ||
+    parts[1] > 12 ||
+    parts[2] < 1 ||
+    parts[2] > 31
+  ) {
+    return null;
+  }
+  const [year, month, day] = parts;
+  const utcMs =
+    Date.UTC(year, month - 1, day, Math.floor(mins / 60), mins % 60) +
+    tzOffsetMinutes * MIN_MS;
+  const d = new Date(utcMs);
+  return isNaN(d.getTime()) ? null : d;
 }
 
 /**
@@ -160,11 +186,12 @@ export function isLiveEligible(
   match: Match,
   now: Date | number,
   graceMinutes = 10,
-  leadMinutes = 10
+  leadMinutes = 10,
+  tzOffsetMinutes = 0
 ): boolean {
   if (match.status === "live" || match.status === "in-progress") return true;
   if (match.status !== "scheduled") return false;
-  const kickoff = matchKickoff(match);
+  const kickoff = matchKickoff(match, tzOffsetMinutes);
   if (!kickoff) return false;
   const current = now instanceof Date ? now.getTime() : now;
   const kickoffMs = kickoff.getTime();

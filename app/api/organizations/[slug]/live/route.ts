@@ -20,6 +20,10 @@ export async function GET(
     const url = new URL(request.url);
     const competitionId = url.searchParams.get("competition_id");
     const seasonId = url.searchParams.get("season_id");
+    const tzRaw = Number(url.searchParams.get("tz"));
+    const tzOffset = Number.isFinite(tzRaw)
+      ? Math.max(-14 * 60, Math.min(14 * 60, Math.round(tzRaw)))
+      : 0;
 
     const sb = createServiceRoleClient();
 
@@ -116,7 +120,7 @@ export async function GET(
 
       if (match.status === "live" || match.status === "in-progress") {
         live.push(match);
-      } else if (isLiveEligible(match, now, 10)) {
+      } else if (isLiveEligible(match, now, 10, 10, tzOffset)) {
         upcoming.push(match);
       }
     }

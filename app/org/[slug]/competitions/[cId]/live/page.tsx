@@ -44,6 +44,7 @@ export default function LiveEventPage() {
   const load = () => {
     const query = new URLSearchParams({ competition_id: cId });
     if (seasonId) query.set("season_id", seasonId);
+    query.set("tz", String(new Date().getTimezoneOffset()));
     fetch(`/api/organizations/${slug}/live?${query.toString()}`)
       .then((r) => r.json())
       .then((d) => {
@@ -154,7 +155,7 @@ export default function LiveEventPage() {
                 {upcoming.map((match) => {
                   const home = getTeam(match.homeId);
                   const away = getTeam(match.awayId);
-                  const kickoff = matchKickoff(match);
+                  const kickoff = matchKickoff(match, new Date().getTimezoneOffset());
                   const delayed = kickoff ? new Date(data?.now || Date.now()) > kickoff : false;
                   return (
                     <div
