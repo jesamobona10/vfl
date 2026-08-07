@@ -50,6 +50,7 @@ export default function LiveEventPage() {
   const [loading, setLoading] = useState(true);
   const [startingId, setStartingId] = useState<number | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [nowTs, setNowTs] = useState(() => Date.now());
 
   const settings: LiveClockSettings | undefined = useMemo(
     () => (competition ? liveSettings(competition.settings) : undefined),
@@ -83,6 +84,11 @@ export default function LiveEventPage() {
     const id = window.setInterval(load, 15000);
     return () => window.clearInterval(id);
   }, [slug, cId, seasonId]);
+
+  useEffect(() => {
+    const id = window.setInterval(() => setNowTs(Date.now()), 1000);
+    return () => window.clearInterval(id);
+  }, []);
 
   const getTeam = (id: number): Team | undefined =>
     teams.find((t) => t.id === id) || data?.teams.find((t) => t.id === id);
@@ -215,7 +221,15 @@ export default function LiveEventPage() {
                   const home = getTeam(match.homeId);
                   const away = getTeam(match.awayId);
                   const kickoff = matchKickoff(match, new Date().getTimezoneOffset());
-                  const delayed = kickoff ? new Date(data?.now || Date.now()) > kickoff : false;
+                  const kickoffTs = kickoff ? kickoff.getTime() : null;
+                  const canStart = kickoffTs !== null && nowTs >= kickoffTs;
+                  const delayed = kickoffTs !== null && nowTs > kickoffTs;
+                  const startsIn =
+                    kickoffTs !== null && kickoffTs > nowTs
+                      ? kickoffTs - nowTs > 60_000
+                        ? `Starts in ${Math.ceil((kickoffTs - nowTs) / 60_000)} min`
+                        : "Starts shortly"
+                      : null;
                   return (
                     <div
                       key={match.id}
@@ -246,14 +260,22 @@ export default function LiveEventPage() {
                           )}
                         </span>
                         {canEdit && (
-                          <button
-                            onClick={() => handleStart(match)}
-                            disabled={startingId === match.id}
-                            className="btn-primary text-xs py-1.5 px-3 flex items-center gap-1.5"
-                          >
-                            <Play size={12} />
-                            {startingId === match.id ? "Starting..." : "Start Match"}
-                          </button>
+                          <div className="flex flex-col items-end gap-1">
+                            {startsIn && (
+                              <span className="text-[11px] text-muted tabular-nums">
+                                {startsIn}
+                              </span>
+                            )}
+                            <button
+                              onClick={() => handleStart(match)}
+                              disabled={!canStart || startingId === match.id}
+                              title={!canStart ? "Available at kickoff time" : undefined}
+                              className={`btn-primary text-xs py-1.5 px-3 flex items-center gap-1.5 ${!canStart ? "opacity-50 cursor-not-allowed" : ""}`}
+                            >
+                              <Play size={12} />
+                              {startingId === match.id ? "Starting..." : "Start Match"}
+                            </button>
+                          </div>
                         )}
                       </div>
                     </div>
