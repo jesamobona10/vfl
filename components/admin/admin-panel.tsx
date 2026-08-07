@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
+import { useSearchParams } from "next/navigation";
 import { useAppStore } from "@/lib/store";
 import { TeamForm } from "../teams/team-form";
 import { DataImporter } from "./data-importer";
@@ -621,59 +622,24 @@ function TeamAccountManager() {
   );
 }
 
+const VALID_TABS: AdminTab[] = ["dashboard", "orgs", "teams", "players", "competitions", "fixtures", "users", "audit", "import"];
+
 export function AdminPanel() {
+  const searchParams = useSearchParams();
   const [tab, setTab] = useState<AdminTab>("dashboard");
 
   useEffect(() => {
-    const urlTab = new URLSearchParams(window.location.search).get("tab") as AdminTab | null;
-    const validTabs: AdminTab[] = ["dashboard", "orgs", "teams", "players", "competitions", "fixtures", "users", "audit", "import"];
-    if (urlTab && validTabs.includes(urlTab)) {
+    const urlTab = searchParams.get("tab") as AdminTab | null;
+    if (urlTab && VALID_TABS.includes(urlTab)) {
       setTab(urlTab);
     }
-  }, []);
-
-  const selectTab = (key: AdminTab) => {
-    setTab(key);
-    const url = new URL(window.location.href);
-    url.searchParams.set("tab", key);
-    window.history.pushState({}, "", url.toString());
-  };
-
-  const adminTabs: { key: AdminTab; label: string; icon: typeof Shield }[] = [
-    { key: "dashboard", label: "Dashboard", icon: LayoutDashboard },
-    { key: "orgs", label: "Organizations", icon: Building2 },
-    { key: "teams", label: "Teams", icon: Users },
-    { key: "players", label: "Players", icon: UserCog },
-    { key: "competitions", label: "Competitions", icon: Trophy },
-    { key: "fixtures", label: "Fixtures", icon: Calendar },
-    { key: "users", label: "Users", icon: KeyRound },
-    { key: "audit", label: "Audit", icon: ScrollText },
-    { key: "import", label: "Import", icon: FileDown },
-  ];
+  }, [searchParams]);
 
   return (
     <div>
       <div className="flex flex-col gap-1 mb-6">
         <h1 className="text-2xl font-bold">Admin Panel</h1>
         <p className="text-sm text-muted">Full system management</p>
-      </div>
-
-      <div className="flex gap-1 bg-surface-2 rounded-lg p-1 mb-6 overflow-x-auto">
-        {adminTabs.map((t) => {
-          const Icon = t.icon;
-          return (
-            <button
-              key={t.key}
-              onClick={() => selectTab(t.key)}
-              className={`flex items-center gap-2 px-4 py-2 text-sm font-medium rounded-md transition-colors whitespace-nowrap ${
-                tab === t.key ? "bg-brand-dark text-white" : "text-muted hover:text-text"
-              }`}
-            >
-              <Icon size={16} />
-              {t.label}
-            </button>
-          );
-        })}
       </div>
 
       {tab === "dashboard" && <DashboardOverview />}
