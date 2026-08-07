@@ -7,6 +7,30 @@ import { refreshAdminData } from "@/lib/hooks/use-team-data";
 import { AppHeader } from "./app-header";
 import { LoginForm } from "./login-form";
 import { SearchModal } from "../search/search-modal";
+import { Sidebar, type SidebarItem } from "./sidebar";
+import {
+  LayoutDashboard,
+  Building2,
+  Users,
+  UserCog,
+  Trophy,
+  Calendar,
+  KeyRound,
+  ScrollText,
+  FileDown,
+} from "lucide-react";
+
+const adminNav: SidebarItem[] = [
+  { href: "/admin?tab=dashboard", label: "Dashboard", icon: LayoutDashboard },
+  { href: "/admin?tab=orgs", label: "Organizations", icon: Building2 },
+  { href: "/admin?tab=teams", label: "Teams", icon: Users },
+  { href: "/admin?tab=players", label: "Players", icon: UserCog },
+  { href: "/admin?tab=competitions", label: "Competitions", icon: Trophy },
+  { href: "/admin?tab=fixtures", label: "Fixtures", icon: Calendar },
+  { href: "/admin?tab=users", label: "Users", icon: KeyRound },
+  { href: "/admin?tab=audit", label: "Audit", icon: ScrollText },
+  { href: "/admin?tab=import", label: "Import", icon: FileDown },
+];
 
 const publicPaths: Set<string> = new Set();
 
@@ -107,9 +131,22 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   }
 
   return (
-    <div className="min-h-screen bg-bg">
-      <AppHeader onOpenSearch={() => setSearchOpen(true)} />
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 py-6">{children}</main>
+    <div className="min-h-screen bg-bg flex">
+      {isAdmin && (
+        <Sidebar
+          items={adminNav}
+          footer={{
+            title: "Super Admin",
+            subtitle: "Full system management",
+            initials: "SA",
+            tone: "brand",
+          }}
+        />
+      )}
+      <div className="flex-1 min-w-0 flex flex-col">
+        <AppHeader onOpenSearch={() => setSearchOpen(true)} />
+        <main className="flex-1 px-4 sm:px-6 py-6">{children}</main>
+      </div>
       <SearchModal isOpen={isSearchOpen} onClose={() => setSearchOpen(false)} />
     </div>
   );

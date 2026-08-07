@@ -1,11 +1,11 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useRef, useEffect } from "react";
 import { useAppStore } from "@/lib/store";
 import { parseImportFile, buildImportPlan } from "@/lib/utils/data-import";
 import { refreshTeamData } from "@/lib/hooks/use-team-data";
 import Notifications from "@/components/notifications/notifications";
-import { Search, Download, Upload, RotateCcw, LogOut, Shield, RefreshCw } from "lucide-react";
+import { Search, Download, Upload, RotateCcw, LogOut, RefreshCw, Settings2 } from "lucide-react";
 
 interface AppHeaderProps {
   onOpenSearch: () => void;
@@ -28,6 +28,18 @@ export function AppHeader({ onOpenSearch }: AppHeaderProps) {
   const players = useAppStore((s) => s.players);
   const [refreshing, setRefreshing] = useState(false);
   const [importing, setImporting] = useState(false);
+  const [menuOpen, setMenuOpen] = useState(false);
+  const menuRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const onClick = (e: MouseEvent) => {
+      if (menuRef.current && !menuRef.current.contains(e.target as Node)) {
+        setMenuOpen(false);
+      }
+    };
+    document.addEventListener("mousedown", onClick);
+    return () => document.removeEventListener("mousedown", onClick);
+  }, []);
 
   const handleExport = () => {
     const data = { teams, fixtures, players };
@@ -40,6 +52,7 @@ export function AppHeader({ onOpenSearch }: AppHeaderProps) {
     a.download = "vfl-export.json";
     a.click();
     URL.revokeObjectURL(url);
+    setMenuOpen(false);
   };
 
   const handleImport = () => {
@@ -96,9 +109,11 @@ export function AppHeader({ onOpenSearch }: AppHeaderProps) {
       reader.readAsText(file);
     };
     input.click();
+    setMenuOpen(false);
   };
 
   const handleReset = () => {
+    setMenuOpen(false);
     if (confirm("Reset all data to defaults? This cannot be undone.")) {
       resetTeams();
       setFixtures([]);
@@ -106,81 +121,81 @@ export function AppHeader({ onOpenSearch }: AppHeaderProps) {
     }
   };
 
-  return (
-    <header className="bg-surface border-b border-line px-6 py-3 flex items-center justify-between">
-      <div className="flex items-center gap-3">
-        <Shield className="text-brand" size={28} />
-        <div>
-          <h1 className="text-lg font-bold text-text">
-            {currentOrg ? currentOrg.name : "VUNA Football League"}
-          </h1>
-          <p className="text-xs text-muted">
-            {currentOrg ? (
-              <><span className="capitalize">{currentOrg.type}</span> &middot; Management System</>
-            ) : (
-              "Management System"
-            )}
-          </p>
-        </div>
-      </div>
+  const handleRefresh = async () => {
+    setRefreshing(true);
+    await refreshTeamData();
+    setRefreshing(false);
+  };
 
-      <div className="flex items-center gap-2">
+  const displayName = isAdmin
+    ? "Admin"
+    : isPlayer
+      ? userProfile?.displayName || "Player"
+      : currentTeamAccount?.name || currentOrg?.name || "VUNA Football League";
+
+  return (
+    <header className="bg-panel border-b border-line px-6 py-3 flex items-center justify-between">
+      <div className="flex items-center gap-3">
         <button
           onClick={onOpenSearch}
-          className="btn-icon"
-          title="Search"
+          className="flex items-center gap-2 text-sm text-ink-3 bg-page border border-line rounded-lg px-3.5 py-2 hover:border-brand-600/30 transition-colors"
         >
-          <Search size={18} />
+          <Search size={15} />
+          <span className="hidden sm:inline">Search teams, players, fixtures&hellip;</span>
         </button>
-        {isAdmin && (
-          <>
-            <button
-              onClick={handleExport}
-              className="btn-icon"
-              title="Export data"
-            >
-              <Download size={18} />
-            </button>
-            <button
-              onClick={handleImport}
-              disabled={importing}
-              className="btn-icon"
-              title={importing ? "Importing & syncing..." : "Import data"}
-            >
-              {importing ? <span className="block w-4 h-4 bg-surface-2 rounded animate-pulse" /> : <Upload size={18} />}
-            </button>
-            <button
-              onClick={handleReset}
-              className="btn-icon text-danger"
-              title="Reset to defaults"
-            >
-              <RotateCcw size={18} />
-            </button>
-          </>
+      </div>
+
+      <div className="flex items-center gap-1">
+        <Notifications />
+        {currentTeamAccount && (
+          <button
+            onClick={handleRefresh}
+            disabled={refreshing}
+            className="btn-icon"
+            title="Refresh team data"
+          >
+            <RefreshCw size={16} className={refreshing ? "animate-spin" : ""} />
+          </button>
         )}
-        {userProfile && (
-          <div className="flex items-center gap-2 ml-3 pl-3 border-l border-line">
-            <span className="text-sm text-muted">
-              {isAdmin ? "Admin" : isPlayer ? userProfile.displayName || "Player" : currentTeamAccount?.name}
-            </span>
-            {/* Notifications */}
-            <div className="ml-2">
-              <Notifications />
-            </div>
-            {currentTeamAccount && (
-              <button
-                onClick={async () => {
-                  setRefreshing(true);
-                  await refreshTeamData();
-                  setRefreshing(false);
-                }}
-                disabled={refreshing}
-                className="btn-icon"
-                title="Refresh team data"
-              >
-                <RefreshCw size={16} className={refreshing ? "animate-spin" : ""} />
-              </button>
+
+        {isAdmin && (
+          <div className="relative" ref={menuRef}>
+            <button
+              onClick={() => setMenuOpen((o) => !o)}
+              className="btn-icon"
+              title="Data tools"
+            >
+              <Settings2 size={17} />
+            </button>
+            {menuOpen && (
+              <div className="absolute right-0 mt-2 w-48 bg-panel border border-line rounded-xl shadow-lg p-1.5 z-50">
+                <button
+                  onClick={handleExport}
+                  className="w-full flex items-center gap-2 px-3 py-2 text-sm text-ink hover:bg-surface-2 rounded-lg transition-colors"
+                >
+                  <Download size={15} /> Export data
+                </button>
+                <button
+                  onClick={handleImport}
+                  disabled={importing}
+                  className="w-full flex items-center gap-2 px-3 py-2 text-sm text-ink hover:bg-surface-2 rounded-lg transition-colors disabled:opacity-50"
+                >
+                  <Upload size={15} /> {importing ? "Importing&hellip;" : "Import data"}
+                </button>
+                <button
+                  onClick={handleReset}
+                  className="w-full flex items-center gap-2 px-3 py-2 text-sm text-danger hover:bg-danger-tint rounded-lg transition-colors"
+                >
+                  <RotateCcw size={15} /> Reset to defaults
+                </button>
+              </div>
             )}
+          </div>
+        )}
+
+        {userProfile && (
+          <div className="flex items-center gap-2 ml-2 pl-3 border-l border-line">
+            <span className="text-sm text-ink-2 hidden sm:inline">{displayName}</span>
             <button onClick={logout} className="btn-icon" title="Logout">
               <LogOut size={18} />
             </button>

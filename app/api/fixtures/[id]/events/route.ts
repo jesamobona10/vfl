@@ -8,6 +8,7 @@ import {
   getClientIp,
   json,
   logApiError,
+  ownsTeam,
   parseJsonObject,
   rateLimit,
   rateLimitResponse,
@@ -43,6 +44,39 @@ export async function POST(
 
     if (!fixture) return json({ error: 'Fixture not found.' }, { status: 404 });
 
+    const homeTeamId = fixture.home_team_id;
+    const awayTeamId = fixture.away_team_id;
+
+    const { data: homeTeam } = await supabase
+      .from('teams')
+      .select('organization_id')
+      .eq('id', homeTeamId)
+      .single();
+
+    const { data: awayTeam } = await supabase
+      .from('teams')
+      .select('organization_id')
+      .eq('id', awayTeamId)
+      .single();
+
+    if (!homeTeam || !awayTeam) {
+      return json({ error: 'Team not found.' }, { status: 404 });
+    }
+
+    const homeOrgId = homeTeam.organization_id;
+    const awayOrgId = awayTeam.organization_id;
+
+    if (homeOrgId !== awayOrgId) {
+      return json({ error: 'Fixture teams belong to different organizations.' }, { status: 400 });
+    }
+
+    const isOrgAdmin = requireOrgAdmin(authed, homeOrgId) === null;
+    const isTeamOwner = ownsTeam(authed, homeTeamId) || ownsTeam(authed, awayTeamId);
+
+    if (!isOrgAdmin && !isTeamOwner) {
+      return json({ error: 'Forbidden' }, { status: 403 });
+    }
+
     const parsed = await parseJsonObject(request);
     if (parsed.error) return json({ error: parsed.error }, { status: 400 });
 
@@ -54,6 +88,21 @@ export async function POST(
     if (!playerId) return json({ error: 'Player ID is required.' }, { status: 400 });
     if (!teamId) return json({ error: 'Team ID is required.' }, { status: 400 });
     if (!eventType) return json({ error: 'Event type is required.' }, { status: 400 });
+
+    if (teamId !== homeTeamId && teamId !== awayTeamId) {
+      return json({ error: 'Team does not participate in this fixture.' }, { status: 400 });
+    }
+
+    const { data: player } = await supabase
+      .from('players')
+      .select('id')
+      .eq('id', playerId)
+      .eq('team_id', teamId)
+      .maybeSingle();
+
+    if (!player) {
+      return json({ error: 'Player not found on the specified team.' }, { status: 400 });
+    }
 
     const sb = createServiceRoleClient();
     const { data, error } = await sb

@@ -3,23 +3,46 @@
 @tailwind utilities;
 
 :root {
-  --bg: 244, 247, 242;
-  --surface: 255, 255, 255;
-  --surface-2: 238, 244, 236;
-  --text: 23, 34, 27;
-  --muted: 102, 115, 106;
-  --line: 219, 228, 220;
+  /* Neutrals — RGB triplets kept for alpha compositing in Tailwind */
+  --bg: 247, 250, 246; /* --page #F7FAF6 */
+  --surface: 255, 255, 255; /* --panel #FFFFFF */
+  --surface-2: 237, 242, 236; /* subtle fill */
+  --text: 22, 33, 26; /* --ink #16211A */
+  --muted: 91, 106, 93; /* --ink-2 #5B6A5D */
+  --line: 225, 232, 224; /* #E1E8E0 */
+
+  /* Brand green — brand-500 kept exactly, scale built around it */
   --brand: #0f7c45;
-  --brand-dark: #0a5d34;
+  --brand-dark: #0b5f35;
+  --brand-50: #EAF6EE;
+  --brand-100: #CFEBD8;
+  --brand-500: #0F7C45;
+  --brand-600: #0B5F35;
+  --brand-700: #084526;
+
+  /* Gold accent — used sparingly, never as a second primary action color */
+  --gold-500: #D99A21;
+  --gold-700: #8C6110;
+  --gold-tint: #FBF0DC;
+
+  /* Status colors — deliberately NOT brand green */
+  --live-500: #0F9D6B;
+  --live-tint: #E4F6EE;
+  --danger-500: #C23B2E;
+  --danger-tint: #FBEAE8;
+  --warn-500: #B67D16;
+  --warn-tint: #FBF0DC;
+
+  /* Semantic aliases used by existing components */
   --accent: #d99a21;
-  --danger: #b42318;
+  --danger: #c23b2e;
   --shadow: 0 18px 45px rgba(23, 34, 27, 0.08);
 }
 
 body {
   background: rgb(var(--bg));
   color: rgb(var(--text));
-  font-family: system-ui, -apple-system, sans-serif;
+  font-variant-numeric: tabular-nums;
   margin: 0;
 }
 
@@ -32,7 +55,7 @@ body {
     @apply inline-flex items-center justify-center gap-2 px-4 py-2 rounded-lg font-medium text-sm transition-colors cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed;
   }
   .btn-primary {
-    @apply btn bg-brand text-white hover:bg-brand-dark;
+    @apply btn bg-brand-600 text-white hover:bg-brand-700;
   }
   .btn-ghost {
     @apply btn text-muted hover:text-text hover:bg-surface-2;
@@ -44,10 +67,23 @@ body {
     @apply btn bg-danger text-white hover:opacity-90;
   }
   .input {
-    @apply w-full px-3 py-2 rounded-lg border border-line bg-surface text-text text-sm placeholder:text-muted/50 focus:outline-none focus:ring-2 focus:ring-brand/30 focus:border-brand transition-colors;
+    @apply w-full px-3 py-2 rounded-lg border border-line bg-surface text-text text-sm placeholder:text-muted/50 focus:outline-none focus:ring-2 focus:ring-brand-600/30 focus:border-brand-600 transition-colors;
   }
   .card {
     @apply bg-surface rounded-xl shadow-sm border border-line;
+  }
+
+  /* Data table header pattern (from the redesign mockup) */
+  .data-table th {
+    @apply text-left text-[10.5px] uppercase tracking-[0.04em] text-ink-3 font-semibold px-4 py-2.5 border-b border-line;
+  }
+  .data-table td {
+    @apply px-4 py-2.5 border-b border-line;
+  }
+
+  /* Activity feed item pattern */
+  .activity-item {
+    @apply flex gap-2.5 px-4 py-3 border-b border-line;
   }
 }
 

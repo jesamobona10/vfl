@@ -1,6 +1,12 @@
 import type { Player, Team, ImportResult } from "../types";
 import { teamName } from "./helpers";
 
+const FORMULA_CHARS = /^[=+\-@]/;
+
+export function sanitizeCsvCell(value: string): string {
+  return value.replace(FORMULA_CHARS, "'$&");
+}
+
 function parseCSVLine(line: string): string[] {
   const result: string[] = [];
   let current = "";

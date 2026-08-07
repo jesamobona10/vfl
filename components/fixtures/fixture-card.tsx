@@ -110,6 +110,15 @@ export function FixtureCard({
       const newAway = scoringTeam === match.awayId ? Math.max(0, currentAway - 1) : currentAway;
       store.updateMatch(match.id, "homeScore", newHome);
       store.updateMatch(match.id, "awayScore", newAway);
+      try {
+        fetch(`/api/fixtures/${match.id}`, {
+          method: "PUT",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ homeScore: newHome, awayScore: newAway }),
+        });
+      } catch {
+        // persist silently
+      }
     }
 
     store.recalculateRatings();

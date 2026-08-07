@@ -44,6 +44,19 @@ export async function POST(request: Request) {
 
     const sb = createServiceRoleClient();
 
+    const { data: existingAdmins } = await sb
+      .from("admin_users")
+      .select("id")
+      .limit(1);
+
+    if (existingAdmins && existingAdmins.length > 0) {
+      logSecurityEvent("blocked_extra_admin_signup", { ip, email });
+      return json(
+        { error: "Admin already exists. Use login instead." },
+        { status: 409 }
+      );
+    }
+
     const { data: authUser, error: createError } = await sb.auth.admin.createUser({
       email,
       password: password as string,

@@ -174,6 +174,20 @@ export function AddEventModal({
       // persist silently
     }
 
+    if (selectedType === "goal" || selectedType === "own-goal") {
+      try {
+        const homeScore = score.homeScore ?? 0;
+        const awayScore = score.awayScore ?? 0;
+        await fetch(`/api/fixtures/${match.id}`, {
+          method: "PUT",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ homeScore, awayScore }),
+        });
+      } catch {
+        // persist silently
+      }
+    }
+
     onClose();
   };
 

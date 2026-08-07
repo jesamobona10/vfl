@@ -13,6 +13,9 @@ import {
   requireAuth,
   sanitizeText,
 } from "@/lib/security";
+import { sortMatchesByDateTime } from "@/lib/utils/helpers";
+import { roundByeId } from "@/lib/logic/standings";
+import type { FixtureRound, Match, MatchEvent, Team } from "@/lib/types";
 
 export const dynamic = "force-dynamic";
 
@@ -28,7 +31,7 @@ export async function GET(request: Request) {
 
     let query = supabase
       .from("fixtures")
-      .select("*")
+      .select("*, match_events(*)")
       .order("round")
       .order("id");
 
@@ -55,7 +58,48 @@ export async function GET(request: Request) {
       logApiError("fixtures_list_failed", error, { userId: auth!.userId });
       return json({ error: "Unable to load fixtures." }, { status: 500 });
     }
-    return json({ fixtures: data });
+
+    const rawFixtures: any[] = data || [];
+
+    const grouped = new Map<number, Match[]>();
+    const roundSet = new Set<number>();
+
+    for (const m of rawFixtures) {
+      const events: MatchEvent[] = (m.match_events || []).map((e: any) => ({
+        playerId: e.player_id,
+        type: e.event_type,
+        teamId: e.team_id,
+        minute: e.minute ?? undefined,
+      }));
+
+      const match: Match = {
+        id: m.id,
+        round: m.round,
+        homeId: m.home_team_id,
+        awayId: m.away_team_id,
+        homeScore: m.home_score,
+        awayScore: m.away_score,
+        status: m.status || "scheduled",
+        date: m.date || "",
+        time: m.time || "",
+        venue: m.venue || "",
+        events,
+        competition_id: m.competition_id ?? null,
+      };
+      if (!grouped.has(m.round)) grouped.set(m.round, []);
+      grouped.get(m.round)!.push(match);
+      roundSet.add(m.round);
+    }
+
+    const sortedRounds = Array.from(roundSet).sort((a, b) => a - b);
+
+    const fixtures: FixtureRound[] = sortedRounds.map((round) => {
+      const matches = sortMatchesByDateTime(grouped.get(round)!);
+      const roundObj: FixtureRound = { round, byeId: null, matches };
+      return roundObj;
+    });
+
+    return json({ fixtures });
   } catch (error) {
     logApiError("fixtures_list_error", error);
     return json({ error: "Internal server error." }, { status: 500 });

@@ -624,6 +624,21 @@ function TeamAccountManager() {
 export function AdminPanel() {
   const [tab, setTab] = useState<AdminTab>("dashboard");
 
+  useEffect(() => {
+    const urlTab = new URLSearchParams(window.location.search).get("tab") as AdminTab | null;
+    const validTabs: AdminTab[] = ["dashboard", "orgs", "teams", "players", "competitions", "fixtures", "users", "audit", "import"];
+    if (urlTab && validTabs.includes(urlTab)) {
+      setTab(urlTab);
+    }
+  }, []);
+
+  const selectTab = (key: AdminTab) => {
+    setTab(key);
+    const url = new URL(window.location.href);
+    url.searchParams.set("tab", key);
+    window.history.pushState({}, "", url.toString());
+  };
+
   const adminTabs: { key: AdminTab; label: string; icon: typeof Shield }[] = [
     { key: "dashboard", label: "Dashboard", icon: LayoutDashboard },
     { key: "orgs", label: "Organizations", icon: Building2 },
@@ -649,7 +664,7 @@ export function AdminPanel() {
           return (
             <button
               key={t.key}
-              onClick={() => setTab(t.key)}
+              onClick={() => selectTab(t.key)}
               className={`flex items-center gap-2 px-4 py-2 text-sm font-medium rounded-md transition-colors whitespace-nowrap ${
                 tab === t.key ? "bg-brand-dark text-white" : "text-muted hover:text-text"
               }`}

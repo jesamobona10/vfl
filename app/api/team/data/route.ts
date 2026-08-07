@@ -1,6 +1,6 @@
 import { createClient } from "@/lib/supabase/server";
 import { createServiceRoleClient } from "@/lib/supabase/service-role";
-import type { Team, Player, FixtureRound, Match } from "@/lib/types";
+import type { Team, Player, FixtureRound, Match, MatchEvent } from "@/lib/types";
 import { roundByeId } from "@/lib/logic/standings";
 import { sortMatchesByDateTime } from "@/lib/utils/helpers";
 import { getAuthContext, json, logApiError, requireAuth } from "@/lib/security";
@@ -86,7 +86,7 @@ export async function GET() {
 
     const { data: dbMatches } = await sb
       .from("fixtures")
-      .select("*")
+      .select("*, match_events(*)")
       .in("home_team_id", dbTeamIds)
       .order("round")
       .order("id");
@@ -95,6 +95,13 @@ export async function GET() {
     const roundSet = new Set<number>();
 
     for (const m of dbMatches || []) {
+      const events: MatchEvent[] = (m.match_events || []).map((e: any) => ({
+        playerId: e.player_id,
+        type: e.event_type,
+        teamId: e.team_id,
+        minute: e.minute ?? undefined,
+      }));
+
       const match: Match = {
         id: m.id,
         round: m.round,
@@ -106,7 +113,7 @@ export async function GET() {
         date: m.date || "",
         time: m.time || "",
         venue: m.venue || "",
-        events: [],
+        events,
       };
       if (!grouped.has(m.round)) grouped.set(m.round, []);
       grouped.get(m.round)!.push(match);

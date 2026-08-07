@@ -1,6 +1,7 @@
 "use client";
 
 import { useAppStore } from "@/lib/store";
+import { sanitizeCsvCell } from "@/lib/utils/csv";
 import { Trophy, Crosshair, ShieldAlert, Ban, Hand, Sword, Sparkles, Download, TrendingUp, Users } from "lucide-react";
 
 function StatColumn({
@@ -82,7 +83,7 @@ export function PlayerStats() {
     for (const section of statSections) {
       const data = top(section.field, section.filter);
       for (const d of data) {
-        rows.push([String(d.rank), section.title, `"${d.name}"`, `"${d.teamName}"`, String(d.value)]);
+        rows.push([String(d.rank), section.title, `"${sanitizeCsvCell(d.name)}"`, `"${sanitizeCsvCell(d.teamName)}"`, String(d.value)]);
       }
     }
     const csv = rows.map((r) => r.join(",")).join("\n");

@@ -5,6 +5,7 @@ import { useAppStore } from "@/lib/store";
 import { PlayerCard } from "./player-card";
 import { PlayerModal } from "./player-modal";
 import { CsvImport } from "./csv-import";
+import { sanitizeCsvCell } from "@/lib/utils/csv";
 import type { Player } from "@/lib/types";
 import { Plus, Trash2, Users, Download } from "lucide-react";
 
@@ -107,10 +108,10 @@ export function PlayerList() {
       ["Name", "Position", "Number", "Team", "Goals", "Assists", "Yellow Cards", "Red Cards", "Saves", "Clean Sheets", "MOTM", "Rating"].join(","),
       ...filtered.map((p) =>
         [
-          `"${p.name}"`,
+          `"${sanitizeCsvCell(p.name)}"`,
           p.position,
           p.number,
-          `"${teamName(p.teamId)}"`,
+          `"${sanitizeCsvCell(teamName(p.teamId))}"`,
           p.goals,
           p.assists,
           p.yellowCards,
