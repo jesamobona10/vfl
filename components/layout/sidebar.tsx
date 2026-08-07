@@ -44,7 +44,7 @@ export function Sidebar({ items, footer }: SidebarProps) {
           V
         </div>
         <div className="min-w-0">
-          <div className="text-[13.5px] font-semibold leading-tight">VUNA Football League</div>
+          <div className="text-[13.5px] font-semibold leading-tight">LeagueForge</div>
           <div className="text-[11px] text-ink-3 mt-0.5">School league management</div>
         </div>
       </Link>

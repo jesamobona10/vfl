@@ -88,13 +88,13 @@ export function StandingsTable() {
 
   const handleDownloadJSON = () => {
     setMenuOpen(false);
-    exportAsJSON(standings, "vuna-standings.json");
+    exportAsJSON(standings, "leagueforge-standings.json");
   };
 
   const handleDownloadPNG = async () => {
     setMenuOpen(false);
     if (!tableRef.current) return;
-    await exportAsPNG(tableRef.current, "vuna-standings.png");
+    await exportAsPNG(tableRef.current, "leagueforge-standings.png");
   };
 
   const handleDownloadPDF = async () => {
@@ -102,7 +102,7 @@ export function StandingsTable() {
     if (!tableRef.current) return;
     await exportAsPDF(
       tableRef.current,
-      "vuna-standings.pdf",
+      "leagueforge-standings.pdf",
       "League Standings"
     );
   };

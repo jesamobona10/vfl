@@ -36,15 +36,15 @@ export function DashboardOverview() {
   if (!stats) return <p className="text-sm text-muted text-center py-8">Failed to load stats.</p>;
 
   const cards = [
-    { label: "Organizations", value: stats.organizations, icon: Building2, color: "text-blue-400" },
-    { label: "Teams", value: stats.teams, icon: Users, color: "text-green-400" },
-    { label: "Players", value: stats.players, icon: UserCog, color: "text-purple-400" },
-    { label: "Fixtures", value: stats.fixtures, icon: Calendar, color: "text-amber-400" },
-    { label: "Competitions", value: stats.competitions, icon: Trophy, color: "text-pink-400" },
-    { label: "Cup Matches", value: stats.cupMatches, icon: Swords, color: "text-cyan-400" },
-    { label: "Org Members", value: stats.orgMembers, icon: Users, color: "text-orange-400" },
-    { label: "Team Accounts", value: stats.teamAccounts, icon: Users, color: "text-indigo-400" },
-    { label: "Admin Users", value: stats.adminUsers, icon: Users, color: "text-red-400" },
+    { label: "Organizations", value: stats.organizations, icon: Building2, color: "text-brand" },
+    { label: "Teams", value: stats.teams, icon: Users, color: "text-brand-600" },
+    { label: "Players", value: stats.players, icon: UserCog, color: "text-gold-500" },
+    { label: "Fixtures", value: stats.fixtures, icon: Calendar, color: "text-live-500" },
+    { label: "Competitions", value: stats.competitions, icon: Trophy, color: "text-gold-700" },
+    { label: "Cup Matches", value: stats.cupMatches, icon: Swords, color: "text-warn-500" },
+    { label: "Org Members", value: stats.orgMembers, icon: Users, color: "text-ink-2" },
+    { label: "Team Accounts", value: stats.teamAccounts, icon: Users, color: "text-ink-2" },
+    { label: "Admin Users", value: stats.adminUsers, icon: Users, color: "text-danger-500" },
   ];
 
   return (

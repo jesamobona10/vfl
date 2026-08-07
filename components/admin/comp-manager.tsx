@@ -209,9 +209,9 @@ export function CompManager() {
   };
 
   const statusColor = (s: string) => {
-    if (s === "active") return "text-green-400";
-    if (s === "completed") return "text-blue-400";
-    return "text-muted";
+    if (s === "active") return "text-live-500";
+    if (s === "completed") return "text-brand-700";
+    return "text-ink-3";
   };
 
   if (loading) return <SkeletonTable rows={5} cols={5} />;
@@ -302,9 +302,9 @@ export function CompManager() {
                     <div key={s.id} className="flex items-center justify-between p-2 rounded bg-surface-2 text-xs">
                       <div className="flex items-center gap-2 min-w-0">
                         <span className={`px-1.5 py-0.5 rounded-full font-medium ${
-                          s.status === "active" ? "bg-green-500/20 text-green-400" :
-                          s.status === "completed" ? "bg-blue-500/20 text-blue-400" :
-                          "bg-gray-500/20 text-gray-300"
+                          s.status === "active" ? "bg-live-tint text-live-500" :
+                          s.status === "completed" ? "bg-brand-50 text-brand-700" :
+                          "bg-surface-2 text-ink-3"
                         }`}>{s.status}</span>
                         <span className="font-medium truncate">{s.name}</span>
                         {s.is_current && <span className="text-brand text-[10px] font-semibold">(Current)</span>}

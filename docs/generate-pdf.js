@@ -63,7 +63,7 @@ try {
   doc.setFontSize(24);
   doc.setFont("helvetica", "bold");
   doc.setTextColor("#1a1a2e");
-  doc.text("VUNA Football League", 105, 90, { align: "center" });
+  doc.text("LeagueForge", 105, 90, { align: "center" });
   doc.setFontSize(14);
   doc.setFont("helvetica", "normal");
   doc.setTextColor("#555");

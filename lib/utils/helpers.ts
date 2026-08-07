@@ -61,7 +61,7 @@ export function teamBadge(team: Team | undefined, useLogo: boolean): string {
   }
   return team?.logo_url
     ? `<img src="${escapeAttribute(team.logo_url)}" alt="${escapeAttribute(team.name)}" class="team-logo-inline" aria-hidden="true">`
-    : `<span aria-hidden="true" style="display:inline-block;width:12px;height:12px;border-radius:50%;background:${team?.color || "#ccc"};margin-right:8px"></span>`;
+    : `<span aria-hidden="true" style="display:inline-block;width:12px;height:12px;border-radius:50%;background:${team?.color || "var(--ink-3)"};margin-right:8px"></span>`;
 }
 
 export function formGuide(form: string[]): string {

@@ -34,7 +34,7 @@ const INITIALS_CSS = `
     font-family: system-ui, -apple-system, sans-serif;
   }
   .flyer-header {
-    background: linear-gradient(135deg, #0a5d34, #0f7c45);
+    background: linear-gradient(135deg, var(--brand-dark), var(--brand));
     padding: 32px;
     text-align: center;
     color: white;
@@ -72,24 +72,24 @@ const INITIALS_CSS = `
     width: 64px;
     height: 64px;
     border-radius: 12px;
-    background: #e8f5e9;
+    background: var(--brand-50);
     display: flex;
     align-items: center;
     justify-content: center;
     font-size: 24px;
     font-weight: 700;
-    color: #0f7c45;
+    color: var(--brand);
   }
   .flyer-team-name {
     font-size: 14px;
     font-weight: 700;
     text-align: center;
-    color: #111;
+    color: var(--ink);
   }
   .flyer-vs {
     font-size: 20px;
     font-weight: 800;
-    color: #ccc;
+    color: var(--ink-3);
   }
   .flyer-details {
     padding: 20px 32px 32px;
@@ -98,22 +98,22 @@ const INITIALS_CSS = `
   .flyer-divider {
     width: 80px;
     height: 2px;
-    background: #e0e0e0;
+    background: var(--line);
     margin: 0 auto 16px;
   }
   .flyer-date {
     font-size: 15px;
     font-weight: 600;
-    color: #333;
+    color: var(--ink);
   }
   .flyer-time {
     font-size: 13px;
-    color: #666;
+    color: var(--ink-2);
     margin-top: 4px;
   }
   .flyer-venue {
     font-size: 13px;
-    color: #888;
+    color: var(--ink-3);
     margin-top: 4px;
   }
 `;

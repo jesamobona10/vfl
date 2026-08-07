@@ -1,7 +1,7 @@
 # Security Review: Authentication & Authorization
 
 **Date:** 2026-06-17  
-**Project:** VUNA Football League (Next.js)
+**Project:** LeagueForge (Next.js)
 
 ## Executive Summary
 

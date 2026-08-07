@@ -1,5 +1,5 @@
 -- ============================================================
--- VUNA Football League — Database Schema Migration
+-- LeagueForge — Database Schema Migration
 -- Run this in your Supabase SQL Editor
 -- ============================================================
 

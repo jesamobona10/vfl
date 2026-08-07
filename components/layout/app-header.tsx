@@ -131,7 +131,7 @@ export function AppHeader({ onOpenSearch }: AppHeaderProps) {
     ? "Admin"
     : isPlayer
       ? userProfile?.displayName || "Player"
-      : currentTeamAccount?.name || currentOrg?.name || "VUNA Football League";
+      : currentTeamAccount?.name || currentOrg?.name || "LeagueForge";
 
   return (
     <header className="bg-panel border-b border-line px-6 py-3 flex items-center justify-between">

@@ -1,4 +1,4 @@
-# VUNA Football League — Management System
+# LeagueForge — Management System
 
 > **Version:** 1.0.0  
 > **Framework:** Next.js 14.1.0 (App Router)  
@@ -37,7 +37,7 @@
 
 ## 1. Project Overview
 
-The **VUNA Football League Management System** is a full-featured web application for managing football league operations. It supports three user roles with different access levels:
+The **LeagueForge Management System** is a full-featured web application for managing football league operations. It supports three user roles with different access levels:
 
 | Role | Login Method | Scope |
 |---|---|---|
@@ -904,4 +904,4 @@ export type AppStore = AuthSlice & TeamsSlice & FixturesSlice & PlayersSlice;
 
 ---
 
-*Generated on 2026-05-28 for the VUNA Football League Management System*
+*Generated on 2026-05-28 for the LeagueForge Management System*

@@ -15,9 +15,9 @@ const statusOptions: { value: string; label: string }[] = [
 ];
 
 const seasonStatusColors: Record<string, string> = {
-  upcoming: "bg-gray-500/20 text-gray-300",
-  active: "bg-green-500/20 text-green-400",
-  completed: "bg-blue-500/20 text-blue-400",
+  upcoming: "bg-surface-2 text-ink-3",
+  active: "bg-live-tint text-live-500",
+  completed: "bg-brand-50 text-brand-700",
 };
 
 export default function CompetitionSettingsPage() {
@@ -372,7 +372,7 @@ export default function CompetitionSettingsPage() {
         <div
           className={`flex items-start gap-2 text-sm p-3 rounded-lg ${
             message.type === "success"
-              ? "text-green-400 bg-green-500/10"
+              ? "text-live-500 bg-live-tint"
               : "text-danger bg-danger/10"
           }`}
         >

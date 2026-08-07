@@ -78,13 +78,13 @@ export function FixtureFilters({
       roundFilter !== "all"
         ? `round-${roundFilter}`
         : "all-fixtures";
-    exportAsJSON(filtered, `vuna-fixtures-${label}.json`);
+    exportAsJSON(filtered, `leagueforge-fixtures-${label}.json`);
   };
 
   const handleDownloadPNG = async () => {
     setMenuOpen(false);
     if (!captureRef?.current) return;
-    await exportAsPNG(captureRef.current, "vuna-fixtures.png");
+    await exportAsPNG(captureRef.current, "leagueforge-fixtures.png");
   };
 
   const handleDownloadPDF = async () => {
@@ -92,7 +92,7 @@ export function FixtureFilters({
     if (!captureRef?.current) return;
     await exportAsPDF(
       captureRef.current,
-      "vuna-fixtures.pdf",
+      "leagueforge-fixtures.pdf",
       "Fixtures"
     );
   };

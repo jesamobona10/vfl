@@ -15,9 +15,9 @@ const typeLabels: Record<string, string> = {
 };
 
 const statusColors: Record<string, string> = {
-  draft: "bg-gray-500/20 text-gray-300",
-  active: "bg-green-500/20 text-green-400",
-  completed: "bg-blue-500/20 text-blue-400",
+  draft: "bg-surface-2 text-ink-3",
+  active: "bg-live-tint text-live-500",
+  completed: "bg-brand-50 text-brand-700",
 };
 
 const tabs = [

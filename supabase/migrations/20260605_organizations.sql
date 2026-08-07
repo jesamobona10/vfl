@@ -29,7 +29,7 @@ ALTER TABLE team_accounts ADD COLUMN IF NOT EXISTS organization_id UUID REFERENC
 
 -- 4. SEED DEFAULT ORGANIZATION FOR EXISTING DATA
 INSERT INTO organizations (id, name, slug, type)
-VALUES ('00000000-0000-0000-0000-000000000001', 'VUNA League', 'vuna-league', 'school')
+VALUES ('00000000-0000-0000-0000-000000000001', 'LeagueForge', 'leagueforge', 'school')
 ON CONFLICT (slug) DO NOTHING;
 
 -- Assign existing teams to the default org (only if organization_id is null)

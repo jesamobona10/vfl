@@ -12,7 +12,7 @@ const inter = Inter({
 });
 
 export const metadata: Metadata = {
-  title: "VUNA Football League",
+  title: "LeagueForge",
   description: "School Football League Management System",
   icons: { icon: "/icon.svg" },
 };

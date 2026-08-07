@@ -1,6 +1,6 @@
-# VUNA Football League - Comprehensive Security & Code Audit Report
+# LeagueForge - Comprehensive Security & Code Audit Report
 
-**Project:** VUNA Football League (Next.js 14.1)
+**Project:** LeagueForge (Next.js 14.1)
 **Date:** May 22, 2026
 **Status:** ⚠️ Multiple Security Issues Identified
 

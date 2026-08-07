@@ -49,10 +49,10 @@ export function SeasonSelector({
                 <span>{s.name}</span>
                 <span className={`text-[11px] font-medium px-1.5 py-0.5 rounded-full ${
                   s.status === "active"
-                    ? "bg-green-500/20 text-green-400"
+                    ? "bg-live-tint text-live-500"
                     : s.status === "completed"
-                    ? "bg-blue-500/20 text-blue-400"
-                    : "bg-gray-500/20 text-gray-300"
+                    ? "bg-brand-50 text-brand-700"
+                    : "bg-surface-2 text-ink-3"
                 }`}>
                   {s.status}
                 </span>

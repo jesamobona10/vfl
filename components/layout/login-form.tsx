@@ -67,7 +67,7 @@ export function LoginForm() {
     <div className="w-full max-w-md">
       <div className="text-center mb-8">
         <Shield className="mx-auto text-brand" size={48} />
-        <h1 className="text-2xl font-bold mt-4">VUNA Football League</h1>
+        <h1 className="text-2xl font-bold mt-4">LeagueForge</h1>
         <p className="text-muted mt-1">Sign in to manage the league</p>
       </div>
 

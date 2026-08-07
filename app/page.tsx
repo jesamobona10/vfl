@@ -87,7 +87,7 @@ export default function LandingPage() {
         <div className="text-center mb-12">
           <Shield className="mx-auto text-brand" size={56} />
           <h1 className="text-3xl sm:text-4xl font-bold mt-6 text-text">
-            VUNA Football Management
+            LeagueForge
           </h1>
           <p className="text-muted mt-3 text-lg max-w-xl mx-auto">
             Manage your school, academy, or club — leagues, cups, player stats, and live scores.

@@ -22,7 +22,7 @@ export function ReportView() {
   const report = useMemo(() => {
     const verification = verifyFixtures(fixtures, teams);
     const lines: string[] = [];
-    lines.push("VUNA FOOTBALL LEAGUE REPORT");
+    lines.push("LEAGUEFORGE REPORT");
     lines.push("");
     lines.push(`Teams: ${teams.length}`);
     lines.push(`Rounds: ${fixtures.length}`);
