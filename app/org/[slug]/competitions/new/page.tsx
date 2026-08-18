@@ -1,0 +1,205 @@
+"use client";
+
+import { useState } from "react";
+import { useQueryClient } from "@tanstack/react-query";
+import { useOrg } from "@/lib/hooks/use-org";
+import { useParams, useRouter } from "next/navigation";
+import { ArrowLeft, AlertCircle } from "lucide-react";
+
+export default function NewCompetitionPage() {
+  const params = useParams();
+  const router = useRouter();
+  const queryClient = useQueryClient();
+  const slug = params.slug as string;
+  const { data: currentOrg } = useOrg(slug);
+
+  const [name, setName] = useState("");
+  const [type, setType] = useState<"league" | "cup" | "friendly">("league");
+  const [seasonName, setSeasonName] = useState("");
+  const [seasonShortName, setSeasonShortName] = useState("");
+  const [startDate, setStartDate] = useState("");
+  const [endDate, setEndDate] = useState("");
+  const [error, setError] = useState("");
+  const [submitting, setSubmitting] = useState(false);
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setError("");
+
+    if (!name.trim()) {
+      setError("Competition name is required.");
+      return;
+    }
+    if (!currentOrg?.id) {
+      setError("No organization selected.");
+      return;
+    }
+
+    setSubmitting(true);
+    try {
+      const res = await fetch("/api/competitions", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          organization_id: currentOrg.id,
+          name: name.trim(),
+          type,
+          season_name: seasonName.trim() || null,
+          season_short_name: seasonShortName.trim() || null,
+          start_date: startDate || null,
+          end_date: endDate || null,
+        }),
+      });
+      if (!res.ok) {
+        const data = await res.json();
+        throw new Error(data.error || "Failed to create competition");
+      }
+      const data = await res.json();
+      const compId = data.competition?.id;
+      queryClient.invalidateQueries({ queryKey: ["competitions"] });
+      if (compId) {
+        router.push(`/org/${slug}/competitions/${compId}`);
+      } else {
+        router.push(`/org/${slug}/competitions`);
+      }
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : "Something went wrong");
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  return (
+    <div className="max-w-lg mx-auto space-y-6">
+      <a
+        href={`/org/${slug}/competitions`}
+        className="inline-flex items-center gap-1 text-sm text-muted hover:text-text transition-colors"
+      >
+        <ArrowLeft size={14} />
+        Back to competitions
+      </a>
+
+      <div>
+        <h1 className="text-2xl font-bold">Create Competition</h1>
+        <p className="text-sm text-muted">Set up a new league, cup, or friendly</p>
+      </div>
+
+      <form onSubmit={handleSubmit} className="card p-6 space-y-4">
+        <div>
+          <label htmlFor="name" className="block text-sm font-medium mb-1">
+            Name
+          </label>
+          <input
+            id="name"
+            type="text"
+            value={name}
+            onChange={(e) => setName(e.target.value)}
+            placeholder="e.g. LeagueForge Premier League"
+            className="input w-full"
+          />
+        </div>
+
+        <div>
+          <label htmlFor="type" className="block text-sm font-medium mb-1">
+            Type
+          </label>
+          <select
+            id="type"
+            value={type}
+            onChange={(e) => setType(e.target.value as "league" | "cup" | "friendly")}
+            className="input w-full"
+          >
+            <option value="league">League</option>
+            <option value="cup">Cup</option>
+            <option value="friendly">Friendly</option>
+          </select>
+        </div>
+
+        <div className="border-t border-line pt-4">
+          <p className="text-sm font-medium mb-1">First Season</p>
+          <p className="text-xs text-muted mb-3">
+            Optional — create the competition&apos;s first season right away. You can add seasons
+            later from Settings.
+          </p>
+          <p className="text-xs text-muted mb-3 bg-brand-50 text-brand-700 p-3 rounded-lg">
+            When a season is created, all of your organization&apos;s teams (and their players) are
+            automatically registered to this season. Fixtures, standings, statistics, and results
+            are then all tied to this season.
+          </p>
+          <div className="space-y-4">
+            <div>
+              <label htmlFor="seasonName" className="block text-sm font-medium mb-1">
+                Season name
+              </label>
+              <input
+                id="seasonName"
+                type="text"
+                value={seasonName}
+                onChange={(e) => setSeasonName(e.target.value)}
+                placeholder="e.g. 2025/2026"
+                className="input w-full"
+              />
+            </div>
+            <div>
+              <label htmlFor="seasonShortName" className="block text-sm font-medium mb-1">
+                Short name <span className="text-muted">(optional)</span>
+              </label>
+              <input
+                id="seasonShortName"
+                type="text"
+                value={seasonShortName}
+                onChange={(e) => setSeasonShortName(e.target.value)}
+                placeholder="e.g. 25/26"
+                className="input w-full"
+              />
+            </div>
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <label htmlFor="startDate" className="block text-sm font-medium mb-1">
+                  Start date
+                </label>
+                <input
+                  id="startDate"
+                  type="date"
+                  value={startDate}
+                  onChange={(e) => setStartDate(e.target.value)}
+                  className="input w-full"
+                />
+              </div>
+              <div>
+                <label htmlFor="endDate" className="block text-sm font-medium mb-1">
+                  End date
+                </label>
+                <input
+                  id="endDate"
+                  type="date"
+                  value={endDate}
+                  onChange={(e) => setEndDate(e.target.value)}
+                  className="input w-full"
+                />
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {error && (
+          <div className="flex items-start gap-2 text-sm text-danger bg-danger/10 p-3 rounded-lg">
+            <AlertCircle size={16} className="mt-0.5 shrink-0" />
+            <span>{error}</span>
+          </div>
+        )}
+
+        <button
+          type="submit"
+          disabled={submitting}
+          className="btn-primary w-full flex items-center justify-center gap-2"
+        >
+          {submitting ? (
+            <span className="block w-4 h-4 bg-surface-2 rounded animate-pulse" />
+          ) : null}
+          {submitting ? "Creating..." : "Create Competition"}
+        </button>
+      </form>
+    </div>
+  );
+}

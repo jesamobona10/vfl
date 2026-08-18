@@ -1,0 +1,26 @@
+name: Season API Smoke Checks
+
+on:
+  workflow_dispatch: {}
+  push:
+    branches:
+      - main
+
+jobs:
+  smoke-check:
+    name: Run season smoke checks against staging
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Use Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+      - name: Install dependencies
+        run: npm ci
+      - name: Run smoke-check script
+        env:
+          AUTH_TOKEN: ${{ secrets.SEASON_SMOKE_AUTH_TOKEN }}
+          SEASON_ID: ${{ secrets.SEASON_SMOKE_SEASON_ID }}
+          BASE_URL: ${{ secrets.SEASON_SMOKE_BASE_URL }}
+        run: node scripts/api_season_smoke_checks.js

@@ -1,0 +1,198 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  /* Neutrals — RGB triplets kept for alpha compositing in Tailwind */
+  --bg: 247, 250, 246; /* --page #F7FAF6 */
+  --surface: 255, 255, 255; /* --panel #FFFFFF */
+  --surface-2: 237, 242, 236; /* subtle fill */
+  --text: 22, 33, 26; /* --ink #16211A */
+  --muted: 91, 106, 93; /* --ink-2 #5B6A5D */
+  --line: 225, 232, 224; /* #E1E8E0 */
+
+  /* Brand green — brand-500 kept exactly, scale built around it */
+  --brand: #0f7c45;
+  --brand-dark: #0b5f35;
+  --brand-50: #EAF6EE;
+  --brand-100: #CFEBD8;
+  --brand-500: #0F7C45;
+  --brand-600: #0B5F35;
+  --brand-700: #084526;
+
+  /* Gold accent — used sparingly, never as a second primary action color */
+  --gold-500: #D99A21;
+  --gold-700: #8C6110;
+  --gold-tint: #FBF0DC;
+
+  /* Status colors — deliberately NOT brand green */
+  --live-500: #0F9D6B;
+  --live-tint: #E4F6EE;
+  --danger-500: #C23B2E;
+  --danger-tint: #FBEAE8;
+  --warn-500: #B67D16;
+  --warn-tint: #FBF0DC;
+
+  /* Semantic aliases used by existing components */
+  --accent: #d99a21;
+  --danger: #c23b2e;
+  --shadow: 0 18px 45px rgba(23, 34, 27, 0.08);
+}
+
+body {
+  background: rgb(var(--bg));
+  color: rgb(var(--text));
+  font-variant-numeric: tabular-nums;
+  margin: 0;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+@layer components {
+  .btn {
+    @apply inline-flex items-center justify-center gap-2 px-4 py-2 rounded-lg font-medium text-sm transition-colors cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed;
+  }
+  .btn-primary {
+    @apply btn bg-brand-600 text-white hover:bg-brand-700;
+  }
+  .btn-ghost {
+    @apply btn text-muted hover:text-text hover:bg-surface-2;
+  }
+  .btn-icon {
+    @apply p-2 rounded-lg text-muted hover:text-text hover:bg-surface-2 transition-colors cursor-pointer inline-flex items-center justify-center disabled:opacity-50 disabled:cursor-not-allowed;
+  }
+  .btn-outline {
+    @apply btn text-brand-700 bg-transparent border border-brand-600/30 hover:border-brand-600 hover:bg-brand-50;
+  }
+  .btn-danger {
+    @apply btn bg-danger text-white hover:opacity-90;
+  }
+  .input {
+    @apply w-full px-3 py-2 rounded-lg border border-line bg-surface text-text text-sm placeholder:text-muted/50 focus:outline-none focus:ring-2 focus:ring-brand-600/30 focus:border-brand-600 transition-colors;
+  }
+  .card {
+    @apply bg-surface rounded-xl shadow-sm border border-line;
+  }
+
+  /* Page head pattern (from the redesign mockup) */
+  .page-head {
+    @apply flex items-end justify-between;
+  }
+  .page-title {
+    @apply text-[19px] font-semibold tracking-[-0.01em];
+  }
+  .page-sub {
+    @apply text-[12.5px] text-ink-2 mt-1;
+  }
+
+  /* Data table header pattern (from the redesign mockup) */
+  .data-table th {
+    @apply text-left text-[10.5px] uppercase tracking-[0.04em] text-ink-3 font-semibold px-4 py-2.5 border-b border-line;
+  }
+  .data-table td {
+    @apply px-4 py-2.5 border-b border-line;
+  }
+
+  /* Activity feed item pattern */
+  .activity-item {
+    @apply flex gap-2.5 px-4 py-3 border-b border-line;
+  }
+
+  /* Metric card pattern (from the redesign mockup) */
+  .metric-card {
+    @apply bg-panel border border-line rounded-xl px-4 py-3.5;
+  }
+  .metric-label {
+    @apply text-xs text-ink-2 font-medium;
+  }
+  .metric-value {
+    @apply text-2xl font-bold tracking-[-0.02em] mt-1 mb-0.5;
+  }
+  .metric-sub {
+    @apply text-[11.5px] text-ink-3;
+  }
+
+  /* Panel pattern (from the redesign mockup) */
+  .panel {
+    @apply bg-panel border border-line rounded-xl overflow-hidden;
+  }
+  .panel-head {
+    @apply flex items-center justify-between px-4 py-3.5 border-b border-line;
+  }
+  .panel-title {
+    @apply text-[13.5px] font-semibold;
+  }
+  .panel-link {
+    @apply text-xs text-brand-600 font-medium flex items-center gap-1 cursor-pointer;
+  }
+
+  /* Fixture row pattern (from the redesign mockup) */
+  .fixture-row {
+    @apply flex items-center justify-between gap-3 px-4 py-3 border-b border-line text-sm;
+  }
+  .fixture-row:last-child {
+    @apply border-b-0;
+  }
+  .fixture-teams {
+    @apply font-medium;
+  }
+  .fixture-meta {
+    @apply flex gap-3 text-ink-2 text-[11.5px] mt-0.5;
+  }
+  .fixture-meta span {
+    @apply inline-flex items-center gap-1;
+  }
+
+  /* Status dot pattern (from the redesign mockup) */
+  .dot-live {
+    @apply inline-flex items-center gap-1.5 text-[11.5px] font-semibold text-live-500 bg-live-tint px-2 py-0.5 rounded-md;
+  }
+  .dot-live-pulse {
+    @apply w-[5px] h-[5px] rounded-full bg-live-500;
+    animation: pulse 1.6s ease-in-out infinite;
+  }
+  .dot-scheduled {
+    @apply inline-flex items-center text-[11.5px] font-medium text-ink-3 bg-page px-2 py-0.5 rounded-md;
+  }
+  @keyframes pulse {
+    0%,
+    100% {
+      opacity: 1;
+    }
+    50% {
+      opacity: 0.3;
+    }
+  }
+}
+
+@keyframes skeleton-shimmer {
+  100% {
+    transform: translateX(100%);
+  }
+}
+
+@media print {
+  header,
+  nav,
+  .btn,
+  .btn-primary,
+  .btn-ghost,
+  .btn-icon,
+  button {
+    display: none !important;
+  }
+  body {
+    background: white !important;
+    color: black !important;
+  }
+  .card {
+    border: 1px solid #ccc !important;
+    box-shadow: none !important;
+  }
+  pre {
+    white-space: pre-wrap !important;
+    font-size: 10pt !important;
+  }
+}

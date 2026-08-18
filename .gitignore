@@ -1,0 +1,14 @@
+node_modules/
+.next/
+out/
+.env.local
+.env
+.env.*.local
+*.tsbuildinfo
+next-env.d.ts
+*.pem
+*.key
+
+agent-skills
+.vercel
+.env*

@@ -1,0 +1,279 @@
+import { NextResponse } from "next/server";
+import type { NextRequest } from "next/server";
+import { createMiddlewareClient } from "@/lib/supabase/middleware";
+import { getClientIp, logSecurityEvent, rateLimit, rateLimitResponse } from "@/lib/security";
+
+type AccountKind = "admin" | "org" | "team" | "player" | "unknown";
+
+/** Pages player accounts may visit (fixtures, standings, player stats). */
+const PLAYER_PAGE_PREFIXES = ["/", "/fixtures", "/standings", "/players"] as const;
+
+const PLAYER_DEFAULT_PAGE = "/fixtures";
+
+function isPlayerAllowedPage(pathname: string): boolean {
+  return PLAYER_PAGE_PREFIXES.some(
+    (prefix) => pathname === prefix || pathname.startsWith(`${prefix}/`)
+  );
+}
+
+function isPlayerAllowedApi(pathname: string, method: string): boolean {
+  if (pathname.startsWith("/api/public/")) return true;
+  if (pathname === "/api/auth/session" && method === "GET") return true;
+  if (    pathname === "/api/auth/logout" && (method === "POST" || method === "GET")) return true;
+  if (pathname === "/api/fixtures" && method === "GET") return true;
+  if (pathname === "/api/players" && method === "GET") return true;
+  if (/^\/api\/players\/\d+$/.test(pathname) && method === "GET") return true;
+  return false;
+}
+
+async function resolveAccountKind(
+  supabase: ReturnType<typeof createMiddlewareClient>["supabase"],
+  userId: string
+): Promise<AccountKind> {
+  const [{ data: admin }, { data: team }, { data: player }, { data: orgMember }] =
+    await Promise.all([
+      supabase.from("admin_users").select("id").eq("id", userId).maybeSingle(),
+      supabase.from("team_accounts").select("id").eq("id", userId).maybeSingle(),
+      supabase.from("player_profiles").select("id").eq("id", userId).maybeSingle(),
+      supabase
+        .from("organization_members")
+        .select("id")
+        .eq("user_id", userId)
+        .maybeSingle(),
+    ]);
+
+  if (admin) return "admin";
+  if (team) return "team";
+  if (player) return "player";
+  if (orgMember) return "org";
+
+  return "unknown";
+}
+
+const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || "";
+
+const ALLOWED_ORIGINS = [
+  "https://vfl.league",
+  "http://localhost:3000",
+  process.env.NEXT_PUBLIC_APP_URL,
+].filter(Boolean) as string[];
+
+function addCors(response: NextResponse, request: NextRequest) {
+  const origin = request.headers.get("origin");
+  if (origin && ALLOWED_ORIGINS.includes(origin)) {
+    response.headers.set("Access-Control-Allow-Origin", origin);
+    response.headers.set("Access-Control-Allow-Methods", "GET, POST, PUT, PATCH, DELETE, OPTIONS");
+    response.headers.set("Access-Control-Allow-Headers", "Content-Type, Authorization");
+    response.headers.set("Access-Control-Allow-Credentials", "true");
+    response.headers.set("Vary", "Origin");
+  }
+  return response;
+}
+
+function secure(response: NextResponse) {
+  response.headers.set("X-Content-Type-Options", "nosniff");
+  response.headers.set("X-Frame-Options", "DENY");
+  response.headers.set("Referrer-Policy", "strict-origin-when-cross-origin");
+  response.headers.set("Permissions-Policy", "camera=(), microphone=(), geolocation=()");
+  const isDev = process.env.NODE_ENV !== "production";
+  response.headers.set(
+    "Content-Security-Policy",
+    `default-src 'self'; script-src 'self' 'unsafe-inline' https://vercel.live${isDev ? " 'unsafe-eval'" : ""}; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https:; font-src 'self' https://vercel.live; connect-src 'self' ${supabaseUrl} https://vercel.live wss://ws-us3.pusher.com wss://*.pusher.com; frame-src https://vercel.live; frame-ancestors 'none';`
+  );
+  if (process.env.NODE_ENV === "production") {
+    response.headers.set(
+      "Strict-Transport-Security",
+      "max-age=31536000; includeSubDomains; preload"
+    );
+  }
+  return response;
+}
+
+/** Apply CORS then security headers in one call. */
+function respond(response: NextResponse, request: NextRequest): NextResponse {
+  addCors(response, request);
+  return secure(response);
+}
+
+export async function middleware(request: NextRequest) {
+  // Serve the SVG favicon where browsers request the legacy .ico path
+  if (request.nextUrl.pathname === "/favicon.ico") {
+    return respond(NextResponse.redirect(new URL("/icon.svg", request.url)), request);
+  }
+
+  // Handle CORS preflight
+  if (request.method === "OPTIONS") {
+    return addCors(new NextResponse(null, { status: 204 }), request);
+  }
+
+  if (
+    process.env.NODE_ENV === "production" &&
+    request.nextUrl.protocol === "http:" &&
+    request.headers.get("x-forwarded-proto") !== "https"
+  ) {
+    const url = request.nextUrl.clone();
+    url.protocol = "https:";
+    return NextResponse.redirect(url, 308);
+  }
+
+  const { supabase, response } = createMiddlewareClient(request);
+
+  const {
+    data: { session },
+  } = await supabase.auth.getSession();
+
+  const pathname = request.nextUrl.pathname;
+
+  const isAuthPage = pathname.startsWith("/auth");
+  const isAdminPage = pathname.startsWith("/admin");
+  const isOrgPage = pathname.startsWith("/org/");
+  const isApiRoute = pathname.startsWith("/api");
+  const isPublicApi =
+    pathname === "/api/auth/admin-signup" ||
+    pathname === "/api/auth/admin-login" ||
+    pathname === "/api/auth/session" ||
+    pathname === "/api/auth/logout" ||
+    pathname === "/api/auth/org-login" ||
+    pathname === "/api/auth/team-login" ||
+    pathname === "/api/auth/player-login" ||
+    pathname === "/api/auth/player-register" ||
+    pathname === "/api/org/register" ||
+    pathname.startsWith("/api/public/");
+
+  if (isApiRoute) {
+    const ip = getClientIp(request);
+    const limit = pathname.startsWith("/api/auth/")
+      ? { limit: 10, windowMs: 60_000 }
+      : pathname.startsWith("/api/public/")
+        ? { limit: 120, windowMs: 60_000 }
+        : { limit: 80, windowMs: 60_000 };
+    const limited = rateLimit({
+      key: `api:${ip}:${pathname}`,
+      ...limit,
+    });
+    if (limited.limited) {
+      logSecurityEvent("rate_limit_exceeded", { ip, pathname });
+      return respond(rateLimitResponse(limited.resetAt), request);
+    }
+  }
+
+  if (!session) {
+    if (isApiRoute) {
+      if (!isPublicApi && !isAuthPage) {
+        return respond(NextResponse.json(
+          { error: "Unauthorized" },
+          { status: 401 }
+        ), request);
+      }
+      return respond(response, request);
+    }
+
+    if (isAdminPage || isOrgPage) {
+      const loginUrl = new URL("/auth/login", request.url);
+      const next = pathname + request.nextUrl.search;
+      if (next && next !== "/") loginUrl.searchParams.set("next", next);
+      return respond(NextResponse.redirect(loginUrl), request);
+    }
+
+    return respond(response, request);
+  }
+
+  if (isAuthPage) {
+    return respond(NextResponse.redirect(new URL("/", request.url)), request);
+  }
+
+  const accountKind = await resolveAccountKind(supabase, session.user.id);
+
+  if (isAdminPage) {
+    if (accountKind !== "admin") {
+      logSecurityEvent("forbidden_admin_page", {
+        userId: session.user.id,
+        pathname,
+        accountKind,
+      });
+      const redirectTo =
+        accountKind === "player" ? PLAYER_DEFAULT_PAGE : "/";
+      return respond(NextResponse.redirect(new URL(redirectTo, request.url)), request);
+    }
+    return respond(response, request);
+  }
+
+  if (isOrgPage) {
+    const orgSlugMatch = pathname.match(/^\/org\/([^/]+)/);
+    if (orgSlugMatch) {
+      const orgSlug = orgSlugMatch[1];
+      const [membershipResult, teamAccountResult] = await Promise.all([
+        supabase
+          .from("organization_members")
+          .select("organization_id, organizations(slug)")
+          .eq("user_id", session.user.id)
+          .maybeSingle(),
+        accountKind === "team"
+          ? supabase
+              .from("team_accounts")
+              .select("organizations(slug)")
+              .eq("id", session.user.id)
+              .maybeSingle()
+          : Promise.resolve({ data: null }),
+      ]);
+
+      const membership = membershipResult.data;
+      const teamAccount = teamAccountResult.data;
+
+      const orgSlugFromMembership = (membership?.organizations as { slug?: string } | null)?.slug;
+      const orgSlugFromTeam = (teamAccount?.organizations as { slug?: string } | null)?.slug;
+      const isOrgMember = membership && orgSlugFromMembership === orgSlug;
+      const isTeamOrgMember = accountKind === "team" && orgSlugFromTeam === orgSlug;
+      const isSuperAdmin = accountKind === "admin";
+
+      if (!isSuperAdmin && !isOrgMember && !isTeamOrgMember) {
+        logSecurityEvent("forbidden_org_page", {
+          userId: session.user.id,
+          pathname,
+          orgSlug,
+          accountKind,
+        });
+        return respond(NextResponse.redirect(new URL("/", request.url)), request);
+      }
+    }
+    return respond(response, request);
+  }
+
+  if (accountKind === "player") {
+    if (isApiRoute && !isPublicApi) {
+      if (!isPlayerAllowedApi(pathname, request.method)) {
+        logSecurityEvent("forbidden_player_api", {
+          userId: session.user.id,
+          pathname,
+          method: request.method,
+        });
+        return respond(
+          NextResponse.json({ error: "Forbidden" }, { status: 403 }),
+          request
+        );
+      }
+    } else if (!isPlayerAllowedPage(pathname)) {
+      logSecurityEvent("forbidden_player_page", {
+        userId: session.user.id,
+        pathname,
+      });
+      return respond(
+        NextResponse.redirect(new URL(PLAYER_DEFAULT_PAGE, request.url)),
+        request
+      );
+    }
+  }
+
+  if (accountKind === "unknown" && isApiRoute && !isPublicApi) {
+    logSecurityEvent("unknown_account_api", { userId: session.user.id, pathname });
+    return respond(NextResponse.json({ error: "Unauthorized" }, { status: 401 }), request);
+  }
+
+  return respond(response, request);
+}
+
+export const config = {
+  matcher: [
+    "/((?!_next/static|_next/image|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)",
+  ],
+};

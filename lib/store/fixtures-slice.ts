@@ -1,0 +1,292 @@
+import type { StateCreator } from "zustand";
+import type { FixtureRound, Match, MatchEvent, NewMatchInput, RepairResult } from "../types";
+import { pairKey, sortMatchesByDateTime } from "../utils/helpers";
+import { generateRoundRobinFixtures } from "../logic/round-robin";
+import { repairFixturesFromLocks } from "../logic/repair";
+import { allMatches } from "../logic/standings";
+import type { AppStore } from "./index";
+
+/** Match fields that can be updated via the `updateMatch` action. */
+type MatchUpdateField =
+  | "homeScore"
+  | "awayScore"
+  | "homeId"
+  | "awayId"
+  | "date"
+  | "time"
+  | "venue"
+  | "status"
+  | "events"
+  | "live_started_at"
+  | string;
+
+/** Fixtures state slice managing the round-robin fixture schedule. */
+export interface FixturesSlice {
+  /** All fixture rounds. */
+  fixtures: FixtureRound[];
+  /** Notice message from the last repair operation. */
+  repairNotice: string;
+
+  /** Replace all fixtures. */
+  setFixtures: (fixtures: FixtureRound[]) => void;
+  /** Generate round-robin fixtures from a list of teams. */
+  generateFixtures: (teams: { id: number; name: string }[]) => void;
+  /** Add a single manual fixture. Returns an error if validation fails. */
+  addFixture: (
+    input: NewMatchInput,
+    teams: { id: number; name: string }[]
+  ) => {
+    error?: string;
+  };
+  /** Reorder a match within its round. */
+  reorderMatch: (round: number, matchId: number, targetId: number) => void;
+  /** Update a specific field on a match. */
+  updateMatch: (
+    id: number,
+    field: MatchUpdateField,
+    value: string | number | null | MatchEvent[]
+  ) => void;
+  /** Set the repair notice message. */
+  setRepairNotice: (notice: string) => void;
+  /** Attempt to repair fixture conflicts. */
+  repairFixtures: () => RepairResult;
+  /** Swap team assignments across all fixtures when a team is replaced. */
+  swapTeamsAcrossFixtures: (oldTeamId: number, newTeamId: number, editedMatchId: number) => number;
+}
+
+function getFixtures(get: () => AppStore): FixtureRound[] {
+  return get().fixtures;
+}
+
+export const createFixturesSlice: StateCreator<AppStore, [], [], FixturesSlice> = (set, get) => ({
+  fixtures: [],
+  repairNotice: "",
+
+  setFixtures: (fixtures) =>
+    set({
+      fixtures: fixtures.map((r) => ({
+        ...r,
+        matches: sortMatchesByDateTime(r.matches),
+      })),
+    }),
+
+  generateFixtures: (teams) => {
+    const result = generateRoundRobinFixtures(teams, getFixtures(get));
+    set({ fixtures: result });
+  },
+
+  addFixture: (input, teams) => {
+    const { homeId, awayId, date, time, venue } = input;
+    if (!homeId || !awayId) return { error: "Select both home and away teams." };
+    if (homeId === awayId) return { error: "Home and away teams must be different." };
+
+    const newPairKey = pairKey(homeId, awayId);
+    const existingPair = allMatches(getFixtures(get)).find(
+      (m) => pairKey(m.homeId, m.awayId) === newPairKey
+    );
+    if (existingPair)
+      return {
+        error: `This pairing already exists in Round ${existingPair.round}.`,
+      };
+
+    const maxMatchesPerRound = Math.floor(teams.length / 2);
+    let roundNum = input.round || 0;
+
+    if (!roundNum) {
+      roundNum = 1;
+      while (true) {
+        const r = getFixtures(get).find((f) => f.round === roundNum);
+        if (!r) break;
+        if (
+          r.matches.length < maxMatchesPerRound &&
+          !r.matches.some(
+            (m) =>
+              m.homeId === homeId ||
+              m.awayId === homeId ||
+              m.homeId === awayId ||
+              m.awayId === awayId
+          )
+        )
+          break;
+        roundNum++;
+      }
+    } else {
+      const existingRound = getFixtures(get).find((r) => r.round === roundNum);
+      if (existingRound) {
+        if (existingRound.matches.length >= maxMatchesPerRound)
+          return {
+            error: `Round ${roundNum} already has ${maxMatchesPerRound} matches (maximum).`,
+          };
+        if (
+          existingRound.matches.some(
+            (m) =>
+              m.homeId === homeId ||
+              m.awayId === homeId ||
+              m.homeId === awayId ||
+              m.awayId === awayId
+          )
+        )
+          return {
+            error: `One of the teams is already playing in Round ${roundNum}.`,
+          };
+      }
+    }
+
+    const allMatchIds = getFixtures(get).flatMap((r) => r.matches.map((m) => m.id));
+    const newId = allMatchIds.length ? Math.max(...allMatchIds) + 1 : 1;
+    const newMatch: Match = {
+      id: newId,
+      round: roundNum,
+      homeId,
+      awayId,
+      homeScore: null,
+      awayScore: null,
+      status: "scheduled",
+      date: date || "",
+      time: time || "",
+      venue: venue || "",
+      events: [],
+      manualEdited: true,
+    };
+
+    const fixtures = [...getFixtures(get)];
+    let round = fixtures.find((r) => r.round === roundNum);
+    if (round) {
+      round = {
+        ...round,
+        matches: sortMatchesByDateTime([...round.matches, newMatch]),
+      };
+      fixtures[fixtures.findIndex((r) => r.round === roundNum)] = round;
+    } else {
+      fixtures.push({
+        round: roundNum,
+        byeId: null,
+        matches: [newMatch],
+      });
+      fixtures.sort((a, b) => a.round - b.round);
+    }
+
+    set({ fixtures });
+    return {};
+  },
+
+  reorderMatch: (round, matchId, targetId) => {
+    if (matchId === targetId) return;
+    const fixtures = [...getFixtures(get)];
+    const roundIdx = fixtures.findIndex((r) => r.round === round);
+    if (roundIdx === -1) return;
+
+    const r = { ...fixtures[roundIdx], matches: [...fixtures[roundIdx].matches] };
+    const sourceIdx = r.matches.findIndex((m) => m.id === matchId);
+    const targetIdx = r.matches.findIndex((m) => m.id === targetId);
+    if (sourceIdx === -1 || targetIdx === -1) return;
+
+    const [moved] = r.matches.splice(sourceIdx, 1);
+    r.matches.splice(targetIdx, 0, moved);
+    fixtures[roundIdx] = r;
+    set({ fixtures });
+  },
+
+  updateMatch: (id, field, value) => {
+    const fixtures = getFixtures(get).map((r) => ({
+      ...r,
+      matches: r.matches.map((m) => {
+        if (m.id !== Number(id)) return m;
+        const updated = { ...m };
+        const isTeamLocked =
+          updated.status === "completed" ||
+          updated.status === "in-progress" ||
+          updated.status === "live" ||
+          updated.manualEdited;
+
+        if (field === "homeScore" || field === "awayScore") {
+          const parsed = Number.parseInt(String(value), 10);
+          updated[field] =
+            value === "" || value === null
+              ? null
+              : Number.isFinite(parsed)
+                ? Math.max(0, parsed)
+                : null;
+          if (
+            Number.isInteger(updated.homeScore) &&
+            Number.isInteger(updated.awayScore) &&
+            updated.status === "scheduled"
+          ) {
+            updated.status = "completed";
+          }
+        } else if (field === "homeId" || field === "awayId") {
+          if (isTeamLocked) return m;
+          const oldTeamId = updated[field];
+          const newTeamId = Number(value);
+          if (oldTeamId === newTeamId) return m;
+          updated[field] = newTeamId;
+          updated.manualEdited = true;
+          updated.autoAdjusted = false;
+        } else if (field === "date" || field === "time" || field === "venue") {
+          (updated as Record<string, unknown>)[field] = value as string;
+        } else if (field === "status") {
+          const validStatuses = ["scheduled", "in-progress", "completed", "live"] as const;
+          if (validStatuses.includes(value as (typeof validStatuses)[number])) {
+            updated.status = value as (typeof validStatuses)[number];
+          }
+        } else if (field === "events") {
+          updated.events = (value as unknown as MatchEvent[]) || [];
+        } else {
+          (updated as Record<string, unknown>)[field] = value;
+        }
+
+        if (
+          updated.status === "completed" &&
+          (!Number.isInteger(updated.homeScore) || !Number.isInteger(updated.awayScore))
+        ) {
+          updated.status = "scheduled";
+        }
+        if (!updated.events) updated.events = [];
+        return updated;
+      }),
+    }));
+
+    const sorted = fixtures.map((r) => ({
+      ...r,
+      matches: sortMatchesByDateTime(r.matches),
+    }));
+    set({ fixtures: sorted, repairNotice: "" });
+  },
+
+  setRepairNotice: (notice) => set({ repairNotice: notice }),
+
+  repairFixtures: () => {
+    const result = repairFixturesFromLocks(getFixtures(get), get().teams);
+    if (result.ok) {
+      set({ fixtures: [...getFixtures(get)] });
+    }
+    return result;
+  },
+
+  swapTeamsAcrossFixtures: (oldTeamId, newTeamId, editedMatchId) => {
+    let changed = 0;
+    const fixtures = getFixtures(get).map((r) => ({
+      ...r,
+      matches: r.matches.map((candidate) => {
+        if (candidate.id === editedMatchId) return candidate;
+        const prevHome = candidate.homeId;
+        const prevAway = candidate.awayId;
+        const c = { ...candidate };
+
+        if (c.homeId === oldTeamId) c.homeId = newTeamId;
+        else if (c.homeId === newTeamId) c.homeId = oldTeamId;
+
+        if (c.awayId === oldTeamId) c.awayId = newTeamId;
+        else if (c.awayId === newTeamId) c.awayId = oldTeamId;
+
+        if (c.homeId !== prevHome || c.awayId !== prevAway) {
+          c.autoAdjusted = true;
+          changed += 1;
+        }
+        return c;
+      }),
+    }));
+    set({ fixtures });
+    return changed;
+  },
+});
