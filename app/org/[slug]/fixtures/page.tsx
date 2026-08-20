@@ -239,7 +239,7 @@ export default function OrgFixturesPage() {
         <BulkScoreEntry />
       ) : (
         <>
-          <FixtureList />
+          <FixtureList loading={loadingDb} />
           {!loadingDb && (
             <div className="mt-4 text-center">
               {hasFixtures ? (

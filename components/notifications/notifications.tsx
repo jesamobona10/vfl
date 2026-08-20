@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { Bell } from "lucide-react";
+import { EmptyState, LoadingState } from "@/components/shared/skeleton";
 
 export default function Notifications() {
   const [items, setItems] = useState<any[]>([]);
@@ -59,7 +60,7 @@ export default function Notifications() {
       </button>
 
       {open && (
-        <div className="absolute right-0 mt-2 w-80 bg-surface border border-line rounded shadow-lg z-50">
+        <div className="absolute right-0 mt-2 w-80 bg-surface border border-line rounded-xl shadow-lg z-50">
           <div className="p-3">
             <div className="flex items-center justify-between mb-2">
               <strong>Notifications</strong>
@@ -70,10 +71,8 @@ export default function Notifications() {
                 Mark all read
               </button>
             </div>
-            {loading && <p className="text-sm text-muted">Loading...</p>}
-            {!loading && items.length === 0 && (
-              <p className="text-sm text-muted">No notifications</p>
-            )}
+            {loading && <LoadingState label="Loading notifications" />}
+            {!loading && items.length === 0 && <EmptyState title="No notifications" />}
             <ul className="space-y-2 max-h-64 overflow-auto">
               {items.map((n) => (
                 <li key={n.id} className={`p-2 rounded ${n.is_read ? "" : "bg-accent/10"}`}>

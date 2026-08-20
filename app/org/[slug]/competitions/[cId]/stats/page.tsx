@@ -4,7 +4,7 @@ import { useMemo, useState } from "react";
 import { useParams, useSearchParams } from "next/navigation";
 import { useSeasonStatistics } from "@/lib/hooks/use-competitions";
 import { Trophy, Target, EyeOff, AlertTriangle } from "lucide-react";
-import { PageSkeleton } from "@/components/shared/skeleton";
+import { EmptyState, LoadingState } from "@/components/shared/skeleton";
 
 interface StatEntry {
   playerId: number;
@@ -64,17 +64,11 @@ export default function StatsPage() {
   }, [stats]);
 
   if (isLoading) {
-    return (
-      <div className="flex items-center justify-center py-20">
-        <PageSkeleton />
-      </div>
-    );
+    return <LoadingState label="Loading statistics" />;
   }
 
   if (!seasonId) {
-    return (
-      <div className="card p-8 text-center text-muted">Select a season to view its statistics.</div>
-    );
+    return <EmptyState title="Select a season" description="Choose a season to view its statistics." />;
   }
 
   const currentList = statMap[activeTab] || [];
@@ -103,9 +97,7 @@ export default function StatsPage() {
       </div>
 
       {currentList.length === 0 ? (
-        <div className="text-center py-16">
-          <p className="text-muted">No statistics yet.</p>
-        </div>
+        <EmptyState title="No statistics yet" description="Statistics will appear after match events are recorded." />
       ) : (
         <div className="overflow-x-auto">
           <table className="w-full text-sm">

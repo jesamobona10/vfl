@@ -3,6 +3,33 @@ import { Pattern } from "@/components/ui/v-skeleton-8";
 
 export { Skeleton };
 
+export function LoadingState({ label = "Loading" }: { label?: string }) {
+  return (
+    <div className="flex items-center justify-center gap-2 py-10 text-sm text-muted" role="status" aria-live="polite">
+      <span className="h-4 w-4 animate-spin rounded-full border-2 border-line border-t-brand-600" aria-hidden="true" />
+      <span>{label}...</span>
+    </div>
+  );
+}
+
+export function EmptyState({
+  title,
+  description,
+  action,
+}: {
+  title: string;
+  description?: string;
+  action?: React.ReactNode;
+}) {
+  return (
+    <div className="flex flex-col items-center justify-center gap-2 px-6 py-10 text-center">
+      <p className="text-sm font-semibold text-text">{title}</p>
+      {description && <p className="max-w-md text-sm text-muted">{description}</p>}
+      {action && <div className="mt-2">{action}</div>}
+    </div>
+  );
+}
+
 export function SkeletonCard({ className = "" }: { className?: string }) {
   return (
     <div className={`card p-4 space-y-3 ${className}`}>

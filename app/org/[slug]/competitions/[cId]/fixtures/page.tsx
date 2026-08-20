@@ -37,5 +37,5 @@ export default function CompFixturesPage() {
     };
   }, [slug, cId, seasonId]);
 
-  return <FixtureList />;
+  return <FixtureList loading={loading} />;
 }

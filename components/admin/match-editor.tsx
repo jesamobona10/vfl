@@ -121,7 +121,7 @@ export function MatchEditor() {
               </div>
 
               <div className="grid gap-3">
-                <div className="flex items-center justify-between gap-3 px-3 py-2 rounded-3xl border border-line bg-surface shadow-sm">
+                <div className="flex items-center justify-between gap-3 px-3 py-2 rounded-xl border border-line bg-surface shadow-sm">
                   <div className="flex items-center gap-2 min-w-0">
                     {home?.logo_url && (
                       <img

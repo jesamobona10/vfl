@@ -5,7 +5,7 @@ import { useParams, useSearchParams } from "next/navigation";
 import { useAppStore } from "@/lib/store";
 import { teamName } from "@/lib/utils/helpers";
 import { completedMatches } from "@/lib/logic/standings";
-import { Trophy } from "lucide-react";
+import { EmptyState, LoadingState } from "@/components/shared/skeleton";
 
 export default function CompResultsPage() {
   const params = useParams();
@@ -42,17 +42,10 @@ export default function CompResultsPage() {
   const teams = useAppStore((s) => s.teams);
   const results = useMemo(() => completedMatches(fixtures), [fixtures]);
 
-  if (loading) return <div className="card p-8 text-center text-muted">Loading results…</div>;
+  if (loading) return <LoadingState label="Loading results" />;
 
   if (results.length === 0) {
-    return (
-      <div className="text-center py-16">
-        <Trophy size={48} className="mx-auto text-muted/30 mb-4" />
-        <p className="text-muted">
-          No completed matches yet. Finish a fixture to see results here.
-        </p>
-      </div>
-    );
+    return <EmptyState title="No completed matches" description="Finish a fixture to see results here." />;
   }
 
   return (

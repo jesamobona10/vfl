@@ -5,6 +5,7 @@ import { useEffect, useState } from "react";
 import { useParams, useSearchParams } from "next/navigation";
 import { useAppStore } from "@/lib/store";
 import type { SeasonTeam } from "@/lib/types";
+import { LoadingState } from "@/components/shared/skeleton";
 
 export default function CompStandingsPage() {
   const params = useParams();
@@ -48,7 +49,7 @@ export default function CompStandingsPage() {
     };
   }, [slug, cId, seasonId]);
 
-  if (loading) return <div className="card p-8 text-center text-muted">Loading standings…</div>;
+  if (loading) return <LoadingState label="Loading standings" />;
 
   return (
     <div>

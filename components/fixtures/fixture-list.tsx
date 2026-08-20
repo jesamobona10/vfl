@@ -5,9 +5,9 @@ import { useAppStore } from "@/lib/store";
 import { FixtureFilters } from "./fixture-filters";
 import { FixtureCreator } from "./fixture-creator";
 import { FixtureRoundPanel } from "./fixture-round";
-import { Calendar } from "lucide-react";
+import { EmptyState, LoadingState } from "@/components/shared/skeleton";
 
-export function FixtureList() {
+export function FixtureList({ loading = false }: { loading?: boolean }) {
   const [roundFilter, setRoundFilter] = useState("all");
   const [teamFilter, setTeamFilter] = useState("all");
   const [statusFilter, setStatusFilter] = useState("all");
@@ -106,13 +106,13 @@ export function FixtureList() {
       )}
 
       <div ref={captureRef} className="space-y-4">
-        {!fixturesExist ? (
-          <div className="text-center py-16">
-            <Calendar size={48} className="mx-auto text-muted/30 mb-4" />
-            <p className="text-muted">
-              No fixtures yet. Click &ldquo;Generate Fixtures&rdquo; above or add one manually.
-            </p>
-          </div>
+        {loading ? (
+          <LoadingState label="Loading fixtures" />
+        ) : !fixturesExist ? (
+          <EmptyState
+            title="No fixtures yet"
+            description="Generate fixtures above or add one manually to build the match calendar."
+          />
         ) : (
           visibleRoundPanels
         )}

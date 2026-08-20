@@ -191,7 +191,7 @@ function FormationRow({ label, players, count }: { label: string; players: any[]
           return (
             <div
               key={`${label}-${index}`}
-              className="rounded-2xl border border-line bg-surface-2 p-3 text-center min-h-[96px]"
+              className="rounded-xl border border-line bg-surface-2 p-3 text-center min-h-[96px]"
             >
               {player ? (
                 <>

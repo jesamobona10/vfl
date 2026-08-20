@@ -5,9 +5,9 @@ import { useParams, useSearchParams } from "next/navigation";
 import { useAppStore } from "@/lib/store";
 import { useCompetition } from "@/lib/hooks/use-competitions";
 import { LiveMatchCard } from "@/components/live/live-match-card";
-import { PageSkeleton } from "@/components/shared/skeleton";
+import { EmptyState, LoadingState } from "@/components/shared/skeleton";
 import { liveSettings, matchKickoff, type LiveClockSettings } from "@/lib/logic/live";
-import { Play, Radio } from "lucide-react";
+import { Play } from "lucide-react";
 import type { Match, Team } from "@/lib/types";
 
 interface LiveData {
@@ -114,11 +114,7 @@ export default function LiveEventPage() {
   };
 
   if (loading && !data) {
-    return (
-      <div className="flex items-center justify-center py-20">
-        <PageSkeleton />
-      </div>
-    );
+    return <LoadingState label="Loading live matches" />;
   }
 
   const live = data?.live || [];
@@ -172,14 +168,10 @@ export default function LiveEventPage() {
       )}
 
       {live.length === 0 && upcoming.length === 0 ? (
-        <div className="text-center py-16">
-          <Radio size={48} className="mx-auto text-muted/30 mb-4" />
-          <p className="text-muted">No matches are currently live or about to kick off.</p>
-          <p className="text-sm text-muted/70 mt-1">
-            Scheduled matches appear here automatically 10 minutes before kickoff and can be started
-            up to 10 minutes after kickoff.
-          </p>
-        </div>
+        <EmptyState
+          title="No live matches"
+          description="Scheduled matches appear here automatically 10 minutes before kickoff and can be started up to 10 minutes after kickoff."
+        />
       ) : (
         <>
           {live.length > 0 && (

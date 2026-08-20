@@ -209,7 +209,7 @@ export function MatchReportModal({
       onClick={onClose}
     >
       <div
-        className="bg-white border border-line rounded-2xl shadow-2xl w-full max-w-2xl flex flex-col max-h-[90vh]"
+        className="bg-surface border border-line rounded-xl shadow-2xl w-full max-w-2xl flex flex-col max-h-[90vh]"
         onClick={(e) => e.stopPropagation()}
       >
         <div className="flex items-center justify-between px-6 py-4 border-b border-line">
