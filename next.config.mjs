@@ -17,6 +17,7 @@ const CSP_DIRECTIVES = [
 
 const nextConfig = {
   poweredByHeader: false,
+  compress: true,
   async headers() {
     return [
       {
@@ -32,6 +33,8 @@ const nextConfig = {
     ];
   },
   images: {
+    formats: ["image/avif", "image/webp"],
+    minimumCacheTTL: 60 * 60 * 24 * 30,
     remotePatterns: [
       {
         protocol: "https",

@@ -6,6 +6,7 @@ import { useAppStore } from "@/lib/store";
 import { useResolvedTeams } from "@/lib/hooks/use-resolved-teams";
 import { calculateStandings } from "@/lib/logic/standings";
 import { ArrowUpRight } from "lucide-react";
+import Image from "next/image";
 
 export function TopFiveStandings() {
   const params = useParams();
@@ -49,9 +50,11 @@ export function TopFiveStandings() {
                     {(() => {
                       const t = teams.find((tt) => tt.id === team.id);
                       return t?.logo_url ? (
-                        <img
+                        <Image
                           src={t.logo_url}
                           alt=""
+                          width={20}
+                          height={20}
                           className="w-5 h-5 rounded-full object-cover"
                         />
                       ) : (

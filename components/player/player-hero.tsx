@@ -1,6 +1,7 @@
 "use client";
 
 import { Shield, Star } from "lucide-react";
+import Image from "next/image";
 
 interface PlayerHeroProps {
   player: {
@@ -20,9 +21,11 @@ export function PlayerHero({ player, team }: PlayerHeroProps) {
     <div className="card p-6 flex flex-col sm:flex-row items-center gap-5">
       <div className="relative shrink-0">
         {player.photoUrl ? (
-          <img
+          <Image
             src={player.photoUrl}
             alt={player.name}
+            width={80}
+            height={80}
             className="w-20 h-20 rounded-full object-cover border-2 border-line"
           />
         ) : (
@@ -56,9 +59,11 @@ export function PlayerHero({ player, team }: PlayerHeroProps) {
           <span className="text-xs text-muted">rating</span>
         </div>
         {team?.logo_url && (
-          <img
+          <Image
             src={team.logo_url}
             alt={team.name}
+            width={40}
+            height={40}
             className="w-10 h-10 rounded-full object-cover"
           />
         )}

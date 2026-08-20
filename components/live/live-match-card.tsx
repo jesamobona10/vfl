@@ -8,6 +8,7 @@ import { LiveClock } from "./live-clock";
 import { useLiveClock } from "./live-clock";
 import { CheckCircle, Plus, Flag } from "lucide-react";
 import type { LiveClockSettings } from "@/lib/logic/live";
+import Image from "next/image";
 
 const EVENT_ABBR: Record<string, string> = {
   goal: "G",
@@ -138,9 +139,11 @@ export function LiveMatchCard({
               {homeTeam?.name || "Unknown"}
             </span>
             {homeTeam?.logo_url ? (
-              <img
+              <Image
                 src={homeTeam.logo_url}
                 alt=""
+                width={40}
+                height={40}
                 className="w-10 h-10 rounded-full object-cover shrink-0"
               />
             ) : (
@@ -161,9 +164,11 @@ export function LiveMatchCard({
 
           <div className="flex items-center gap-3 justify-start min-w-0">
             {awayTeam?.logo_url ? (
-              <img
+              <Image
                 src={awayTeam.logo_url}
                 alt=""
+                width={40}
+                height={40}
                 className="w-10 h-10 rounded-full object-cover shrink-0"
               />
             ) : (

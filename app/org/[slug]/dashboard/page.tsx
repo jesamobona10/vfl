@@ -18,6 +18,7 @@ import { OrgSeasonSelector } from "@/components/competitions/org-season-selector
 import { Shield, RefreshCw, Plus, Upload } from "lucide-react";
 import { DashboardSkeleton } from "@/components/shared/skeleton";
 import { useParams, useRouter } from "next/navigation";
+import Image from "next/image";
 
 export default function OrgDashboardPage() {
   const params = useParams();
@@ -146,9 +147,10 @@ export default function OrgDashboardPage() {
                 className="w-12 h-12 rounded-xl bg-surface-2 flex items-center justify-center overflow-hidden border border-line cursor-pointer hover:opacity-80 transition-opacity"
               >
                 {orgLogoUrl || currentOrg?.logo_url ? (
-                  <img
+                  <Image
                     src={orgLogoUrl || currentOrg!.logo_url!}
                     alt="Org logo"
+                    fill
                     className="w-full h-full object-cover"
                   />
                 ) : (

@@ -8,6 +8,7 @@ import { titleCase } from "@/lib/utils/helpers";
 import { MatchReportModal } from "./match-report-modal";
 import { LiveBadge } from "@/components/live/live-badge";
 import { Sparkles } from "lucide-react";
+import Image from "next/image";
 
 /** Lazy-loaded flyer — only fetched when the user clicks the card. */
 const MatchFlyer = lazy(() =>
@@ -229,9 +230,11 @@ export function FixtureCard({
               {homeTeam?.name || "Unknown"}
             </span>
             {homeTeam?.logo_url ? (
-              <img
+              <Image
                 src={homeTeam.logo_url}
                 alt=""
+                width={40}
+                height={40}
                 className="w-10 h-10 rounded-full object-cover shrink-0"
               />
             ) : (
@@ -249,9 +252,11 @@ export function FixtureCard({
 
           <div className="flex items-center gap-3 justify-start min-w-0">
             {awayTeam?.logo_url ? (
-              <img
+              <Image
                 src={awayTeam.logo_url}
                 alt=""
+                width={40}
+                height={40}
                 className="w-10 h-10 rounded-full object-cover shrink-0"
               />
             ) : (
