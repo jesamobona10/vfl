@@ -37,8 +37,13 @@ RUN npm prune --omit=dev
 # Final stage for app image
 FROM base
 
+RUN groupadd --system --gid 1001 nodejs && \
+    useradd --system --uid 1001 --gid nodejs nextjs
+
 # Copy built application
-COPY --from=build /app /app
+COPY --from=build --chown=nextjs:nodejs /app /app
+
+USER nextjs
 
 # Start the server by default, this can be overwritten at runtime
 EXPOSE 3000

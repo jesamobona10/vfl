@@ -54,8 +54,18 @@ export async function PUT(request: Request, { params }: { params: { id: string }
       update.rating = rating;
     }
     if (parsed.data!.logo_url !== undefined) update.logo_url = parsed.data!.logo_url;
-    if (parsed.data!.organization_id !== undefined)
-      update.organization_id = parsed.data!.organization_id;
+    if (parsed.data!.organization_id !== undefined) {
+      const orgId = parsed.data!.organization_id as string;
+      if (orgId) {
+        const { data: orgCheck } = await sb
+          .from("organizations")
+          .select("id")
+          .eq("id", orgId)
+          .maybeSingle();
+        if (!orgCheck) return json({ error: "Organization not found." }, { status: 400 });
+      }
+      update.organization_id = orgId || null;
+    }
 
     if (Object.keys(update).length === 0)
       return json({ error: "No valid fields to update." }, { status: 400 });

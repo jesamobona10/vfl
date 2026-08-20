@@ -9,7 +9,10 @@ import {
   rateLimit,
   rateLimitResponse,
   requireAuth,
+  requireOrgAdmin,
+  writeAuditRecord,
 } from "@/lib/security";
+import { AUDIT_ACTIONS } from "@/lib/audit/actions";
 
 export const dynamic = "force-dynamic";
 
@@ -35,18 +38,14 @@ export async function POST(request: Request, { params }: { params: { slug: strin
       return json({ error: "Organization not found." }, { status: 404 });
     }
 
-    if (
-      !auth!.isAdmin &&
-      (!auth!.orgMembership ||
-        auth!.orgMembership.organization_id !== org.id ||
-        !["owner", "admin"].includes(auth!.orgMembership.role))
-    ) {
+    const orgAdminError = requireOrgAdmin(auth, org.id);
+    if (orgAdminError) {
       logSecurityEvent("org_delete_fixtures_forbidden", {
         userId: auth!.userId,
         slug: params.slug,
         orgId: org.id,
       });
-      return json({ error: "Forbidden" }, { status: 403 });
+      return orgAdminError;
     }
 
     let competitionId: string | null = null;
@@ -88,6 +87,16 @@ export async function POST(request: Request, { params }: { params: { slug: strin
       logApiError("org_delete_fixtures_error", error);
       return json({ error: "Failed to delete fixtures." }, { status: 500 });
     }
+
+    void writeAuditRecord({
+      organizationId: org.id,
+      actorId: auth!.userId,
+      action: AUDIT_ACTIONS.FIXTURE_DELETED,
+      resourceType: "FIXTURE",
+      description: `Deleted ${deleted?.length || 0} fixtures from org ${params.slug}`,
+      before: { count: deleted?.length || 0 },
+      ip,
+    }).catch(() => {});
 
     return json({ success: true, deletedCount: deleted?.length || 0 });
   } catch (error) {

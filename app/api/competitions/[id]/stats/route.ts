@@ -1,5 +1,5 @@
 import { createClient } from "@/lib/supabase/server";
-import { getAuthContext, json, logApiError } from "@/lib/security";
+import { getAuthContext, json, logApiError, requireAuth, requireOrgMember } from "@/lib/security";
 
 export const dynamic = "force-dynamic";
 
@@ -7,9 +7,21 @@ export async function GET(request: Request, { params }: { params: { id: string }
   try {
     const supabase = await createClient();
     const auth = await getAuthContext(supabase);
-    if (!auth) return json({ error: "Unauthorized" }, { status: 401 });
+    const authError = requireAuth(auth);
+    if (authError) return authError;
 
     const competitionId = params.id;
+
+    const { data: comp } = await supabase
+      .from("competitions")
+      .select("organization_id")
+      .eq("id", competitionId)
+      .maybeSingle();
+
+    if (!comp) return json({ error: "Competition not found." }, { status: 404 });
+
+    const orgError = requireOrgMember(auth, comp.organization_id);
+    if (orgError) return orgError;
     const url = new URL(request.url);
     const seasonId = url.searchParams.get("season_id");
 

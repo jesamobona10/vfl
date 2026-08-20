@@ -91,6 +91,15 @@ export async function POST(request: Request, { params }: { params: { id: string 
     if (!teamId) return json({ error: "Team ID is required." }, { status: 400 });
     if (!eventType) return json({ error: "Event type is required." }, { status: 400 });
 
+    const ALLOWED_EVENT_TYPES = [
+      "goal", "assist", "own-goal", "yellow", "red", "save", "penalty-save",
+      "clean-sheet", "motm", "error", "penalty-conceded", "tackle", "interception",
+      "block", "aerial", "goal-conceded", "match-win", "bonus-5-saves",
+    ];
+    if (!ALLOWED_EVENT_TYPES.includes(eventType)) {
+      return json({ error: `Invalid event type. Allowed: ${ALLOWED_EVENT_TYPES.join(", ")}` }, { status: 400 });
+    }
+
     if (teamId !== homeTeamId && teamId !== awayTeamId) {
       return json({ error: "Team does not participate in this fixture." }, { status: 400 });
     }

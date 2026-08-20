@@ -1,4 +1,5 @@
 import { createClient } from "@/lib/supabase/server";
+import { createServiceRoleClient } from "@/lib/supabase/service-role";
 import {
   asString,
   actorRole,
@@ -10,6 +11,7 @@ import {
   parseJsonObject,
   rateLimit,
   rateLimitResponse,
+  requireAuth,
   requireOrgAdmin,
   sanitizeText,
   writeAuditRecord,
@@ -22,13 +24,22 @@ export async function GET(request: Request) {
   try {
     const supabase = await createClient();
     const auth = await getAuthContext(supabase);
+    const authError = requireAuth(auth);
+    if (authError) return authError;
+
     const url = new URL(request.url);
-    const orgId = url.searchParams.get("org_id") || auth?.orgMembership?.organization_id;
+    const orgId = url.searchParams.get("org_id") || auth!.orgMembership?.organization_id;
 
-    let query = supabase.from("teams").select("*").order("id");
-    if (orgId) query = query.eq("organization_id", orgId);
+    if (!orgId) {
+      return json({ error: "Organization ID is required." }, { status: 400 });
+    }
 
-    const { data, error } = await query;
+    const sb = createServiceRoleClient();
+    const { data, error } = await sb
+      .from("teams")
+      .select("*")
+      .eq("organization_id", orgId)
+      .order("id");
 
     if (error) {
       logApiError("teams_list_failed", error);

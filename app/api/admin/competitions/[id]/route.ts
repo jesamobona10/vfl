@@ -62,8 +62,18 @@ export async function PUT(request: Request, { params }: { params: { id: string }
       update.status = parsed.data!.status;
     }
     if (parsed.data!.season !== undefined) update.season = parsed.data!.season || null;
-    if (parsed.data!.organization_id !== undefined)
-      update.organization_id = parsed.data!.organization_id;
+    if (parsed.data!.organization_id !== undefined) {
+      const orgId = parsed.data!.organization_id as string;
+      if (orgId) {
+        const { data: orgCheck } = await sb
+          .from("organizations")
+          .select("id")
+          .eq("id", orgId)
+          .maybeSingle();
+        if (!orgCheck) return json({ error: "Organization not found." }, { status: 400 });
+      }
+      update.organization_id = orgId || null;
+    }
     if (parsed.data!.logo_url !== undefined) update.logo_url = parsed.data!.logo_url;
 
     if (Object.keys(update).length === 0)

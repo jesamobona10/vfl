@@ -1,20 +1,19 @@
 import { createClient } from "@/lib/supabase/server";
-import { json, logApiError } from "@/lib/security";
+import { getAuthContext, json, logApiError, requireAuth } from "@/lib/security";
 
 export const dynamic = "force-dynamic";
 
 export async function GET() {
   try {
     const supabase = await createClient();
-    const {
-      data: { session },
-    } = await supabase.auth.getSession();
-    if (!session) return json({ error: "Unauthorized" }, { status: 401 });
+    const auth = await getAuthContext(supabase);
+    const authError = requireAuth(auth);
+    if (authError) return authError;
 
     const { data: profile } = await supabase
       .from("player_profiles")
       .select("player_id, display_name, jersey_number, position, photo_url")
-      .eq("id", session.user.id)
+      .eq("id", auth!.userId)
       .single();
 
     if (!profile || !profile.player_id) {

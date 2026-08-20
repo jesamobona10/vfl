@@ -13,7 +13,7 @@ import {
   parseJsonObject,
   rateLimit,
   rateLimitResponse,
-  requireAdmin,
+  requireOrgAdmin,
   sanitizeText,
 } from "@/lib/security";
 
@@ -30,6 +30,11 @@ export async function POST(request: Request) {
 
     if (!auth.isAdmin && !auth.orgMembership) {
       return json({ error: "Forbidden" }, { status: 403 });
+    }
+
+    if (!auth.isAdmin) {
+      const orgAdminError = requireOrgAdmin(auth, auth.orgMembership!.organization_id);
+      if (orgAdminError) return orgAdminError;
     }
 
     const ip = getClientIp(request);
