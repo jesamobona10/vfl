@@ -17,7 +17,8 @@ import {
 
 export const dynamic = "force-dynamic";
 
-export async function POST(request: Request, { params }: { params: { id: string } }) {
+export async function POST(request: Request, props: { params: Promise<{ id: string }> }) {
+  const params = await props.params;
   try {
     const supabase = await createClient();
     const auth = await getAuthContext(supabase);
@@ -26,7 +27,7 @@ export async function POST(request: Request, { params }: { params: { id: string 
     const authed = auth!;
 
     const ip = getClientIp(request);
-    const limited = rateLimit({
+    const limited = await rateLimit({
       key: `events:create:${ip}:${authed.userId}`,
       limit: 120,
       windowMs: 60 * 60_000,

@@ -1,4 +1,4 @@
-import { createServiceRoleClient } from "@/lib/supabase/service-role";
+import { createClient } from "@/lib/supabase/server";
 import {
   asString,
   getClientIp,
@@ -10,7 +10,6 @@ import {
   rateLimit,
   rateLimitResponse,
 } from "@/lib/security";
-import { randomBytes, createHash } from "crypto";
 
 export const dynamic = "force-dynamic";
 
@@ -18,7 +17,7 @@ export async function POST(request: Request) {
   try {
     const ip = getClientIp(request);
 
-    const limited = rateLimit({
+    const limited = await rateLimit({
       key: `forgot-password:${ip}`,
       limit: 3,
       windowMs: 60 * 60_000,
@@ -36,40 +35,22 @@ export async function POST(request: Request) {
       return json({ error: "Valid email is required." }, { status: 400 });
     }
 
-    const sb = createServiceRoleClient();
-
-    const {
-      data: { users },
-      error: listError,
-    } = await sb.auth.admin.listUsers();
-    if (listError) {
-      logApiError("forgot_password_list_failed", listError, { ip, email });
-      return json({ error: "Internal server error." }, { status: 500 });
-    }
-
-    const targetUser = users?.find((u) => u.email?.toLowerCase() === email);
-    if (!targetUser) {
-      return json({ success: true });
-    }
-
-    const token = randomBytes(32).toString("hex");
-    const tokenHash = createHash("sha256").update(token).digest("hex");
-    const expiry = Date.now() + 30 * 60 * 1000;
-
-    const { error: updateError } = await sb.auth.admin.updateUserById(targetUser.id, {
-      user_metadata: {
-        ...targetUser.user_metadata,
-        reset_token_hash: tokenHash,
-        reset_token_expiry: expiry,
-      },
+    // Native GoTrue recovery flow: Supabase emails the user a one-time link.
+    // The link lands on /auth/callback?next=/auth/reset, which exchanges the
+    // code for a session; the new password is then set via /api/auth/reset-password.
+    // NOTE: the redirect URL must be allowlisted in Supabase Auth settings.
+    const origin = process.env.NEXT_PUBLIC_APP_URL || new URL(request.url).origin;
+    const supabase = await createClient();
+    const { error } = await supabase.auth.resetPasswordForEmail(email, {
+      redirectTo: `${origin}/auth/callback?next=${encodeURIComponent("/auth/reset")}`,
     });
 
-    if (updateError) {
-      logApiError("forgot_password_update_failed", updateError, { ip, email });
-      return json({ error: "Internal server error." }, { status: 500 });
+    if (error) {
+      logApiError("forgot_password_send_failed", error, { ip, email });
+      // Do not surface whether the account exists (no user enumeration).
+    } else {
+      logSecurityEvent("forgot_password_email_sent", { ip });
     }
-
-    logSecurityEvent("forgot_password_token_generated", { ip, userId: targetUser.id });
 
     return json({ success: true });
   } catch (error) {

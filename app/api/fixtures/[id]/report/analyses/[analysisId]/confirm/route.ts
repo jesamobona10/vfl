@@ -15,15 +15,20 @@ import {
 } from "@/lib/security";
 import { AUDIT_ACTIONS } from "@/lib/audit/actions";
 import { loadFixtureContext, buildMatchContext } from "@/lib/ai/context-loader";
-import { computeScore, eventTypeToMatchEventType } from "@/lib/ai/event-validation";
-import type { ResolvedEvent } from "@/lib/ai/event-validation";
+import {
+  computeScore,
+  eventTypeToMatchEventType,
+  validateEvents,
+} from "@/lib/ai/event-validation";
+import type { CandidateEvent } from "@/lib/ai/event-validation";
 
 export const dynamic = "force-dynamic";
 
 export async function POST(
   request: Request,
-  { params }: { params: { id: string; analysisId: string } }
+  props: { params: Promise<{ id: string; analysisId: string }> }
 ) {
+  const params = await props.params;
   try {
     const supabase = await createClient();
     const auth = await getAuthContext(supabase);
@@ -31,7 +36,7 @@ export async function POST(
     const authed = auth;
 
     const ip = getClientIp(request);
-    const limited = rateLimit({
+    const limited = await rateLimit({
       key: `report:confirm:${ip}:${authed.userId}`,
       limit: 30,
       windowMs: 60 * 60_000,
@@ -86,20 +91,81 @@ export async function POST(
     }
 
     const context = buildMatchContext(loaded.context);
-    const approved: ResolvedEvent[] = rawEvents as ResolvedEvent[];
 
-    const invalid = approved.some(
-      (e) =>
-        e.playerStatus !== "RESOLVED" ||
-        !e.validation?.valid ||
-        e.playerId == null ||
-        e.teamId == null
-    );
-    if (invalid) {
+    // SECURITY: never trust client-supplied validation flags or resolution
+    // statuses. Re-run deterministic validation on the server; anything that
+    // fails business rules (type whitelist, minutes, team membership) here
+    // refuses confirmation.
+    const approved = validateEvents(rawEvents as CandidateEvent[], context).events;
+
+    const invalid = approved.filter((e) => !e.validation.valid);
+    if (invalid.length > 0) {
       return json(
-        { error: "Cannot confirm: some events are unresolved or invalid. Resolve them first." },
+        {
+          error: "Cannot confirm: some events are invalid.",
+          details: invalid.map((e) => ({
+            type: e.type,
+            minute: e.minute,
+            errors: e.validation.errors,
+          })),
+        },
         { status: 400 }
       );
+    }
+    const unresolved = approved.filter(
+      (e) => e.playerId == null || e.teamId == null || e.playerStatus !== "RESOLVED"
+    );
+    if (unresolved.length > 0) {
+      return json(
+        { error: "Cannot confirm: some events are unresolved. Resolve them first." },
+        { status: 400 }
+      );
+    }
+
+    // Verify every referenced player exists and actually belongs to the team
+    // claimed by the event (the client could assert any player/team pair).
+    const referencedPlayerIds = Array.from(
+      new Set(
+        approved.flatMap((e) =>
+          e.assistPlayerId != null ? [e.playerId!, e.assistPlayerId] : [e.playerId!]
+        )
+      )
+    );
+    const { data: rosterRows, error: rosterError } = await sb
+      .from("players")
+      .select("id, team_id")
+      .in("id", referencedPlayerIds);
+    if (rosterError) {
+      logApiError("report_confirm_roster_lookup_failed", rosterError, {
+        userId: authed.userId,
+        fixtureId,
+      });
+      return json({ error: "Unable to verify players." }, { status: 500 });
+    }
+    const rosterTeam = new Map<number, number>(
+      (rosterRows || []).map((p: { id: number; team_id: number }) => [p.id, p.team_id])
+    );
+    for (const ev of approved) {
+      if (rosterTeam.get(ev.playerId!) !== ev.teamId) {
+        return json(
+          {
+            error: `Cannot confirm: player ${ev.playerId} does not belong to team ${ev.teamId}.`,
+          },
+          { status: 400 }
+        );
+      }
+      const isGoalWithAssist =
+        (ev.type === "GOAL" || ev.type === "PENALTY_GOAL") && ev.assistPlayerId != null;
+      if (isGoalWithAssist) {
+        if (rosterTeam.get(ev.assistPlayerId!) !== ev.teamId) {
+          return json(
+            {
+              error: `Cannot confirm: assisting player ${ev.assistPlayerId} does not belong to team ${ev.teamId}.`,
+            },
+            { status: 400 }
+          );
+        }
+      }
     }
 
     // --- Apply the confirmed events atomically-ish (per-guide, all writes

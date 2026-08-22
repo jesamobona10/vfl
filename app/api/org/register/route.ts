@@ -41,7 +41,7 @@ async function uniqueSlug(
 export async function POST(request: Request) {
   try {
     const ip = getClientIp(request);
-    const limited = rateLimit({
+    const limited = await rateLimit({
       key: `org-register:${ip}`,
       limit: 5,
       windowMs: 60 * 60_000,

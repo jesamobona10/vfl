@@ -1,26 +1,29 @@
-import { createServiceRoleClient } from "@/lib/supabase/service-role";
+import { createClient } from "@/lib/supabase/server";
 import {
-  asString,
   getClientIp,
-  validatePassword,
   json,
   logApiError,
   logSecurityEvent,
   parseJsonObject,
   rateLimit,
   rateLimitResponse,
+  validatePassword,
 } from "@/lib/security";
-import { createHash } from "crypto";
 
 export const dynamic = "force-dynamic";
 
+/**
+ * Sets a new password using the session created by the GoTrue recovery
+ * link (see forgot-password). Requires an authenticated session — either
+ * the recovery session itself or an existing logged-in session.
+ */
 export async function POST(request: Request) {
   try {
     const ip = getClientIp(request);
 
-    const limited = rateLimit({
+    const limited = await rateLimit({
       key: `reset-password:${ip}`,
-      limit: 5,
+      limit: 10,
       windowMs: 60 * 60_000,
     });
     if (limited.limited) {
@@ -31,80 +34,41 @@ export async function POST(request: Request) {
     const parsed = await parseJsonObject(request);
     if (parsed.error) return json({ error: parsed.error }, { status: 400 });
 
-    const email = asString(parsed.data!.email, 254)?.toLowerCase();
-    const token = asString(parsed.data!.token);
-    const password = asString(parsed.data!.password, 128);
-
-    if (!email || !token || !password) {
-      return json({ error: "Email, token, and password are required." }, { status: 400 });
-    }
-
+    const password = parsed.data!.password;
     const passwordError = validatePassword(password);
     if (passwordError) {
       return json({ error: passwordError }, { status: 400 });
     }
 
-    const sb = createServiceRoleClient();
-
+    // Recovery-session flow: cookies carry the session established by
+    // /auth/callback after exchanging the recovery code.
+    const supabase = await createClient();
     const {
-      data: { users },
-      error: listError,
-    } = await sb.auth.admin.listUsers();
-    if (listError) {
-      logApiError("reset_password_list_failed", listError, { ip, email });
-      return json({ error: "Internal server error." }, { status: 500 });
+      data: { user },
+    } = await supabase.auth.getUser();
+
+    if (!user) {
+      return json(
+        { error: "Reset link is invalid or has expired. Request a new one." },
+        { status: 401 }
+      );
     }
 
-    const targetUser = users?.find((u) => u.email?.toLowerCase() === email);
-    if (!targetUser) {
-      return json({ error: "Invalid token or email." }, { status: 400 });
-    }
-
-    const userMetadata = targetUser.user_metadata || {};
-    const storedHash = userMetadata.reset_token_hash;
-    const storedExpiry = userMetadata.reset_token_expiry;
-
-    if (!storedHash || !storedExpiry) {
-      return json({ error: "Invalid token or email." }, { status: 400 });
-    }
-
-    if (Date.now() > storedExpiry) {
-      await sb.auth.admin.updateUserById(targetUser.id, {
-        user_metadata: {
-          ...targetUser.user_metadata,
-          reset_token_hash: null,
-          reset_token_expiry: null,
-        },
-      });
-      logSecurityEvent("reset_password_token_expired", { ip, userId: targetUser.id });
-      return json({ error: "Token has expired." }, { status: 400 });
-    }
-
-    const providedHash = createHash("sha256").update(token).digest("hex");
-
-    if (providedHash !== storedHash) {
-      logSecurityEvent("reset_password_invalid_token", { ip, userId: targetUser.id });
-      return json({ error: "Invalid token or email." }, { status: 400 });
-    }
-
-    const { error: updateError } = await sb.auth.admin.updateUserById(targetUser.id, {
-      password,
+    const { error: updateError } = await supabase.auth.updateUser({
+      password: password as string,
     });
 
     if (updateError) {
-      logApiError("reset_password_update_failed", updateError, { ip, userId: targetUser.id });
-      return json({ error: "Internal server error." }, { status: 500 });
+      logApiError("reset_password_update_failed", updateError, { ip, userId: user.id });
+      return json({ error: "Unable to update password." }, { status: 500 });
     }
 
-    await sb.auth.admin.updateUserById(targetUser.id, {
-      user_metadata: {
-        ...targetUser.user_metadata,
-        reset_token_hash: null,
-        reset_token_expiry: null,
-      },
-    });
+    // Revoke every session for this user (including the current recovery
+    // session) so stolen sessions cannot survive a reset. Default scope is
+    // already 'global'.
+    await supabase.auth.signOut().catch(() => {});
 
-    logSecurityEvent("password_reset_success", { ip, userId: targetUser.id });
+    logSecurityEvent("password_reset_success", { ip, userId: user.id });
 
     return json({ success: true });
   } catch (error) {

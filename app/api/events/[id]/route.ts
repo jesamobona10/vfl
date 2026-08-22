@@ -16,7 +16,7 @@ import {
 export const dynamic = "force-dynamic";
 
 async function checkEventOwnership(
-  supabase: ReturnType<typeof createClient>,
+  supabase: Awaited<ReturnType<typeof createClient>>,
   authed: NonNullable<Awaited<ReturnType<typeof getAuthContext>>>,
   matchId: number
 ): Promise<Response | null> {
@@ -54,7 +54,8 @@ async function checkEventOwnership(
   return null;
 }
 
-export async function DELETE(request: Request, { params }: { params: { id: string } }) {
+export async function DELETE(request: Request, props: { params: Promise<{ id: string }> }) {
+  const params = await props.params;
   try {
     const supabase = await createClient();
     const auth = await getAuthContext(supabase);
@@ -63,7 +64,7 @@ export async function DELETE(request: Request, { params }: { params: { id: strin
     const authed = auth!;
 
     const ip = getClientIp(request);
-    const limited = rateLimit({
+    const limited = await rateLimit({
       key: `events:delete:${ip}:${authed.userId}`,
       limit: 60,
       windowMs: 60 * 60_000,

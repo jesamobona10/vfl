@@ -53,7 +53,7 @@ const ALLOWED_TYPES: ExtractionEventType[] = [
 
 const GOAL_TYPES: ExtractionEventType[] = ["GOAL", "OWN_GOAL", "PENALTY_GOAL"];
 
-interface CandidateEvent {
+export interface CandidateEvent {
   type: ExtractionEventType;
   minute: number | null;
   addedTime?: number | null;

@@ -92,7 +92,7 @@ export async function POST(request: Request) {
     }
 
     const ip = getClientIp(request);
-    const limited = rateLimit({
+    const limited = await rateLimit({
       key: `org:members:invite:${ip}:${auth!.userId}`,
       limit: 20,
       windowMs: 60 * 60_000,
@@ -104,37 +104,71 @@ export async function POST(request: Request) {
 
     const sb = createServiceRoleClient();
 
-    const { data: existingMember } = await sb
-      .from("organization_members")
-      .select("id")
-      .eq("organization_id", orgId)
-      .eq("user_id", email)
-      .maybeSingle();
+    // SECURITY: previously this compared user_id (a UUID) with an email and
+    // created accounts whose random passwords were never delivered anywhere.
+    // Now: send a real Supabase invite email when the user is new, or attach
+    // an existing account by its actual user id.
+    const findUserIdByEmail = async (
+      targetEmail: string
+    ): Promise<string | null> => {
+      const perPage = 200;
+      for (let page = 1; page <= 20; page++) {
+        const { data, error } = await sb.auth.admin.listUsers({ page, perPage });
+        if (error) return null;
+        const match = data.users.find(
+          (u) => u.email?.toLowerCase() === targetEmail
+        );
+        if (match) return match.id;
+        if (data.users.length < perPage) break;
+      }
+      return null;
+    };
 
-    if (existingMember) {
-      return json({ error: "User is already a member of this organization." }, { status: 409 });
-    }
+    const invitedUserId = await findUserIdByEmail(email);
+    let createdAuthUserId: string | null = null;
 
-    const tempPassword = crypto.randomUUID().replace(/-/g, "").slice(0, 16) + "Aa1";
-    const { data: authUser, error: createError } = await sb.auth.admin.createUser({
-      email,
-      password: tempPassword,
-      email_confirm: true,
-    });
+    let userIdForMembership = invitedUserId;
+    if (!userIdForMembership) {
+      const { data: invited, error: inviteError } = await sb.auth.admin.inviteUserByEmail(
+        email
+      );
+      if (inviteError || !invited.user) {
+        logApiError("org_members_invite_send_failed", inviteError ?? new Error("no user"), {
+          ip,
+          email,
+          orgId,
+        });
+        return json(
+          { error: "Unable to send invite email. Check the email address." },
+          { status: 400 }
+        );
+      }
+      createdAuthUserId = invited.user.id;
+      userIdForMembership = invited.user.id;
+    } else {
+      const { data: existingMember } = await sb
+        .from("organization_members")
+        .select("id")
+        .eq("organization_id", orgId)
+        .eq("user_id", userIdForMembership)
+        .maybeSingle();
 
-    if (createError) {
-      logSecurityEvent("org_members_invite_auth_failed", { ip, email, orgId });
-      return json({ error: "Unable to invite user. Check the email address." }, { status: 400 });
+      if (existingMember) {
+        return json({ error: "User is already a member of this organization." }, { status: 409 });
+      }
     }
 
     const { error: insertError } = await sb.from("organization_members").insert({
       organization_id: orgId,
-      user_id: authUser.user.id,
+      user_id: userIdForMembership,
       role,
     });
 
     if (insertError) {
-      await sb.auth.admin.deleteUser(authUser.user.id);
+      // Only clean up accounts we just created — never delete pre-existing users.
+      if (createdAuthUserId) {
+        await sb.auth.admin.deleteUser(createdAuthUserId);
+      }
       logApiError("org_members_invite_insert_failed", insertError, { ip, orgId });
       return json({ error: "Unable to add member." }, { status: 500 });
     }
@@ -153,7 +187,7 @@ export async function POST(request: Request) {
       actorRole: auth!.isAdmin ? "super_admin" : `org_${auth!.orgMembership?.role}`,
       action: AUDIT_ACTIONS.USER_CREATED,
       resourceType: "ORG_MEMBER",
-      resourceId: authUser.user.id,
+      resourceId: userIdForMembership,
       description: `Invited ${email} to the organization as ${role}`,
       after: { email, role },
       ip,
@@ -190,7 +224,7 @@ export async function DELETE(request: Request) {
     }
 
     const ip = getClientIp(request);
-    const limited = rateLimit({
+    const limited = await rateLimit({
       key: `org:members:remove:${ip}:${auth!.userId}`,
       limit: 20,
       windowMs: 60 * 60_000,

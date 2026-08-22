@@ -18,7 +18,8 @@ import { AUDIT_ACTIONS } from "@/lib/audit/actions";
 
 export const dynamic = "force-dynamic";
 
-export async function PATCH(request: Request, { params }: { params: { id: string } }) {
+export async function PATCH(request: Request, props: { params: Promise<{ id: string }> }) {
+  const params = await props.params;
   try {
     const supabase = await createClient();
     const auth = await getAuthContext(supabase);
@@ -52,7 +53,7 @@ export async function PATCH(request: Request, { params }: { params: { id: string
     }
 
     const ip = getClientIp(request);
-    const limited = rateLimit({
+    const limited = await rateLimit({
       key: `org:team-accounts:reset:${ip}:${auth.userId}`,
       limit: 20,
       windowMs: 60 * 60_000,
@@ -110,7 +111,8 @@ export async function PATCH(request: Request, { params }: { params: { id: string
   }
 }
 
-export async function DELETE(_request: Request, { params }: { params: { id: string } }) {
+export async function DELETE(_request: Request, props: { params: Promise<{ id: string }> }) {
+  const params = await props.params;
   try {
     const supabase = await createClient();
     const auth = await getAuthContext(supabase);
@@ -144,7 +146,7 @@ export async function DELETE(_request: Request, { params }: { params: { id: stri
     }
 
     const ip = getClientIp(_request);
-    const limited = rateLimit({
+    const limited = await rateLimit({
       key: `org:team-accounts:delete:${ip}:${auth.userId}`,
       limit: 20,
       windowMs: 60 * 60_000,

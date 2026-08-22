@@ -28,7 +28,27 @@ export async function GET(request: Request) {
     if (authError) return authError;
 
     const url = new URL(request.url);
-    const orgId = url.searchParams.get("org_id") || auth!.orgMembership?.organization_id;
+    // Org scoping: non-admins are always limited to their own organization.
+    // A client-supplied org_id must never widen access (service-role reads
+    // bypass RLS, so this route would otherwise leak every org's teams).
+    const requestedOrgId = url.searchParams.get("org_id");
+    let orgId: string | null;
+    if (auth!.isAdmin) {
+      orgId = requestedOrgId || auth!.orgMembership?.organization_id || null;
+    } else {
+      orgId = auth!.orgMembership?.organization_id || null;
+      if (!orgId) {
+        return json({ error: "Organization ID is required." }, { status: 400 });
+      }
+      if (requestedOrgId && requestedOrgId !== orgId) {
+        logSecurityEvent("teams_list_forbidden_org", {
+          userId: auth!.userId,
+          requestedOrgId,
+          orgId,
+        });
+        return json({ error: "Forbidden" }, { status: 403 });
+      }
+    }
 
     if (!orgId) {
       return json({ error: "Organization ID is required." }, { status: 400 });
@@ -58,7 +78,7 @@ export async function POST(request: Request) {
     const auth = await getAuthContext(supabase);
 
     const ip = getClientIp(request);
-    const limited = rateLimit({
+    const limited = await rateLimit({
       key: `teams:create:${ip}:${auth?.userId || "anon"}`,
       limit: 60,
       windowMs: 60 * 60_000,

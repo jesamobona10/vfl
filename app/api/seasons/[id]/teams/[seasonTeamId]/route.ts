@@ -16,11 +16,12 @@ export const dynamic = "force-dynamic";
 
 export async function DELETE(
   request: Request,
-  { params }: { params: { id: string; seasonTeamId: string } }
+  props: { params: Promise<{ id: string; seasonTeamId: string }> }
 ) {
+  const params = await props.params;
   try {
     const ip = getClientIp(request);
-    const limited = rateLimit({ key: `season_team_unregister:${ip}`, limit: 30, windowMs: 60_000 });
+    const limited = await rateLimit({ key: `season_team_unregister:${ip}`, limit: 30, windowMs: 60_000 });
     if (limited.limited) return rateLimitResponse(limited.resetAt);
 
     const supabase = await createClient();

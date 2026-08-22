@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { KeyRound, FileDown, AlertCircle, CheckCircle } from "lucide-react";
 import type { GeneratedPlayerCredential } from "@/lib/player-credentials";
+import { sanitizeCsvCell } from "@/lib/utils/csv";
 
 type Props = {
   scope: "admin" | "team";
@@ -14,8 +15,10 @@ type Props = {
 function downloadCredentialsCsv(rows: GeneratedPlayerCredential[]) {
   const header = "Player,Team,Username,Temporary Password,Status";
   const lines = rows.map((r) =>
+    // Formula-injection guard: player/team names are user-controlled and sit
+    // next to plaintext credentials in this export.
     [r.playerName, r.teamName, r.username, r.password, r.status]
-      .map((v) => `"${String(v).replace(/"/g, '""')}"`)
+      .map((v) => `"${sanitizeCsvCell(String(v)).replace(/"/g, '""')}"`)
       .join(",")
   );
   const blob = new Blob([[header, ...lines].join("\n")], { type: "text/csv" });

@@ -25,8 +25,63 @@ type RateLimitOptions = {
   windowMs: number;
 };
 
-/** In-memory rate limit store. Resets on server restart. */
+/** In-memory rate limit store. Resets on server restart. Single-instance only. */
 const rateLimitStore = new Map<string, RateLimitEntry>();
+
+type RateLimitResult = {
+  limited: boolean;
+  remaining: number;
+  resetAt: number;
+};
+
+const UPSTASH_URL = process.env.UPSTASH_REDIS_REST_URL;
+const UPSTASH_TOKEN = process.env.UPSTASH_REDIS_REST_TOKEN;
+
+/**
+ * Fixed-window counter in Upstash Redis via its REST API (plain fetch — no
+ * SDK dependency). Shared across instances so limits survive restarts and
+ * apply fleet-wide. Returns null when unconfigured or on any error so the
+ * caller can fall back to the in-memory store (fail open per instance).
+ */
+async function upstashRateLimit(
+  key: string,
+  limit: number,
+  windowMs: number
+): Promise<RateLimitResult | null> {
+  if (!UPSTASH_URL || !UPSTASH_TOKEN) return null;
+  try {
+    const redisKey = `ratelimit:${key}`;
+    const windowSeconds = Math.max(1, Math.ceil(windowMs / 1000));
+    const res = await fetch(`${UPSTASH_URL.replace(/\/+$/, "")}/pipeline`, {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${UPSTASH_TOKEN}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify([
+        ["INCR", redisKey],
+        ["EXPIRE", redisKey, String(windowSeconds), "NX"],
+        ["TTL", redisKey],
+      ]),
+      signal: AbortSignal.timeout(2000),
+    });
+    if (!res.ok) return null;
+    const results = (await res.json()) as Array<{ result?: unknown }>;
+    const count = results?.[0]?.result;
+    if (typeof count !== "number") return null;
+    const ttl =
+      typeof results?.[2]?.result === "number" && results[2].result > 0
+        ? results[2].result
+        : windowSeconds;
+    return {
+      limited: count > limit,
+      remaining: Math.max(0, limit - count),
+      resetAt: Date.now() + ttl * 1000,
+    };
+  } catch {
+    return null;
+  }
+}
 
 /** An organization membership record resolved from the session. */
 export type OrgMembership = {
@@ -54,8 +109,22 @@ export function getClientIp(request: Request): string {
   return request.headers.get("x-real-ip") || "unknown";
 }
 
-/** Check and update the rate limit counter for a given key. */
-export function rateLimit({ key, limit, windowMs }: RateLimitOptions) {
+/**
+ * Check and update the rate limit counter for a given key.
+ *
+ * When `UPSTASH_REDIS_REST_URL` and `UPSTASH_REDIS_REST_TOKEN` are set the
+ * counter lives in Redis and is shared across all app instances. Otherwise
+ * (or if Redis errors) an in-memory store is used — accurate only for a
+ * single instance.
+ */
+export async function rateLimit({
+  key,
+  limit,
+  windowMs,
+}: RateLimitOptions): Promise<RateLimitResult> {
+  const shared = await upstashRateLimit(key, limit, windowMs);
+  if (shared) return shared;
+
   const now = Date.now();
   const current = rateLimitStore.get(key);
 

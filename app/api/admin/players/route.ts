@@ -73,7 +73,7 @@ export async function POST(request: Request) {
     if (adminError) return adminError;
 
     const ip = getClientIp(request);
-    const limited = rateLimit({
+    const limited = await rateLimit({
       key: `admin:players:create:${ip}:${auth!.userId}`,
       limit: 60,
       windowMs: 60 * 60_000,

@@ -17,7 +17,7 @@ export const dynamic = "force-dynamic";
 export async function POST(request: Request) {
   try {
     const ip = getClientIp(request);
-    const limited = rateLimit({
+    const limited = await rateLimit({
       key: `signup:admin:${ip}`,
       limit: 3,
       windowMs: 60 * 60_000,

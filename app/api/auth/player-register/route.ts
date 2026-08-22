@@ -1,6 +1,5 @@
 import { createServiceRoleClient } from "@/lib/supabase/service-role";
 import {
-  asInteger,
   asString,
   getClientIp,
   json,
@@ -18,7 +17,7 @@ export const dynamic = "force-dynamic";
 export async function POST(request: Request) {
   try {
     const ip = getClientIp(request);
-    const limited = rateLimit({ key: `player_register:${ip}`, limit: 5, windowMs: 60 * 60_000 });
+    const limited = await rateLimit({ key: `player_register:${ip}`, limit: 5, windowMs: 60 * 60_000 });
     if (limited.limited) {
       logSecurityEvent("player_register_rate_limited", { ip });
       return rateLimitResponse(limited.resetAt);
@@ -30,7 +29,6 @@ export async function POST(request: Request) {
     const email = asString(parsed.data!.email, 254)?.toLowerCase();
     const password = parsed.data!.password;
     const displayName = sanitizeText(asString(parsed.data!.displayName, 80) || "");
-    const playerId = asInteger(parsed.data!.playerId, 1); // optional link to existing players.id
 
     const passwordError = validatePassword(password);
     if (!email || passwordError) {
@@ -51,11 +49,14 @@ export async function POST(request: Request) {
       return json({ error: "Unable to create player account." }, { status: 400 });
     }
 
+    // NOTE: linking to an existing `players` row is intentionally NOT supported
+    // here. Claiming an existing player identity requires a verified invite
+    // token issued by the organization; accepting a client-supplied player_id
+    // would allow anyone to take over any player's profile and stats.
     const insert: Record<string, unknown> = {
       id: authUser.user.id,
       display_name: displayName || email,
     };
-    if (playerId) insert.player_id = Number(playerId);
 
     const { error: insertError } = await sb.from("player_profiles").insert(insert);
     if (insertError) {

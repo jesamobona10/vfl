@@ -14,14 +14,15 @@ import {
 
 export const dynamic = "force-dynamic";
 
-export async function GET(request: Request, { params }: { params: { id: string } }) {
+export async function GET(request: Request, props: { params: Promise<{ id: string }> }) {
+  const params = await props.params;
   const teamId = Number(params.id);
 
   if (Number.isNaN(teamId)) {
     return json({ error: "Invalid team id." }, { status: 400 });
   }
 
-  const supabase = createClient();
+  const supabase = await createClient();
   const auth = await getAuthContext(supabase);
 
   if (!auth) {
@@ -56,9 +57,10 @@ export async function GET(request: Request, { params }: { params: { id: string }
   return json({ lineups });
 }
 
-export async function POST(request: Request, { params }: { params: { id: string } }) {
+export async function POST(request: Request, props: { params: Promise<{ id: string }> }) {
+  const params = await props.params;
   const ip = getClientIp(request);
-  const limited = rateLimit({ key: `lineup_create:${ip}`, limit: 20, windowMs: 60_000 });
+  const limited = await rateLimit({ key: `lineup_create:${ip}`, limit: 20, windowMs: 60_000 });
   if (limited.limited) return rateLimitResponse(limited.resetAt);
   const teamId = Number(params.id);
 
@@ -78,7 +80,7 @@ export async function POST(request: Request, { params }: { params: { id: string 
     return json({ error: "Name, formation, and slots are required." }, { status: 400 });
   }
 
-  const supabase = createClient();
+  const supabase = await createClient();
   const auth = await getAuthContext(supabase);
 
   if (!auth) {

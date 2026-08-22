@@ -75,7 +75,7 @@ export async function GET() {
 export async function PATCH(request: Request) {
   try {
     const ip = getClientIp(request);
-    const limited = rateLimit({
+    const limited = await rateLimit({
       key: `notifications_mark_read:${ip}`,
       limit: 30,
       windowMs: 60_000,

@@ -33,7 +33,7 @@ export default function OrgFixturesPage() {
   const [comps, setComps] = useState<CompOption[]>([]);
   const [selectedCompId, setSelectedCompId] = useState<string>("");
   const [error, setError] = useState("");
-  const autoSaveTimer = useRef<ReturnType<typeof setTimeout>>();
+  const autoSaveTimer = useRef<ReturnType<typeof setTimeout>>(undefined);
   const prevFixturesRef = useRef("");
 
   useEffect(() => {

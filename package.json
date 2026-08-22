@@ -6,8 +6,8 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start -p ${PORT:-8080} -H 0.0.0.0",
-    "lint": "next lint",
-    "lint:fix": "next lint --fix",
+    "lint": "eslint .",
+    "lint:fix": "eslint --fix .",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
     "typecheck": "tsc --noEmit"
@@ -19,25 +19,27 @@
     "clsx": "^2.1.0",
     "html2canvas": "^1.4.1",
     "jspdf": "^4.2.1",
-    "lucide-react": "^0.303.0",
-    "next": "^14.2.25",
-    "react": "^18.2.0",
-    "react-dom": "^18.2.0",
+    "lucide-react": "^1.33.0",
+    "next": "16.3.2",
+    "react": "19.2.8",
+    "react-dom": "19.2.8",
     "uuid": "^14.0.0",
-    "zustand": "^4.5.0"
+    "zustand": "^5.0.15"
   },
   "devDependencies": {
+    "@eslint/eslintrc": "^3.3.6",
+    "@eslint/js": "^9.39.5",
     "@swc/counter": "^0.1.3",
     "@types/jspdf": "^1.3.3",
     "@types/node": "^20.11.5",
-    "@types/react": "^18.2.48",
-    "@types/react-dom": "^18.2.18",
+    "@types/react": "19.2.18",
+    "@types/react-dom": "19.2.4",
     "@types/uuid": "^10.0.0",
     "@typescript-eslint/eslint-plugin": "^8.67.0",
     "@typescript-eslint/parser": "^8.67.0",
     "autoprefixer": "^10.4.17",
-    "eslint": "^8.57.1",
-    "eslint-config-next": "^14.2.35",
+    "eslint": "^9.39.5",
+    "eslint-config-next": "16.3.2",
     "postcss": "^8.4.33",
     "prettier": "^3.9.6",
     "tailwindcss": "^3.4.1",
@@ -46,5 +48,9 @@
   "allowScripts": {
     "sharp@0.34.5": true,
     "core-js@3.49.0": true
+  },
+  "overrides": {
+    "@types/react": "19.2.18",
+    "@types/react-dom": "19.2.4"
   }
 }

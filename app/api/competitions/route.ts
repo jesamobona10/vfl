@@ -64,7 +64,7 @@ export async function POST(request: Request) {
     const auth = await getAuthContext(supabase);
 
     const ip = getClientIp(request);
-    const limited = rateLimit({
+    const limited = await rateLimit({
       key: `competitions:create:${ip}:${auth?.userId || "anon"}`,
       limit: 60,
       windowMs: 60 * 60_000,

@@ -29,8 +29,9 @@ async function resolveSeasonTeam(sb: any, seasonTeamId: string) {
 
 export async function GET(
   _request: Request,
-  { params }: { params: { id: string; seasonTeamId: string } }
+  props: { params: Promise<{ id: string; seasonTeamId: string }> }
 ) {
+  const params = await props.params;
   try {
     const supabase = await createClient();
     const auth = await getAuthContext(supabase);
@@ -65,11 +66,12 @@ export async function GET(
 
 export async function POST(
   request: Request,
-  { params }: { params: { id: string; seasonTeamId: string } }
+  props: { params: Promise<{ id: string; seasonTeamId: string }> }
 ) {
+  const params = await props.params;
   try {
     const ip = getClientIp(request);
-    const limited = rateLimit({
+    const limited = await rateLimit({
       key: `season_team_player_register:${ip}`,
       limit: 60,
       windowMs: 60_000,

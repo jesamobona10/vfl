@@ -29,7 +29,7 @@ export async function POST(request: Request) {
       return json({ error: "Invalid username or password." }, { status: 400 });
     }
 
-    const limited = rateLimit({
+    const limited = await rateLimit({
       key: `login:team:${ip}:${username}`,
       limit: 5,
       windowMs: 15 * 60_000,

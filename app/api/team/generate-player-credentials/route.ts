@@ -29,7 +29,7 @@ export async function POST(request: Request) {
     }
 
     const ip = getClientIp(request);
-    const limited = rateLimit({
+    const limited = await rateLimit({
       key: `gen_player_creds:team:${ip}:${auth!.userId}`,
       limit: 10,
       windowMs: 60 * 60_000,

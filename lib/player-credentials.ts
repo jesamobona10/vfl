@@ -1,10 +1,33 @@
+import { randomBytes } from "crypto";
+
 /** Normalize a name segment for usernames/passwords (alphanumeric uppercase). */
 export function normalizeCredentialPart(value: string): string {
   const normalized = value.replace(/[^a-zA-Z0-9]/g, "").toUpperCase();
   return normalized || "PLAYER";
 }
 
-/** Username: PLAYERNAME_TEAMNAME_001 — Password: PLAYERNAME_001 */
+/**
+ * Cryptographically random initial password (16 chars, guaranteed to contain
+ * uppercase, lowercase, and digits). Never derived from player names.
+ */
+export function generateRandomPassword(length = 16): string {
+  const upper = "ABCDEFGHJKLMNPQRSTUVWXYZ";
+  const lower = "abcdefghijkmnopqrstuvwxyz";
+  const digits = "23456789";
+  const all = upper + lower + digits;
+  const byte = () => randomBytes(1)[0];
+  // Guarantee at least one of each required class, shuffled into random positions
+  const required = [upper[byte() % upper.length], lower[byte() % lower.length], digits[byte() % digits.length]];
+  const rest = Array.from({ length: length - required.length }, () => all[byte() % all.length]);
+  const chars = [...required, ...rest];
+  for (let i = chars.length - 1; i > 0; i--) {
+    const j = byte() % (i + 1);
+    [chars[i], chars[j]] = [chars[j], chars[i]];
+  }
+  return chars.join("");
+}
+
+/** Username: PLAYERNAME_TEAMNAME_001 — Password: cryptographically random */
 export function buildPlayerCredentialPair(
   playerName: string,
   teamName: string,
@@ -15,7 +38,7 @@ export function buildPlayerCredentialPair(
   const seq = String(sequence).padStart(3, "0");
   return {
     username: `${playerToken}_${teamToken}_${seq}`,
-    password: `${playerToken}_${seq}`,
+    password: generateRandomPassword(),
     sequence: seq,
   };
 }

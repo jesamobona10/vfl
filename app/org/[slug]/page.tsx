@@ -1,5 +1,9 @@
 import { redirect } from "next/navigation";
 
-export default function OrgIndexPage({ params }: { params: { slug: string } }) {
+// TODO: Cache Components adoption. Refactor this route so this opt-out can be removed.
+// See: https://nextjs.org/docs/app/guides/migrating-to-cache-components
+
+export default async function OrgIndexPage(props: { params: Promise<{ slug: string }> }) {
+  const params = await props.params;
   redirect(`/org/${params.slug}/dashboard`);
 }

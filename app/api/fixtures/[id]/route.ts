@@ -24,7 +24,8 @@ import { AUDIT_ACTIONS } from "@/lib/audit/actions";
 
 export const dynamic = "force-dynamic";
 
-export async function PUT(request: Request, { params }: { params: { id: string } }) {
+export async function PUT(request: Request, props: { params: Promise<{ id: string }> }) {
+  const params = await props.params;
   try {
     const supabase = await createClient();
     const auth = await getAuthContext(supabase);
@@ -33,7 +34,7 @@ export async function PUT(request: Request, { params }: { params: { id: string }
     const authed = auth!;
 
     const ip = getClientIp(request);
-    const limited = rateLimit({
+    const limited = await rateLimit({
       key: `fixtures:update:${ip}:${authed.userId}`,
       limit: 60,
       windowMs: 60 * 60_000,
@@ -130,6 +131,43 @@ export async function PUT(request: Request, { params }: { params: { id: string }
       return json({ error: "No valid fields to update." }, { status: 400 });
     }
 
+    // SECURITY: non-admins may not re-point a fixture at arbitrary teams —
+    // a cross-org admin could otherwise move this fixture onto another
+    // organization's teams via the service-role client.
+    if (
+      !authed.isAdmin &&
+      (update.home_team_id !== undefined || update.away_team_id !== undefined)
+    ) {
+      const newTeamIds = [update.home_team_id, update.away_team_id].filter(
+        (v): v is number => typeof v === "number"
+      );
+      const { data: newTeams } = await createServiceRoleClient()
+        .from("teams")
+        .select("id, organization_id")
+        .in("id", newTeamIds);
+      const orgByTeam = new Map<number, string | null>(
+        (newTeams || []).map((t: { id: number; organization_id: string | null }) => [
+          t.id,
+          t.organization_id,
+        ])
+      );
+      for (const teamId of newTeamIds) {
+        const teamOrgId = orgByTeam.get(teamId);
+        if (
+          !teamOrgId ||
+          (teamOrgId !== homeTeamOrgId && teamOrgId !== awayTeamOrgId) ||
+          requireOrgAdmin(authed, teamOrgId)
+        ) {
+          logSecurityEvent("fixture_update_forbidden_team_repoint", {
+            userId: authed.userId,
+            fixtureId,
+            teamId,
+          });
+          return json({ error: "Teams must belong to your organization." }, { status: 403 });
+        }
+      }
+    }
+
     const { data, error } = await createServiceRoleClient()
       .from("fixtures")
       .update(update)
@@ -179,7 +217,8 @@ export async function PUT(request: Request, { params }: { params: { id: string }
   }
 }
 
-export async function DELETE(request: Request, { params }: { params: { id: string } }) {
+export async function DELETE(request: Request, props: { params: Promise<{ id: string }> }) {
+  const params = await props.params;
   try {
     const supabase = await createClient();
     const auth = await getAuthContext(supabase);
@@ -188,7 +227,7 @@ export async function DELETE(request: Request, { params }: { params: { id: strin
     const authed = auth!;
 
     const ip = getClientIp(request);
-    const limited = rateLimit({
+    const limited = await rateLimit({
       key: `fixtures:delete:${ip}:${authed.userId}`,
       limit: 60,
       windowMs: 60 * 60_000,

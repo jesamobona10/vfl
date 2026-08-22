@@ -16,7 +16,8 @@ import {
 
 export const dynamic = "force-dynamic";
 
-export async function GET(_request: Request, { params }: { params: { slug: string } }) {
+export async function GET(_request: Request, props: { params: Promise<{ slug: string }> }) {
+  const params = await props.params;
   try {
     const supabase = await createClient();
     const auth = await getAuthContext(supabase);
@@ -41,7 +42,8 @@ export async function GET(_request: Request, { params }: { params: { slug: strin
   }
 }
 
-export async function PUT(request: Request, { params }: { params: { slug: string } }) {
+export async function PUT(request: Request, props: { params: Promise<{ slug: string }> }) {
+  const params = await props.params;
   try {
     const supabase = await createClient();
     const auth = await getAuthContext(supabase);
@@ -71,7 +73,7 @@ export async function PUT(request: Request, { params }: { params: { slug: string
     }
 
     const ip = getClientIp(request);
-    const limited = rateLimit({
+    const limited = await rateLimit({
       key: `org:update:${ip}:${auth!.userId}`,
       limit: 30,
       windowMs: 60 * 60_000,

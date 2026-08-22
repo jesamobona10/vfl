@@ -29,7 +29,7 @@ export async function POST(request: Request) {
       return json({ error: "Invalid email or password." }, { status: 400 });
     }
 
-    const limited = rateLimit({
+    const limited = await rateLimit({
       key: `login:admin:${ip}:${email}`,
       limit: 5,
       windowMs: 15 * 60_000,

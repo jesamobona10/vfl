@@ -25,7 +25,8 @@ export const dynamic = "force-dynamic";
 const MAX_REPORT_LENGTH = 4000;
 const MAX_ANALYSES_PER_MATCH = 20;
 
-export async function POST(request: Request, { params }: { params: { id: string } }) {
+export async function POST(request: Request, props: { params: Promise<{ id: string }> }) {
+  const params = await props.params;
   try {
     if (!isAIConfigured()) {
       return json(
@@ -40,7 +41,7 @@ export async function POST(request: Request, { params }: { params: { id: string 
     const authed = auth;
 
     const ip = getClientIp(request);
-    const limited = rateLimit({
+    const limited = await rateLimit({
       key: `report:analyze:${ip}:${authed.userId}`,
       limit: 20,
       windowMs: 60 * 60_000,

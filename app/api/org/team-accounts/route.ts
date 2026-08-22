@@ -74,7 +74,7 @@ export async function POST(request: Request) {
     if (authError) return authError;
 
     const ip = getClientIp(request);
-    const limited = rateLimit({
+    const limited = await rateLimit({
       key: `org-account-create:${ip}:${auth!.userId}`,
       limit: 20,
       windowMs: 60 * 60_000,

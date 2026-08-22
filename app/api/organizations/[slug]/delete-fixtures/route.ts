@@ -1,6 +1,7 @@
 import { createClient } from "@/lib/supabase/server";
 import { createServiceRoleClient } from "@/lib/supabase/service-role";
 import {
+  asOptionalString,
   getAuthContext,
   getClientIp,
   json,
@@ -16,10 +17,11 @@ import { AUDIT_ACTIONS } from "@/lib/audit/actions";
 
 export const dynamic = "force-dynamic";
 
-export async function POST(request: Request, { params }: { params: { slug: string } }) {
+export async function POST(request: Request, props: { params: Promise<{ slug: string }> }) {
+  const params = await props.params;
   try {
     const ip = getClientIp(request);
-    const limited = rateLimit({ key: `org_delete_fixtures:${ip}`, limit: 5, windowMs: 60_000 });
+    const limited = await rateLimit({ key: `org_delete_fixtures:${ip}`, limit: 5, windowMs: 60_000 });
     if (limited.limited) return rateLimitResponse(limited.resetAt);
     const supabase = await createClient();
     const auth = await getAuthContext(supabase);
@@ -52,10 +54,39 @@ export async function POST(request: Request, { params }: { params: { slug: strin
     let seasonId: string | null = null;
     try {
       const body = await request.json();
-      competitionId = body.competition_id || null;
-      seasonId = body.season_id || null;
+      competitionId = asOptionalString(body.competition_id, 64);
+      seasonId = asOptionalString(body.season_id, 64);
     } catch {
       // body is optional
+    }
+
+    // IDOR guard: the referenced competition/season must belong to THIS org.
+    // Without this, an org admin could pass another org's IDs and delete its
+    // fixtures via the service-role client (which bypasses RLS).
+    if (competitionId) {
+      const { data: competition } = await sb
+        .from("competitions")
+        .select("id")
+        .eq("id", competitionId)
+        .eq("organization_id", org.id)
+        .maybeSingle();
+      if (!competition) {
+        return json({ error: "Competition not found for this organization." }, { status: 404 });
+      }
+    }
+    if (seasonId) {
+      const { data: season } = await sb
+        .from("seasons")
+        .select("id, competition_id, competitions!inner(organization_id)")
+        .eq("id", seasonId)
+        .eq("competitions.organization_id", org.id)
+        .maybeSingle();
+      if (!season) {
+        return json({ error: "Season not found for this organization." }, { status: 404 });
+      }
+      if (competitionId && season.competition_id !== competitionId) {
+        return json({ error: "Season does not belong to this competition." }, { status: 400 });
+      }
     }
 
     const { data: dbTeams } = await sb.from("teams").select("id").eq("organization_id", org.id);
@@ -66,15 +97,17 @@ export async function POST(request: Request, { params }: { params: { slug: strin
       return json({ success: true, deletedCount: 0 });
     }
 
+    // Always constrain deletion to fixtures involving THIS org's teams, ANDed
+    // with the optional competition/season filters.
     let query = sb.from("fixtures").delete();
+
+    const conditions = teamIds
+      .map((id) => `home_team_id.eq.${id},away_team_id.eq.${id}`)
+      .join(",");
+    query = query.or(conditions);
 
     if (competitionId) {
       query = query.eq("competition_id", competitionId);
-    } else {
-      const conditions = teamIds
-        .map((id) => `home_team_id.eq.${id},away_team_id.eq.${id}`)
-        .join(",");
-      query = query.or(conditions);
     }
 
     if (seasonId) {

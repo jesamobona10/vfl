@@ -13,7 +13,7 @@ export const dynamic = "force-dynamic";
 export async function POST(request: Request) {
   try {
     const ip = getClientIp(request);
-    const limited = rateLimit({ key: `logout:${ip}`, limit: 10, windowMs: 60_000 });
+    const limited = await rateLimit({ key: `logout:${ip}`, limit: 10, windowMs: 60_000 });
     if (limited.limited) return rateLimitResponse(limited.resetAt);
     const supabase = await createClient();
     await supabase.auth.signOut();

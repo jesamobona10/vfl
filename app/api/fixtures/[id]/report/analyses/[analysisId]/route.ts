@@ -48,8 +48,9 @@ function guardFixture(
 
 export async function GET(
   request: Request,
-  { params }: { params: { id: string; analysisId: string } }
+  props: { params: Promise<{ id: string; analysisId: string }> }
 ) {
+  const params = await props.params;
   try {
     const supabase = await createClient();
     const auth = await getAuthContext(supabase);
@@ -81,8 +82,9 @@ export async function GET(
 
 export async function PATCH(
   request: Request,
-  { params }: { params: { id: string; analysisId: string } }
+  props: { params: Promise<{ id: string; analysisId: string }> }
 ) {
+  const params = await props.params;
   try {
     const supabase = await createClient();
     const auth = await getAuthContext(supabase);
@@ -90,7 +92,7 @@ export async function PATCH(
     const authed = auth;
 
     const ip = getClientIp(request);
-    const limited = rateLimit({
+    const limited = await rateLimit({
       key: `report:patch:${ip}:${authed.userId}`,
       limit: 60,
       windowMs: 60 * 60_000,

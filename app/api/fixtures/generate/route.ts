@@ -16,7 +16,7 @@ export const dynamic = "force-dynamic";
 export async function POST(request: Request) {
   try {
     const ip = getClientIp(request);
-    const limited = rateLimit({ key: `fixtures:generate:${ip}`, limit: 5, windowMs: 60 * 60_000 });
+    const limited = await rateLimit({ key: `fixtures:generate:${ip}`, limit: 5, windowMs: 60 * 60_000 });
     if (limited.limited) {
       logSecurityEvent("fixtures_generate_rate_limited", { ip });
       return rateLimitResponse(limited.resetAt);

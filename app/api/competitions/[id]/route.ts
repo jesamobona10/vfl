@@ -16,9 +16,49 @@ import {
 
 const ALLOWED_UPDATE_FIELDS = ["name", "type", "status", "settings", "current_season_id"] as const;
 
+const MAX_SETTINGS_BYTES = 8192;
+const DANGEROUS_KEYS = new Set(["__proto__", "constructor", "prototype"]);
+
+function containsDangerousKey(value: unknown, depth = 0): boolean {
+  if (depth > 10) return true;
+  if (value === null || typeof value !== "object") return false;
+  if (Array.isArray(value)) return value.some((v) => containsDangerousKey(v, depth + 1));
+  for (const [key, v] of Object.entries(value as Record<string, unknown>)) {
+    if (DANGEROUS_KEYS.has(key)) return true;
+    if (containsDangerousKey(v, depth + 1)) return true;
+  }
+  return false;
+}
+
+/**
+ * Validate the free-form competition `settings` JSONB: must be a small plain
+ * object without prototype-pollution keys. Unknown keys are preserved (the
+ * schema is UI-owned) but dangerous keys are rejected outright.
+ */
+function validateSettings(value: unknown): { data?: Record<string, unknown>; error?: string } {
+  if (value === null) return { data: {} };
+  if (typeof value !== "object" || Array.isArray(value)) {
+    return { error: "settings must be a JSON object." };
+  }
+  if (containsDangerousKey(value)) {
+    return { error: "settings contains a forbidden key." };
+  }
+  let serialized: string;
+  try {
+    serialized = JSON.stringify(value);
+  } catch {
+    return { error: "settings is not JSON-serializable." };
+  }
+  if (!serialized || serialized.length > MAX_SETTINGS_BYTES) {
+    return { error: "settings is too large." };
+  }
+  return { data: value as Record<string, unknown> };
+}
+
 export const dynamic = "force-dynamic";
 
-export async function GET(_request: Request, { params }: { params: { id: string } }) {
+export async function GET(_request: Request, props: { params: Promise<{ id: string }> }) {
+  const params = await props.params;
   try {
     const supabase = await createClient();
     const auth = await getAuthContext(supabase);
@@ -52,7 +92,8 @@ export async function GET(_request: Request, { params }: { params: { id: string 
   }
 }
 
-export async function PUT(request: Request, { params }: { params: { id: string } }) {
+export async function PUT(request: Request, props: { params: Promise<{ id: string }> }) {
+  const params = await props.params;
   try {
     const supabase = await createClient();
     const auth = await getAuthContext(supabase);
@@ -82,7 +123,7 @@ export async function PUT(request: Request, { params }: { params: { id: string }
     }
 
     const ip = getClientIp(request);
-    const limited = rateLimit({
+    const limited = await rateLimit({
       key: `competitions:update:${ip}:${auth.userId}`,
       limit: 60,
       windowMs: 60 * 60_000,
@@ -118,7 +159,28 @@ export async function PUT(request: Request, { params }: { params: { id: string }
               { status: 400 }
             );
           }
+          // Ownership check: the season must belong to THIS competition —
+          // otherwise an org admin could point their competition at another
+          // org's season via the service-role client.
+          if (value) {
+            const { data: season } = await sb
+              .from("seasons")
+              .select("id")
+              .eq("id", value)
+              .eq("competition_id", params.id)
+              .maybeSingle();
+            if (!season) {
+              return json(
+                { error: "Season does not belong to this competition." },
+                { status: 400 }
+              );
+            }
+          }
           update.current_season_id = value || null;
+        } else if (field === "settings") {
+          const check = validateSettings(value);
+          if (check.error) return json({ error: check.error }, { status: 400 });
+          update.settings = check.data;
         } else {
           update[field] = value;
         }
@@ -158,7 +220,8 @@ export async function PUT(request: Request, { params }: { params: { id: string }
   }
 }
 
-export async function DELETE(_request: Request, { params }: { params: { id: string } }) {
+export async function DELETE(_request: Request, props: { params: Promise<{ id: string }> }) {
+  const params = await props.params;
   try {
     const supabase = await createClient();
     const auth = await getAuthContext(supabase);
@@ -187,7 +250,7 @@ export async function DELETE(_request: Request, { params }: { params: { id: stri
     }
 
     const ip = getClientIp(_request);
-    const limited = rateLimit({
+    const limited = await rateLimit({
       key: `competitions:delete:${ip}:${auth.userId}`,
       limit: 30,
       windowMs: 60 * 60_000,

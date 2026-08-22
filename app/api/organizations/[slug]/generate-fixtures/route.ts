@@ -18,10 +18,11 @@ import { AUDIT_ACTIONS } from "@/lib/audit/actions";
 
 export const dynamic = "force-dynamic";
 
-export async function POST(request: Request, { params }: { params: { slug: string } }) {
+export async function POST(request: Request, props: { params: Promise<{ slug: string }> }) {
+  const params = await props.params;
   try {
     const ip = getClientIp(request);
-    const limited = rateLimit({ key: `org_generate_fixtures:${ip}`, limit: 5, windowMs: 60_000 });
+    const limited = await rateLimit({ key: `org_generate_fixtures:${ip}`, limit: 5, windowMs: 60_000 });
     if (limited.limited) return rateLimitResponse(limited.resetAt);
     const supabase = await createClient();
     const auth = await getAuthContext(supabase);
@@ -67,6 +68,19 @@ export async function POST(request: Request, { params }: { params: { slug: strin
 
     if (!competitionId) {
       return json({ error: "competition_id is required." }, { status: 400 });
+    }
+
+    // IDOR guard: the competition must belong to THIS org. Without this, an
+    // org admin could pass another org's competition/season and inject
+    // fixtures into it via the service-role client (bypasses RLS).
+    const { data: competition } = await sb
+      .from("competitions")
+      .select("id")
+      .eq("id", competitionId)
+      .eq("organization_id", org.id)
+      .maybeSingle();
+    if (!competition) {
+      return json({ error: "Competition not found for this organization." }, { status: 404 });
     }
 
     // Resolve season: use explicit season_id, or find/create active season for this competition

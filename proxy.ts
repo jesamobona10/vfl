@@ -5,10 +5,20 @@ import { getClientIp, logSecurityEvent, rateLimit, rateLimitResponse } from "@/l
 
 type AccountKind = "admin" | "org" | "team" | "player" | "unknown";
 
+type AccountInfo = {
+  kind: AccountKind;
+  /** Player accounts flagged for mandatory password rotation. */
+  mustChangePassword: boolean;
+};
+
 /** Pages player accounts may visit (fixtures, standings, player stats). */
 const PLAYER_PAGE_PREFIXES = ["/", "/fixtures", "/standings", "/players"] as const;
 
 const PLAYER_DEFAULT_PAGE = "/fixtures";
+
+const CHANGE_PASSWORD_PAGE = "/auth/change-password";
+
+const RESET_PASSWORD_PAGE = "/auth/reset";
 
 function isPlayerAllowedPage(pathname: string): boolean {
   return PLAYER_PAGE_PREFIXES.some(
@@ -20,21 +30,34 @@ function isPlayerAllowedApi(pathname: string, method: string): boolean {
   if (pathname.startsWith("/api/public/")) return true;
   if (pathname === "/api/auth/session" && method === "GET") return true;
   if (    pathname === "/api/auth/logout" && (method === "POST" || method === "GET")) return true;
+  if (pathname === "/api/auth/change-password" && method === "POST") return true;
   if (pathname === "/api/fixtures" && method === "GET") return true;
   if (pathname === "/api/players" && method === "GET") return true;
   if (/^\/api\/players\/\d+$/.test(pathname) && method === "GET") return true;
   return false;
 }
 
+/** APIs a player flagged for password rotation may still call. */
+function isPasswordRotationAllowedApi(pathname: string, method: string): boolean {
+  if (pathname === "/api/auth/session" && method === "GET") return true;
+  if (pathname === "/api/auth/logout" && (method === "POST" || method === "GET")) return true;
+  if (pathname === "/api/auth/change-password" && method === "POST") return true;
+  return false;
+}
+
 async function resolveAccountKind(
   supabase: ReturnType<typeof createMiddlewareClient>["supabase"],
   userId: string
-): Promise<AccountKind> {
+): Promise<AccountInfo> {
   const [{ data: admin }, { data: team }, { data: player }, { data: orgMember }] =
     await Promise.all([
       supabase.from("admin_users").select("id").eq("id", userId).maybeSingle(),
       supabase.from("team_accounts").select("id").eq("id", userId).maybeSingle(),
-      supabase.from("player_profiles").select("id").eq("id", userId).maybeSingle(),
+      supabase
+        .from("player_profiles")
+        .select("id, must_change_password")
+        .eq("id", userId)
+        .maybeSingle(),
       supabase
         .from("organization_members")
         .select("id")
@@ -42,12 +65,13 @@ async function resolveAccountKind(
         .maybeSingle(),
     ]);
 
-  if (admin) return "admin";
-  if (team) return "team";
-  if (player) return "player";
-  if (orgMember) return "org";
+  if (admin) return { kind: "admin", mustChangePassword: false };
+  if (team) return { kind: "team", mustChangePassword: false };
+  if (player)
+    return { kind: "player", mustChangePassword: player.must_change_password === true };
+  if (orgMember) return { kind: "org", mustChangePassword: false };
 
-  return "unknown";
+  return { kind: "unknown", mustChangePassword: false };
 }
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || "";
@@ -95,7 +119,7 @@ function respond(response: NextResponse, request: NextRequest): NextResponse {
   return secure(response);
 }
 
-export async function middleware(request: NextRequest) {
+export async function proxy(request: NextRequest) {
   // Serve the SVG favicon where browsers request the legacy .ico path
   if (request.nextUrl.pathname === "/favicon.ico") {
     return respond(NextResponse.redirect(new URL("/icon.svg", request.url)), request);
@@ -147,7 +171,7 @@ export async function middleware(request: NextRequest) {
       : pathname.startsWith("/api/public/")
         ? { limit: 120, windowMs: 60_000 }
         : { limit: 80, windowMs: 60_000 };
-    const limited = rateLimit({
+    const limited = await rateLimit({
       key: `api:${ip}:${pathname}`,
       ...limit,
     });
@@ -175,14 +199,50 @@ export async function middleware(request: NextRequest) {
       return respond(NextResponse.redirect(loginUrl), request);
     }
 
+    // The reset page requires a recovery session; without one, start at login.
+    if (pathname === RESET_PASSWORD_PAGE) {
+      return respond(NextResponse.redirect(new URL("/auth/login", request.url)), request);
+    }
+
     return respond(response, request);
   }
 
-  if (isAuthPage) {
+  const isChangePasswordPage = pathname === CHANGE_PASSWORD_PAGE;
+  const isResetPasswordPage = pathname === RESET_PASSWORD_PAGE;
+  if (isAuthPage && !isChangePasswordPage && !isResetPasswordPage) {
     return respond(NextResponse.redirect(new URL("/", request.url)), request);
   }
 
-  const accountKind = await resolveAccountKind(supabase, session.user.id);
+  const account = await resolveAccountKind(supabase, session.user.id);
+  const accountKind = account.kind;
+
+  // Players with a pending mandatory password rotation may only reach the
+  // change-password flow until they set a new password.
+  if (account.kind === "player" && account.mustChangePassword) {
+    if (isApiRoute) {
+      if (!isPasswordRotationAllowedApi(pathname, request.method)) {
+        logSecurityEvent("forbidden_password_rotation_api", {
+          userId: session.user.id,
+          pathname,
+          method: request.method,
+        });
+        return respond(
+          NextResponse.json(
+            { error: "Password change required.", mustChangePassword: true },
+            { status: 403 }
+          ),
+          request
+        );
+      }
+      return respond(response, request);
+    }
+    if (!isChangePasswordPage && !isResetPasswordPage) {
+      const url = new URL(CHANGE_PASSWORD_PAGE, request.url);
+      if (pathname !== "/") url.searchParams.set("next", pathname + request.nextUrl.search);
+      return respond(NextResponse.redirect(url), request);
+    }
+    return respond(response, request);
+  }
 
   if (isAdminPage) {
     if (accountKind !== "admin") {

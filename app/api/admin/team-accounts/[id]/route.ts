@@ -14,7 +14,8 @@ import {
 
 export const dynamic = "force-dynamic";
 
-export async function DELETE(request: Request, { params }: { params: { id: string } }) {
+export async function DELETE(request: Request, props: { params: Promise<{ id: string }> }) {
+  const params = await props.params;
   try {
     const supabase = await createClient();
     const auth = await getAuthContext(supabase);
@@ -22,7 +23,7 @@ export async function DELETE(request: Request, { params }: { params: { id: strin
     if (adminError) return adminError;
 
     const ip = getClientIp(request);
-    const limited = rateLimit({
+    const limited = await rateLimit({
       key: `admin:team-accounts:delete:${ip}:${auth!.userId}`,
       limit: 30,
       windowMs: 60 * 60_000,

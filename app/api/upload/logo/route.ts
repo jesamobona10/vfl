@@ -56,7 +56,7 @@ export async function POST(request: Request) {
     if (orgAdminError) return orgAdminError;
 
     const ip = getClientIp(request);
-    const limited = rateLimit({
+    const limited = await rateLimit({
       key: `upload:logo:${ip}:${auth!.userId}`,
       limit: 30,
       windowMs: 60 * 60_000,

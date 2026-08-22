@@ -15,7 +15,8 @@ import {
 
 export const dynamic = "force-dynamic";
 
-export async function PUT(request: Request, { params }: { params: { id: string } }) {
+export async function PUT(request: Request, props: { params: Promise<{ id: string }> }) {
+  const params = await props.params;
   try {
     const supabase = await createClient();
     const auth = await getAuthContext(supabase);
@@ -23,7 +24,7 @@ export async function PUT(request: Request, { params }: { params: { id: string }
     if (adminError) return adminError;
 
     const ip = getClientIp(request);
-    const limited = rateLimit({
+    const limited = await rateLimit({
       key: `admin:competitions:update:${ip}:${auth!.userId}`,
       limit: 60,
       windowMs: 60 * 60_000,
@@ -97,7 +98,8 @@ export async function PUT(request: Request, { params }: { params: { id: string }
   }
 }
 
-export async function DELETE(request: Request, { params }: { params: { id: string } }) {
+export async function DELETE(request: Request, props: { params: Promise<{ id: string }> }) {
+  const params = await props.params;
   try {
     const supabase = await createClient();
     const auth = await getAuthContext(supabase);
@@ -105,7 +107,7 @@ export async function DELETE(request: Request, { params }: { params: { id: strin
     if (adminError) return adminError;
 
     const ip = getClientIp(request);
-    const limited = rateLimit({
+    const limited = await rateLimit({
       key: `admin:competitions:delete:${ip}:${auth!.userId}`,
       limit: 60,
       windowMs: 60 * 60_000,

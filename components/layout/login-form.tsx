@@ -240,6 +240,11 @@ export function LoginForm() {
                 Register your organization
               </a>
             </p>
+            <p className="text-center text-xs text-muted">
+              <a href="/auth/forgot" className="text-brand hover:underline">
+                Forgot password?
+              </a>
+            </p>
           </form>
         ) : (
           <form onSubmit={handleAdminLogin} className="space-y-4">
@@ -269,6 +274,11 @@ export function LoginForm() {
               <Shield size={16} />
               {loading ? "Signing in..." : "Sign In as Admin"}
             </button>
+            <p className="text-center text-xs text-muted">
+              <a href="/auth/forgot" className="text-brand hover:underline">
+                Forgot password?
+              </a>
+            </p>
           </form>
         )}
       </div>

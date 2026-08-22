@@ -99,7 +99,7 @@ export async function POST(request: Request) {
     const authError = requireAuth(auth);
     if (authError) return authError;
 
-    const limited = rateLimit({
+    const limited = await rateLimit({
       key: `players:create:${ip}:${auth!.userId}`,
       limit: 30,
       windowMs: 60 * 60_000,

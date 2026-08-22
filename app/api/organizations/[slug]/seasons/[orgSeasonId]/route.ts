@@ -21,8 +21,9 @@ export const dynamic = "force-dynamic";
 
 export async function GET(
   _request: Request,
-  { params }: { params: { slug: string; orgSeasonId: string } }
+  props: { params: Promise<{ slug: string; orgSeasonId: string }> }
 ) {
+  const params = await props.params;
   try {
     const supabase = await createClient();
     const auth = await getAuthContext(supabase);
@@ -61,11 +62,12 @@ export async function GET(
 
 export async function PUT(
   request: Request,
-  { params }: { params: { slug: string; orgSeasonId: string } }
+  props: { params: Promise<{ slug: string; orgSeasonId: string }> }
 ) {
+  const params = await props.params;
   try {
     const ip = getClientIp(request);
-    const limited = rateLimit({ key: `org_season_update:${ip}`, limit: 60, windowMs: 60_000 });
+    const limited = await rateLimit({ key: `org_season_update:${ip}`, limit: 60, windowMs: 60_000 });
     if (limited.limited) return rateLimitResponse(limited.resetAt);
 
     const supabase = await createClient();
@@ -167,8 +169,9 @@ export async function PUT(
 
 export async function DELETE(
   _request: Request,
-  { params }: { params: { slug: string; orgSeasonId: string } }
+  props: { params: Promise<{ slug: string; orgSeasonId: string }> }
 ) {
+  const params = await props.params;
   try {
     const supabase = await createClient();
     const auth = await getAuthContext(supabase);

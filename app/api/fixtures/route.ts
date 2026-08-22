@@ -108,7 +108,7 @@ export async function GET(request: Request) {
 export async function POST(request: Request) {
   try {
     const ip = getClientIp(request);
-    const limited = rateLimit({ key: `fixture_create:${ip}`, limit: 15, windowMs: 60_000 });
+    const limited = await rateLimit({ key: `fixture_create:${ip}`, limit: 15, windowMs: 60_000 });
     if (limited.limited) return rateLimitResponse(limited.resetAt);
     const supabase = await createClient();
     const auth = await getAuthContext(supabase);

@@ -57,10 +57,11 @@ function fuzzyTeamMatch(input: string, teamMap: Map<string, number>): number | n
   return best.dist <= 2 ? teamMap.get(best.key!)! : null;
 }
 
-export async function POST(request: Request, { params }: { params: { slug: string } }) {
+export async function POST(request: Request, props: { params: Promise<{ slug: string }> }) {
+  const params = await props.params;
   try {
     const ip = getClientIp(request);
-    const limited = rateLimit({ key: `players:import:${ip}`, limit: 20, windowMs: 60 * 60_000 });
+    const limited = await rateLimit({ key: `players:import:${ip}`, limit: 20, windowMs: 60 * 60_000 });
     if (limited.limited) {
       logSecurityEvent("player_import_rate_limited", { ip });
       return rateLimitResponse(limited.resetAt);

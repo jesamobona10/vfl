@@ -16,10 +16,11 @@ import {
 
 export const dynamic = "force-dynamic";
 
-export async function POST(request: Request, { params }: { params: { id: string } }) {
+export async function POST(request: Request, props: { params: Promise<{ id: string }> }) {
+  const params = await props.params;
   try {
     const ip = getClientIp(request);
-    const limited = rateLimit({ key: `season_rollover:${ip}`, limit: 10, windowMs: 60_000 });
+    const limited = await rateLimit({ key: `season_rollover:${ip}`, limit: 10, windowMs: 60_000 });
     if (limited.limited) return rateLimitResponse(limited.resetAt);
 
     const supabase = await createClient();

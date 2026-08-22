@@ -17,14 +17,15 @@ import { AUDIT_ACTIONS } from "@/lib/audit/actions";
 
 export const dynamic = "force-dynamic";
 
-export async function POST(request: Request, { params }: { params: { id: string } }) {
+export async function POST(request: Request, props: { params: Promise<{ id: string }> }) {
+  const params = await props.params;
   try {
     const supabase = await createClient();
     const auth = await getAuthContext(supabase);
     if (!auth) return json({ error: "Unauthorized" }, { status: 401 });
 
     const ip = getClientIp(request);
-    const limited = rateLimit({
+    const limited = await rateLimit({
       key: `fixture:start:${ip}:${auth.userId}`,
       limit: 60,
       windowMs: 60 * 60_000,

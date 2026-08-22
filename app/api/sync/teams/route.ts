@@ -26,7 +26,7 @@ export async function POST(request: Request) {
     if (adminError) return adminError;
 
     const ip = getClientIp(request);
-    const limited = rateLimit({ key: `sync:teams:${ip}`, limit: 10, windowMs: 60 * 60_000 });
+    const limited = await rateLimit({ key: `sync:teams:${ip}`, limit: 10, windowMs: 60 * 60_000 });
     if (limited.limited) {
       logSecurityEvent("sync_teams_rate_limited", { ip, userId: auth!.userId });
       return rateLimitResponse(limited.resetAt);
