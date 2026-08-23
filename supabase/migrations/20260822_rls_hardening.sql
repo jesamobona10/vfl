@@ -92,7 +92,7 @@ CREATE POLICY "org_members_insert_admin_or_owner" ON organization_members
     public.is_super_admin()
     OR (
       public.auth_org_role(organization_id) IN ('owner', 'admin')
-      AND (NEW.role <> 'owner' OR public.auth_org_role(organization_id) = 'owner')
+      AND (role <> 'owner' OR public.auth_org_role(organization_id) = 'owner')
     )
   );
 
@@ -110,7 +110,7 @@ CREATE POLICY "org_members_update_admin_or_owner" ON organization_members
     public.is_super_admin()
     OR (
       public.auth_org_role(organization_id) IN ('owner', 'admin')
-      AND (NEW.role <> 'owner' OR public.auth_org_role(organization_id) = 'owner')
+      AND (role <> 'owner' OR public.auth_org_role(organization_id) = 'owner')
     )
   );
 
