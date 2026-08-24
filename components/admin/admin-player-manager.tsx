@@ -180,15 +180,15 @@ export function AdminPlayerManager() {
         {filtered.map((p) => {
           const team = teams.find((t) => t.id === p.teamId);
           return (
-            <div key={p.id} className="card px-4 py-2 flex items-center gap-3 text-sm">
+            <div key={p.id} className="card px-4 py-2 flex flex-wrap items-center gap-x-3 gap-y-1 text-sm">
               <div className="w-7 h-7 rounded-full bg-gradient-to-br from-brand to-brand-dark flex items-center justify-center text-xs font-bold text-white shrink-0">
                 {p.name.charAt(0).toUpperCase()}
               </div>
-              <span className="w-8 text-muted text-xs">#{p.number}</span>
-              <span className="font-medium flex-1">{p.name}</span>
+              <span className="w-8 text-muted text-xs shrink-0">#{p.number}</span>
+              <span className="font-medium flex-1 min-w-[100px] truncate">{p.name}</span>
               <span className="text-xs text-muted w-10">{p.position}</span>
-              <span className="text-xs text-muted w-24 truncate">{team?.name || "?"}</span>
-              <span className="text-xs text-muted">
+              <span className="text-xs text-muted max-w-[120px] truncate">{team?.name || "?"}</span>
+              <span className="text-xs text-muted whitespace-nowrap">
                 G:{p.goals} A:{p.assists}
               </span>
               <button

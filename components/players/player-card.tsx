@@ -114,11 +114,11 @@ export function PlayerCard({ player, teamName, onEdit, onDelete }: PlayerCardPro
             </p>
           </div>
 
-          <div className="flex flex-col items-end gap-1 shrink-0">
+          <div className="flex flex-col items-end gap-1 shrink-0 min-w-0">
             <span className="rounded-full bg-brand/10 text-brand px-2 py-0.5 text-xs font-semibold">
               {player.rating.toFixed(1)}
             </span>
-            <span className="rounded-full bg-surface-2 px-2 py-0.5 text-xs text-muted">
+            <span className="rounded-full bg-surface-2 px-2 py-0.5 text-xs text-muted max-w-[110px] truncate">
               {teamName}
             </span>
           </div>

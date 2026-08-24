@@ -87,7 +87,7 @@ export function LoginForm() {
       </div>
 
       <div className="card p-6">
-        <div role="tablist" aria-label="Account type" className="flex gap-1 bg-surface-2 rounded-lg p-1 mb-6">
+        <div role="tablist" aria-label="Account type" className="grid grid-cols-2 sm:flex gap-1 bg-surface-2 rounded-lg p-1 mb-6">
           {tabs.map(([value, label, Icon]) => (
             <button
               key={value}
@@ -98,7 +98,7 @@ export function LoginForm() {
                 setMode(value);
                 setError("");
               }}
-              className={`flex-1 py-2 text-xs sm:text-sm font-medium rounded-md transition-colors ${
+              className={`flex-1 py-2 px-2 text-xs sm:text-sm font-medium rounded-md transition-colors whitespace-nowrap ${
                 mode === value ? "bg-surface shadow-sm text-text" : "text-muted hover:text-text"
               }`}
             >

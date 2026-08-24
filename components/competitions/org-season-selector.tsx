@@ -35,17 +35,17 @@ export function OrgSeasonSelector({
         onClick={() => setOpen(!open)}
         aria-expanded={open}
         aria-haspopup="menu"
-        className="flex items-center gap-2 px-3 py-1.5 text-sm font-medium border border-line rounded-lg bg-surface hover:bg-surface-2 transition-colors"
+        className="flex items-center gap-2 px-3 py-1.5 text-sm font-medium border border-line rounded-lg bg-surface hover:bg-surface-2 transition-colors max-w-full"
       >
-        {activeLabel}
-        <ChevronDown size={14} className="text-muted" />
+        <span className="truncate">{activeLabel}</span>
+        <ChevronDown size={14} className="text-muted shrink-0" />
       </button>
       {open && (
         <>
           <div className="fixed inset-0 z-10" onClick={() => setOpen(false)} aria-hidden="true" />
           <div
             role="menu"
-            className="absolute right-0 top-full mt-1 bg-surface border border-line rounded-lg shadow-lg py-1 z-20 min-w-[180px]"
+            className="absolute left-0 sm:left-auto sm:right-0 top-full mt-1 bg-surface border border-line rounded-lg shadow-lg py-1 z-20 min-w-[180px] max-w-[calc(100vw-2rem)]"
           >
             {seasons.map((s) => (
               <button
@@ -59,15 +59,15 @@ export function OrgSeasonSelector({
                   s.id === selectedSeasonId ? "font-semibold text-brand" : ""
                 }`}
               >
-                <span className="flex items-center gap-2">
-                  {s.name}
+                <span className="flex items-center gap-2 min-w-0">
+                  <span className="truncate">{s.name}</span>
                   {s.is_current && (
-                    <span className="text-xs font-medium px-1.5 py-0.5 rounded-full bg-brand-50 text-brand-700">
+                    <span className="text-xs font-medium px-1.5 py-0.5 rounded-full bg-brand-50 text-brand-700 shrink-0">
                       Current
                     </span>
                   )}
                 </span>
-                <span className={`text-xs font-medium px-1.5 py-0.5 rounded-full ${badge(s)}`}>
+                <span className={`text-xs font-medium px-1.5 py-0.5 rounded-full shrink-0 ml-2 ${badge(s)}`}>
                   {s.status}
                 </span>
               </button>

@@ -125,10 +125,10 @@ function ChangesList({
         return (
           <div
             key={key}
-            className="flex items-start gap-3 text-sm rounded-lg border border-line px-3 py-2"
+            className="flex flex-col sm:flex-row sm:items-start gap-1.5 sm:gap-3 text-sm rounded-lg border border-line px-3 py-2"
           >
-            <span className="font-medium w-32 shrink-0 pt-0.5">{humanizeKey(key)}</span>
-            <div className="flex-1 grid grid-cols-2 gap-3">
+            <span className="font-medium w-32 shrink-0 sm:pt-0.5">{humanizeKey(key)}</span>
+            <div className="flex-1 grid grid-cols-1 sm:grid-cols-2 gap-3 [overflow-wrap:anywhere]">
               <div>
                 <div className="text-xs uppercase tracking-wide text-ink-3 mb-0.5">Before</div>
                 <div className={changed ? "text-ink-2" : "text-ink-3"}>{renderChange(key, b)}</div>

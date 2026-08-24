@@ -517,10 +517,10 @@ export default function CompetitionSettingsPage() {
 
       <div className="card p-6 space-y-4">
         <h2 className="text-lg font-semibold">Competition Details</h2>
-        <div className="grid grid-cols-2 gap-4 text-sm">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-sm">
           <div>
             <span className="text-muted">Name</span>
-            <p className="font-medium">{currentCompetition.name}</p>
+            <p className="font-medium break-words">{currentCompetition.name}</p>
           </div>
           <div>
             <span className="text-muted">Type</span>
@@ -534,7 +534,7 @@ export default function CompetitionSettingsPage() {
             <span className="text-muted">Season</span>
             <p className="font-medium">{seasons.find((s) => s.is_current)?.name ?? "—"}</p>
           </div>
-          <div className="col-span-2">
+          <div className="col-span-1 sm:col-span-2">
             <span className="text-muted">ID</span>
             <p className="font-medium text-xs font-mono">{currentCompetition.id}</p>
           </div>
@@ -566,7 +566,7 @@ export default function CompetitionSettingsPage() {
               className="input text-sm"
               placeholder="Short name (e.g. 25/26) — optional"
             />
-            <div className="grid grid-cols-2 gap-3">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <div>
                 <label className="block text-xs text-muted mb-1">Start Date</label>
                 <input
@@ -621,7 +621,7 @@ export default function CompetitionSettingsPage() {
             {seasons.map((season) => (
               <div
                 key={season.id}
-                className="flex items-center justify-between p-3 rounded-lg bg-surface-2"
+                className="flex flex-wrap items-center justify-between gap-x-3 gap-y-2 p-3 rounded-lg bg-surface-2"
               >
                 <div className="flex items-center gap-3 min-w-0">
                   <span

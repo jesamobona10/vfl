@@ -193,7 +193,7 @@ export default function OrgDashboardPage() {
                 ? "Team account"
                 : `${currentOrg?.name || "Organization"} · Round ${currentRound || "—"} of ${totalRounds || "—"}`}
             </p>
-            <div className="flex items-center gap-3">
+            <div className="flex flex-wrap items-center gap-x-3 gap-y-2">
               <h1 className="text-xl font-semibold tracking-[-0.01em]">
                 {currentTeamAccount ? `${currentTeamAccount.name}` : "Dashboard"}
               </h1>

@@ -59,27 +59,27 @@ export default function CompResultsPage() {
 
       <div className="space-y-2">
         {results.map((match) => (
-          <div key={match.id} className="card p-4 flex items-center justify-between gap-4">
-            <div className="flex items-center gap-3 flex-1 justify-end text-right">
+          <div key={match.id} className="card p-4 flex items-center justify-between gap-2 sm:gap-4">
+            <div className="flex items-center gap-2 sm:gap-3 flex-1 justify-end text-right min-w-0">
               {(() => {
                 const t = teams.find((tt) => tt.id === match.homeId);
                 return t?.logo_url ? (
-                  <img src={t.logo_url} alt="" className="w-7 h-7 rounded-full object-cover" />
+                  <img src={t.logo_url} alt="" className="w-7 h-7 rounded-full object-cover shrink-0" />
                 ) : null;
               })()}
-              <span className="font-medium">{teamName(match.homeId, teams)}</span>
+              <span className="font-medium truncate">{teamName(match.homeId, teams)}</span>
             </div>
-            <div className="flex items-center gap-3 shrink-0">
+            <div className="flex items-center gap-2 sm:gap-3 shrink-0">
               <span className="text-lg font-bold tabular-nums">{match.homeScore}</span>
               <span className="text-muted text-sm">-</span>
               <span className="text-lg font-bold tabular-nums">{match.awayScore}</span>
             </div>
-            <div className="flex items-center gap-3 flex-1">
-              <span className="font-medium">{teamName(match.awayId, teams)}</span>
+            <div className="flex items-center gap-2 sm:gap-3 flex-1 min-w-0">
+              <span className="font-medium truncate">{teamName(match.awayId, teams)}</span>
               {(() => {
                 const t = teams.find((tt) => tt.id === match.awayId);
                 return t?.logo_url ? (
-                  <img src={t.logo_url} alt="" className="w-7 h-7 rounded-full object-cover" />
+                  <img src={t.logo_url} alt="" className="w-7 h-7 rounded-full object-cover shrink-0" />
                 ) : null;
               })()}
             </div>

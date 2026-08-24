@@ -512,7 +512,7 @@ export function CompManager() {
                         className="input text-xs py-1"
                         placeholder="Season name (e.g. 2025/2026)"
                       />
-                      <div className="grid grid-cols-2 gap-2">
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                         <input
                           type="date"
                           value={newSeasonStart}

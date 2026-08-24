@@ -24,17 +24,17 @@ export function SeasonSelector({ seasons, selectedSeasonId, onSeasonChange }: Se
         onClick={() => setOpen(!open)}
         aria-expanded={open}
         aria-haspopup="menu"
-        className="flex items-center gap-2 px-3 py-1.5 text-sm font-medium border border-line rounded-lg bg-surface hover:bg-surface-2 transition-colors"
+        className="flex items-center gap-2 px-3 py-1.5 text-sm font-medium border border-line rounded-lg bg-surface hover:bg-surface-2 transition-colors max-w-full"
       >
-        {activeLabel}
-        <ChevronDown size={14} className="text-muted" />
+        <span className="truncate">{activeLabel}</span>
+        <ChevronDown size={14} className="text-muted shrink-0" />
       </button>
       {open && (
         <>
           <div className="fixed inset-0 z-10" onClick={() => setOpen(false)} aria-hidden="true" />
           <div
             role="menu"
-            className="absolute right-0 top-full mt-1 bg-surface border border-line rounded-lg shadow-lg py-1 z-20 min-w-[180px]"
+            className="absolute left-0 sm:left-auto sm:right-0 top-full mt-1 bg-surface border border-line rounded-lg shadow-lg py-1 z-20 min-w-[180px] max-w-[calc(100vw-2rem)]"
           >
             {seasons.map((s) => (
               <button
@@ -48,9 +48,9 @@ export function SeasonSelector({ seasons, selectedSeasonId, onSeasonChange }: Se
                   s.id === selectedSeasonId ? "font-semibold text-brand" : ""
                 }`}
               >
-                <span>{s.name}</span>
+                <span className="truncate min-w-0">{s.name}</span>
                 <span
-                  className={`text-xs font-medium px-1.5 py-0.5 rounded-full ${
+                  className={`text-xs font-medium px-1.5 py-0.5 rounded-full shrink-0 ml-2 ${
                     s.status === "active"
                       ? "bg-live-tint text-live-500"
                       : s.status === "completed"

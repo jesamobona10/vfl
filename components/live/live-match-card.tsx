@@ -132,10 +132,10 @@ export function LiveMatchCard({
         )}
       </div>
 
-      <div className="px-5 py-4">
-        <div className="grid grid-cols-[1fr_auto_1fr] items-center gap-4">
-          <div className="flex items-center gap-3 justify-end min-w-0">
-            <span className="font-semibold text-base truncate text-right">
+      <div className="px-4 sm:px-5 py-4">
+        <div className="grid grid-cols-[1fr_auto_1fr] items-center gap-2 sm:gap-4">
+          <div className="flex items-center gap-2 sm:gap-3 justify-end min-w-0">
+            <span className="font-semibold text-sm sm:text-base truncate text-right">
               {homeTeam?.name || "Unknown"}
             </span>
             {homeTeam?.logo_url ? (
@@ -144,17 +144,17 @@ export function LiveMatchCard({
                 alt=""
                 width={40}
                 height={40}
-                className="w-10 h-10 rounded-full object-cover shrink-0"
+                className="w-8 h-8 sm:w-10 sm:h-10 rounded-full object-cover shrink-0"
               />
             ) : (
-              <div className="w-10 h-10 rounded-full bg-surface-2 flex items-center justify-center text-sm font-bold text-muted shrink-0">
+              <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-full bg-surface-2 flex items-center justify-center text-sm font-bold text-muted shrink-0">
                 {homeTeam?.name?.[0] || "?"}
               </div>
             )}
           </div>
 
           <div className="text-center">
-            <div className="text-2xl font-bold tabular-nums">
+            <div className="text-xl sm:text-2xl font-bold tabular-nums">
               {match.homeScore ?? 0} - {match.awayScore ?? 0}
             </div>
             <div className="text-xs uppercase tracking-widest text-muted">
@@ -162,21 +162,21 @@ export function LiveMatchCard({
             </div>
           </div>
 
-          <div className="flex items-center gap-3 justify-start min-w-0">
+          <div className="flex items-center gap-2 sm:gap-3 justify-start min-w-0">
             {awayTeam?.logo_url ? (
               <Image
                 src={awayTeam.logo_url}
                 alt=""
                 width={40}
                 height={40}
-                className="w-10 h-10 rounded-full object-cover shrink-0"
+                className="w-8 h-8 sm:w-10 sm:h-10 rounded-full object-cover shrink-0"
               />
             ) : (
-              <div className="w-10 h-10 rounded-full bg-surface-2 flex items-center justify-center text-sm font-bold text-muted shrink-0">
+              <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-full bg-surface-2 flex items-center justify-center text-sm font-bold text-muted shrink-0">
                 {awayTeam?.name?.[0] || "?"}
               </div>
             )}
-            <span className="font-semibold text-base truncate">{awayTeam?.name || "Unknown"}</span>
+            <span className="font-semibold text-sm sm:text-base truncate">{awayTeam?.name || "Unknown"}</span>
           </div>
         </div>
 

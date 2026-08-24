@@ -259,19 +259,19 @@ export default function OrgTeamAccountsPage() {
       ) : (
         <div className="space-y-3">
           {accounts.map((account) => (
-            <div key={account.id} className="card p-4 flex items-center justify-between">
-              <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-full bg-surface-2 flex items-center justify-center">
+            <div key={account.id} className="card p-4 flex flex-wrap items-center justify-between gap-x-3 gap-y-2">
+              <div className="flex items-center gap-3 min-w-0">
+                <div className="w-10 h-10 rounded-full bg-surface-2 flex items-center justify-center shrink-0">
                   <UserCog size={18} className="text-muted" />
                 </div>
-                <div>
-                  <p className="font-medium">{account.display_name}</p>
-                  <p className="text-xs text-muted font-mono">{account.username}</p>
+                <div className="min-w-0">
+                  <p className="font-medium truncate">{account.display_name}</p>
+                  <p className="text-xs text-muted font-mono truncate">{account.username}</p>
                 </div>
               </div>
-              <div className="flex items-center gap-4">
-                <div className="text-right text-xs text-muted">
-                  <p>{account.teams?.name || "—"}</p>
+              <div className="flex items-center gap-4 min-w-0">
+                <div className="text-right text-xs text-muted min-w-0">
+                  <p className="truncate max-w-[140px]">{account.teams?.name || "—"}</p>
                   <p>{new Date(account.created_at).toLocaleDateString()}</p>
                 </div>
                 <button

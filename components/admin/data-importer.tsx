@@ -327,20 +327,20 @@ export function DataImporter() {
 
       {step === "preview" && plan && (
         <div className="space-y-6">
-          <div className="grid grid-cols-3 gap-4">
-            <div className="card p-4 text-center">
+          <div className="grid grid-cols-3 gap-2 sm:gap-4">
+            <div className="card p-3 sm:p-4 text-center">
               <Shield size={20} className="mx-auto mb-1 text-brand" />
-              <p className="text-2xl font-bold">{plan.teams.length}</p>
+              <p className="text-xl sm:text-2xl font-bold">{plan.teams.length}</p>
               <p className="text-xs text-muted">Teams</p>
             </div>
-            <div className="card p-4 text-center">
+            <div className="card p-3 sm:p-4 text-center">
               <Calendar size={20} className="mx-auto mb-1 text-brand" />
-              <p className="text-2xl font-bold">{fixtureCount}</p>
+              <p className="text-xl sm:text-2xl font-bold">{fixtureCount}</p>
               <p className="text-xs text-muted">Matches</p>
             </div>
-            <div className="card p-4 text-center">
+            <div className="card p-3 sm:p-4 text-center">
               <Users size={20} className="mx-auto mb-1 text-brand" />
-              <p className="text-2xl font-bold">{plan.players.length}</p>
+              <p className="text-xl sm:text-2xl font-bold">{plan.players.length}</p>
               <p className="text-xs text-muted">Players</p>
             </div>
           </div>
@@ -354,9 +354,9 @@ export function DataImporter() {
                 const srcId = plan.mapping.find(([, int]) => int === t.id)?.[0];
                 const wasMatched = teams.some((it) => it.id === t.id);
                 return (
-                  <div key={t.id} className="flex items-center gap-3 text-sm">
+                  <div key={t.id} className="flex flex-wrap items-center gap-x-3 gap-y-1 text-sm">
                     <Shield size={14} className="text-muted shrink-0" />
-                    <span className="font-medium">{t.name}</span>
+                    <span className="font-medium min-w-0 truncate max-w-[180px]">{t.name}</span>
                     <span className="text-xs text-muted">(ID: {t.id})</span>
                     {srcId !== undefined && srcId !== t.id && (
                       <>

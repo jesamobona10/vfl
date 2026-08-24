@@ -58,11 +58,11 @@ export default function TransfersPage() {
             <tbody>
               {transfers.map((t) => (
                 <tr key={t.id} className="border-t">
-                  <td className="py-2">{new Date(t.created_at).toLocaleString()}</td>
-                  <td className="py-2">{t.players?.name ?? t.player_id}</td>
+                  <td className="py-2 whitespace-nowrap">{new Date(t.created_at).toLocaleString()}</td>
+                  <td className="py-2 whitespace-nowrap">{t.players?.name ?? t.player_id}</td>
                   <td className="py-2">{t.from_team?.name ?? "—"}</td>
                   <td className="py-2">{t.to_team?.name ?? "—"}</td>
-                  <td className="py-2">
+                  <td className="py-2 whitespace-nowrap">
                     {t.performed_by_role} — {t.performed_by}
                   </td>
                 </tr>
