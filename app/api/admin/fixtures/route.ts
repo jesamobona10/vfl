@@ -182,6 +182,6 @@ export async function GET(request: Request) {
     return json({ organizations: result });
   } catch (error) {
     logApiError("admin_fixtures_list_error", error);
-    return json({ error: "Internal server error." }, { status: 500 });
+    return json({ error: "Something went wrong. Please try again." }, { status: 500 });
   }
 }

@@ -13,6 +13,8 @@ import { UsersManager } from "./users-manager";
 import { AdminTeamAccountManager } from "./admin-team-account-manager";
 import { ChevronDown, ChevronRight, Building2, Calendar, Trash2, Search } from "lucide-react";
 import { PageSkeleton } from "@/components/shared/skeleton";
+import { useToast } from "@/components/ui/toast";
+import { useConfirm } from "@/components/shared/confirm-dialog";
 import type { Team, Player } from "@/lib/types";
 
 type AdminTab =
@@ -27,6 +29,8 @@ type AdminTab =
   | "import";
 
 function FixtureManager() {
+  const toast = useToast();
+  const { confirm, dialog: confirmDialog } = useConfirm();
   const [data, setData] = useState<{
     organizations: Array<{
       id: string;
@@ -76,7 +80,13 @@ function FixtureManager() {
   const [deletingOrg, setDeletingOrg] = useState<string | null>(null);
 
   const handleDeleteOrgFixtures = async (org: { id: string; name: string; slug: string }) => {
-    if (!confirm(`Delete ALL fixtures for "${org.name}"? This CANNOT be undone.`)) return;
+    if (
+      !(await confirm({
+        title: `Delete ALL fixtures for "${org.name}"?`,
+        description: "Every fixture in this organization will be permanently removed. This cannot be undone.",
+      }))
+    )
+      return;
     setDeletingOrg(org.id);
     try {
       const res = await fetch(`/api/organizations/${org.slug}/delete-fixtures`, {
@@ -86,15 +96,16 @@ function FixtureManager() {
       });
       const d = await res.json();
       if (d.error) {
-        alert(d.error);
+        toast.error(d.error);
         return;
       }
+      toast.success(`All fixtures for "${org.name}" deleted.`);
       const reload = await fetch("/api/admin/fixtures");
       const reloadData = await reload.json();
-      if (reloadData.error) alert(reloadData.error);
+      if (reloadData.error) toast.error(reloadData.error);
       else setData(reloadData);
     } catch {
-      alert("Failed to delete fixtures.");
+      toast.error("Failed to delete fixtures. Please try again.");
     } finally {
       setDeletingOrg(null);
     }
@@ -150,6 +161,7 @@ function FixtureManager() {
 
   return (
     <div className="space-y-6">
+      {confirmDialog}
       <p className="text-sm text-muted">Viewing all fixtures across the platform (read-only).</p>
       <div className="relative">
         <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted" />

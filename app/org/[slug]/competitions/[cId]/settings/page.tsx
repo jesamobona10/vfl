@@ -24,6 +24,8 @@ import {
   Sparkles,
 } from "lucide-react";
 import { SkeletonForm } from "@/components/shared/skeleton";
+import { useToast } from "@/components/ui/toast";
+import { useConfirm } from "@/components/shared/confirm-dialog";
 import type { Season } from "@/lib/types";
 
 const statusOptions: { value: string; label: string }[] = [
@@ -44,6 +46,8 @@ const seasonStatusColors: Record<string, string> = {
 export default function CompetitionSettingsPage() {
   const params = useParams();
   const cId = params.cId as string;
+  const toast = useToast();
+  const { confirm, dialog: confirmDialog } = useConfirm();
   const { data: currentCompetition, isLoading } = useCompetition(cId);
   const { data: seasons = [] } = useSeasons(currentCompetition?.id);
   const updateMutation = useUpdateCompetition();
@@ -76,11 +80,11 @@ export default function CompetitionSettingsPage() {
 
   const handleCompLogoUpload = async (file: File) => {
     if (!file.type.startsWith("image/")) {
-      alert("Please select an image file.");
+      toast.error("Please select an image file.");
       return;
     }
     if (file.size > 2 * 1024 * 1024) {
-      alert("File too large. Max 2MB.");
+      toast.error("File too large. Maximum size is 2MB.");
       return;
     }
     if (!currentCompetition) return;
@@ -93,13 +97,13 @@ export default function CompetitionSettingsPage() {
       const res = await fetch("/api/upload/comp-logo", { method: "POST", body: formData });
       const data = await res.json();
       if (data.error) {
-        alert(data.error);
+        toast.error(data.error);
         return;
       }
       setCompLogoUrl(data.url);
       queryClient.invalidateQueries({ queryKey: ["competition", cId] });
     } catch {
-      alert("Upload failed.");
+      toast.error("Upload failed. Please try again.");
     } finally {
       setCompLogoUploading(false);
     }
@@ -107,11 +111,11 @@ export default function CompetitionSettingsPage() {
 
   const handleFlyerBgUpload = async (file: File) => {
     if (!file.type.startsWith("image/")) {
-      alert("Please select an image file.");
+      toast.error("Please select an image file.");
       return;
     }
     if (file.size > 4 * 1024 * 1024) {
-      alert("File too large. Max 4MB.");
+      toast.error("File too large. Maximum size is 4MB.");
       return;
     }
     if (!currentCompetition) return;
@@ -124,13 +128,13 @@ export default function CompetitionSettingsPage() {
       const res = await fetch("/api/upload/flyer-bg", { method: "POST", body: formData });
       const data = await res.json();
       if (data.error) {
-        alert(data.error);
+        toast.error(data.error);
         return;
       }
       setFlyerBgUrl(data.url);
       queryClient.invalidateQueries({ queryKey: ["competition", cId] });
     } catch {
-      alert("Upload failed.");
+      toast.error("Upload failed. Please try again.");
     } finally {
       setFlyerUploading(false);
     }
@@ -269,11 +273,13 @@ export default function CompetitionSettingsPage() {
     );
   };
 
-  const handleRollover = (source: Season) => {
+  const handleRollover = async (source: Season) => {
     if (
-      !confirm(
-        `Create a new season from "${source.name}"? Teams registered this season will be copied over.`
-      )
+      !(await confirm({
+        title: `Rollover season "${source.name}"?`,
+        description: "A new season will be created and teams registered this season will be copied over.",
+        confirmLabel: "Create season",
+      }))
     )
       return;
     setMessage(null);
@@ -355,6 +361,7 @@ export default function CompetitionSettingsPage() {
 
   return (
     <div className="max-w-xl space-y-6">
+      {confirmDialog}
       <div className="card p-6 space-y-4">
         <h2 className="text-lg font-semibold">Competition Logo</h2>
         <div className="flex items-center gap-4">

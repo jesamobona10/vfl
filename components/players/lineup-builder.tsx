@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { useAppStore } from "@/lib/store";
+import { useConfirm } from "@/components/shared/confirm-dialog";
 import type { LineupSlot, TeamLineup } from "@/lib/types";
 
 const formationSlotDefinitions: Record<
@@ -59,6 +60,7 @@ function createSlots(formation: string): LineupSlot[] {
 }
 
 export function LineupBuilder() {
+  const { confirm, dialog: confirmDialog } = useConfirm();
   const teams = useAppStore((state) => state.teams);
   const players = useAppStore((state) => state.players);
   const isTeamAccount = useAppStore((state) => state.isTeamAccount());
@@ -196,7 +198,12 @@ export function LineupBuilder() {
       return;
     }
 
-    if (!confirm("Delete this lineup?")) {
+    if (
+      !(await confirm({
+        title: "Delete this lineup?",
+        confirmLabel: "Delete",
+      }))
+    ) {
       return;
     }
 
@@ -250,6 +257,7 @@ export function LineupBuilder() {
 
   return (
     <div className="space-y-6">
+      {confirmDialog}
       <div className="grid gap-4 md:grid-cols-2">
         <div className="card p-5 space-y-3">
           <h2 className="text-lg font-semibold">Lineup details</h2>

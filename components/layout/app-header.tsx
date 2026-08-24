@@ -16,6 +16,8 @@ import {
   Menu,
 } from "lucide-react";
 import { useResolvedTeams } from "@/lib/hooks/use-resolved-teams";
+import { useToast } from "@/components/ui/toast";
+import { useConfirm } from "@/components/shared/confirm-dialog";
 
 interface AppHeaderProps {
   onOpenSearch: () => void;
@@ -23,6 +25,8 @@ interface AppHeaderProps {
 }
 
 export function AppHeader({ onOpenSearch, onOpenMenu }: AppHeaderProps) {
+  const toast = useToast();
+  const { confirm, dialog: confirmDialog } = useConfirm();
   const currentTeamAccount = useAppStore((s) => s.currentTeamAccount);
   const userProfile = useAppStore((s) => s.userProfile);
   const isAdmin = useAppStore((s) => s.isAdmin);
@@ -80,7 +84,7 @@ export function AppHeader({ onOpenSearch, onOpenMenu }: AppHeaderProps) {
           const json = JSON.parse(ev.target?.result as string);
           const parsed = parseImportFile(json);
           if ("error" in parsed) {
-            alert(`Import error: ${parsed.error}`);
+            toast.error(`Import error: ${parsed.error}`);
             return;
           }
           const plan = buildImportPlan(parsed, teams);
@@ -108,18 +112,18 @@ export function AppHeader({ onOpenSearch, onOpenMenu }: AppHeaderProps) {
                 body: JSON.stringify({ fixtures: plan.fixtures, teamIdMap: idMap }),
               });
             }
-            alert(
+            toast.success(
               `Import complete. ${plan.teams.length} teams, ${plan.players.length} players synced to database.`
             );
           } catch {
-            alert(
+            toast.error(
               `Data imported locally. Sync to database failed — use the Database tab to retry.`
             );
           } finally {
             setImporting(false);
           }
         } catch {
-          alert("Invalid JSON file.");
+          toast.error("Invalid JSON file. Please choose a valid export file.");
         }
       };
       reader.readAsText(file);
@@ -128,13 +132,20 @@ export function AppHeader({ onOpenSearch, onOpenMenu }: AppHeaderProps) {
     setMenuOpen(false);
   };
 
-  const handleReset = () => {
+  const handleReset = async () => {
     setMenuOpen(false);
-    if (confirm("Reset all data to defaults? This cannot be undone.")) {
-      resetTeams();
-      setFixtures([]);
-      deleteAllPlayers();
-    }
+    if (
+      !(await confirm({
+        title: "Reset all data to defaults?",
+        description: "This cannot be undone.",
+        confirmLabel: "Reset",
+      }))
+    )
+      return;
+    resetTeams();
+    setFixtures([]);
+    deleteAllPlayers();
+    toast.success("Data reset to defaults.");
   };
 
   const handleRefresh = async () => {
@@ -151,6 +162,7 @@ export function AppHeader({ onOpenSearch, onOpenMenu }: AppHeaderProps) {
 
   return (
     <header className="bg-panel border-b border-line px-4 sm:px-6 py-3 flex items-center justify-between">
+      {confirmDialog}
       <div className="flex items-center gap-2 sm:gap-3">
         {onOpenMenu && (
           <button onClick={onOpenMenu} className="btn-icon lg:hidden" aria-label="Open navigation">

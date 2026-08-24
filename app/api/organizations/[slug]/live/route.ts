@@ -186,6 +186,6 @@ export async function GET(request: Request, props: { params: Promise<{ slug: str
     });
   } catch (error) {
     logApiError("org_live_error", error);
-    return json({ error: "Internal server error." }, { status: 500 });
+    return json({ error: "Something went wrong. Please try again." }, { status: 500 });
   }
 }

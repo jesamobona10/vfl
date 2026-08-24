@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { Shield, AlertCircle, CheckCircle } from "lucide-react";
+import { describeFetchError } from "@/lib/utils/error-message";
 
 export default function ForgotPasswordPage() {
   const router = useRouter();
@@ -27,8 +28,8 @@ export default function ForgotPasswordPage() {
         return;
       }
       setSent(true);
-    } catch {
-      setError("Connection error. Please try again.");
+    } catch (err) {
+      setError(describeFetchError(err, "Connection error. Please try again."));
     } finally {
       setLoading(false);
     }

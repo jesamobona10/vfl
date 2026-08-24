@@ -107,7 +107,7 @@ export async function PATCH(request: Request, props: { params: Promise<{ id: str
     return json({ success: true, message: "Password updated." });
   } catch (error) {
     logApiError("org_team_account_reset_error", error);
-    return json({ error: "Internal server error." }, { status: 500 });
+    return json({ error: "Something went wrong. Please try again." }, { status: 500 });
   }
 }
 
@@ -186,6 +186,6 @@ export async function DELETE(_request: Request, props: { params: Promise<{ id: s
     return json({ success: true });
   } catch (error) {
     logApiError("org_team_account_delete_error", error);
-    return json({ error: "Internal server error." }, { status: 500 });
+    return json({ error: "Something went wrong. Please try again." }, { status: 500 });
   }
 }

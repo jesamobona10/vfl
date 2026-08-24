@@ -18,6 +18,9 @@ import {
   ChevronRight,
 } from "lucide-react";
 import { SkeletonTable } from "@/components/shared/skeleton";
+import { ErrorBanner } from "@/components/shared/error-banner";
+import { useToast } from "@/components/ui/toast";
+import { useConfirm } from "@/components/shared/confirm-dialog";
 import type { Season } from "@/lib/types";
 
 interface CompRow {
@@ -49,6 +52,8 @@ interface OrgSummary {
 }
 
 export function CompManager() {
+  const toast = useToast();
+  const { confirm, dialog: confirmDialog } = useConfirm();
   const [comps, setComps] = useState<CompRow[]>([]);
   const [orgs, setOrgs] = useState<OrgSummary[]>([]);
   const [loading, setLoading] = useState(true);
@@ -157,7 +162,13 @@ export function CompManager() {
   };
 
   const handleDelete = async (comp: CompRow) => {
-    if (!confirm(`Delete "${comp.name}" and all associated fixtures and cup matches?`)) return;
+    if (
+      !(await confirm({
+        title: `Delete "${comp.name}"?`,
+        description: "All associated fixtures and cup matches will also be deleted. This cannot be undone.",
+      }))
+    )
+      return;
     try {
       const res = await fetch(`/api/admin/competitions/${comp.id}`, { method: "DELETE" });
       if (!res.ok) {
@@ -165,9 +176,10 @@ export function CompManager() {
         setError(d.error || "Delete failed.");
         return;
       }
+      toast.success(`Competition "${comp.name}" deleted.`);
       fetchComps();
     } catch {
-      setError("Failed to delete.");
+      setError("Failed to delete competition. Please try again.");
     }
   };
 
@@ -259,11 +271,11 @@ export function CompManager() {
 
   const handleLogoUpload = async (comp: CompRow, file: File) => {
     if (!file.type.startsWith("image/")) {
-      alert("Please select an image file.");
+      toast.error("Please select an image file.");
       return;
     }
     if (file.size > 2 * 1024 * 1024) {
-      alert("File too large. Max 2MB.");
+      toast.error("File too large. Maximum size is 2MB.");
       return;
     }
     setLogoUploading(true);
@@ -275,12 +287,13 @@ export function CompManager() {
       const res = await fetch("/api/upload/comp-logo", { method: "POST", body: formData });
       const data = await res.json();
       if (data.error) {
-        alert(data.error);
+        toast.error(data.error);
         return;
       }
       setEditingLogoUrl(data.url);
+      toast.success("Logo uploaded. Save to apply.");
     } catch {
-      alert("Upload failed.");
+      toast.error("Upload failed. Please try again.");
     } finally {
       setLogoUploading(false);
     }
@@ -296,6 +309,7 @@ export function CompManager() {
 
   return (
     <div className="space-y-4">
+      {confirmDialog}
       <div className="flex items-center justify-between">
         <h3 className="text-lg font-bold">Competitions</h3>
         <button
@@ -325,14 +339,7 @@ export function CompManager() {
         <span className="text-xs text-muted">{comps.length} competition(s)</span>
       </div>
 
-      {error && (
-        <div className="flex items-center gap-2 text-sm text-danger bg-danger/10 rounded-lg px-4 py-3">
-          <AlertCircle size={16} /> {error}{" "}
-          <button onClick={() => setError("")} className="ml-auto">
-            <X size={14} />
-          </button>
-        </div>
-      )}
+      <ErrorBanner message={error} onDismiss={() => setError("")} />
 
       {showForm && (
         <form onSubmit={handleSubmit} className="card p-4 space-y-3 border-l-4 border-l-brand">

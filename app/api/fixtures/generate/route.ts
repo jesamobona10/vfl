@@ -75,6 +75,6 @@ export async function POST(request: Request) {
     return json({ success: true, count: rows.length });
   } catch (error) {
     logApiError("fixtures_generate_error", error);
-    return json({ error: "Internal server error." }, { status: 500 });
+    return json({ error: "Something went wrong. Please try again." }, { status: 500 });
   }
 }

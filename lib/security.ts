@@ -147,7 +147,7 @@ export async function rateLimit({
 export function rateLimitResponse(resetAt: number) {
   const retryAfter = Math.max(1, Math.ceil((resetAt - Date.now()) / 1000));
   return NextResponse.json(
-    { error: "Too many requests. Please try again later." },
+    { error: "Too many requests. Please slow down and try again shortly.", code: "RATE_LIMITED" },
     {
       status: 429,
       headers: {

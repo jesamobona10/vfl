@@ -62,7 +62,7 @@ export async function GET() {
     return json({ orgs: orgsWithCounts });
   } catch (error) {
     logApiError("admin_orgs_list_error", error);
-    return json({ error: "Internal server error." }, { status: 500 });
+    return json({ error: "Something went wrong. Please try again." }, { status: 500 });
   }
 }
 
@@ -131,6 +131,6 @@ export async function POST(request: Request) {
     return json({ org: data });
   } catch (error) {
     logApiError("admin_org_create_error", error);
-    return json({ error: "Internal server error." }, { status: 500 });
+    return json({ error: "Something went wrong. Please try again." }, { status: 500 });
   }
 }

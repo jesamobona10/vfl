@@ -68,7 +68,7 @@ export async function GET() {
     return json({ notifications: data });
   } catch (error) {
     logApiError("notifications_list_error", error);
-    return json({ error: "Internal server error." }, { status: 500 });
+    return json({ error: "Something went wrong. Please try again." }, { status: 500 });
   }
 }
 
@@ -121,6 +121,6 @@ export async function PATCH(request: Request) {
     return json({ success: true });
   } catch (error) {
     logApiError("notifications_mark_read_error", error);
-    return json({ error: "Internal server error." }, { status: 500 });
+    return json({ error: "Something went wrong. Please try again." }, { status: 500 });
   }
 }

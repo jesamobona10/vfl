@@ -17,12 +17,14 @@ import { TeamDashboard } from "@/components/team/team-dashboard";
 import { OrgSeasonSelector } from "@/components/competitions/org-season-selector";
 import { Shield, RefreshCw, Plus, Upload } from "lucide-react";
 import { DashboardSkeleton } from "@/components/shared/skeleton";
+import { useToast } from "@/components/ui/toast";
 import { useParams, useRouter } from "next/navigation";
 import Image from "next/image";
 
 export default function OrgDashboardPage() {
   const params = useParams();
   const router = useRouter();
+  const toast = useToast();
   const slug = params.slug as string;
   const queryClient = useQueryClient();
   const { data: currentOrg } = useOrg(slug);
@@ -85,11 +87,11 @@ export default function OrgDashboardPage() {
 
   const handleOrgLogoUpload = async (file: File) => {
     if (!file.type.startsWith("image/")) {
-      alert("Please select an image file.");
+      toast.error("Please select an image file.");
       return;
     }
     if (file.size > 2 * 1024 * 1024) {
-      alert("File too large. Max 2MB.");
+      toast.error("File too large. Maximum size is 2MB.");
       return;
     }
     if (!currentOrg) return;
@@ -102,13 +104,13 @@ export default function OrgDashboardPage() {
       const res = await fetch("/api/upload/org-logo", { method: "POST", body: formData });
       const data = await res.json();
       if (data.error) {
-        alert(data.error);
+        toast.error(data.error);
         return;
       }
       setOrgLogoUrl(data.url);
       queryClient.invalidateQueries({ queryKey: ["org", slug] });
     } catch {
-      alert("Upload failed.");
+      toast.error("Upload failed. Please try again.");
     } finally {
       setOrgLogoUploading(false);
     }

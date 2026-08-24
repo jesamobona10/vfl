@@ -10,8 +10,10 @@ import {
 } from "@/lib/hooks/use-competitions";
 import { Shield, Plus, X, AlertCircle } from "lucide-react";
 import { PageSkeleton } from "@/components/shared/skeleton";
+import { useConfirm } from "@/components/shared/confirm-dialog";
 
 export default function CompTeamsPage() {
+  const { confirm, dialog: confirmDialog } = useConfirm();
   const params = useParams();
   const searchParams = useSearchParams();
   const slug = params.slug as string;
@@ -75,10 +77,17 @@ export default function CompTeamsPage() {
     );
   };
 
-  const handleUnregister = (seasonTeam: any) => {
+  const handleUnregister = async (seasonTeam: any) => {
     setError("");
     const name = seasonTeam.display_name || seasonTeam.team?.name || "this team";
-    if (!confirm(`Unregister ${name} from this season?`)) return;
+    if (
+      !(await confirm({
+        title: `Unregister ${name}?`,
+        description: "The team will be removed from this season.",
+        confirmLabel: "Unregister",
+      }))
+    )
+      return;
     deleteMutation.mutate(seasonTeam.id, {
       onError: (err) => setError(err instanceof Error ? err.message : "Failed to unregister team"),
     });
@@ -86,6 +95,7 @@ export default function CompTeamsPage() {
 
   return (
     <div className="space-y-5">
+      {confirmDialog}
       <div className="flex items-center justify-between">
         <div>
           <h2 className="text-lg font-semibold">Teams</h2>

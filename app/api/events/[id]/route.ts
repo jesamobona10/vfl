@@ -132,6 +132,6 @@ export async function DELETE(request: Request, props: { params: Promise<{ id: st
     return json({ success: true });
   } catch (error) {
     logApiError("event_delete_error", error);
-    return json({ error: "Internal server error." }, { status: 500 });
+    return json({ error: "Something went wrong. Please try again." }, { status: 500 });
   }
 }

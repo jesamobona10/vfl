@@ -5,6 +5,7 @@ import { useAppStore } from "@/lib/store";
 import { useResolvedTeams } from "@/lib/hooks/use-resolved-teams";
 import { Plus, Trash2 } from "lucide-react";
 import { GeneratePlayerCredentials } from "@/components/players/generate-player-credentials";
+import { useConfirm } from "@/components/shared/confirm-dialog";
 import type { Player } from "@/lib/types";
 
 /**
@@ -12,6 +13,7 @@ import type { Player } from "@/lib/types";
  * Extracted from admin-panel.tsx for single-responsibility.
  */
 export function AdminPlayerManager() {
+  const { confirm, dialog: confirmDialog } = useConfirm();
   const isAdmin = useAppStore((s) => s.isAdmin);
   const players = useAppStore((s) => s.players);
   const currentSeasonId = useAppStore((s) => s.currentSeasonId);
@@ -63,18 +65,24 @@ export function AdminPlayerManager() {
     setNewNumber("");
   };
 
-  const handleDelete = (id: number) => {
+  const handleDelete = async (id: number) => {
     const p = players.find((pl) => pl.id === id);
     if (!p) return;
-    if (!confirm(`Delete player ${p.name}?`)) return;
+    if (!(await confirm({ title: `Delete player ${p.name}?`, confirmLabel: "Delete" }))) return;
     deletePlayer(id);
   };
 
-  const handleDeleteAllFromTeam = () => {
+  const handleDeleteAllFromTeam = async () => {
     if (!filterTeam) return;
     const team = teams.find((t) => t.id === Number(filterTeam));
     if (!team) return;
-    if (!confirm(`Delete all players from ${team.name}?`)) return;
+    if (
+      !(await confirm({
+        title: `Delete all players from ${team.name}?`,
+        description: "Every player on this team will be removed. This cannot be undone.",
+      }))
+    )
+      return;
     deleteTeamPlayers(Number(filterTeam));
   };
 
@@ -84,6 +92,7 @@ export function AdminPlayerManager() {
 
   return (
     <div className="space-y-4">
+      {confirmDialog}
       <h3 className="text-lg font-bold">Players</h3>
 
       {isAdmin && (

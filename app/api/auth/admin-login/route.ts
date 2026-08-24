@@ -87,6 +87,6 @@ export async function POST(request: Request) {
     });
   } catch (error) {
     logApiError("admin_login_error", error);
-    return json({ error: "Internal server error." }, { status: 500 });
+    return json({ error: "Something went wrong. Please try again." }, { status: 500 });
   }
 }

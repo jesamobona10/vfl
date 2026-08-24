@@ -5,6 +5,7 @@ import { useAppStore } from "@/lib/store";
 import { useResolvedTeams } from "@/lib/hooks/use-resolved-teams";
 import { Download, ChevronDown } from "lucide-react";
 import { exportAsJSON, exportAsPNG, exportAsPDF } from "@/lib/utils/export";
+import { useToast } from "@/components/ui/toast";
 
 interface FixtureFiltersProps {
   roundFilter: string;
@@ -25,6 +26,7 @@ export function FixtureFilters({
   onStatusChange,
   captureRef,
 }: FixtureFiltersProps) {
+  const toast = useToast();
   const [menuOpen, setMenuOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
   const fixtures = useAppStore((s) => s.fixtures);
@@ -62,7 +64,7 @@ export function FixtureFilters({
     setMenuOpen(false);
     const filtered = getFilteredFixtures();
     if (!filtered.length) {
-      alert("No fixtures match the current filters.");
+      toast.info("No fixtures match the current filters.");
       return;
     }
     const label = roundFilter !== "all" ? `round-${roundFilter}` : "all-fixtures";

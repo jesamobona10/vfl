@@ -55,7 +55,7 @@ export async function GET(request: Request) {
     return json({ accounts: data });
   } catch (error) {
     logApiError("org_team_accounts_list_error", error);
-    return json({ error: "Internal server error." }, { status: 500 });
+    return json({ error: "Something went wrong. Please try again." }, { status: 500 });
   }
 }
 
@@ -168,6 +168,6 @@ export async function POST(request: Request) {
     });
   } catch (error) {
     logApiError("org_team_account_create_error", error);
-    return json({ error: "Internal server error." }, { status: 500 });
+    return json({ error: "Something went wrong. Please try again." }, { status: 500 });
   }
 }

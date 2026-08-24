@@ -6,6 +6,7 @@ import { useAppStore } from "@/lib/store";
 import { useOrg } from "@/lib/hooks/use-org";
 import { Plus, UserCog, Key, Check, AlertCircle, Eye, EyeOff, Trash2 } from "lucide-react";
 import { SkeletonList } from "@/components/shared/skeleton";
+import { useConfirm } from "@/components/shared/confirm-dialog";
 
 interface TeamAccount {
   id: string;
@@ -20,6 +21,7 @@ interface TeamAccount {
 export default function OrgTeamAccountsPage() {
   const params = useParams();
   const slug = params.slug as string;
+  const { confirm, dialog: confirmDialog } = useConfirm();
   const { data: currentOrg } = useOrg(slug);
   const teams = useAppStore((s) => s.teams);
 
@@ -38,7 +40,13 @@ export default function OrgTeamAccountsPage() {
   const [deletingId, setDeletingId] = useState<string | null>(null);
 
   const handleDelete = async (account: TeamAccount) => {
-    if (!confirm(`Delete account "${account.username}"? This CANNOT be undone.`)) return;
+    if (
+      !(await confirm({
+        title: `Delete account "${account.username}"?`,
+        description: "This cannot be undone.",
+      }))
+    )
+      return;
     setMessage(null);
     setDeletingId(account.id);
     try {
@@ -117,6 +125,7 @@ export default function OrgTeamAccountsPage() {
 
   return (
     <div className="space-y-5">
+      {confirmDialog}
       <div className="page-head">
         <div>
           <p className="page-title">Team Accounts</p>

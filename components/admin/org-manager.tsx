@@ -14,6 +14,9 @@ import {
   Image as ImageIcon,
 } from "lucide-react";
 import { SkeletonTable, SkeletonList } from "@/components/shared/skeleton";
+import { ErrorBanner } from "@/components/shared/error-banner";
+import { useToast } from "@/components/ui/toast";
+import { useConfirm } from "@/components/shared/confirm-dialog";
 
 interface OrgRow {
   id: string;
@@ -37,6 +40,8 @@ interface MemberRow {
 }
 
 export function OrgManager() {
+  const toast = useToast();
+  const { confirm, dialog: confirmDialog } = useConfirm();
   const [orgs, setOrgs] = useState<OrgRow[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
@@ -142,7 +147,13 @@ export function OrgManager() {
   };
 
   const handleDelete = async (org: OrgRow) => {
-    if (!confirm(`Delete "${org.name}" and all its data? This CANNOT be undone.`)) return;
+    if (
+      !(await confirm({
+        title: `Delete "${org.name}"?`,
+        description: "The organization and all of its data will be permanently removed. This cannot be undone.",
+      }))
+    )
+      return;
     try {
       const res = await fetch(`/api/admin/orgs/${org.id}`, { method: "DELETE" });
       if (!res.ok) {
@@ -150,9 +161,10 @@ export function OrgManager() {
         setError(d.error || "Delete failed.");
         return;
       }
+      toast.success(`Organization "${org.name}" deleted.`);
       fetchOrgs();
     } catch {
-      setError("Failed to delete.");
+      setError("Failed to delete organization. Please try again.");
     }
   };
 
@@ -182,7 +194,14 @@ export function OrgManager() {
   };
 
   const handleRemoveMember = async (orgId: string, userId: string) => {
-    if (!confirm("Remove this member?")) return;
+    if (
+      !(await confirm({
+        title: "Remove this member?",
+        description: "They will lose access to this organization immediately.",
+        confirmLabel: "Remove",
+      }))
+    )
+      return;
     try {
       const res = await fetch(`/api/admin/orgs/${orgId}/members/${userId}`, { method: "DELETE" });
       if (!res.ok) {
@@ -216,11 +235,11 @@ export function OrgManager() {
 
   const handleLogoUpload = async (orgId: string, orgName: string, file: File) => {
     if (!file.type.startsWith("image/")) {
-      alert("Please select an image file.");
+      toast.error("Please select an image file.");
       return;
     }
     if (file.size > 2 * 1024 * 1024) {
-      alert("File too large. Max 2MB.");
+      toast.error("File too large. Maximum size is 2MB.");
       return;
     }
     setLogoUploading(true);
@@ -232,12 +251,13 @@ export function OrgManager() {
       const res = await fetch("/api/upload/org-logo", { method: "POST", body: formData });
       const data = await res.json();
       if (data.error) {
-        alert(data.error);
+        toast.error(data.error);
         return;
       }
       setEditingLogoUrl(data.url);
+      toast.success("Logo uploaded. Save to apply.");
     } catch {
-      alert("Upload failed.");
+      toast.error("Upload failed. Please try again.");
     } finally {
       setLogoUploading(false);
     }
@@ -247,6 +267,7 @@ export function OrgManager() {
 
   return (
     <div className="space-y-4">
+      {confirmDialog}
       <div className="flex items-center justify-between">
         <h3 className="text-lg font-bold">Organizations</h3>
         <button
@@ -260,14 +281,7 @@ export function OrgManager() {
         </button>
       </div>
 
-      {error && (
-        <div className="flex items-center gap-2 text-sm text-danger bg-danger/10 rounded-lg px-4 py-3">
-          <AlertCircle size={16} /> {error}
-          <button onClick={() => setError("")} className="ml-auto">
-            <X size={14} />
-          </button>
-        </div>
-      )}
+      <ErrorBanner message={error} onDismiss={() => setError("")} />
 
       {showForm && (
         <form onSubmit={handleSubmit} className="card p-4 space-y-3 border-l-4 border-l-brand">

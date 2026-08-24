@@ -134,6 +134,6 @@ export async function POST(request: Request, props: { params: Promise<{ slug: st
     return json({ success: true, deletedCount: deleted?.length || 0 });
   } catch (error) {
     logApiError("org_delete_fixtures_error", error);
-    return json({ error: "Internal server error." }, { status: 500 });
+    return json({ error: "Something went wrong. Please try again." }, { status: 500 });
   }
 }

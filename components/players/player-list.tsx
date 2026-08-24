@@ -7,10 +7,14 @@ import { PlayerCard } from "./player-card";
 import { PlayerModal } from "./player-modal";
 import { CsvImport } from "./csv-import";
 import { sanitizeCsvCell } from "@/lib/utils/csv";
+import { useToast } from "@/components/ui/toast";
+import { useConfirm } from "@/components/shared/confirm-dialog";
 import type { Player } from "@/lib/types";
 import { Plus, Trash2, Users, Download } from "lucide-react";
 
 export function PlayerList() {
+  const toast = useToast();
+  const { confirm, dialog: confirmDialog } = useConfirm();
   const [teamFilter, setTeamFilter] = useState("all");
   const [posFilter, setPosFilter] = useState("all");
   const [modalPlayer, setModalPlayer] = useState<Player | null>(null);
@@ -45,50 +49,55 @@ export function PlayerList() {
   };
 
   const handleDelete = async (id: number) => {
-    if (!confirm("Delete this player?")) return;
+    if (!(await confirm({ title: "Delete this player?", confirmLabel: "Delete" }))) return;
     try {
       const res = await fetch(`/api/players/${id}`, {
         method: "DELETE",
       });
       if (!res.ok) {
         const body = await res.json().catch(() => ({}));
-        alert(body.error || "Failed to delete player.");
+        toast.error(body.error || "Failed to delete player.");
         return;
       }
       deletePlayer(id);
+      toast.success("Player deleted.");
     } catch {
-      alert("Unable to delete player. Please try again.");
+      toast.error("Unable to delete player. Please try again.");
     }
   };
 
   const handleDeleteAll = async () => {
+    if (players.length === 0) return;
     if (
-      players.length > 0 &&
-      confirm(`Delete all ${players.length} player(s)? This cannot be undone.`)
-    ) {
-      try {
-        const results = await Promise.all(
-          players.map((player) =>
-            fetch(`/api/players/${player.id}`, {
-              method: "DELETE",
-            })
-          )
-        );
-        const failed = await Promise.all(
-          results.map(async (res) => ({
-            ok: res.ok,
-            body: res.ok ? null : await res.json().catch(() => null),
-          }))
-        );
-        const errorItem = failed.find((item) => !item.ok);
-        if (errorItem) {
-          alert(errorItem.body?.error || "Failed to delete all players. Please try again.");
-          return;
-        }
-        deleteAllPlayers();
-      } catch {
-        alert("Unable to delete players. Please try again.");
+      !(await confirm({
+        title: `Delete all ${players.length} player(s)?`,
+        description: "This cannot be undone.",
+      }))
+    )
+      return;
+    try {
+      const results = await Promise.all(
+        players.map((player) =>
+          fetch(`/api/players/${player.id}`, {
+            method: "DELETE",
+          })
+        )
+      );
+      const failed = await Promise.all(
+        results.map(async (res) => ({
+          ok: res.ok,
+          body: res.ok ? null : await res.json().catch(() => null),
+        }))
+      );
+      const errorItem = failed.find((item) => !item.ok);
+      if (errorItem) {
+        toast.error(errorItem.body?.error || "Some players could not be deleted. Please try again.");
+        return;
       }
+      deleteAllPlayers();
+      toast.success("All players deleted.");
+    } catch {
+      toast.error("Unable to delete players. Please try again.");
     }
   };
 
@@ -136,6 +145,7 @@ export function PlayerList() {
 
   return (
     <div>
+      {confirmDialog}
       <div className="flex flex-wrap items-center justify-between gap-3 mb-6">
         <div className="flex items-center gap-2">
           <button onClick={openAdd} className="btn-primary">

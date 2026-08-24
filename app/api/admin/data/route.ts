@@ -91,6 +91,6 @@ export async function GET() {
     return json({ teams, players, fixtures });
   } catch (error) {
     logApiError("admin_data_error", error);
-    return json({ error: "Internal server error." }, { status: 500 });
+    return json({ error: "Something went wrong. Please try again." }, { status: 500 });
   }
 }

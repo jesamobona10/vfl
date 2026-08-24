@@ -4,6 +4,7 @@ import { useState } from "react";
 import { KeyRound, FileDown, AlertCircle, CheckCircle } from "lucide-react";
 import type { GeneratedPlayerCredential } from "@/lib/player-credentials";
 import { sanitizeCsvCell } from "@/lib/utils/csv";
+import { useConfirm } from "@/components/shared/confirm-dialog";
 
 type Props = {
   scope: "admin" | "team";
@@ -31,6 +32,7 @@ function downloadCredentialsCsv(rows: GeneratedPlayerCredential[]) {
 }
 
 export function GeneratePlayerCredentials({ scope, teamId, playerCount, teamName }: Props) {
+  const { confirm, dialog: confirmDialog } = useConfirm();
   const [loading, setLoading] = useState(false);
   const [forceRegenerate, setForceRegenerate] = useState(false);
   const [error, setError] = useState("");
@@ -54,15 +56,25 @@ export function GeneratePlayerCredentials({ scope, teamId, playerCount, teamName
       return;
     }
 
-    const confirmMsg = forceRegenerate
+    const title = forceRegenerate
+      ? "Regenerate player credentials?"
+      : "Generate player credentials?";
+    const description = forceRegenerate
       ? scope === "admin"
-        ? "Regenerate credentials for all players in the system? Existing logins will be replaced."
-        : `Regenerate credentials for all players on ${teamName || "your team"}? Existing logins will be replaced.`
+        ? "Credentials for all players in the system will be regenerated and existing logins replaced."
+        : `Credentials for all players on ${teamName || "your team"} will be regenerated and existing logins replaced.`
       : scope === "admin"
-        ? "Generate credentials for every player in the system who does not already have an account?"
-        : `Generate credentials for every player on ${teamName || "your team"} who does not already have an account?`;
+        ? "Accounts will be created for every player in the system who does not already have one."
+        : `Accounts will be created for every player on ${teamName || "your team"} who does not already have one.`;
 
-    if (!confirm(confirmMsg)) return;
+    if (
+      !(await confirm({
+        title,
+        description,
+        confirmLabel: "Generate",
+      }))
+    )
+      return;
 
     setLoading(true);
     setError("");
@@ -97,6 +109,7 @@ export function GeneratePlayerCredentials({ scope, teamId, playerCount, teamName
 
   return (
     <div className="card p-5 space-y-4 border-l-4 border-l-brand">
+      {confirmDialog}
       <div>
         <h4 className="text-sm font-semibold text-muted uppercase tracking-wider mb-1">
           Player Login Credentials

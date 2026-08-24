@@ -1,3 +1,4 @@
+import { describeFetchError } from "@/lib/utils/error-message";
 import type { StateCreator } from "zustand";
 import type { TeamAccount, UserProfile } from "../types";
 import type { AppStore } from "./index";
@@ -122,8 +123,8 @@ export const createAuthSlice: StateCreator<AppStore, [], [], AuthSlice> = (set, 
         teamDataLoaded: false,
       });
       return {};
-    } catch {
-      return { error: "Connection error. Please try again." };
+    } catch (err) {
+      return { error: describeFetchError(err, "Connection error. Please try again.") };
     }
   },
 
@@ -148,8 +149,8 @@ export const createAuthSlice: StateCreator<AppStore, [], [], AuthSlice> = (set, 
         teamDataLoaded: false,
       });
       return { slug: data.user.org.slug };
-    } catch {
-      return { error: "Connection error. Please try again." };
+    } catch (err) {
+      return { error: describeFetchError(err, "Connection error. Please try again.") };
     }
   },
 
@@ -175,8 +176,8 @@ export const createAuthSlice: StateCreator<AppStore, [], [], AuthSlice> = (set, 
         },
       });
       return {};
-    } catch {
-      return { error: "Connection error. Please try again." };
+    } catch (err) {
+      return { error: describeFetchError(err, "Connection error. Please try again.") };
     }
   },
 
@@ -211,8 +212,8 @@ export const createAuthSlice: StateCreator<AppStore, [], [], AuthSlice> = (set, 
         },
       });
       return { slug: data.user.orgSlug };
-    } catch {
-      return { error: "Connection error. Please try again." };
+    } catch (err) {
+      return { error: describeFetchError(err, "Connection error. Please try again.") };
     }
   },
 

@@ -84,6 +84,6 @@ export async function POST(request: Request) {
     return json({ success: true });
   } catch (error) {
     logApiError("invite_player_error", error);
-    return json({ error: "Internal server error." }, { status: 500 });
+    return json({ error: "Something went wrong. Please try again." }, { status: 500 });
   }
 }

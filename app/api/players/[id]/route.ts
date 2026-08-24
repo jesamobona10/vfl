@@ -191,7 +191,7 @@ export async function PUT(request: Request, props: { params: Promise<{ id: strin
     return json({ player: data });
   } catch (error) {
     logApiError("player_update_error", error);
-    return json({ error: "Internal server error." }, { status: 500 });
+    return json({ error: "Something went wrong. Please try again." }, { status: 500 });
   }
 }
 
@@ -236,6 +236,6 @@ export async function DELETE(request: Request, props: { params: Promise<{ id: st
     return json({ success: true });
   } catch (error) {
     logApiError("player_delete_error", error);
-    return json({ error: "Internal server error." }, { status: 500 });
+    return json({ error: "Something went wrong. Please try again." }, { status: 500 });
   }
 }

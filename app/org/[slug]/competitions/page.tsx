@@ -8,6 +8,8 @@ import { useParams, useRouter } from "next/navigation";
 import { Trophy, Plus, Swords, Users, Trash2, AlertCircle } from "lucide-react";
 import { useState } from "react";
 import { PageSkeleton } from "@/components/shared/skeleton";
+import { useConfirm } from "@/components/shared/confirm-dialog";
+import { useToast } from "@/components/ui/toast";
 
 const typeConfig: Record<string, { label: string; icon: React.ReactNode }> = {
   league: { label: "League", icon: <Trophy size={16} /> },
@@ -26,6 +28,8 @@ export default function CompetitionsPage() {
   const params = useParams();
   const slug = params.slug as string;
   const router = useRouter();
+  const toast = useToast();
+  const { confirm, dialog: confirmDialog } = useConfirm();
   const queryClient = useQueryClient();
   const { data: currentOrg } = useOrg(slug);
   const { data: competitions = [], isLoading } = useCompetitions(currentOrg?.id);
@@ -34,9 +38,10 @@ export default function CompetitionsPage() {
 
   const handleDelete = async (comp: Competition) => {
     if (
-      !confirm(
-        `Delete "${comp.name}" and all its fixtures, cup matches, and seasons? This CANNOT be undone.`
-      )
+      !(await confirm({
+        title: `Delete "${comp.name}"?`,
+        description: "All its fixtures, cup matches, and seasons will also be deleted. This cannot be undone.",
+      }))
     )
       return;
     setError("");
@@ -48,10 +53,11 @@ export default function CompetitionsPage() {
         setError(d.error);
         return;
       }
+      toast.success(`Competition "${comp.name}" deleted.`);
       queryClient.invalidateQueries({ queryKey: ["competitions", currentOrg?.id] });
       if (window.location.pathname.includes(comp.id)) router.replace(`/org/${slug}/competitions`);
     } catch {
-      setError("Failed to delete competition.");
+      setError("Failed to delete competition. Please try again.");
     } finally {
       setDeletingId(null);
     }
@@ -67,6 +73,7 @@ export default function CompetitionsPage() {
 
   return (
     <div className="space-y-5">
+      {confirmDialog}
       <div className="page-head">
         <div>
           <p className="page-title">Competitions</p>

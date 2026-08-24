@@ -38,7 +38,7 @@ export async function GET(_request: Request, props: { params: Promise<{ slug: st
     return json({ org });
   } catch (error) {
     logApiError("org_get_error", error);
-    return json({ error: "Internal server error." }, { status: 500 });
+    return json({ error: "Something went wrong. Please try again." }, { status: 500 });
   }
 }
 
@@ -116,6 +116,6 @@ export async function PUT(request: Request, props: { params: Promise<{ slug: str
     return json({ org: updated });
   } catch (error) {
     logApiError("org_update_error", error);
-    return json({ error: "Internal server error." }, { status: 500 });
+    return json({ error: "Something went wrong. Please try again." }, { status: 500 });
   }
 }

@@ -8,11 +8,13 @@ import { PlayerCard } from "@/components/players/player-card";
 import { PlayerModal } from "@/components/players/player-modal";
 import { PlayerImportModal } from "@/components/players/player-import-modal";
 import { Users, Plus, AlertCircle, Upload } from "lucide-react";
+import { useConfirm } from "@/components/shared/confirm-dialog";
 import type { Player } from "@/lib/types";
 
 export default function OrgPlayersPage() {
   const params = useParams();
   const slug = params.slug as string;
+  const { confirm, dialog: confirmDialog } = useConfirm();
   const { data: currentOrg } = useOrg(slug);
   const players = useAppStore((s) => s.players);
   const teams = useAppStore((s) => s.teams);
@@ -53,7 +55,13 @@ export default function OrgPlayersPage() {
   const handleDelete = async (id: number) => {
     const p = players.find((pl) => pl.id === id);
     if (!p) return;
-    if (!confirm(`Delete player "${p.name}"? This CANNOT be undone.`)) return;
+    if (
+      !(await confirm({
+        title: `Delete player "${p.name}"?`,
+        description: "This cannot be undone.",
+      }))
+    )
+      return;
     setError("");
     try {
       const res = await fetch(`/api/players/${id}`, { method: "DELETE" });
@@ -64,7 +72,7 @@ export default function OrgPlayersPage() {
       }
       deletePlayer(id);
     } catch {
-      setError("Failed to delete player.");
+      setError("Failed to delete player. Please try again.");
     }
   };
 
@@ -77,6 +85,7 @@ export default function OrgPlayersPage() {
 
   return (
     <div className="space-y-5">
+      {confirmDialog}
       <div className="page-head">
         <div>
           <p className="page-title">Players</p>

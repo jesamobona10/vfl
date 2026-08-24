@@ -50,7 +50,7 @@ export async function GET(_request: Request, props: { params: Promise<{ id: stri
     return json({ teams: seasonTeams || [] });
   } catch (error) {
     logApiError("season_teams_error", error);
-    return json({ error: "Internal server error." }, { status: 500 });
+    return json({ error: "Something went wrong. Please try again." }, { status: 500 });
   }
 }
 
@@ -152,6 +152,6 @@ export async function POST(request: Request, props: { params: Promise<{ id: stri
     return json({ teams: seasonTeams || [], registered: rows.length });
   } catch (error) {
     logApiError("season_team_register_error", error);
-    return json({ error: "Internal server error." }, { status: 500 });
+    return json({ error: "Something went wrong. Please try again." }, { status: 500 });
   }
 }

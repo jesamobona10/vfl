@@ -135,6 +135,6 @@ export async function GET(request: Request, props: { params: Promise<{ id: strin
     });
   } catch (error) {
     logApiError("stats_error", error);
-    return json({ error: "Internal server error." }, { status: 500 });
+    return json({ error: "Something went wrong. Please try again." }, { status: 500 });
   }
 }

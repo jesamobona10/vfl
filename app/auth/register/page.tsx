@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { Shield, AlertCircle, Check, School, Building2, Users } from "lucide-react";
+import { describeFetchError } from "@/lib/utils/error-message";
 import type { OrgType } from "@/lib/types";
 
 type Step = "choose-type" | "details" | "done";
@@ -61,8 +62,8 @@ export default function RegisterPage() {
         }
         setStep("done");
       }
-    } catch {
-      setError("Connection error. Please try again.");
+    } catch (err) {
+      setError(describeFetchError(err, "Connection error. Please try again."));
     } finally {
       setLoading(false);
     }

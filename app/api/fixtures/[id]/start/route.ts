@@ -103,6 +103,6 @@ export async function POST(request: Request, props: { params: Promise<{ id: stri
     return json({ fixture: data });
   } catch (error) {
     logApiError("fixture_start_error", error);
-    return json({ error: "Internal server error." }, { status: 500 });
+    return json({ error: "Something went wrong. Please try again." }, { status: 500 });
   }
 }

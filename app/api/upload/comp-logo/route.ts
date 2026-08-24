@@ -149,6 +149,6 @@ export async function POST(request: Request) {
       error: err instanceof Error ? err.message : String(err),
       stack: err instanceof Error ? err.stack : undefined,
     });
-    return json({ error: "Internal server error." }, { status: 500 });
+    return json({ error: "Upload failed. Please check the file and try again." }, { status: 500 });
   }
 }

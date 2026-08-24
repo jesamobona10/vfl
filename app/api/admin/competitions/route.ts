@@ -58,7 +58,7 @@ export async function GET(request: Request) {
     return json({ competitions: compsWithCounts });
   } catch (error) {
     logApiError("admin_competitions_list_error", error);
-    return json({ error: "Internal server error." }, { status: 500 });
+    return json({ error: "Something went wrong. Please try again." }, { status: 500 });
   }
 }
 
@@ -117,6 +117,6 @@ export async function POST(request: Request) {
     return json({ competition: data });
   } catch (error) {
     logApiError("admin_competition_create_error", error);
-    return json({ error: "Internal server error." }, { status: 500 });
+    return json({ error: "Something went wrong. Please try again." }, { status: 500 });
   }
 }

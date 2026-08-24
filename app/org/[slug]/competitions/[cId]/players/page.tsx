@@ -11,8 +11,10 @@ import {
 } from "@/lib/hooks/use-competitions";
 import { Users, X, Plus, AlertCircle } from "lucide-react";
 import { PageSkeleton } from "@/components/shared/skeleton";
+import { useConfirm } from "@/components/shared/confirm-dialog";
 
 export default function CompPlayersPage() {
+  const { confirm, dialog: confirmDialog } = useConfirm();
   const params = useParams();
   const searchParams = useSearchParams();
   const slug = params.slug as string;
@@ -95,9 +97,15 @@ export default function CompPlayersPage() {
     );
   };
 
-  const handleDelete = (registrationId: string) => {
+  const handleDelete = async (registrationId: string) => {
     setError("");
-    if (!confirm("Remove this player from the season roster?")) return;
+    if (
+      !(await confirm({
+        title: "Remove this player from the season roster?",
+        confirmLabel: "Remove",
+      }))
+    )
+      return;
     deleteMutation.mutate(registrationId, {
       onError: (err) => setError(err instanceof Error ? err.message : "Failed to remove player"),
     });
@@ -105,6 +113,7 @@ export default function CompPlayersPage() {
 
   return (
     <div className="space-y-5">
+      {confirmDialog}
       <div>
         <h2 className="text-lg font-semibold">Players</h2>
         <p className="text-sm text-muted">Season-scoped player registrations</p>

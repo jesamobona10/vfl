@@ -60,7 +60,7 @@ export async function GET(
     return json({ players: registrations || [] });
   } catch (error) {
     logApiError("season_team_players_error", error);
-    return json({ error: "Internal server error." }, { status: 500 });
+    return json({ error: "Something went wrong. Please try again." }, { status: 500 });
   }
 }
 
@@ -174,6 +174,6 @@ export async function POST(
     return json({ players: registrations || [], registered: rows.length });
   } catch (error) {
     logApiError("season_team_player_register_error", error);
-    return json({ error: "Internal server error." }, { status: 500 });
+    return json({ error: "Something went wrong. Please try again." }, { status: 500 });
   }
 }

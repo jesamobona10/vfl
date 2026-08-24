@@ -22,6 +22,6 @@ export async function GET() {
     return json({ transfers: data });
   } catch (error) {
     logApiError("transfers_list_error", error);
-    return json({ error: "Internal server error." }, { status: 500 });
+    return json({ error: "Something went wrong. Please try again." }, { status: 500 });
   }
 }

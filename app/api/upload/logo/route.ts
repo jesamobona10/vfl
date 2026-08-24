@@ -124,6 +124,6 @@ export async function POST(request: Request) {
     return json({ url: publicUrl });
   } catch (err) {
     logApiError("logo_upload_error", err);
-    return json({ error: "Internal server error." }, { status: 500 });
+    return json({ error: "Upload failed. Please check the file and try again." }, { status: 500 });
   }
 }

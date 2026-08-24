@@ -62,6 +62,6 @@ export async function GET(_request: Request, props: { params: Promise<{ id: stri
     return json({ standings });
   } catch (error) {
     logApiError("season_standings_error", error);
-    return json({ error: "Internal server error." }, { status: 500 });
+    return json({ error: "Something went wrong. Please try again." }, { status: 500 });
   }
 }

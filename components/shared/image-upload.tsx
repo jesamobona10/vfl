@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import { Upload, Image as ImageIcon, AlertTriangle } from "lucide-react";
+import { useToast } from "@/components/ui/toast";
 
 interface ImageUploadProps {
   currentUrl?: string;
@@ -11,6 +12,7 @@ interface ImageUploadProps {
 }
 
 export function ImageUpload({ currentUrl, teamId, teamName, onUploadComplete }: ImageUploadProps) {
+  const toast = useToast();
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [uploading, setUploading] = useState(false);
   const [preview, setPreview] = useState<string | null>(null);
@@ -28,12 +30,12 @@ export function ImageUpload({ currentUrl, teamId, teamName, onUploadComplete }: 
     if (!file) return;
 
     if (!file.type.startsWith("image/")) {
-      alert("Please select an image file.");
+      toast.error("Please select an image file.");
       return;
     }
 
     if (file.size > 2 * 1024 * 1024) {
-      alert("File too large. Max 2MB.");
+      toast.error("File too large. Maximum size is 2MB.");
       return;
     }
 
@@ -54,13 +56,13 @@ export function ImageUpload({ currentUrl, teamId, teamName, onUploadComplete }: 
 
       const data = await res.json();
       if (data.error) {
-        alert(data.error);
+        toast.error(data.error);
         return;
       }
 
       onUploadComplete(data.url);
     } catch {
-      alert("Upload failed. Please try again.");
+      toast.error("Upload failed. Please try again.");
     } finally {
       setUploading(false);
       URL.revokeObjectURL(objectUrl);

@@ -140,6 +140,6 @@ export async function POST(request: Request, props: { params: Promise<{ id: stri
     return json({ event: data });
   } catch (error) {
     logApiError("event_create_error", error);
-    return json({ error: "Internal server error." }, { status: 500 });
+    return json({ error: "Something went wrong. Please try again." }, { status: 500 });
   }
 }

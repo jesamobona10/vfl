@@ -54,7 +54,7 @@ export async function GET(_request: Request, props: { params: Promise<{ id: stri
     });
   } catch (error) {
     logApiError("admin_org_get_error", error);
-    return json({ error: "Internal server error." }, { status: 500 });
+    return json({ error: "Something went wrong. Please try again." }, { status: 500 });
   }
 }
 
@@ -132,7 +132,7 @@ export async function PUT(request: Request, props: { params: Promise<{ id: strin
     return json({ org: data });
   } catch (error) {
     logApiError("admin_org_update_error", error);
-    return json({ error: "Internal server error." }, { status: 500 });
+    return json({ error: "Something went wrong. Please try again." }, { status: 500 });
   }
 }
 
@@ -169,6 +169,6 @@ export async function DELETE(request: Request, props: { params: Promise<{ id: st
     return json({ success: true });
   } catch (error) {
     logApiError("admin_org_delete_error", error);
-    return json({ error: "Internal server error." }, { status: 500 });
+    return json({ error: "Something went wrong. Please try again." }, { status: 500 });
   }
 }

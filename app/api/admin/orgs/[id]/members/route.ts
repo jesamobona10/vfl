@@ -36,7 +36,7 @@ export async function GET(_request: Request, props: { params: Promise<{ id: stri
     return json({ members: members || [] });
   } catch (error) {
     logApiError("admin_org_members_list_error", error);
-    return json({ error: "Internal server error." }, { status: 500 });
+    return json({ error: "Something went wrong. Please try again." }, { status: 500 });
   }
 }
 
@@ -87,6 +87,6 @@ export async function POST(request: Request, props: { params: Promise<{ id: stri
     return json({ member: data });
   } catch (error) {
     logApiError("admin_org_member_add_error", error);
-    return json({ error: "Internal server error." }, { status: 500 });
+    return json({ error: "Something went wrong. Please try again." }, { status: 500 });
   }
 }

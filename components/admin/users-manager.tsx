@@ -3,6 +3,8 @@
 import { useState, useEffect, useCallback } from "react";
 import { Shield, AlertCircle, KeyRound, Users, Trash2 } from "lucide-react";
 import { SkeletonList } from "@/components/shared/skeleton";
+import { useConfirm } from "@/components/shared/confirm-dialog";
+import { useToast } from "@/components/ui/toast";
 
 export function UsersManager() {
   const [tab, setTab] = useState<"admins" | "teams" | "players">("admins");
@@ -67,6 +69,8 @@ function AdminUsersList() {
 }
 
 function TeamAccountsList() {
+  const { confirm, dialog: confirmDialog } = useConfirm();
+  const toast = useToast();
   const [accounts, setAccounts] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [deletingId, setDeletingId] = useState<string | null>(null);
@@ -85,7 +89,13 @@ function TeamAccountsList() {
   }, [fetchAccounts]);
 
   const handleDelete = async (a: any) => {
-    if (!confirm(`Delete team account "${a.username}"? This CANNOT be undone.`)) return;
+    if (
+      !(await confirm({
+        title: `Delete team account "${a.username}"?`,
+        description: "The account will be permanently removed. This cannot be undone.",
+      }))
+    )
+      return;
     setError("");
     setDeletingId(a.id);
     try {
@@ -95,9 +105,10 @@ function TeamAccountsList() {
         setError(d.error);
         return;
       }
+      toast.success(`Team account "${a.username}" deleted.`);
       fetchAccounts();
     } catch {
-      setError("Failed to delete account.");
+      setError("Failed to delete account. Please try again.");
     } finally {
       setDeletingId(null);
     }
@@ -107,6 +118,7 @@ function TeamAccountsList() {
 
   return (
     <div className="space-y-2">
+      {confirmDialog}
       {error && (
         <div className="flex items-center gap-2 text-sm text-danger bg-danger/10 rounded-lg px-4 py-3">
           <AlertCircle size={16} /> {error}

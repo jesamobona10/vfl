@@ -8,6 +8,8 @@ import { FixtureList } from "@/components/fixtures/fixture-list";
 import { MatchEditor } from "@/components/admin/match-editor";
 import { BulkScoreEntry } from "@/components/fixtures/bulk-score-entry";
 import { RefreshCw, Pencil, Eye, Table2, AlertCircle, Trash2, Lock } from "lucide-react";
+import { useConfirm } from "@/components/shared/confirm-dialog";
+import { useToast } from "@/components/ui/toast";
 
 interface CompOption {
   id: string;
@@ -18,6 +20,8 @@ interface CompOption {
 export default function OrgFixturesPage() {
   const params = useParams();
   const slug = params.slug as string;
+  const toast = useToast();
+  const { confirm, dialog: confirmDialog } = useConfirm();
   const { data: currentOrg } = useOrg(slug);
   const teams = useAppStore((s) => s.teams);
   const fixtures = useAppStore((s) => s.fixtures);
@@ -142,7 +146,13 @@ export default function OrgFixturesPage() {
   };
 
   const handleReset = async () => {
-    if (!window.confirm("Delete all fixtures? This cannot be undone.")) return;
+    if (
+      !(await confirm({
+        title: "Delete all fixtures?",
+        description: "This cannot be undone.",
+      }))
+    )
+      return;
     setResetting(true);
     setError("");
     try {
@@ -160,8 +170,9 @@ export default function OrgFixturesPage() {
       }
       setFixtures([]);
       prevFixturesRef.current = "";
+      toast.success("All fixtures deleted.");
     } catch {
-      setError("Failed to delete fixtures.");
+      setError("Failed to delete fixtures. Please try again.");
     } finally {
       setResetting(false);
     }
@@ -171,6 +182,7 @@ export default function OrgFixturesPage() {
 
   return (
     <div>
+      {confirmDialog}
       {error && (
         <div className="flex items-center gap-2 mb-4 px-4 py-3 bg-danger/10 text-danger text-sm rounded-lg border border-danger/20">
           <AlertCircle size={16} />

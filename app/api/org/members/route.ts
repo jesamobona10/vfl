@@ -57,7 +57,7 @@ export async function GET(request: Request) {
     return json({ members: members || [] });
   } catch (error) {
     logApiError("org_members_error", error);
-    return json({ error: "Internal server error." }, { status: 500 });
+    return json({ error: "Something went wrong. Please try again." }, { status: 500 });
   }
 }
 
@@ -195,7 +195,7 @@ export async function POST(request: Request) {
     return json({ success: true, message: "Member invited." });
   } catch (error) {
     logApiError("org_members_invite_error", error);
-    return json({ error: "Internal server error." }, { status: 500 });
+    return json({ error: "Something went wrong. Please try again." }, { status: 500 });
   }
 }
 
@@ -298,6 +298,6 @@ export async function DELETE(request: Request) {
     return json({ success: true });
   } catch (error) {
     logApiError("org_members_remove_error", error);
-    return json({ error: "Internal server error." }, { status: 500 });
+    return json({ error: "Something went wrong. Please try again." }, { status: 500 });
   }
 }

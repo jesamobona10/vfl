@@ -56,7 +56,7 @@ export async function GET(
     return json({ season });
   } catch (error) {
     logApiError("org_season_get_error", error);
-    return json({ error: "Internal server error." }, { status: 500 });
+    return json({ error: "Something went wrong. Please try again." }, { status: 500 });
   }
 }
 
@@ -163,7 +163,7 @@ export async function PUT(
     return json({ season });
   } catch (error) {
     logApiError("org_season_update_error", error);
-    return json({ error: "Internal server error." }, { status: 500 });
+    return json({ error: "Something went wrong. Please try again." }, { status: 500 });
   }
 }
 
@@ -217,6 +217,6 @@ export async function DELETE(
     return json({ success: true });
   } catch (error) {
     logApiError("org_season_delete_error", error);
-    return json({ error: "Internal server error." }, { status: 500 });
+    return json({ error: "Something went wrong. Please try again." }, { status: 500 });
   }
 }

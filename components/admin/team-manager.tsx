@@ -3,6 +3,9 @@
 import { useState, useEffect, useCallback } from "react";
 import { Users, Plus, Edit2, Trash2, X, Check, AlertCircle, Building2 } from "lucide-react";
 import { SkeletonTable } from "@/components/shared/skeleton";
+import { ErrorBanner } from "@/components/shared/error-banner";
+import { useToast } from "@/components/ui/toast";
+import { useConfirm } from "@/components/shared/confirm-dialog";
 
 interface TeamRow {
   id: number;
@@ -22,6 +25,8 @@ interface OrgSummary {
 }
 
 export function AdminTeamManager() {
+  const toast = useToast();
+  const { confirm, dialog: confirmDialog } = useConfirm();
   const [teams, setTeams] = useState<TeamRow[]>([]);
   const [orgs, setOrgs] = useState<OrgSummary[]>([]);
   const [loading, setLoading] = useState(true);
@@ -103,7 +108,12 @@ export function AdminTeamManager() {
   };
 
   const handleDelete = async (team: TeamRow) => {
-    if (!confirm(`Delete "${team.name}" and all associated players, fixtures, and accounts?`))
+    if (
+      !(await confirm({
+        title: `Delete "${team.name}"?`,
+        description: "All associated players, fixtures, and team accounts will also be deleted. This cannot be undone.",
+      }))
+    )
       return;
     try {
       const res = await fetch(`/api/admin/teams/${team.id}`, { method: "DELETE" });
@@ -112,9 +122,10 @@ export function AdminTeamManager() {
         setError(d.error || "Delete failed.");
         return;
       }
+      toast.success(`Team "${team.name}" deleted.`);
       fetchTeams();
     } catch {
-      setError("Failed to delete.");
+      setError("Failed to delete team. Please try again.");
     }
   };
 
@@ -124,6 +135,7 @@ export function AdminTeamManager() {
 
   return (
     <div className="space-y-4">
+      {confirmDialog}
       <div className="flex items-center justify-between">
         <h3 className="text-lg font-bold">Teams</h3>
         <button
@@ -153,14 +165,7 @@ export function AdminTeamManager() {
         <span className="text-xs text-muted">{teams.length} team(s)</span>
       </div>
 
-      {error && (
-        <div className="flex items-center gap-2 text-sm text-danger bg-danger/10 rounded-lg px-4 py-3">
-          <AlertCircle size={16} /> {error}
-          <button onClick={() => setError("")} className="ml-auto">
-            <X size={14} />
-          </button>
-        </div>
-      )}
+      <ErrorBanner message={error} onDismiss={() => setError("")} />
 
       {showForm && (
         <form onSubmit={handleSubmit} className="card p-4 space-y-3 border-l-4 border-l-brand">

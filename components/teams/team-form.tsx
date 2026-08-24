@@ -7,9 +7,11 @@ import { useOrg } from "@/lib/hooks/use-org";
 import { TeamCard } from "./team-card";
 import { RotateCcw, AlertCircle, Plus, Trash2, Shield } from "lucide-react";
 import { SkeletonForm } from "@/components/shared/skeleton";
+import { useConfirm } from "@/components/shared/confirm-dialog";
 import type { Team } from "@/lib/types";
 
 export function TeamForm() {
+  const { confirm, dialog: confirmDialog } = useConfirm();
   const params = useParams();
   const slug = params.slug as string;
   const { data: currentOrg } = useOrg(slug);
@@ -102,7 +104,13 @@ export function TeamForm() {
 
   const handleDelete = async (id: number) => {
     const name = teams.find((t) => t.id === id)?.name || "this team";
-    if (!confirm(`Delete ${name} and all its players? This cannot be undone.`)) return;
+    if (
+      !(await confirm({
+        title: `Delete ${name}?`,
+        description: "All of its players will also be removed. This cannot be undone.",
+      }))
+    )
+      return;
     setAdminError("");
 
     try {
@@ -122,18 +130,29 @@ export function TeamForm() {
     }
   };
 
-  const handleResetNames = () => {
+  const handleResetNames = async () => {
     if (
-      confirm("Reset all team names to defaults? This will also clear all fixtures and players.")
-    ) {
-      resetTeams();
-      setFixtures([]);
-      deleteAllPlayers();
-    }
+      !(await confirm({
+        title: "Reset all team names to defaults?",
+        description: "This will also clear all fixtures and players.",
+        confirmLabel: "Reset",
+      }))
+    )
+      return;
+    resetTeams();
+    setFixtures([]);
+    deleteAllPlayers();
   };
 
-  const handleResetAll = () => {
-    if (!confirm("Reset ALL data (teams, fixtures, players)? This cannot be undone.")) return;
+  const handleResetAll = async () => {
+    if (
+      !(await confirm({
+        title: "Reset ALL data?",
+        description: "Teams, fixtures, and players will be reset to defaults. This cannot be undone.",
+        confirmLabel: "Reset everything",
+      }))
+    )
+      return;
     resetTeams();
     setFixtures([]);
     deleteAllPlayers();
@@ -141,6 +160,7 @@ export function TeamForm() {
 
   return (
     <div className="space-y-5">
+      {confirmDialog}
       <div className="page-head">
         <div>
           <p className="page-title">Team Management</p>

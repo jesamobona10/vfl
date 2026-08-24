@@ -43,7 +43,7 @@ function guardFixture(
       }
       return null;
     })
-    .catch(() => ({ error: "Internal server error.", status: 500 }));
+    .catch(() => ({ error: "Something went wrong. Please try again.", status: 500 }));
 }
 
 export async function GET(
@@ -76,7 +76,7 @@ export async function GET(
     return json({ analysis });
   } catch (error) {
     logApiError("report_analysis_get_error", error);
-    return json({ error: "Internal server error." }, { status: 500 });
+    return json({ error: "Something went wrong. Please try again." }, { status: 500 });
   }
 }
 
@@ -181,6 +181,6 @@ export async function PATCH(
     });
   } catch (error) {
     logApiError("report_analysis_patch_error", error);
-    return json({ error: "Internal server error." }, { status: 500 });
+    return json({ error: "Something went wrong. Please try again." }, { status: 500 });
   }
 }

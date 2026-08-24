@@ -59,6 +59,6 @@ export async function GET() {
     });
   } catch (error) {
     logApiError("public_live_error", error);
-    return json({ error: "Internal server error." }, { status: 500 });
+    return json({ error: "Something went wrong. Please try again." }, { status: 500 });
   }
 }

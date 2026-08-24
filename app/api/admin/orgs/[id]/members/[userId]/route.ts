@@ -65,7 +65,7 @@ export async function PATCH(
     return json({ member: data });
   } catch (error) {
     logApiError("admin_org_member_update_error", error);
-    return json({ error: "Internal server error." }, { status: 500 });
+    return json({ error: "Something went wrong. Please try again." }, { status: 500 });
   }
 }
 
@@ -112,6 +112,6 @@ export async function DELETE(
     return json({ success: true });
   } catch (error) {
     logApiError("admin_org_member_delete_error", error);
-    return json({ error: "Internal server error." }, { status: 500 });
+    return json({ error: "Something went wrong. Please try again." }, { status: 500 });
   }
 }
