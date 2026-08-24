@@ -9,7 +9,14 @@
   --surface-2: 237, 242, 236; /* subtle fill */
   --text: 22, 33, 26; /* --ink #16211A */
   --muted: 91, 106, 93; /* --ink-2 #5B6A5D */
+  --ink-3: 147, 160, 146; /* #93A092 — faintest text tier */
   --line: 225, 232, 224; /* #E1E8E0 */
+
+  /* Elevation scale — the single source for all shadows (mapped in tailwind.config) */
+  --shadow-xs: 0 1px 2px rgba(22, 33, 26, 0.05);
+  --shadow-sm: 0 1px 3px rgba(22, 33, 26, 0.06), 0 1px 2px rgba(22, 33, 26, 0.04);
+  --shadow-md: 0 4px 12px rgba(22, 33, 26, 0.08);
+  --shadow-lg: 0 12px 32px rgba(22, 33, 26, 0.14);
 
   /* Brand green — brand-500 kept exactly, scale built around it */
   --brand: #0f7c45;
@@ -36,7 +43,23 @@
   /* Semantic aliases used by existing components */
   --accent: #d99a21;
   --danger: #c23b2e;
-  --shadow: 0 18px 45px rgba(23, 34, 27, 0.08);
+}
+
+/* Dark theme — flips the neutral tokens; brand/status colors carry over.
+   Tints (brand-50, gold-tint, etc.) become translucent so badges read on dark. */
+.dark {
+  --bg: 10, 15, 11; /* deep green-black */
+  --surface: 20, 27, 21;
+  --surface-2: 30, 39, 31;
+  --text: 232, 238, 231;
+  --muted: 154, 168, 155;
+  --ink-3: 110, 122, 112;
+  --line: 44, 55, 46;
+
+  --shadow-xs: 0 1px 2px rgba(0, 0, 0, 0.4);
+  --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.45), 0 1px 2px rgba(0, 0, 0, 0.35);
+  --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.5);
+  --shadow-lg: 0 12px 32px rgba(0, 0, 0, 0.6);
 }
 
 body {
@@ -87,6 +110,17 @@ body {
   }
   .card {
     @apply bg-surface rounded-xl shadow-sm border border-line;
+  }
+  /* Interactive-card affordance: quiet at rest, lifts on hover/focus.
+     Color+shadow only — no transforms, safe for cheap touch devices. */
+  .card-hover {
+    @apply transition-[box-shadow,border-color] duration-150 hover:shadow-md hover:border-brand-600/30;
+  }
+
+  /* Glass surface for floating layers only (modals, drawers, popovers, toasts).
+     Never applied to page-level panels — keeps data screens crisp and cheap. */
+  .glass-panel {
+    @apply bg-surface/85 backdrop-blur-md border border-line/70 shadow-lg;
   }
 
   /* Page head pattern (from the redesign mockup) */
@@ -208,6 +242,15 @@ body {
 @media (prefers-reduced-motion: reduce) {
   .animate-page-in {
     animation: none;
+  }
+}
+
+/* Users who opt out of transparency get solid glass panels. */
+@media (prefers-reduced-transparency: reduce) {
+  .glass-panel {
+    background: rgb(var(--surface));
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
   }
 }
 

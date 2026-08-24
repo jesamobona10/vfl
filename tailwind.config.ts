@@ -48,12 +48,18 @@ const config: Config = {
         line: "rgb(var(--line) / <alpha-value>)",
         bg: "rgb(var(--bg) / <alpha-value>)",
         ink: {
-          DEFAULT: "#16211A",
-          2: "#5B6A5D",
-          3: "#93A092",
+          DEFAULT: "rgb(var(--text) / <alpha-value>)",
+          2: "rgb(var(--muted) / <alpha-value>)",
+          3: "rgb(var(--ink-3, 147, 160, 146) / <alpha-value>)",
         },
         page: "rgb(var(--bg) / <alpha-value>)",
         panel: "rgb(var(--surface) / <alpha-value>)",
+      },
+      boxShadow: {
+        xs: "var(--shadow-xs)",
+        sm: "var(--shadow-sm)",
+        md: "var(--shadow-md)",
+        lg: "var(--shadow-lg)",
       },
       fontFamily: {
         sans: [

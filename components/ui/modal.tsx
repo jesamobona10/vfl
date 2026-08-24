@@ -102,9 +102,9 @@ export function Modal({ open, onClose, title, subtitle, children, headerActions,
         aria-modal="true"
         aria-label={title}
         tabIndex={-1}
-        className={cn("card w-full max-w-lg max-h-[90vh] overflow-y-auto outline-none", className)}
+        className={cn("glass-panel rounded-xl w-full max-w-lg max-h-[90vh] overflow-y-auto outline-none", className)}
       >
-        <div className="sticky top-0 z-10 flex items-center justify-between gap-3 border-b border-line bg-surface px-5 py-3.5">
+        <div className="sticky top-0 z-10 flex items-center justify-between gap-3 border-b border-line bg-surface/70 backdrop-blur-sm px-5 py-3.5">
           <div className="min-w-0">
             <h2 className="text-[15px] font-semibold truncate">{title}</h2>
             {subtitle && <p className="text-xs text-muted truncate">{subtitle}</p>}
@@ -118,7 +118,7 @@ export function Modal({ open, onClose, title, subtitle, children, headerActions,
         </div>
         <div className="p-5">{children}</div>
         {footer && (
-          <div className="sticky bottom-0 border-t border-line bg-surface px-5 py-3">{footer}</div>
+          <div className="sticky bottom-0 border-t border-line bg-surface/70 backdrop-blur-sm px-5 py-3">{footer}</div>
         )}
       </div>
     </div>,

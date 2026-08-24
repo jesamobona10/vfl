@@ -36,15 +36,15 @@ const AUTO_DISMISS_MS = 5000;
 
 const VARIANT_STYLES: Record<ToastVariant, { container: string; icon: string }> = {
   success: {
-    container: "border-brand-600/30 bg-surface",
+    container: "border-brand-600/30 glass-panel",
     icon: "bg-brand-600 text-white",
   },
   error: {
-    container: "border-danger/40 bg-surface",
+    container: "border-danger/40 glass-panel",
     icon: "bg-danger text-white",
   },
   info: {
-    container: "border-line bg-surface",
+    container: "border-line glass-panel",
     icon: "bg-ink-600 text-white",
   },
 };

@@ -141,7 +141,7 @@ function AuditRow({ log }: { log: AuditLog }) {
             role="dialog"
             aria-modal="true"
             aria-label={log.label || log.action}
-            className="absolute right-0 top-0 h-full w-full max-w-md bg-surface shadow-2xl flex flex-col"
+            className="absolute right-0 top-0 h-full w-full max-w-md glass-panel rounded-none shadow-none border-y-0 border-r-0 flex flex-col"
           >
             <div className="flex items-center justify-between px-5 py-4 border-b border-line">
               <div>

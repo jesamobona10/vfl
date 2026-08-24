@@ -77,7 +77,7 @@ export function useConfirm() {
               aria-modal="true"
               aria-labelledby="confirm-title"
               aria-describedby={options.description ? "confirm-description" : undefined}
-              className="card w-full max-w-sm p-5"
+              className="glass-panel rounded-xl w-full max-w-sm p-5"
               onKeyDown={(e) => {
                 if (e.key === "Tab") {
                   // rudimentary focus trap between the two buttons
