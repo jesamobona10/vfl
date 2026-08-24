@@ -91,7 +91,10 @@ body {
 
   /* Page head pattern (from the redesign mockup) */
   .page-head {
-    @apply flex items-end justify-between;
+    @apply flex flex-wrap items-end justify-between gap-3;
+  }
+  .page-head > :first-child {
+    @apply min-w-0;
   }
   .page-title {
     @apply text-[19px] font-semibold tracking-[-0.01em];

@@ -323,11 +323,11 @@ export function CompManager() {
         </button>
       </div>
 
-      <div className="flex items-center gap-2">
+      <div className="flex flex-wrap items-center gap-2">
         <select
           value={filterOrg}
           onChange={(e) => setFilterOrg(e.target.value)}
-          className="input text-sm w-auto"
+          className="input text-sm w-auto max-w-full min-w-0 flex-1 sm:flex-none"
         >
           <option value="">All Organizations</option>
           {orgs.map((o) => (
@@ -346,7 +346,7 @@ export function CompManager() {
           <h4 className="text-sm font-semibold text-muted uppercase">
             {editingComp ? "Edit" : "Create"} Competition
           </h4>
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
             <input
               value={formName}
               onChange={(e) => setFormName(e.target.value)}
@@ -577,7 +577,7 @@ export function CompManager() {
       ) : (
         <div className="space-y-1">
           {comps.map((comp) => (
-            <div key={comp.id} className="card px-4 py-2.5 flex items-center gap-3 text-sm">
+            <div key={comp.id} className="card px-4 py-2.5 flex flex-wrap items-center gap-x-3 gap-y-1.5 text-sm">
               {comp.logo_url ? (
                 <img
                   src={comp.logo_url}
@@ -587,21 +587,21 @@ export function CompManager() {
               ) : (
                 <Trophy size={16} className="text-muted shrink-0" />
               )}
-              <span className="font-medium flex-1">{comp.name}</span>
-              <span className="text-xs text-muted w-28 truncate">
+              <span className="font-medium flex-1 min-w-[120px] truncate">{comp.name}</span>
+              <span className="text-xs text-muted max-w-[140px] truncate">
                 <Building2 size={12} className="inline mr-1" />
                 {comp.organizations?.name || "—"}
               </span>
-              <span className="text-xs capitalize text-muted w-16">{comp.type}</span>
-              <span className={`text-xs capitalize ${statusColor(comp.status)} w-16`}>
+              <span className="text-xs capitalize text-muted whitespace-nowrap">{comp.type}</span>
+              <span className={`text-xs capitalize ${statusColor(comp.status)} whitespace-nowrap`}>
                 {comp.status}
               </span>
-              <span className="text-xs text-muted">{comp.season || "—"}</span>
-              <span className="text-xs text-muted flex items-center gap-1">
+              <span className="text-xs text-muted whitespace-nowrap">{comp.season || "—"}</span>
+              <span className="text-xs text-muted flex items-center gap-1 whitespace-nowrap">
                 <Calendar size={10} />
                 {comp.fixtureCount}
               </span>
-              <span className="text-xs text-muted flex items-center gap-1">
+              <span className="text-xs text-muted flex items-center gap-1 whitespace-nowrap">
                 <Swords size={10} />
                 {comp.cupMatchCount}
               </span>

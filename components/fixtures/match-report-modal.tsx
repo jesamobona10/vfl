@@ -351,9 +351,9 @@ export function MatchReportModal({
 
                     return (
                       <div key={i} className="rounded-xl border border-line p-4 space-y-3">
-                        <div className="flex items-center gap-2">
+                        <div className="flex flex-wrap items-center gap-2">
                           <span
-                            className={`w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold ${meta.color}`}
+                            className={`w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold shrink-0 ${meta.color}`}
                           >
                             {meta.abbr}
                           </span>
@@ -368,7 +368,7 @@ export function MatchReportModal({
                                 assistStatus: "NONE",
                               });
                             }}
-                            className="input text-xs w-auto font-semibold uppercase"
+                            className="input text-xs w-auto flex-1 min-w-[120px] font-semibold uppercase"
                           >
                             {EVENT_TYPES.map((t) => (
                               <option key={t} value={t}>

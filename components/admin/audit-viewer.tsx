@@ -84,9 +84,9 @@ function ChangesList({
         return (
           <div key={key} className="text-xs border-b border-line pb-2">
             <div className="font-medium capitalize mb-1">{titleCase(key.replace(/_/g, " "))}</div>
-            <div className="flex justify-between gap-4">
-              <span className="text-ink-3">Before: {render(b)}</span>
-              <span className="text-ink-1">After: {render(a)}</span>
+            <div className="flex flex-col sm:flex-row sm:justify-between gap-1 sm:gap-4">
+              <span className="text-ink-3 break-words min-w-0">Before: {render(b)}</span>
+              <span className="text-ink-1 break-words min-w-0">After: {render(a)}</span>
             </div>
           </div>
         );
@@ -110,16 +110,16 @@ function AuditRow({ log }: { log: AuditLog }) {
     <>
       <button
         type="button"
-        className="card px-4 py-2.5 flex items-center gap-3 text-xs cursor-pointer hover:bg-surface-2/40 w-full text-left"
+        className="card px-4 py-2.5 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs cursor-pointer hover:bg-surface-2/40 w-full text-left"
         onClick={() => setOpen(true)}
       >
         <Shield size={14} className="text-muted shrink-0" />
-        <span className="font-medium w-44 truncate">
+        <span className="font-medium max-w-[160px] truncate">
           {log.actor?.label || log.actor_role || "Unknown"}
         </span>
-        <span className="font-medium w-36">{log.label || log.action}</span>
-        <span className="text-muted w-40 truncate">{log.description || "—"}</span>
-        <span className="text-muted w-24">
+        <span className="font-medium max-w-[140px] truncate">{log.label || log.action}</span>
+        <span className="text-muted min-w-0 flex-1 basis-40 truncate">{log.description || "—"}</span>
+        <span className="text-muted whitespace-nowrap">
           {new Date(log.created_at).toLocaleDateString()}{" "}
           {new Date(log.created_at).toLocaleTimeString([], {
             hour: "2-digit",
@@ -245,11 +245,11 @@ export function AuditViewer() {
         </p>
       </div>
 
-      <div className="flex items-center gap-2">
+      <div className="flex flex-wrap items-center gap-2">
         <select
           value={actionFilter}
           onChange={(e) => setActionFilter(e.target.value)}
-          className="input text-sm w-auto"
+          className="input text-sm w-auto max-w-full min-w-0 flex-1 sm:flex-none"
         >
           {ACTION_FILTERS.map((o) => (
             <option key={o.value} value={o.value}>
@@ -304,12 +304,12 @@ export function AuditViewer() {
           <h4 className="text-sm font-semibold text-muted uppercase mb-2">Credential Generation</h4>
           <div className="space-y-1">
             {credLogs.map((log) => (
-              <div key={log.id} className="card px-4 py-2.5 flex items-center gap-3 text-xs">
-                <span className="font-mono text-muted w-32 truncate">{log.generated_by}</span>
+              <div key={log.id} className="card px-4 py-2.5 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs">
+                <span className="font-mono text-muted max-w-[140px] truncate">{log.generated_by}</span>
                 <span className="text-muted">Team #{log.team_id}</span>
                 <span className="text-muted capitalize">{log.scope}</span>
                 <span className="text-muted">{log.players_affected} player(s)</span>
-                <span className="text-muted">{new Date(log.created_at).toLocaleString()}</span>
+                <span className="text-muted whitespace-nowrap">{new Date(log.created_at).toLocaleString()}</span>
               </div>
             ))}
           </div>

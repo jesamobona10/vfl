@@ -434,11 +434,11 @@ export function OrgManager() {
                   </div>
 
                   {memberFormOrgId === org.id && (
-                    <div className="flex items-center gap-2">
+                    <div className="flex flex-wrap items-center gap-2">
                       <input
                         value={memberUserId}
                         onChange={(e) => setMemberUserId(e.target.value)}
-                        className="input text-xs flex-1"
+                        className="input text-xs flex-1 min-w-[140px]"
                         placeholder="User ID (UUID)"
                       />
                       <select

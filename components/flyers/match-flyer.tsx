@@ -23,12 +23,14 @@ const INITIALS_CSS = `
     height: 100%;
     z-index: 9999;
     display: flex;
-    align-items: center;
-    justify-content: center;
     background: rgba(0,0,0,0.5);
+    overflow-y: auto;
+    padding: 24px 16px;
   }
   .flyer-card {
     width: 390px;
+    max-width: 100%;
+    margin: auto;
     background: white;
     border-radius: 16px;
     overflow: hidden;

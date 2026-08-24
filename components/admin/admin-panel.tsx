@@ -238,15 +238,15 @@ function FixtureManager() {
                           onClick={() =>
                             setExpandedMatch(expandedMatch === match.id ? null : match.id)
                           }
-                          className="w-full flex items-center gap-3 px-4 py-3 hover:bg-surface-2/50 transition-colors text-left"
+                          className="w-full flex flex-wrap items-center gap-x-3 gap-y-1.5 px-4 py-3 hover:bg-surface-2/50 transition-colors text-left"
                         >
                           {expandedMatch === match.id ? (
                             <ChevronDown size={14} className="shrink-0 text-muted" />
                           ) : (
                             <ChevronRight size={14} className="shrink-0 text-muted" />
                           )}
-                          <div className="flex-1 grid grid-cols-[1fr_auto_1fr] items-center gap-2">
-                            <div className="flex items-center gap-2 justify-end">
+                          <div className="flex-1 basis-full sm:basis-auto min-w-0 grid grid-cols-[1fr_auto_1fr] items-center gap-2">
+                            <div className="flex items-center gap-2 justify-end min-w-0">
                               {match.homeTeamLogo && (
                                 <img
                                   src={match.homeTeamLogo}
@@ -262,7 +262,7 @@ function FixtureManager() {
                               {match.homeScore != null ? match.homeScore : "-"} –{" "}
                               {match.awayScore != null ? match.awayScore : "-"}
                             </span>
-                            <div className="flex items-center gap-2">
+                            <div className="flex items-center gap-2 min-w-0">
                               <span className="text-sm font-semibold truncate">
                                 {match.awayTeamName}
                               </span>

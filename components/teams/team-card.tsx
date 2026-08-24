@@ -315,12 +315,12 @@ export function TeamCard({ team, index, isManaged, showAdmin, onDelete }: TeamCa
                                   return (
                                     <div
                                       key={roleLabel}
-                                      className="w-full flex justify-center gap-2"
+                                      className="w-full flex justify-center gap-2 overflow-x-auto"
                                     >
                                       <div
                                         className="w-full max-w-[520px] grid gap-2"
                                         style={{
-                                          gridTemplateColumns: `repeat(${count}, minmax(0, 1fr))`,
+                                          gridTemplateColumns: `repeat(${count}, minmax(48px, 1fr))`,
                                         }}
                                       >
                                         {cells.map((slot, idx) => {
@@ -345,7 +345,7 @@ export function TeamCard({ team, index, isManaged, showAdmin, onDelete }: TeamCa
                                               key={slot ? slot.slotId : `empty-${roleLabel}-${idx}`}
                                               className="flex flex-col items-center text-center"
                                             >
-                                              <div className="w-12 h-12 rounded-full bg-surface/90 flex items-center justify-center text-xs font-semibold text-text ring-1 ring-line">
+                                              <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-full bg-surface/90 flex items-center justify-center text-xs font-semibold text-text ring-1 ring-line">
                                                 <div>
                                                   <div className="text-sm">
                                                     {player ? player.number : ""}
@@ -353,7 +353,7 @@ export function TeamCard({ team, index, isManaged, showAdmin, onDelete }: TeamCa
                                                   <div className="text-xs">{initials}</div>
                                                 </div>
                                               </div>
-                                              <div className="text-xs text-white/90 mt-1 truncate max-w-[90px]">
+                                              <div className="text-xs text-white/90 mt-1 truncate w-full max-w-[90px]">
                                                 {player ? player.name : slot ? slot.label : "Empty"}
                                               </div>
                                             </div>

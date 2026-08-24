@@ -149,11 +149,11 @@ export function AdminTeamManager() {
         </button>
       </div>
 
-      <div className="flex items-center gap-2">
+      <div className="flex flex-wrap items-center gap-2">
         <select
           value={filterOrg}
           onChange={(e) => setFilterOrg(e.target.value)}
-          className="input text-sm w-auto"
+          className="input text-sm w-auto max-w-full min-w-0 flex-1 sm:flex-none"
         >
           <option value="">All Organizations</option>
           {orgs.map((o) => (
@@ -229,7 +229,7 @@ export function AdminTeamManager() {
       ) : (
         <div className="space-y-1">
           {filteredTeams.map((team) => (
-            <div key={team.id} className="card px-4 py-2.5 flex items-center gap-3 text-sm">
+            <div key={team.id} className="card px-4 py-2.5 flex flex-wrap items-center gap-x-3 gap-y-1.5 text-sm">
               {team.logo_url ? (
                 <img
                   src={team.logo_url}
@@ -239,13 +239,13 @@ export function AdminTeamManager() {
               ) : (
                 <Users size={16} className="text-muted shrink-0" />
               )}
-              <span className="font-medium flex-1">{team.name}</span>
-              <span className="text-xs text-muted w-32 truncate">
+              <span className="font-medium flex-1 min-w-[120px] truncate">{team.name}</span>
+              <span className="text-xs text-muted max-w-[160px] truncate">
                 <Building2 size={12} className="inline mr-1" />
                 {team.organizations?.name || "—"}
               </span>
-              <span className="text-xs text-muted w-16">★ {team.rating}</span>
-              <span className="text-xs text-muted w-16">{team.playerCount} players</span>
+              <span className="text-xs text-muted whitespace-nowrap">★ {team.rating}</span>
+              <span className="text-xs text-muted whitespace-nowrap">{team.playerCount} players</span>
               <button onClick={() => openEdit(team)} className="btn-ghost text-xs">
                 <Edit2 size={12} />
               </button>

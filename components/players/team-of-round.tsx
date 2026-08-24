@@ -184,10 +184,11 @@ function FormationRow({ label, players, count }: { label: string; players: any[]
           {players.length}/{count}
         </p>
       </div>
-      <div
-        className="grid gap-3"
-        style={{ gridTemplateColumns: `repeat(${count}, minmax(0, 1fr))` }}
-      >
+      <div className="overflow-x-auto -mx-1 px-1 pb-1">
+        <div
+          className="grid gap-3"
+          style={{ gridTemplateColumns: `repeat(${count}, minmax(88px, 1fr))` }}
+        >
         {Array.from({ length: count }).map((_, index) => {
           const player = players[index];
           return (
@@ -210,6 +211,7 @@ function FormationRow({ label, players, count }: { label: string; players: any[]
             </div>
           );
         })}
+        </div>
       </div>
     </div>
   );

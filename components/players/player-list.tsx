@@ -148,7 +148,7 @@ export function PlayerList() {
     <div>
       {confirmDialog}
       <div className="flex flex-wrap items-center justify-between gap-3 mb-6">
-        <div className="flex items-center gap-2">
+        <div className="flex flex-wrap items-center gap-2 min-w-0">
           <button onClick={openAdd} className="btn-primary">
             <Plus size={16} />
             Add Player

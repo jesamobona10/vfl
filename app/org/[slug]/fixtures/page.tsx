@@ -191,12 +191,12 @@ export default function OrgFixturesPage() {
       )}
 
       {isAdmin && comps.length > 0 && (
-        <div className="flex items-center gap-3 mb-4">
+        <div className="flex flex-wrap items-center gap-3 mb-4">
           <label className="text-sm text-muted whitespace-nowrap">Competition:</label>
           <select
             value={selectedCompId}
             onChange={(e) => setSelectedCompId(e.target.value)}
-            className="input text-sm max-w-xs"
+            className="input text-sm sm:max-w-xs min-w-0 flex-1 sm:flex-none"
           >
             <option value="">All teams (no competition)</option>
             {comps.map((c) => (
@@ -209,7 +209,7 @@ export default function OrgFixturesPage() {
       )}
 
       {isAdmin && hasFixtures && (
-        <div className="flex items-center justify-between gap-2 mb-4">
+        <div className="flex flex-wrap items-center justify-between gap-2 mb-4">
           <button
             onClick={handleReset}
             disabled={resetting}
