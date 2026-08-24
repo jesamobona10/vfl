@@ -97,7 +97,7 @@ export default function LandingPage() {
             <button
               key={type}
               onClick={() => router.push(`/auth/register?type=${type}`)}
-              className="card p-6 text-left hover:border-brand transition-colors group"
+              className="card card-hover p-6 text-left group"
             >
               <div className={`w-12 h-12 rounded-full ${bg} flex items-center justify-center mb-4`}>
                 <Icon size={24} className={color} />

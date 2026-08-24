@@ -94,7 +94,7 @@ export function PlayerCard({ player, teamName, onEdit, onDelete }: PlayerCardPro
   };
 
   return (
-    <div className="card overflow-hidden border border-line shadow-sm transition-shadow duration-150 hover:shadow-md">
+    <div className="card overflow-hidden card-hover">
       <button
         onClick={() => setExpanded(!expanded)}
         className="w-full text-left focus:outline-none"

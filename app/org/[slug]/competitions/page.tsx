@@ -116,7 +116,7 @@ export default function CompetitionsPage() {
                 <div key={comp.id} className="relative group">
                   <a
                     href={`/org/${slug}/competitions/${comp.id}`}
-                    className="card p-4 hover:border-brand/50 transition-colors block"
+                    className="card card-hover p-4 block"
                   >
                     <div className="flex items-start justify-between mb-3">
                       <div className="flex items-center gap-2 text-ink-2">

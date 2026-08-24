@@ -20,7 +20,6 @@ export function TeamCard({ team, index, isManaged, showAdmin, onDelete }: TeamCa
   const players = useAppStore((s) => s.players);
   const [name, setName] = useState(team.name);
   const [rating, setRating] = useState(team.rating.toFixed(1));
-  const [isHovered, setIsHovered] = useState(false);
 
   useEffect(() => {
     setName(team.name);
@@ -128,14 +127,7 @@ export function TeamCard({ team, index, isManaged, showAdmin, onDelete }: TeamCa
   };
 
   return (
-    <div
-      className="card p-0 overflow-hidden transition-all duration-200"
-      style={{
-        boxShadow: isHovered ? "0 4px 12px rgba(0,0,0,0.08)" : undefined,
-      }}
-      onMouseEnter={() => setIsHovered(true)}
-      onMouseLeave={() => setIsHovered(false)}
-    >
+    <div className="card card-hover p-0 overflow-hidden">
       <div className="bg-surface-2 px-4 py-2.5 flex items-center justify-between border-b border-line">
         <span className="text-xs font-semibold text-muted uppercase tracking-wider">
           {isManaged ? "Your Team" : `Team ${index + 1}`}

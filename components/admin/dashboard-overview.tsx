@@ -50,25 +50,26 @@ export function DashboardOverview() {
   return (
     <div>
       <h3 className="text-lg font-bold mb-4">Platform Overview</h3>
-      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3">
-        {cards.map((card) => {
-          const Icon = card.icon;
-          return (
-            <div key={card.label} className="card p-4">
-              <div className="flex items-center gap-2 mb-2 min-w-0">
-                <Icon size={18} className={`${card.color} shrink-0`} />
-                <span className="text-xs text-muted uppercase tracking-wider truncate">
-                  {card.label}
-                </span>
+      <div className="grid gap-3 lg:grid-cols-[1.15fr_1fr] items-start">
+        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-2 gap-3">
+          {cards.map((card) => {
+            const Icon = card.icon;
+            return (
+              <div key={card.label} className="card p-4">
+                <div className="flex items-center gap-2 mb-2 min-w-0">
+                  <Icon size={18} className={`${card.color} shrink-0`} />
+                  <span className="text-xs text-muted uppercase tracking-wider truncate">
+                    {card.label}
+                  </span>
+                </div>
+                <p className="text-2xl font-bold">{card.value}</p>
               </div>
-              <p className="text-2xl font-bold">{card.value}</p>
-            </div>
-          );
-        })}
-      </div>
-
-      <div className="mt-6">
-        <CalendarView />
+            );
+          })}
+        </div>
+        <div>
+          <CalendarView />
+        </div>
       </div>
     </div>
   );

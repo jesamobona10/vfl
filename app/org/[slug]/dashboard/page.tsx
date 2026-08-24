@@ -263,7 +263,7 @@ export default function OrgDashboardPage() {
             fixtureCount={fixtures.length}
           />
 
-          <MetricCards />
+          <MetricCards fixtureHref={`/org/${slug}/fixtures`} />
 
           <div className="grid grid-cols-1 xl:grid-cols-[1.3fr_1fr] gap-4">
             <UpcomingMatches />

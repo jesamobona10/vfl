@@ -200,9 +200,9 @@ export function FixtureCard({
     <>
       <article
         onClick={() => setShowFlyer(true)}
-        className={`flex flex-col gap-3 px-4 py-4 rounded-xl border transition-all cursor-pointer ${
+        className={`card-hover flex flex-col gap-3 px-4 py-4 rounded-xl border cursor-pointer ${
           editable
-            ? "border-line bg-surface hover:border-brand/30 hover:bg-surface-2/30 hover:shadow-sm"
+            ? "border-line bg-surface hover:bg-surface-2/30"
             : "border-line bg-surface"
         }`}
       >
