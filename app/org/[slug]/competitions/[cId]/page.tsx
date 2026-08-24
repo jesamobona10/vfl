@@ -75,7 +75,7 @@ export default function CompetitionOverviewPage() {
       </div>
 
       {seasons.length === 0 ? (
-        <div className="card p-12 text-center">
+        <div className="card p-8 sm:p-12 text-center">
           <Trophy size={48} className="mx-auto text-ink-3/40 mb-4" />
           <h2 className="text-lg font-semibold mb-1">No seasons yet</h2>
           <p className="text-sm text-muted mb-6">
@@ -91,7 +91,7 @@ export default function CompetitionOverviewPage() {
       ) : (
         <div className="grid gap-6 lg:grid-cols-3">
           <div className="lg:col-span-2 card p-6">
-            <div className="flex items-center justify-between mb-4">
+            <div className="flex flex-wrap items-center justify-between gap-2 mb-4">
               <h2 className="text-lg font-semibold">Standings — {currentSeason?.name}</h2>
               <Link
                 href={`${basePath}/standings${seasonQuery}`}
@@ -115,9 +115,9 @@ export default function CompetitionOverviewPage() {
                     : "border-line hover:border-brand/30"
                 }`}
               >
-                <span className="text-sm font-medium">{s.name}</span>
+                <span className="text-sm font-medium min-w-0 truncate">{s.name}</span>
                 {s.is_current && (
-                  <span className="text-xs font-medium px-2 py-0.5 rounded-full bg-brand-50 text-brand-700">
+                  <span className="text-xs font-medium px-2 py-0.5 rounded-full bg-brand-50 text-brand-700 shrink-0 ml-2">
                     Current
                   </span>
                 )}

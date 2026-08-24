@@ -177,7 +177,7 @@ export default function CompTeamsPage() {
       ) : (
         <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
           {seasonTeams.map((st: any) => (
-            <div key={st.id} className="card p-4 flex items-start justify-between gap-3">
+            <div key={st.id} className="card p-4 flex items-start justify-between gap-3 group">
               <div className="flex items-center gap-3 min-w-0">
                 {st.team?.logo_url || st.logo_url ? (
                   <img
@@ -200,7 +200,7 @@ export default function CompTeamsPage() {
               <button
                 onClick={() => handleUnregister(st)}
                 disabled={deleteMutation.isPending}
-                className="text-danger opacity-0 group-hover:opacity-100 hover:opacity-100 transition-opacity shrink-0"
+                className="text-danger opacity-100 md:opacity-0 md:group-hover:opacity-100 md:group-focus-within:opacity-100 transition-opacity shrink-0"
                 title="Unregister team"
               >
                 <X size={15} />

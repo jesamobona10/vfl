@@ -133,7 +133,7 @@ export function MatchEditor() {
                     <span className="text-sm font-semibold truncate">{home?.name || "?"}</span>
                   </div>
 
-                  <div className="flex items-center gap-4">
+                  <div className="flex items-center gap-2 sm:gap-4 shrink-0">
                     <input
                       type="number"
                       min={0}
@@ -141,9 +141,9 @@ export function MatchEditor() {
                       value={match.homeScore ?? ""}
                       onChange={(e) => handleFieldChange(match.id, "homeScore", e.target.value)}
                       onClick={(e) => e.stopPropagation()}
-                      className="input w-16 text-2xl font-bold text-center py-1"
+                      className="input w-12 sm:w-16 text-xl sm:text-2xl font-bold text-center py-1"
                     />
-                    <span className="text-2xl font-bold text-muted">-</span>
+                    <span className="text-xl sm:text-2xl font-bold text-muted">-</span>
                     <input
                       type="number"
                       min={0}
@@ -151,7 +151,7 @@ export function MatchEditor() {
                       value={match.awayScore ?? ""}
                       onChange={(e) => handleFieldChange(match.id, "awayScore", e.target.value)}
                       onClick={(e) => e.stopPropagation()}
-                      className="input w-16 text-2xl font-bold text-center py-1"
+                      className="input w-12 sm:w-16 text-xl sm:text-2xl font-bold text-center py-1"
                     />
                   </div>
 

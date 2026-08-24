@@ -147,11 +147,11 @@ export function TeamOfRound() {
       </div>
 
       {!roundNum ? (
-        <div className="card p-8 text-center text-muted">
+        <div className="card p-5 sm:p-8 text-center text-muted">
           <p>Select a round to view Team of the Round.</p>
         </div>
       ) : (
-        <div className="card p-6 space-y-6">
+        <div className="card p-4 sm:p-6 space-y-6">
           <div>
             <h3 className="text-lg font-bold mb-2 text-center">Team of Round {roundNum}</h3>
             <p className="text-sm text-center text-muted">

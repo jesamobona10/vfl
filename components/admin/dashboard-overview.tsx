@@ -55,9 +55,11 @@ export function DashboardOverview() {
           const Icon = card.icon;
           return (
             <div key={card.label} className="card p-4">
-              <div className="flex items-center gap-2 mb-2">
-                <Icon size={18} className={card.color} />
-                <span className="text-xs text-muted uppercase tracking-wider">{card.label}</span>
+              <div className="flex items-center gap-2 mb-2 min-w-0">
+                <Icon size={18} className={`${card.color} shrink-0`} />
+                <span className="text-xs text-muted uppercase tracking-wider truncate">
+                  {card.label}
+                </span>
               </div>
               <p className="text-2xl font-bold">{card.value}</p>
             </div>

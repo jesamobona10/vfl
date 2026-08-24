@@ -88,7 +88,7 @@ export default function CompetitionsPage() {
       </div>
 
       {competitions.length === 0 ? (
-        <div className="panel p-12 text-center">
+        <div className="panel p-8 sm:p-12 text-center">
           <Trophy size={48} className="mx-auto text-ink-3/40 mb-4" />
           <h2 className="text-lg font-semibold mb-1">No competitions yet</h2>
           <p className="text-sm text-ink-2 max-w-md mx-auto mb-6">
@@ -141,7 +141,7 @@ export default function CompetitionsPage() {
                   <button
                     onClick={() => handleDelete(comp)}
                     disabled={deletingId === comp.id}
-                    className="btn-icon absolute top-2 right-2 text-danger opacity-0 group-hover:opacity-100 hover:opacity-100 transition-opacity"
+                    className="btn-icon absolute top-2 right-2 text-danger opacity-100 md:opacity-0 md:group-hover:opacity-100 md:group-focus-within:opacity-100 transition-opacity"
                     title="Delete competition"
                   >
                     {deletingId === comp.id ? (

@@ -104,7 +104,7 @@ export default function LandingPage() {
               </div>
               <h3 className="font-bold text-lg text-text">{label}</h3>
               <p className="text-sm text-muted mt-1">{desc}</p>
-              <div className="flex items-center gap-1 text-sm font-medium text-brand mt-4 opacity-0 group-hover:opacity-100 transition-opacity">
+              <div className="flex items-center gap-1 text-sm font-medium text-brand mt-4 opacity-100 md:opacity-0 md:group-hover:opacity-100 md:group-focus-visible:opacity-100 transition-opacity">
                 Get started <ArrowRight size={14} />
               </div>
             </button>

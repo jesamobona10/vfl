@@ -375,7 +375,7 @@ export default function OrgAuditLogsPage() {
           )}
         </div>
       ) : (
-        <div className="panel p-8 text-center text-ink-2">
+        <div className="panel p-5 sm:p-8 text-center text-ink-2">
           <ScrollText size={32} className="mx-auto text-ink-3/40 mb-3" />
           <p>No audit events found.</p>
           <p className="text-sm text-ink-3 mt-1">

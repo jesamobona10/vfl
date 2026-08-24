@@ -28,7 +28,13 @@ export function MobileNavDrawer({ items, footer, isOpen, onClose }: MobileNavDra
       if (e.key === "Escape") onClose();
     };
     window.addEventListener("keydown", handler);
-    return () => window.removeEventListener("keydown", handler);
+    const { overflow, touchAction } = document.body.style;
+    document.body.style.overflow = "hidden";
+    return () => {
+      window.removeEventListener("keydown", handler);
+      document.body.style.overflow = overflow;
+      document.body.style.touchAction = touchAction;
+    };
   }, [isOpen, onClose]);
 
   const lastPathname = useRef(pathname);

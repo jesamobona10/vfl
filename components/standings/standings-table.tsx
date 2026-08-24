@@ -127,7 +127,7 @@ export function StandingsTable() {
 
   if (!standings.length) {
     return (
-      <div className="card p-8 text-center text-muted">
+      <div className="card p-5 sm:p-8 text-center text-muted">
         <p>No teams to display.</p>
       </div>
     );
@@ -196,7 +196,7 @@ export function StandingsTable() {
                 key={team.id}
                 className="border-b border-line/50 last:border-0 hover:bg-surface-2/40 transition-colors"
               >
-                <td className="px-5 py-3 font-bold sticky left-0 bg-panel w-12">
+                <td className="px-4 py-3 font-bold sticky left-0 bg-panel w-12">
                   {index === 0 ? (
                     <span className="inline-flex items-center justify-center gap-1 text-gold-700">
                       <Crown size={15} className="fill-gold-500 text-gold-500" />
@@ -205,7 +205,7 @@ export function StandingsTable() {
                     index + 1
                   )}
                 </td>
-                <td className="px-5 py-3 font-medium sticky left-12 bg-panel">
+                <td className="px-4 py-3 font-medium sticky left-12 bg-panel">
                   <span className="flex items-center gap-2">
                     {(() => {
                       const t = teams.find((tt) => tt.id === team.id);

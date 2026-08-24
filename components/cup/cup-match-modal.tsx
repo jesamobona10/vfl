@@ -97,7 +97,7 @@ export function CupMatchModal({
           </div>
         </div>
 
-        <div className="flex items-center gap-2">
+        <div className="flex flex-wrap items-center gap-x-4 gap-y-2">
           <label className="flex items-center gap-2 text-sm text-muted cursor-pointer">
             <input
               type="checkbox"

@@ -25,7 +25,7 @@ export function UpcomingMatches() {
 
   if (!fixtures.length) {
     return (
-      <div className="panel p-6 text-center">
+      <div className="panel p-4 sm:p-6 text-center">
         <Calendar size={32} className="mx-auto text-ink-3/40 mb-3" />
         <p className="text-sm text-ink-2">Generate fixtures to see upcoming matches.</p>
       </div>
@@ -38,7 +38,7 @@ export function UpcomingMatches() {
 
   if (!nextRound) {
     return (
-      <div className="panel p-6 text-center">
+      <div className="panel p-4 sm:p-6 text-center">
         <p className="text-sm text-ink-2">All fixtures are completed.</p>
       </div>
     );

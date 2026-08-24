@@ -270,7 +270,7 @@ export function AddEventModal({
                 <p className="text-xs uppercase tracking-wider text-muted font-semibold mb-2">
                   {category.label}
                 </p>
-                <div className="grid grid-cols-2 gap-2">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                   {category.types.map((t) => {
                     const color = EVENT_COLOR[t.value] || "bg-muted/20 text-muted";
                     return (

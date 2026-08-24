@@ -140,7 +140,7 @@ export default function OrgTeamAccountsPage() {
       </div>
 
       {showForm && (
-        <div className="card p-6 mb-6 space-y-4 border-l-4 border-l-brand">
+        <div className="card p-4 sm:p-6 mb-6 space-y-4 border-l-4 border-l-brand">
           <h2 className="text-lg font-semibold flex items-center gap-2">
             <Key size={18} className="text-brand" />
             New Team Account
@@ -217,7 +217,7 @@ export default function OrgTeamAccountsPage() {
       )}
 
       {createdAccount && (
-        <div className="card p-6 mb-6 border border-live-500/30 bg-live-tint space-y-3">
+        <div className="card p-4 sm:p-6 mb-6 border border-live-500/30 bg-live-tint space-y-3">
           <h3 className="font-semibold flex items-center gap-2 text-live-500">
             <Check size={18} />
             Account Created
@@ -251,7 +251,7 @@ export default function OrgTeamAccountsPage() {
           <SkeletonList items={4} />
         </div>
       ) : accounts.length === 0 ? (
-        <div className="panel p-12 text-center text-ink-2">
+        <div className="panel p-8 sm:p-12 text-center text-ink-2">
           <UserCog size={48} className="mx-auto mb-4 text-ink-3/40" />
           <p className="text-lg font-medium">No team accounts yet</p>
           <p className="text-sm mt-1">Create accounts so teams can log in independently.</p>

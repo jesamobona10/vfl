@@ -225,7 +225,7 @@ export function TeamForm() {
           <SkeletonForm fields={4} />
         </div>
       ) : visibleTeams.length === 0 ? (
-        <div className="panel p-12 text-center text-ink-2">
+        <div className="panel p-8 sm:p-12 text-center text-ink-2">
           <Shield size={48} className="mx-auto mb-4 text-ink-3/40" />
           <p className="text-lg font-medium">No teams yet</p>
           <p className="text-sm mt-1">Add your first team to get started.</p>
