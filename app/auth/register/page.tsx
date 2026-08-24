@@ -139,8 +139,9 @@ export default function RegisterPage() {
               )}
 
               <div>
-                <label className="block text-sm font-medium mb-1">Organization Name</label>
+                <label htmlFor="register-org" className="block text-sm font-medium mb-1">Organization Name</label>
                 <input
+                  id="register-org"
                   type="text"
                   value={orgName}
                   onChange={(e) => setOrgName(e.target.value)}
@@ -151,8 +152,9 @@ export default function RegisterPage() {
               </div>
 
               <div>
-                <label className="block text-sm font-medium mb-1">Admin Email</label>
+                <label htmlFor="register-email" className="block text-sm font-medium mb-1">Admin Email</label>
                 <input
+                  id="register-email"
                   type="email"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
@@ -163,8 +165,9 @@ export default function RegisterPage() {
               </div>
 
               <div>
-                <label className="block text-sm font-medium mb-1">Password</label>
+                <label htmlFor="register-password" className="block text-sm font-medium mb-1">Password</label>
                 <input
+                  id="register-password"
                   type="password"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}

@@ -20,6 +20,13 @@ const tabs: SidebarItem[] = [
   { href: "/audit-logs", label: "Audit Logs", icon: ScrollText },
 ];
 
+/** Which nav sections each role may see. Org admins see everything. */
+const NAV_BY_ROLE: Record<string, string[]> = {
+  org_admin: ["/dashboard", "/competitions", "/standings", "/players", "/teams", "/team-accounts", "/audit-logs"],
+  team_account: ["/dashboard", "/standings", "/players"],
+  player: ["/dashboard", "/standings"],
+};
+
 export default function OrgLayout({ children }: { children: React.ReactNode }) {
   const params = useParams();
   const slug = params.slug as string;
@@ -38,10 +45,14 @@ export default function OrgLayout({ children }: { children: React.ReactNode }) {
           ? userProfile.orgRole
           : "Organization admin";
 
-  const items = tabs.map((tab) => ({
-    ...tab,
-    href: `/org/${slug}${tab.href}`,
-  }));
+  const role = currentTeamAccount != null ? "team_account" : (userProfile?.role ?? "org_admin");
+  const allowed = NAV_BY_ROLE[role] ?? NAV_BY_ROLE.org_admin!;
+  const items = tabs
+    .filter((tab) => allowed.includes(tab.href))
+    .map((tab) => ({
+      ...tab,
+      href: `/org/${slug}${tab.href}`,
+    }));
 
   const footer = currentOrg
     ? {

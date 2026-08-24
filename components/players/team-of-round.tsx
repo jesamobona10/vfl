@@ -105,8 +105,9 @@ export function TeamOfRound() {
     <div>
       <div className="flex flex-col gap-3 md:flex-row md:items-center mb-4">
         <div className="flex items-center gap-3">
-          <label className="text-sm font-medium text-text">Round</label>
+          <label className="text-sm font-medium text-text" htmlFor="tor-round">Round</label>
           <select
+            id="tor-round"
             value={roundNum}
             onChange={(e) => setRoundNum(e.target.value)}
             className="input w-auto min-w-[180px]"
@@ -121,8 +122,9 @@ export function TeamOfRound() {
         </div>
 
         <div className="flex items-center gap-3">
-          <label className="text-sm font-medium text-text">Formation</label>
+          <label className="text-sm font-medium text-text" htmlFor="tor-formation">Formation</label>
           <select
+            id="tor-formation"
             value={formation}
             onChange={(e) => setFormation(e.target.value as FormationType)}
             className="input w-auto min-w-[140px]"

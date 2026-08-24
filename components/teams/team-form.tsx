@@ -198,6 +198,7 @@ export function TeamForm() {
               onChange={(e) => setNewTeamName(e.target.value)}
               className="input flex-1"
               placeholder="Enter new team name..."
+              aria-label="New team name"
               onKeyDown={(e) => e.key === "Enter" && handleAdd()}
               autoFocus
             />

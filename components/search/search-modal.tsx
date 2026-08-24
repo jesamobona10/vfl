@@ -62,7 +62,12 @@ export function SearchModal({ isOpen, onClose }: SearchModalProps) {
       if (e.key === "Escape") onClose();
     };
     window.addEventListener("keydown", handler);
-    return () => window.removeEventListener("keydown", handler);
+    const prevOverflow = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    return () => {
+      window.removeEventListener("keydown", handler);
+      document.body.style.overflow = prevOverflow;
+    };
   }, [isOpen, onClose]);
 
   const q = query.toLowerCase().trim();
@@ -217,7 +222,12 @@ export function SearchModal({ isOpen, onClose }: SearchModalProps) {
         if (e.target === e.currentTarget) onClose();
       }}
     >
-      <div className="bg-surface rounded-xl shadow-sm border border-line w-full max-w-2xl max-h-[70vh] flex flex-col relative">
+      <div
+        role="dialog"
+        aria-modal="true"
+        aria-label="Search"
+        className="bg-surface rounded-xl shadow-sm border border-line w-full max-w-2xl max-h-[70vh] flex flex-col relative"
+      >
         <div className="flex items-center gap-3 p-4 border-b border-line">
           <Search size={20} className="text-muted shrink-0" />
           <input
@@ -261,6 +271,7 @@ export function SearchModal({ isOpen, onClose }: SearchModalProps) {
                 value={sort}
                 onChange={(e) => setSort(e.target.value as SortOption)}
                 className="text-xs bg-transparent border border-line rounded px-2 py-1 text-text"
+                aria-label="Sort results"
               >
                 {sortOptions.map((o) => (
                   <option key={o.key} value={o.key}>

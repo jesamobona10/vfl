@@ -4,7 +4,8 @@ import { useEffect, useMemo, useState } from "react";
 import { useAppStore } from "@/lib/store";
 import type { Team, TeamLineup } from "@/lib/types";
 import { ImageUpload } from "@/components/shared/image-upload";
-import { Trash2, Users, Star, X } from "lucide-react";
+import { Modal } from "@/components/ui/modal";
+import { Trash2, Users, Star } from "lucide-react";
 
 interface TeamCardProps {
   team: Team;
@@ -169,6 +170,7 @@ export function TeamCard({ team, index, isManaged, showAdmin, onDelete }: TeamCa
           maxLength={40}
           className="input text-center font-semibold text-base mb-3"
           placeholder="Team name"
+          aria-label={`Team name for ${team.name}`}
         />
 
         <div className="flex items-center gap-4 w-full justify-center text-xs text-muted">
@@ -188,6 +190,7 @@ export function TeamCard({ team, index, isManaged, showAdmin, onDelete }: TeamCa
                 onChange={(e) => setRating(e.target.value)}
                 onBlur={handleRatingBlur}
                 className="w-12 bg-transparent border-none text-center text-xs font-medium text-text focus:outline-none p-0"
+                aria-label={`Rating for ${team.name}`}
               />
             </span>
           ) : (
@@ -204,24 +207,14 @@ export function TeamCard({ team, index, isManaged, showAdmin, onDelete }: TeamCa
       </div>
 
       {showDetails && (
-        <div className="fixed inset-0 bg-black/40 z-50 flex items-center justify-center p-4">
-          <div className="bg-white w-full max-w-2xl rounded-xl shadow-xl overflow-hidden">
-            <div className="px-6 py-4 border-b border-line flex items-center justify-between">
-              <div>
-                <h3 className="text-lg font-semibold">{team.name} Overview</h3>
-                <p className="text-sm text-muted">Full team summary and lineup preview</p>
-              </div>
-              <button
-                type="button"
-                onClick={() => setShowDetails(false)}
-                className="text-muted hover:text-text"
-                title="Close"
-              >
-                <X size={18} />
-              </button>
-            </div>
-
-            <div className="p-6 grid gap-6 lg:grid-cols-[1.3fr_0.9fr]">
+        <Modal
+          open
+          onClose={() => setShowDetails(false)}
+          title={`${team.name} Overview`}
+          subtitle="Full team summary and lineup preview"
+          className="max-w-2xl"
+        >
+            <div className="grid gap-6 lg:grid-cols-[1.3fr_0.9fr]">
               <div className="space-y-4">
                 <div className="grid grid-cols-2 gap-4">
                   <div className="card p-4">
@@ -434,8 +427,7 @@ export function TeamCard({ team, index, isManaged, showAdmin, onDelete }: TeamCa
                 </div>
               </div>
             </div>
-          </div>
-        </div>
+        </Modal>
       )}
     </div>
   );

@@ -1,8 +1,9 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import type { CupMatch } from "@/lib/types";
-import { X, Clock } from "lucide-react";
+import { Clock } from "lucide-react";
+import { Modal } from "@/components/ui/modal";
 
 interface CupMatchModalProps {
   match: CupMatch;
@@ -57,15 +58,7 @@ export function CupMatchModal({
   const canSave = homeScore !== "" && awayScore !== "" && Number(homeScore) !== Number(awayScore);
 
   return (
-    <div className="fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4">
-      <div className="bg-surface border border-line rounded-xl shadow-2xl w-full max-w-md p-6 space-y-5">
-        <div className="flex items-center justify-between">
-          <h3 className="text-lg font-bold text-text">Match Result</h3>
-          <button onClick={onClose} className="btn-icon">
-            <X size={18} />
-          </button>
-        </div>
-
+    <Modal open onClose={onClose} title="Match Result" className="max-w-md">
         <div className="text-center space-y-1">
           <p className="font-semibold text-text">
             {homeName} vs {awayName}
@@ -88,6 +81,7 @@ export function CupMatchModal({
               onChange={(e) => setHomeScore(e.target.value)}
               className="input w-20 text-center text-xl font-bold"
               placeholder="0"
+              aria-label={`${homeName} goals`}
             />
             <span className="text-muted font-bold">:</span>
             <input
@@ -98,6 +92,7 @@ export function CupMatchModal({
               onChange={(e) => setAwayScore(e.target.value)}
               className="input w-20 text-center text-xl font-bold"
               placeholder="0"
+              aria-label={`${awayName} goals`}
             />
           </div>
         </div>
@@ -139,6 +134,7 @@ export function CupMatchModal({
                 className="input w-20 text-center font-bold"
                 placeholder="0"
                 disabled={usePen}
+                aria-label={`${homeName} extra time goals`}
               />
               <span className="text-muted font-bold">:</span>
               <input
@@ -150,6 +146,7 @@ export function CupMatchModal({
                 className="input w-20 text-center font-bold"
                 placeholder="0"
                 disabled={usePen}
+                aria-label={`${awayName} extra time goals`}
               />
             </div>
           </div>
@@ -169,6 +166,7 @@ export function CupMatchModal({
                 onChange={(e) => setHomePen(e.target.value)}
                 className="input w-20 text-center font-bold"
                 placeholder="0"
+                aria-label={`${homeName} penalties`}
               />
               <span className="text-muted font-bold">:</span>
               <input
@@ -179,6 +177,7 @@ export function CupMatchModal({
                 onChange={(e) => setAwayPen(e.target.value)}
                 className="input w-20 text-center font-bold"
                 placeholder="0"
+                aria-label={`${awayName} penalties`}
               />
             </div>
           </div>
@@ -186,8 +185,9 @@ export function CupMatchModal({
 
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
           <div>
-            <label className="text-xs text-muted">Date</label>
+            <label htmlFor="cup-date" className="text-xs text-muted">Date</label>
             <input
+              id="cup-date"
               type="text"
               value={date}
               onChange={(e) => setDate(e.target.value)}
@@ -196,10 +196,11 @@ export function CupMatchModal({
             />
           </div>
           <div>
-            <label className="text-xs text-muted">Time</label>
+            <label htmlFor="cup-time" className="text-xs text-muted">Time</label>
             <div className="flex items-center gap-1">
               <Clock size={12} className="text-muted shrink-0" />
               <input
+                id="cup-time"
                 type="time"
                 value={time}
                 onChange={(e) => setTime(e.target.value)}
@@ -208,8 +209,9 @@ export function CupMatchModal({
             </div>
           </div>
           <div>
-            <label className="text-xs text-muted">Venue</label>
+            <label htmlFor="cup-venue" className="text-xs text-muted">Venue</label>
             <input
+              id="cup-venue"
               type="text"
               value={venue}
               onChange={(e) => setVenue(e.target.value)}
@@ -226,7 +228,6 @@ export function CupMatchModal({
         <p className="text-xs text-muted text-center">
           Scores must be different to determine a winner.
         </p>
-      </div>
-    </div>
+    </Modal>
   );
 }

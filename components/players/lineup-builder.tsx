@@ -265,6 +265,7 @@ export function LineupBuilder() {
             <label className="block text-sm font-medium text-text">Team</label>
             <select
               className="input"
+              aria-label="Team"
               value={selectedTeamId}
               onChange={(event) => {
                 const value = event.target.value;
@@ -280,15 +281,17 @@ export function LineupBuilder() {
                 </option>
               ))}
             </select>
-            <label className="block text-sm font-medium text-text">Lineup name</label>
+            <label className="block text-sm font-medium text-text" htmlFor="lineup-name">Lineup name</label>
             <input
+              id="lineup-name"
               className="input"
               value={name}
               onChange={(event) => setName(event.target.value)}
               placeholder="Enter a lineup name"
             />
-            <label className="block text-sm font-medium text-text">Formation</label>
+            <label className="block text-sm font-medium text-text" htmlFor="lineup-formation">Formation</label>
             <select
+              id="lineup-formation"
               className="input"
               value={formation}
               onChange={(event) => handleFormationChange(event.target.value as any)}
@@ -358,6 +361,7 @@ export function LineupBuilder() {
             <div>
               <select
                 className="input"
+                aria-label="Saved lineup"
                 value={selectedLineupId ?? ""}
                 onChange={(event) => {
                   const value = event.target.value;
@@ -406,6 +410,7 @@ export function LineupBuilder() {
                 </div>
                 <select
                   className="input"
+                  aria-label={`Player for ${slot.label}`}
                   value={slot.playerId ?? ""}
                   onChange={(event) => {
                     const value = event.target.value;

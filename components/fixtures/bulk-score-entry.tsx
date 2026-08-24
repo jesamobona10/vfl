@@ -108,6 +108,7 @@ export function BulkScoreEntry() {
                                 handleScoreChange(match.id, "homeScore", e.target.value)
                               }
                               className="input w-12 text-center text-base font-bold py-1"
+                              aria-label={`${home?.name || "Home"} goals`}
                             />
                             <span className="text-muted font-bold">-</span>
                             <input
@@ -119,6 +120,7 @@ export function BulkScoreEntry() {
                                 handleScoreChange(match.id, "awayScore", e.target.value)
                               }
                               className="input w-12 text-center text-base font-bold py-1"
+                              aria-label={`${away?.name || "Away"} goals`}
                             />
                           </div>
                         </td>
@@ -140,6 +142,7 @@ export function BulkScoreEntry() {
                             value={match.date || ""}
                             onChange={(e) => handleDateChange(match.id, e.target.value)}
                             className="input text-xs py-1 w-28 text-center"
+                            aria-label={`Match date for ${home?.name || "home"} vs ${away?.name || "away"}`}
                           />
                         </td>
                         <td className="py-2 px-2 text-center">

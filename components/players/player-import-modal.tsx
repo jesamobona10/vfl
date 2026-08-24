@@ -4,7 +4,8 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { useOrg } from "@/lib/hooks/use-org";
 import { parsePlayerImportCSV } from "@/lib/utils/csv";
 import type { PlayerImportRow } from "@/lib/types";
-import { X, Upload, FileSpreadsheet, AlertCircle, CheckCircle2, Loader2 } from "lucide-react";
+import { Upload, FileSpreadsheet, AlertCircle, CheckCircle2, Loader2 } from "lucide-react";
+import { Modal } from "@/components/ui/modal";
 
 interface PlayerImportModalProps {
   slug: string;
@@ -194,41 +195,74 @@ export function PlayerImportModal({ slug, onClose, onImported }: PlayerImportMod
   };
 
   return (
-    <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50 p-4">
-      <div className="bg-white rounded-xl w-full max-w-2xl relative shadow-lg max-h-[90vh] flex flex-col">
-        <button onClick={onClose} className="absolute top-4 right-4 btn-icon">
-          <X size={18} />
-        </button>
-
-        <div className="p-6 border-b border-line">
-          <h2 className="text-lg font-bold">Import Players from CSV</h2>
-          <p className="text-sm text-muted">
-            Upload the exported responses from your player registration form (Google Forms →
-            Download responses (.csv)).
-          </p>
-        </div>
-
-        <div className="p-6 overflow-y-auto flex-1 space-y-4">
-          {step === "upload" && (
-            <>
-              <div
-                className="border-2 border-dashed border-line rounded-xl p-8 text-center cursor-pointer hover:bg-surface transition-colors"
-                onClick={() => fileInputRef.current?.click()}
-              >
-                <input
-                  ref={fileInputRef}
-                  type="file"
-                  accept=".csv,text/csv,text/plain"
-                  onChange={handleFile}
-                  className="hidden"
-                />
-                <FileSpreadsheet size={40} className="mx-auto text-muted mb-3" />
-                <p className="font-medium">Click to select a CSV file</p>
-                <p className="text-sm text-muted mt-1">
-                  Required columns: <strong>Player Name</strong> and <strong>Team</strong>.
-                  Optional: Position, Jersey Number, Captain.
-                </p>
-              </div>
+    <Modal
+      open
+      onClose={onClose}
+      title="Import Players from CSV"
+      subtitle="Upload the exported responses from your player registration form (Google Forms → Download responses (.csv))."
+      className="max-w-2xl"
+      footer={
+        step === "preview" ? (
+          <div className="flex items-center gap-2 justify-end">
+            <button className="btn" onClick={onClose} disabled={submitting}>
+              Cancel
+            </button>
+            <button
+              className="btn-primary flex items-center gap-2"
+              onClick={handleSubmit}
+              disabled={submitting || rowsToSend.length === 0}
+            >
+              {submitting ? (
+                <Loader2 size={16} className="animate-spin" />
+              ) : (
+                <Upload size={16} />
+              )}
+              {submitting
+                ? "Importing..."
+                : `Import ${rowsToSend.length} Player${rowsToSend.length !== 1 ? "s" : ""}`}
+            </button>
+          </div>
+        ) : step === "done" ? (
+          <div className="flex justify-end gap-2">
+            <button
+              className="btn"
+              onClick={() => {
+                setStep("upload");
+                setParseResult(null);
+                setResult(null);
+                setCsvText("");
+              }}
+            >
+              Import Another File
+            </button>
+            <button className="btn-primary" onClick={onClose}>
+              Done
+            </button>
+          </div>
+        ) : undefined
+      }
+    >
+      {step === "upload" && (
+        <>
+          <button
+            type="button"
+            className="w-full border-2 border-dashed border-line rounded-xl p-8 text-center cursor-pointer hover:bg-surface transition-colors"
+            onClick={() => fileInputRef.current?.click()}
+          >
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept=".csv,text/csv,text/plain"
+              onChange={handleFile}
+              className="hidden"
+            />
+            <FileSpreadsheet size={40} className="mx-auto text-muted mb-3" />
+            <p className="font-medium">Click to select a CSV file</p>
+            <p className="text-sm text-muted mt-1">
+              Required columns: <strong>Player Name</strong> and <strong>Team</strong>.
+              Optional: Position, Jersey Number, Captain.
+            </p>
+          </button>
 
               <div className="flex items-center gap-3 text-sm text-muted">
                 <div className="flex-1 h-px bg-line" />
@@ -369,10 +403,11 @@ export function PlayerImportModal({ slug, onClose, onImported }: PlayerImportMod
               </label>
 
               <div>
-                <label className="block text-sm font-medium mb-1">
+                <label htmlFor="import-season" className="block text-sm font-medium mb-1">
                   Register into a season <span className="text-muted">(optional)</span>
                 </label>
                 <select
+                  id="import-season"
                   value={seasonId}
                   onChange={(e) => setSeasonId(e.target.value)}
                   className="input w-full"
@@ -388,26 +423,6 @@ export function PlayerImportModal({ slug, onClose, onImported }: PlayerImportMod
                   If selected, imported players are registered into that season&apos;s rosters
                   (season teams are registered too).
                 </p>
-              </div>
-
-              <div className="flex items-center gap-2 justify-end">
-                <button className="btn" onClick={onClose} disabled={submitting}>
-                  Cancel
-                </button>
-                <button
-                  className="btn-primary flex items-center gap-2"
-                  onClick={handleSubmit}
-                  disabled={submitting || rowsToSend.length === 0}
-                >
-                  {submitting ? (
-                    <Loader2 size={16} className="animate-spin" />
-                  ) : (
-                    <Upload size={16} />
-                  )}
-                  {submitting
-                    ? "Importing..."
-                    : `Import ${rowsToSend.length} Player${rowsToSend.length !== 1 ? "s" : ""}`}
-                </button>
               </div>
             </>
           )}
@@ -445,27 +460,8 @@ export function PlayerImportModal({ slug, onClose, onImported }: PlayerImportMod
                   </div>
                 </div>
               )}
-
-              <div className="flex justify-end gap-2">
-                <button
-                  className="btn"
-                  onClick={() => {
-                    setStep("upload");
-                    setParseResult(null);
-                    setResult(null);
-                    setCsvText("");
-                  }}
-                >
-                  Import Another File
-                </button>
-                <button className="btn-primary" onClick={onClose}>
-                  Done
-                </button>
-              </div>
             </div>
           )}
-        </div>
-      </div>
-    </div>
+    </Modal>
   );
 }

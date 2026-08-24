@@ -15,6 +15,7 @@ import { CalendarView } from "@/components/calendar/calendar-view";
 import { PlayerDashboard } from "@/components/player/player-dashboard";
 import { TeamDashboard } from "@/components/team/team-dashboard";
 import { OrgSeasonSelector } from "@/components/competitions/org-season-selector";
+import { SetupChecklist } from "@/components/dashboard/setup-checklist";
 import { Shield, RefreshCw, Plus, Upload } from "lucide-react";
 import { DashboardSkeleton } from "@/components/shared/skeleton";
 import { useToast } from "@/components/ui/toast";
@@ -144,8 +145,10 @@ export default function OrgDashboardPage() {
         <div className="flex items-center gap-4">
           {!currentTeamAccount && (
             <div className="relative shrink-0">
-              <div
+              <button
+                type="button"
                 onClick={() => orgLogoInputRef.current?.click()}
+                aria-label="Upload organization logo"
                 className="w-12 h-12 rounded-xl bg-surface-2 flex items-center justify-center overflow-hidden border border-line cursor-pointer hover:opacity-80 transition-opacity"
               >
                 {orgLogoUrl || currentOrg?.logo_url ? (
@@ -163,7 +166,7 @@ export default function OrgDashboardPage() {
                     <span className="block w-4 h-4 bg-surface-2 rounded animate-pulse" />
                   </div>
                 )}
-              </div>
+              </button>
               <input
                 ref={orgLogoInputRef}
                 type="file"
@@ -253,6 +256,13 @@ export default function OrgDashboardPage() {
 
       {!currentTeamAccount && (
         <>
+          <SetupChecklist
+            slug={slug}
+            competitionCount={competitions.length}
+            teamCount={teams.length}
+            fixtureCount={fixtures.length}
+          />
+
           <MetricCards />
 
           <div className="grid grid-cols-1 xl:grid-cols-[1.3fr_1fr] gap-4">

@@ -1,6 +1,6 @@
 import { createClient } from "@/lib/supabase/server";
 import { createServiceRoleClient } from "@/lib/supabase/service-role";
-import { asInteger, getAuthContext, json, logApiError, requireOrgMember } from "@/lib/security";
+import { asInteger, getAuthContext, json, logApiError, requireOrgAdmin } from "@/lib/security";
 import { normalizeAction, actionLabel } from "@/lib/audit/actions";
 
 export const dynamic = "force-dynamic";
@@ -54,8 +54,8 @@ export async function GET(request: Request, props: { params: Promise<{ slug: str
 
     if (!org) return json({ error: "Organization not found." }, { status: 404 });
 
-    const memberError = requireOrgMember(auth, org.id);
-    if (memberError) return memberError;
+    const adminError = requireOrgAdmin(auth, org.id);
+    if (adminError) return adminError;
 
     const url = new URL(request.url);
     const page = asInteger(url.searchParams.get("page"), 1, 10000) ?? 1;

@@ -71,8 +71,9 @@ export default function SetupPage() {
 
           <form onSubmit={handleSetup} className="space-y-4">
             <div>
-              <label className="block text-sm font-medium mb-1">Email</label>
+              <label htmlFor="setup-email" className="block text-sm font-medium mb-1">Email</label>
               <input
+                id="setup-email"
                 type="email"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
@@ -82,8 +83,9 @@ export default function SetupPage() {
               />
             </div>
             <div>
-              <label className="block text-sm font-medium mb-1">Password</label>
+              <label htmlFor="setup-password" className="block text-sm font-medium mb-1">Password</label>
               <input
+                id="setup-password"
                 type="password"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}

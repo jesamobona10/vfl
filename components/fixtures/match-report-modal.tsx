@@ -3,8 +3,8 @@
 import { useState } from "react";
 import type { Match, MatchEvent, Player } from "@/lib/types";
 import { useAppStore } from "@/lib/store";
+import { Modal } from "@/components/ui/modal";
 import {
-  X,
   Sparkles,
   AlertTriangle,
   CheckCircle2,
@@ -82,8 +82,6 @@ export function MatchReportModal({
     (p) => p.teamId === match.homeId || p.teamId === match.awayId
   );
   const playerById = (id: number | null) => eligiblePlayers.find((p) => p.id === id);
-
-  const nameFor = (id: number | null) => playerById(id)?.name || "—";
 
   const handleAnalyze = async () => {
     if (!report.trim()) {
@@ -204,30 +202,75 @@ export function MatchReportModal({
   const requiresAction = analysis?.events.some((e) => e.playerStatus !== "RESOLVED");
 
   return (
-    <div
-      className="fixed inset-0 bg-black/40 z-50 flex items-center justify-center p-4"
-      onClick={onClose}
-    >
-      <div
-        className="bg-surface border border-line rounded-xl shadow-2xl w-full max-w-2xl flex flex-col max-h-[90vh]"
-        onClick={(e) => e.stopPropagation()}
-      >
-        <div className="flex items-center justify-between px-6 py-4 border-b border-line">
-          <div>
-            <div className="flex items-center gap-2">
-              <Sparkles size={16} className="text-brand" />
-              <h3 className="text-lg font-bold">AI Match Report</h3>
-            </div>
-            <p className="text-xs text-muted">
-              {homeTeamName} vs {awayTeamName}
-            </p>
-          </div>
-          <button onClick={onClose} className="btn-icon">
-            <X size={18} />
-          </button>
-        </div>
+    <Modal
+      open
+      onClose={onClose}
+      title="AI Match Report"
+      subtitle={`${homeTeamName} vs ${awayTeamName}`}
+      className="max-w-2xl"
+      footer={
+        <>
+          {step === "input" && (
+            <>
+              <button onClick={onClose} className="btn-ghost text-sm">
+                Cancel
+              </button>
+              <button
+                onClick={handleAnalyze}
+                disabled={analyzing || !report.trim()}
+                className="btn-primary text-sm flex items-center gap-1.5"
+              >
+                {analyzing ? (
+                  <>
+                    <Loader2 size={14} className="animate-spin" /> Analyzing…
+                  </>
+                ) : (
+                  <>
+                    <Sparkles size={14} /> Analyze Report
+                  </>
+                )}
+              </button>
+            </>
+          )}
 
-        <div className="flex-1 overflow-y-auto px-6 py-4 space-y-4">
+          {step === "review" && analysis && (
+            <>
+              <button onClick={onClose} className="btn-ghost text-sm">
+                Discard
+              </button>
+              <div className="flex items-center gap-2">
+                {requiresAction && (
+                  <span className="text-xs text-warn-500 flex items-center gap-1">
+                    <AlertTriangle size={13} /> Resolve issues before confirming
+                  </span>
+                )}
+                <button
+                  onClick={handleConfirm}
+                  disabled={confirming || requiresAction}
+                  className="btn-primary text-sm flex items-center gap-1.5"
+                >
+                  {confirming ? (
+                    <>
+                      <Loader2 size={14} className="animate-spin" /> Saving…
+                    </>
+                  ) : (
+                    <>
+                      <CheckCircle2 size={14} /> Confirm Events
+                    </>
+                  )}
+                </button>
+              </div>
+            </>
+          )}
+
+          {step === "done" && (
+            <button onClick={onClose} className="btn-primary text-sm ml-auto">
+              Done
+            </button>
+          )}
+        </>
+      }
+    >
           {step === "input" && (
             <>
               <textarea
@@ -235,6 +278,7 @@ export function MatchReportModal({
                 onChange={(e) => setReport(e.target.value)}
                 rows={8}
                 maxLength={4000}
+                aria-label="Match report text"
                 placeholder={
                   'Paste or type the match report here.\n\nExample:\n"Veritas FC opened strongly. Daniel Musa scored in the 17th minute after a pass from David John. Samuel Peter equalised shortly before halftime from a free kick."'
                 }
@@ -315,6 +359,7 @@ export function MatchReportModal({
                           </span>
                           <select
                             value={ev.type}
+                            aria-label={`Event ${i + 1} type`}
                             onChange={(e) => {
                               const type = e.target.value;
                               updateEvent(i, {
@@ -344,6 +389,7 @@ export function MatchReportModal({
                             }
                             className="input text-xs w-16 text-center"
                             placeholder="?"
+                            aria-label={`Event ${i + 1} minute`}
                           />
                           <span className="ml-auto">
                             {ev.minuteInference ? (
@@ -364,6 +410,7 @@ export function MatchReportModal({
                             </label>
                             <select
                               value={ev.playerId ?? ""}
+                              aria-label={`Event ${i + 1} player`}
                               onChange={(e) => {
                                 const pid = e.target.value ? Number(e.target.value) : null;
                                 const player = playerById(pid);
@@ -407,6 +454,7 @@ export function MatchReportModal({
                               </label>
                               <select
                                 value={ev.assistPlayerId ?? ""}
+                                aria-label={`Event ${i + 1} assist player`}
                                 onChange={(e) =>
                                   updateEvent(i, {
                                     assistPlayerId: e.target.value ? Number(e.target.value) : null,
@@ -484,70 +532,7 @@ export function MatchReportModal({
               <AlertTriangle size={16} /> {error}
             </div>
           )}
-        </div>
-
-        <div className="px-6 py-4 border-t border-line flex items-center justify-between gap-3">
-          {step === "input" && (
-            <>
-              <button onClick={onClose} className="btn-ghost text-sm">
-                Cancel
-              </button>
-              <button
-                onClick={handleAnalyze}
-                disabled={analyzing || !report.trim()}
-                className="btn-primary text-sm flex items-center gap-1.5"
-              >
-                {analyzing ? (
-                  <>
-                    <Loader2 size={14} className="animate-spin" /> Analyzing…
-                  </>
-                ) : (
-                  <>
-                    <Sparkles size={14} /> Analyze Report
-                  </>
-                )}
-              </button>
-            </>
-          )}
-
-          {step === "review" && analysis && (
-            <>
-              <button onClick={onClose} className="btn-ghost text-sm">
-                Discard
-              </button>
-              <div className="flex items-center gap-2">
-                {requiresAction && (
-                  <span className="text-xs text-warn-500 flex items-center gap-1">
-                    <AlertTriangle size={13} /> Resolve issues before confirming
-                  </span>
-                )}
-                <button
-                  onClick={handleConfirm}
-                  disabled={confirming || requiresAction}
-                  className="btn-primary text-sm flex items-center gap-1.5"
-                >
-                  {confirming ? (
-                    <>
-                      <Loader2 size={14} className="animate-spin" /> Saving…
-                    </>
-                  ) : (
-                    <>
-                      <CheckCircle2 size={14} /> Confirm Events
-                    </>
-                  )}
-                </button>
-              </div>
-            </>
-          )}
-
-          {step === "done" && (
-            <button onClick={onClose} className="btn-primary text-sm ml-auto">
-              Done
-            </button>
-          )}
-        </div>
-      </div>
-    </div>
+    </Modal>
   );
 }
 

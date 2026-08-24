@@ -75,8 +75,8 @@ export function FixtureCreator() {
         <div className="border-t border-line px-5 py-4">
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 mb-4">
             <div>
-              <label className="block text-sm font-medium mb-1">Home Team</label>
-              <select value={homeId} onChange={(e) => setHomeId(e.target.value)} className="input">
+              <label htmlFor="fc-home" className="block text-sm font-medium mb-1">Home Team</label>
+              <select id="fc-home" value={homeId} onChange={(e) => setHomeId(e.target.value)} className="input">
                 <option value="">Select home team</option>
                 {teams.map((t) => (
                   <option key={t.id} value={t.id}>
@@ -86,8 +86,8 @@ export function FixtureCreator() {
               </select>
             </div>
             <div>
-              <label className="block text-sm font-medium mb-1">Away Team</label>
-              <select value={awayId} onChange={(e) => setAwayId(e.target.value)} className="input">
+              <label htmlFor="fc-away" className="block text-sm font-medium mb-1">Away Team</label>
+              <select id="fc-away" value={awayId} onChange={(e) => setAwayId(e.target.value)} className="input">
                 <option value="">Select away team</option>
                 {teams.map((t) => (
                   <option key={t.id} value={t.id}>
@@ -97,8 +97,8 @@ export function FixtureCreator() {
               </select>
             </div>
             <div>
-              <label className="block text-sm font-medium mb-1">Round</label>
-              <select value={round} onChange={(e) => setRound(e.target.value)} className="input">
+              <label htmlFor="fc-round" className="block text-sm font-medium mb-1">Round</label>
+              <select id="fc-round" value={round} onChange={(e) => setRound(e.target.value)} className="input">
                 <option value="">Auto (next available)</option>
                 {fixtures.map((r) => (
                   <option key={r.round} value={r.round}>
@@ -108,8 +108,9 @@ export function FixtureCreator() {
               </select>
             </div>
             <div>
-              <label className="block text-sm font-medium mb-1">Date</label>
+              <label htmlFor="fc-date" className="block text-sm font-medium mb-1">Date</label>
               <input
+                id="fc-date"
                 type="date"
                 value={date}
                 onChange={(e) => setDate(e.target.value)}
@@ -117,12 +118,13 @@ export function FixtureCreator() {
               />
             </div>
             <div>
-              <label className="block text-sm font-medium mb-1">Time</label>
-              <TimeInput value={time} onChange={setTime} />
+              <label htmlFor="fc-time" className="block text-sm font-medium mb-1">Time</label>
+              <TimeInput value={time} onChange={setTime} label="Kickoff time" />
             </div>
             <div>
-              <label className="block text-sm font-medium mb-1">Venue</label>
+              <label htmlFor="fc-venue" className="block text-sm font-medium mb-1">Venue</label>
               <input
+                id="fc-venue"
                 type="text"
                 value={venue}
                 onChange={(e) => setVenue(e.target.value)}

@@ -22,6 +22,8 @@ export function SeasonSelector({ seasons, selectedSeasonId, onSeasonChange }: Se
     <div className="relative">
       <button
         onClick={() => setOpen(!open)}
+        aria-expanded={open}
+        aria-haspopup="menu"
         className="flex items-center gap-2 px-3 py-1.5 text-sm font-medium border border-line rounded-lg bg-surface hover:bg-surface-2 transition-colors"
       >
         {activeLabel}
@@ -29,11 +31,15 @@ export function SeasonSelector({ seasons, selectedSeasonId, onSeasonChange }: Se
       </button>
       {open && (
         <>
-          <div className="fixed inset-0 z-10" onClick={() => setOpen(false)} />
-          <div className="absolute right-0 top-full mt-1 bg-surface border border-line rounded-lg shadow-lg py-1 z-20 min-w-[180px]">
+          <div className="fixed inset-0 z-10" onClick={() => setOpen(false)} aria-hidden="true" />
+          <div
+            role="menu"
+            className="absolute right-0 top-full mt-1 bg-surface border border-line rounded-lg shadow-lg py-1 z-20 min-w-[180px]"
+          >
             {seasons.map((s) => (
               <button
                 key={s.id}
+                role="menuitem"
                 onClick={() => {
                   onSeasonChange(s.id);
                   setOpen(false);

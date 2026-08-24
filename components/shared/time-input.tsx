@@ -25,9 +25,11 @@ function to24h(hour: string, minute: string, period: "AM" | "PM"): string {
 interface TimeInputProps {
   value: string;
   onChange: (value: string) => void;
+  /** Accessible name for the input. */
+  label?: string;
 }
 
-export function TimeInput({ value, onChange }: TimeInputProps) {
+export function TimeInput({ value, onChange, label = "Time" }: TimeInputProps) {
   const [mode, setMode] = useState<"24h" | "12h">("24h");
 
   const parsed = parse12h(value);
@@ -59,6 +61,7 @@ export function TimeInput({ value, onChange }: TimeInputProps) {
           value={value}
           onChange={(e) => onChange(e.target.value)}
           className="input text-sm py-1.5 flex-1"
+          aria-label={label}
         />
         <button
           type="button"
@@ -94,6 +97,7 @@ export function TimeInput({ value, onChange }: TimeInputProps) {
           }}
           className="input text-sm py-1.5 w-12 text-center"
           placeholder="HH"
+          aria-label={`${label} hour`}
         />
         <span className="text-muted text-sm">:</span>
         <select
@@ -104,6 +108,7 @@ export function TimeInput({ value, onChange }: TimeInputProps) {
             emit12h(h12, v, p12);
           }}
           className="input text-sm py-1.5 w-14"
+          aria-label={`${label} minute`}
         >
           <option value="00">00</option>
           <option value="15">15</option>
@@ -118,6 +123,7 @@ export function TimeInput({ value, onChange }: TimeInputProps) {
             emit12h(h12, m12, v);
           }}
           className="input text-sm py-1.5 w-16"
+          aria-label={`${label} AM/PM`}
         >
           <option value="AM">AM</option>
           <option value="PM">PM</option>

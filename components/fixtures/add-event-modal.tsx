@@ -3,8 +3,9 @@
 import { useState } from "react";
 import { useAppStore } from "@/lib/store";
 import type { Match, MatchEvent, Player } from "@/lib/types";
-import { X, CheckCircle } from "lucide-react";
+import { CheckCircle } from "lucide-react";
 import { useQueryClient } from "@tanstack/react-query";
+import { Modal } from "@/components/ui/modal";
 
 const EVENT_CATEGORIES = [
   {
@@ -229,40 +230,39 @@ export function AddEventModal({
     "";
 
   return (
-    <div
-      className="fixed inset-0 bg-black/40 z-50 flex items-center justify-center p-4"
-      onClick={onClose}
-    >
-      <div
-        className="bg-surface border border-line rounded-xl shadow-2xl w-full max-w-md p-6 space-y-4 max-h-[90vh] overflow-y-auto"
-        onClick={(e) => e.stopPropagation()}
-      >
-        <div className="flex items-center justify-between">
-          <div>
-            {step === "player" && (
-              <button
-                onClick={() => {
-                  setStep("type");
-                  setSelectedType(null);
-                }}
-                className="text-xs text-muted hover:text-text transition-colors"
-              >
-                &larr; Back
-              </button>
-            )}
-            <h3 className="text-lg font-bold">
-              {step === "type" ? "Add Event" : `Add ${selectedLabel}`}
-            </h3>
-          </div>
-          <button onClick={onClose} className="btn-icon">
-            <X size={18} />
+    <Modal
+      open
+      onClose={onClose}
+      title={step === "type" ? "Add Event" : `Add ${selectedLabel}`}
+      subtitle={`${homeTeamName} vs ${awayTeamName}`}
+      className="max-w-md"
+      headerActions={
+        step === "player" ? (
+          <button
+            onClick={() => {
+              setStep("type");
+              setSelectedType(null);
+            }}
+            className="text-xs text-muted hover:text-text transition-colors"
+          >
+            &larr; Back
           </button>
-        </div>
-
-        <p className="text-xs text-muted">
-          {homeTeamName} vs {awayTeamName}
-        </p>
-
+        ) : undefined
+      }
+      footer={
+        match.status !== "completed" ? (
+          <div className="flex justify-center">
+            <button
+              onClick={handleMarkComplete}
+              className="btn-primary text-sm py-1.5 px-4 flex items-center gap-1.5"
+            >
+              <CheckCircle size={14} />
+              MARK COMPLETED
+            </button>
+          </div>
+        ) : undefined
+      }
+    >
         {step === "type" ? (
           <div className="space-y-4 max-h-80 overflow-y-auto">
             {EVENT_CATEGORIES.map((category) => (
@@ -337,19 +337,6 @@ export function AddEventModal({
             )}
           </div>
         )}
-
-        {match.status !== "completed" && (
-          <div className="flex justify-center pt-2 border-t border-line">
-            <button
-              onClick={handleMarkComplete}
-              className="btn-primary text-sm py-1.5 px-4 flex items-center gap-1.5"
-            >
-              <CheckCircle size={14} />
-              MARK COMPLETED
-            </button>
-          </div>
-        )}
-      </div>
-    </div>
+    </Modal>
   );
 }

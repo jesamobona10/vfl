@@ -97,10 +97,20 @@ function ChangesList({
 
 function AuditRow({ log }: { log: AuditLog }) {
   const [open, setOpen] = useState(false);
+  useEffect(() => {
+    if (!open) return;
+    const handler = (e: KeyboardEvent) => {
+      if (e.key === "Escape") setOpen(false);
+    };
+    window.addEventListener("keydown", handler);
+    return () => window.removeEventListener("keydown", handler);
+  }, [open]);
+
   return (
     <>
-      <div
-        className="card px-4 py-2.5 flex items-center gap-3 text-xs cursor-pointer hover:bg-surface-2/40"
+      <button
+        type="button"
+        className="card px-4 py-2.5 flex items-center gap-3 text-xs cursor-pointer hover:bg-surface-2/40 w-full text-left"
         onClick={() => setOpen(true)}
       >
         <Shield size={14} className="text-muted shrink-0" />
@@ -123,11 +133,16 @@ function AuditRow({ log }: { log: AuditLog }) {
         >
           {log.severity || "LOW"}
         </span>
-      </div>
+      </button>
       {open && (
         <div className="fixed inset-0 z-40">
-          <div className="absolute inset-0 bg-black/40" onClick={() => setOpen(false)} />
-          <div className="absolute right-0 top-0 h-full w-full max-w-md bg-surface shadow-2xl flex flex-col">
+          <div className="absolute inset-0 bg-black/40" onClick={() => setOpen(false)} aria-hidden="true" />
+          <div
+            role="dialog"
+            aria-modal="true"
+            aria-label={log.label || log.action}
+            className="absolute right-0 top-0 h-full w-full max-w-md bg-surface shadow-2xl flex flex-col"
+          >
             <div className="flex items-center justify-between px-5 py-4 border-b border-line">
               <div>
                 <div className="text-xs uppercase tracking-wide text-ink-3">Audit Event</div>
