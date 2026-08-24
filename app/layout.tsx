@@ -40,11 +40,14 @@ export const metadata: Metadata = {
   },
 };
 
+const NO_FLASH_THEME_SCRIPT = `(function(){try{var t=localStorage.getItem("lf-theme");if(t==="dark"||(!t&&window.matchMedia&&window.matchMedia("(prefers-color-scheme: dark)").matches)){document.documentElement.classList.add("dark")}}catch(e){}})();`;
+
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="en" className={inter.variable}>
-      <head />
-      <body className="font-sans antialiased">
+    <html lang="en" className={inter.variable} suppressHydrationWarning>
+      <head>
+        <script dangerouslySetInnerHTML={{ __html: NO_FLASH_THEME_SCRIPT }} />
+      </head>      <body className="font-sans antialiased">
         <QueryProvider>
           <ToastProvider>
             <AppShell>{children}</AppShell>

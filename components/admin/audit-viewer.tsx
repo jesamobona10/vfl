@@ -56,7 +56,7 @@ const ACTION_FILTERS: { value: string; label: string }[] = [
 ];
 
 const SEVERITY_STYLES: Record<string, string> = {
-  LOW: "bg-black/10 text-black/50",
+  LOW: "bg-muted/15 text-muted",
   MEDIUM: "bg-amber-100 text-amber-700",
   HIGH: "bg-red-100 text-red-700",
   CRITICAL: "bg-red-600 text-white",

@@ -10,33 +10,33 @@ const config: Config = {
       colors: {
         brand: {
           DEFAULT: "#0f7c45",
-          dark: "#0b5f35",
-          50: "#EAF6EE",
-          100: "#CFEBD8",
+          dark: "var(--brand-dark)",
+          50: "rgb(var(--brand-50-rgb) / <alpha-value>)",
+          100: "rgb(var(--brand-100-rgb) / <alpha-value>)",
           500: "#0F7C45",
-          600: "#0B5F35",
-          700: "#084526",
+          600: "rgb(var(--brand-600-rgb) / <alpha-value>)",
+          700: "var(--brand-700)",
         },
         gold: {
           DEFAULT: "#D99A21",
           500: "#D99A21",
-          700: "#8C6110",
-          tint: "#FBF0DC",
+          700: "var(--gold-700)",
+          tint: "rgb(var(--gold-tint-rgb) / <alpha-value>)",
         },
         live: {
           DEFAULT: "#0F9D6B",
           500: "#0F9D6B",
-          tint: "#E4F6EE",
+          tint: "rgb(var(--live-tint-rgb) / <alpha-value>)",
         },
         danger: {
           DEFAULT: "#C23B2E",
           500: "#C23B2E",
-          tint: "#FBEAE8",
+          tint: "rgb(var(--danger-tint-rgb) / <alpha-value>)",
         },
         warn: {
           DEFAULT: "#B67D16",
           500: "#B67D16",
-          tint: "#FBF0DC",
+          tint: "rgb(var(--warn-tint-rgb) / <alpha-value>)",
         },
         accent: "#d99a21",
         surface: {

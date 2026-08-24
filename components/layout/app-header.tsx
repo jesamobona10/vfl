@@ -5,6 +5,7 @@ import { useAppStore } from "@/lib/store";
 import { parseImportFile, buildImportPlan } from "@/lib/utils/data-import";
 import { refreshTeamData } from "@/lib/hooks/use-team-data";
 import Notifications from "@/components/notifications/notifications";
+import { ThemeToggle } from "@/components/shared/theme-toggle";
 import {
   Search,
   Download,
@@ -157,6 +158,7 @@ export function AppHeader({ onOpenSearch, onOpenMenu }: AppHeaderProps) {
       </div>
 
       <div className="flex items-center gap-1">
+        <ThemeToggle />
         <Notifications />
         {currentTeamAccount && (
           <button

@@ -45,7 +45,7 @@ const VARIANT_STYLES: Record<ToastVariant, { container: string; icon: string }> 
   },
   info: {
     container: "border-line glass-panel",
-    icon: "bg-ink-600 text-white",
+    icon: "bg-muted text-white",
   },
 };
 
