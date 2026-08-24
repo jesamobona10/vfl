@@ -8,6 +8,8 @@
     "start": "next start -p ${PORT:-8080} -H 0.0.0.0",
     "lint": "eslint .",
     "lint:fix": "eslint --fix .",
+    "test": "vitest run",
+    "test:watch": "vitest",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
     "typecheck": "tsc --noEmit"
@@ -43,7 +45,8 @@
     "postcss": "^8.4.33",
     "prettier": "^3.9.6",
     "tailwindcss": "^3.4.1",
-    "typescript": "^5.3.3"
+    "typescript": "^5.3.3",
+    "vitest": "^4.1.11"
   },
   "allowScripts": {
     "sharp@0.34.5": true,
