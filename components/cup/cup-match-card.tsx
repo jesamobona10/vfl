@@ -66,7 +66,7 @@ export function CupMatchCard({
               </span>
             </div>
             {homeTeamId != null && match.playoffPairing && match.round === "quarter" && (
-              <p className="text-[10px] text-muted/60 mt-0.5 truncate">{match.playoffPairing}</p>
+              <p className="text-xs text-muted/60 mt-0.5 truncate">{match.playoffPairing}</p>
             )}
           </div>
 
@@ -104,7 +104,7 @@ export function CupMatchCard({
               )}
             </div>
             {awayTeamId != null && match.playoffPairing && match.round === "quarter" && (
-              <p className="text-[10px] text-muted/60 mt-0.5 truncate text-right">
+              <p className="text-xs text-muted/60 mt-0.5 truncate text-right">
                 {match.playoffPairing}
               </p>
             )}
@@ -114,12 +114,12 @@ export function CupMatchCard({
         {isCompleted && match.completedVia && (
           <div className="mt-1.5 flex items-center gap-2">
             {match.winnerId != null && (
-              <span className="text-[11px] font-semibold text-brand flex items-center gap-1">
+              <span className="text-xs font-semibold text-brand flex items-center gap-1">
                 <Trophy size={10} />
                 {getTeamName(match.winnerId)} advances
               </span>
             )}
-            <span className="text-[10px] text-muted">
+            <span className="text-xs text-muted">
               {match.completedVia === "regular"
                 ? "FT"
                 : match.completedVia === "extra_time"

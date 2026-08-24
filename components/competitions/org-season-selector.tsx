@@ -62,12 +62,12 @@ export function OrgSeasonSelector({
                 <span className="flex items-center gap-2">
                   {s.name}
                   {s.is_current && (
-                    <span className="text-[11px] font-medium px-1.5 py-0.5 rounded-full bg-brand-50 text-brand-700">
+                    <span className="text-xs font-medium px-1.5 py-0.5 rounded-full bg-brand-50 text-brand-700">
                       Current
                     </span>
                   )}
                 </span>
-                <span className={`text-[11px] font-medium px-1.5 py-0.5 rounded-full ${badge(s)}`}>
+                <span className={`text-xs font-medium px-1.5 py-0.5 rounded-full ${badge(s)}`}>
                   {s.status}
                 </span>
               </button>

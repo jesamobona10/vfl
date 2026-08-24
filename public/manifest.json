@@ -1,0 +1,17 @@
+{
+  "name": "LeagueForge — School Football League Management",
+  "short_name": "LeagueForge",
+  "description": "Manage school football leagues: competitions, teams, players, fixtures, and live standings.",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#F7FAF6",
+  "theme_color": "#0f7c45",
+  "icons": [
+    {
+      "src": "/icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any"
+    }
+  ]
+}

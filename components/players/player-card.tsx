@@ -115,10 +115,10 @@ export function PlayerCard({ player, teamName, onEdit, onDelete }: PlayerCardPro
           </div>
 
           <div className="flex flex-col items-end gap-1 shrink-0">
-            <span className="rounded-full bg-brand/10 text-brand px-2 py-0.5 text-[11px] font-semibold">
+            <span className="rounded-full bg-brand/10 text-brand px-2 py-0.5 text-xs font-semibold">
               {player.rating.toFixed(1)}
             </span>
-            <span className="rounded-full bg-surface-2 px-2 py-0.5 text-[11px] text-muted">
+            <span className="rounded-full bg-surface-2 px-2 py-0.5 text-xs text-muted">
               {teamName}
             </span>
           </div>
@@ -188,7 +188,7 @@ export function PlayerCard({ player, teamName, onEdit, onDelete }: PlayerCardPro
           )}
 
           <div className="flex items-center justify-between pt-1">
-            <span className="text-[11px] text-muted">ID: {player.id}</span>
+            <span className="text-xs text-muted">ID: {player.id}</span>
             <div className="flex items-center gap-2">
               {player.captain && (
                 <span className="inline-flex items-center gap-1 text-xs text-accent font-medium">

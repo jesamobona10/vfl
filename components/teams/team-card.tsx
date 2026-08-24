@@ -350,7 +350,7 @@ export function TeamCard({ team, index, isManaged, showAdmin, onDelete }: TeamCa
                                                   <div className="text-sm">
                                                     {player ? player.number : ""}
                                                   </div>
-                                                  <div className="text-[11px]">{initials}</div>
+                                                  <div className="text-xs">{initials}</div>
                                                 </div>
                                               </div>
                                               <div className="text-xs text-white/90 mt-1 truncate max-w-[90px]">
@@ -395,7 +395,7 @@ export function TeamCard({ team, index, isManaged, showAdmin, onDelete }: TeamCa
                                                     <div className="text-sm">
                                                       {p ? p.number : ""}
                                                     </div>
-                                                    <div className="text-[11px]">{initials}</div>
+                                                    <div className="text-xs">{initials}</div>
                                                   </div>
                                                 </div>
                                                 <div className="text-xs text-white/90 mt-1">GK</div>

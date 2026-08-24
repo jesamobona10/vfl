@@ -313,7 +313,7 @@ export function SearchModal({ isOpen, onClose }: SearchModalProps) {
                     <div className="flex items-center gap-2">
                       <span className="font-medium text-sm text-text truncate">{r.title}</span>
                       <span
-                        className={`text-[10px] font-medium uppercase px-1.5 py-0.5 rounded shrink-0 ${
+                        className={`text-xs font-medium uppercase px-1.5 py-0.5 rounded shrink-0 ${
                           r.type === "team"
                             ? "bg-brand/10 text-brand"
                             : r.type === "player"

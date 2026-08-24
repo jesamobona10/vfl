@@ -154,7 +154,7 @@ export function SetupChecklist({ slug, competitionCount, teamCount, fixtureCount
                     <Icon size={13} className="shrink-0 text-muted" />
                     {step.label}
                     {isNext && (
-                      <span className="ml-1 rounded bg-brand-50 px-1.5 py-0.5 text-[11px] font-semibold text-brand-600">
+                      <span className="ml-1 rounded bg-brand-50 px-1.5 py-0.5 text-xs font-semibold text-brand-600">
                         Next up
                       </span>
                     )}

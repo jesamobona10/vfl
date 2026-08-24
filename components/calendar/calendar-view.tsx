@@ -109,7 +109,7 @@ export function CalendarView({ orgId }: CalendarViewProps) {
         {DAYS.map((d) => (
           <div
             key={d}
-            className="bg-surface-2 text-center text-[11px] text-muted font-semibold py-1.5"
+            className="bg-surface-2 text-center text-xs text-muted font-semibold py-1.5"
           >
             {d}
           </div>

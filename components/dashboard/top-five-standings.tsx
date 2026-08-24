@@ -30,7 +30,7 @@ export function TopFiveStandings() {
       <div className="overflow-x-auto">
         <table className="w-full text-[12.5px]">
           <thead>
-            <tr className="text-[10.5px] uppercase tracking-[0.04em] text-ink-3 font-semibold">
+            <tr className="text-xs uppercase tracking-[0.04em] text-ink-3 font-semibold">
               <th className="text-left px-4 py-2.5 font-semibold border-b border-line">#</th>
               <th className="text-left px-4 py-2.5 font-semibold border-b border-line">Team</th>
               <th className="text-center px-4 py-2.5 font-semibold border-b border-line">P</th>

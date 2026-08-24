@@ -67,7 +67,7 @@ function severityBadge(severity?: string | null) {
   const s = severity || "LOW";
   return (
     <span
-      className={`inline-flex items-center px-1.5 py-0.5 rounded-full text-[10px] font-semibold uppercase tracking-wide ${
+      className={`inline-flex items-center px-1.5 py-0.5 rounded-full text-xs font-semibold uppercase tracking-wide ${
         SEVERITY_STYLES[s] || SEVERITY_STYLES.LOW
       }`}
     >
@@ -130,11 +130,11 @@ function ChangesList({
             <span className="font-medium w-32 shrink-0 pt-0.5">{humanizeKey(key)}</span>
             <div className="flex-1 grid grid-cols-2 gap-3">
               <div>
-                <div className="text-[10px] uppercase tracking-wide text-ink-3 mb-0.5">Before</div>
+                <div className="text-xs uppercase tracking-wide text-ink-3 mb-0.5">Before</div>
                 <div className={changed ? "text-ink-2" : "text-ink-3"}>{renderChange(key, b)}</div>
               </div>
               <div>
-                <div className="text-[10px] uppercase tracking-wide text-ink-3 mb-0.5">After</div>
+                <div className="text-xs uppercase tracking-wide text-ink-3 mb-0.5">After</div>
                 <div className={changed ? "font-semibold text-text" : "text-ink-3"}>
                   {renderChange(key, a)}
                 </div>
@@ -276,7 +276,7 @@ export default function OrgAuditLogsPage() {
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
               <thead>
-                <tr className="text-left text-[10.5px] uppercase tracking-[0.04em] text-ink-3 font-semibold">
+                <tr className="text-left text-xs uppercase tracking-[0.04em] text-ink-3 font-semibold">
                   <th className="px-4 py-2.5 font-semibold border-b border-line">Date</th>
                   <th className="px-4 py-2.5 font-semibold border-b border-line">User</th>
                   <th className="px-4 py-2.5 font-semibold border-b border-line">Action</th>
@@ -308,7 +308,7 @@ export default function OrgAuditLogsPage() {
                         {log.actor?.label || log.actor_role || "Unknown"}
                       </span>
                       {log.actor?.role && (
-                        <span className="block text-[11px] text-ink-3 capitalize">
+                        <span className="block text-xs text-ink-3 capitalize">
                           {log.actor.role.replace(/_/g, " ")}
                         </span>
                       )}
@@ -319,7 +319,7 @@ export default function OrgAuditLogsPage() {
                         <span className="font-medium">{log.label || log.action}</span>
                       </span>
                       {log.description && (
-                        <span className="block text-[11.5px] text-ink-2 truncate max-w-[240px]">
+                        <span className="block text-xs text-ink-2 truncate max-w-[240px]">
                           {log.description}
                         </span>
                       )}
@@ -329,7 +329,7 @@ export default function OrgAuditLogsPage() {
                         {log.resource_type?.toLowerCase() || "—"}
                       </span>
                       {log.resource_id && (
-                        <span className="block text-[11px] text-ink-3 font-mono">
+                        <span className="block text-xs text-ink-3 font-mono">
                           #{log.resource_id}
                         </span>
                       )}
@@ -436,7 +436,7 @@ function AuditDetailDrawer({ log, onClose }: { log: AuditLog; onClose: () => voi
           </div>
 
           <div>
-            <div className="text-[10px] uppercase tracking-wide text-ink-3 mb-1.5">Date</div>
+            <div className="text-xs uppercase tracking-wide text-ink-3 mb-1.5">Date</div>
             <div className="text-sm">
               {new Date(log.created_at).toLocaleString("en-GB", {
                 day: "numeric",
@@ -449,12 +449,12 @@ function AuditDetailDrawer({ log, onClose }: { log: AuditLog; onClose: () => voi
           </div>
 
           <div>
-            <div className="text-[10px] uppercase tracking-wide text-ink-3 mb-1.5">Description</div>
+            <div className="text-xs uppercase tracking-wide text-ink-3 mb-1.5">Description</div>
             <div className="text-sm">{log.description || "No description recorded."}</div>
           </div>
 
           <div>
-            <div className="text-[10px] uppercase tracking-wide text-ink-3 mb-1.5">Resource</div>
+            <div className="text-xs uppercase tracking-wide text-ink-3 mb-1.5">Resource</div>
             <div className="text-sm">
               <span className="uppercase text-xs font-semibold tracking-wide">
                 {log.resource_type?.toLowerCase() || "—"}
@@ -464,14 +464,14 @@ function AuditDetailDrawer({ log, onClose }: { log: AuditLog; onClose: () => voi
           </div>
 
           <div>
-            <div className="text-[10px] uppercase tracking-wide text-ink-3 mb-1.5">Changes</div>
+            <div className="text-xs uppercase tracking-wide text-ink-3 mb-1.5">Changes</div>
             <ChangesList before={log.before} after={log.after} />
           </div>
 
           {log.metadata && Object.keys(log.metadata).length > 0 && (
             <div>
-              <div className="text-[10px] uppercase tracking-wide text-ink-3 mb-1.5">Metadata</div>
-              <pre className="text-[11px] bg-bg border border-line rounded-lg p-3 overflow-x-auto">
+              <div className="text-xs uppercase tracking-wide text-ink-3 mb-1.5">Metadata</div>
+              <pre className="text-xs bg-bg border border-line rounded-lg p-3 overflow-x-auto">
                 {JSON.stringify(log.metadata, null, 2)}
               </pre>
             </div>

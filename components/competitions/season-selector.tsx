@@ -50,7 +50,7 @@ export function SeasonSelector({ seasons, selectedSeasonId, onSeasonChange }: Se
               >
                 <span>{s.name}</span>
                 <span
-                  className={`text-[11px] font-medium px-1.5 py-0.5 rounded-full ${
+                  className={`text-xs font-medium px-1.5 py-0.5 rounded-full ${
                     s.status === "active"
                       ? "bg-live-tint text-live-500"
                       : s.status === "completed"

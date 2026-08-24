@@ -133,7 +133,7 @@ export default function LiveEventPage() {
           <p className="text-xs font-semibold uppercase tracking-widest text-muted">
             Diagnostics (debug=1)
           </p>
-          <p className="text-[11px] text-muted">
+          <p className="text-xs text-muted">
             Server now: <code className="text-text">{data.now}</code>
           </p>
           <div className="overflow-x-auto">
@@ -250,7 +250,7 @@ export default function LiveEventPage() {
                         <span className="text-xs text-muted">
                           {match.time ? `Kickoff ${match.time}` : "Kickoff soon"}
                           {delayed && (
-                            <span className="ml-1.5 inline-flex items-center px-1.5 py-0.5 rounded bg-warn-500/15 text-warn-500 text-[10px] font-semibold uppercase">
+                            <span className="ml-1.5 inline-flex items-center px-1.5 py-0.5 rounded bg-warn-500/15 text-warn-500 text-xs font-semibold uppercase">
                               Delayed
                             </span>
                           )}
@@ -258,7 +258,7 @@ export default function LiveEventPage() {
                         {canEdit && (
                           <div className="flex flex-col items-end gap-1">
                             {startsIn && (
-                              <span className="text-[11px] text-muted tabular-nums">
+                              <span className="text-xs text-muted tabular-nums">
                                 {startsIn}
                               </span>
                             )}

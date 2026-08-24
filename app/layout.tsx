@@ -13,9 +13,31 @@ const inter = Inter({
 });
 
 export const metadata: Metadata = {
-  title: "LeagueForge",
-  description: "School Football League Management System",
-  icons: { icon: "/icon.svg" },
+  metadataBase: new URL(
+    process.env.NEXT_PUBLIC_SITE_URL ?? "https://leagueforge.vercel.app"
+  ),
+  title: {
+    default: "LeagueForge",
+    template: "%s · LeagueForge",
+  },
+  description:
+    "School Football League Management System — competitions, teams, players, fixtures, and live standings.",
+  applicationName: "LeagueForge",
+  manifest: "/manifest.json",
+  icons: { icon: "/icon.svg", apple: "/icon.svg" },
+  openGraph: {
+    type: "website",
+    siteName: "LeagueForge",
+    title: "LeagueForge",
+    description:
+      "School Football League Management System — competitions, teams, players, fixtures, and live standings.",
+  },
+  twitter: {
+    card: "summary",
+    title: "LeagueForge",
+    description:
+      "School Football League Management System — competitions, teams, players, fixtures, and live standings.",
+  },
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {

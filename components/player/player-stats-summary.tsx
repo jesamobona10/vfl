@@ -90,14 +90,14 @@ export function PlayerStatsSummary({ player }: PlayerStatsSummaryProps) {
       <div className="space-y-5">
         {groups.map((group) => (
           <div key={group.label}>
-            <p className="text-[10px] font-semibold uppercase tracking-wider text-muted mb-2">
+            <p className="text-xs font-semibold uppercase tracking-wider text-muted mb-2">
               {group.label}
             </p>
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
               {group.items.map((item) => (
                 <div key={item.label} className="bg-surface-2 rounded-lg px-3 py-2.5 flex flex-col">
                   <span className="text-lg font-bold text-text">{item.value}</span>
-                  <span className="text-[11px] text-muted leading-tight">{item.label}</span>
+                  <span className="text-xs text-muted leading-tight">{item.label}</span>
                 </div>
               ))}
             </div>

@@ -7,6 +7,7 @@ import { useResolvedTeams } from "@/lib/hooks/use-resolved-teams";
 import { calculateStandings, completedMatches } from "@/lib/logic/standings";
 import { Download, ChevronDown, Crown } from "lucide-react";
 import { exportAsJSON, exportAsPNG, exportAsPDF } from "@/lib/utils/export";
+import { SkeletonTable } from "@/components/shared/skeleton";
 import type { StandingRow } from "@/lib/types";
 
 function computeForm(
@@ -39,7 +40,7 @@ function FormGuide({ form }: { form: string[] }) {
       {form.map((r, i) => (
         <span
           key={i}
-          className={`inline-flex items-center justify-center w-5 h-5 rounded text-[11px] font-bold ${
+          className={`inline-flex items-center justify-center w-5 h-5 rounded text-xs font-bold ${
             colors[r] || "bg-muted/20 text-muted"
           }`}
         >
@@ -58,7 +59,9 @@ export function StandingsTable() {
   const currentSeasonId = useAppStore((s) => s.currentSeasonId);
   const fixtures = useAppStore((s) => s.fixtures);
 
-  const { data: seasonStandings } = useSeasonStandings(currentSeasonId ?? undefined);
+  const { data: seasonStandings, isPending: standingsPending } = useSeasonStandings(
+    currentSeasonId ?? undefined
+  );
   const teams = useResolvedTeams(currentSeasonId);
 
   const standings = seasonStandings?.length
@@ -114,6 +117,14 @@ export function StandingsTable() {
     await exportAsPDF(tableRef.current, "leagueforge-standings.pdf", "League Standings");
   };
 
+  if (standingsPending && !standings.length) {
+    return (
+      <div className="card p-4">
+        <SkeletonTable rows={8} cols={6} />
+      </div>
+    );
+  }
+
   if (!standings.length) {
     return (
       <div className="card p-8 text-center text-muted">
@@ -160,7 +171,7 @@ export function StandingsTable() {
       <div className="overflow-x-auto">
         <table className="w-full text-sm">
           <thead>
-            <tr className="text-[10.5px] uppercase tracking-[0.04em] text-ink-3 font-semibold">
+            <tr className="text-xs uppercase tracking-[0.04em] text-ink-3 font-semibold">
               <th className="text-left px-4 py-2.5 font-semibold border-b border-line sticky left-0 bg-panel z-10 w-12">
                 #
               </th>

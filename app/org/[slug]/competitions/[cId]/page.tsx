@@ -117,7 +117,7 @@ export default function CompetitionOverviewPage() {
               >
                 <span className="text-sm font-medium">{s.name}</span>
                 {s.is_current && (
-                  <span className="text-[11px] font-medium px-2 py-0.5 rounded-full bg-brand-50 text-brand-700">
+                  <span className="text-xs font-medium px-2 py-0.5 rounded-full bg-brand-50 text-brand-700">
                     Current
                   </span>
                 )}

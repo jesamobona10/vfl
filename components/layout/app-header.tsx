@@ -9,7 +9,6 @@ import {
   Search,
   Download,
   Upload,
-  RotateCcw,
   LogOut,
   RefreshCw,
   Settings2,
@@ -17,7 +16,6 @@ import {
 } from "lucide-react";
 import { useResolvedTeams } from "@/lib/hooks/use-resolved-teams";
 import { useToast } from "@/components/ui/toast";
-import { useConfirm } from "@/components/shared/confirm-dialog";
 
 interface AppHeaderProps {
   onOpenSearch: () => void;
@@ -26,18 +24,15 @@ interface AppHeaderProps {
 
 export function AppHeader({ onOpenSearch, onOpenMenu }: AppHeaderProps) {
   const toast = useToast();
-  const { confirm, dialog: confirmDialog } = useConfirm();
   const currentTeamAccount = useAppStore((s) => s.currentTeamAccount);
   const userProfile = useAppStore((s) => s.userProfile);
   const isAdmin = useAppStore((s) => s.isAdmin);
   const isPlayer = userProfile?.role === "player";
   const currentOrg = useAppStore((s) => s.currentOrg);
   const logout = useAppStore((s) => s.logout);
-  const resetTeams = useAppStore((s) => s.resetTeams);
   const setTeams = useAppStore((s) => s.setTeams);
   const setFixtures = useAppStore((s) => s.setFixtures);
   const setPlayers = useAppStore((s) => s.setPlayers);
-  const deleteAllPlayers = useAppStore((s) => s.deleteAllPlayers);
   const currentSeasonId = useAppStore((s) => s.currentSeasonId);
   const teams = useResolvedTeams(currentSeasonId);
   const fixtures = useAppStore((s) => s.fixtures);
@@ -132,22 +127,6 @@ export function AppHeader({ onOpenSearch, onOpenMenu }: AppHeaderProps) {
     setMenuOpen(false);
   };
 
-  const handleReset = async () => {
-    setMenuOpen(false);
-    if (
-      !(await confirm({
-        title: "Reset all data to defaults?",
-        description: "This cannot be undone.",
-        confirmLabel: "Reset",
-      }))
-    )
-      return;
-    resetTeams();
-    setFixtures([]);
-    deleteAllPlayers();
-    toast.success("Data reset to defaults.");
-  };
-
   const handleRefresh = async () => {
     setRefreshing(true);
     await refreshTeamData();
@@ -162,7 +141,6 @@ export function AppHeader({ onOpenSearch, onOpenMenu }: AppHeaderProps) {
 
   return (
     <header className="bg-panel border-b border-line px-4 sm:px-6 py-3 flex items-center justify-between">
-      {confirmDialog}
       <div className="flex items-center gap-2 sm:gap-3">
         {onOpenMenu && (
           <button onClick={onOpenMenu} className="btn-icon lg:hidden" aria-label="Open navigation">
@@ -210,12 +188,6 @@ export function AppHeader({ onOpenSearch, onOpenMenu }: AppHeaderProps) {
                   className="w-full flex items-center gap-2 px-3 py-2 text-sm text-ink hover:bg-surface-2 rounded-lg transition-colors disabled:opacity-50"
                 >
                   <Upload size={15} /> {importing ? "Importing&hellip;" : "Import data"}
-                </button>
-                <button
-                  onClick={handleReset}
-                  className="w-full flex items-center gap-2 px-3 py-2 text-sm text-danger hover:bg-danger-tint rounded-lg transition-colors"
-                >
-                  <RotateCcw size={15} /> Reset to defaults
                 </button>
               </div>
             )}

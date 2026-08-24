@@ -153,7 +153,7 @@ export function BulkScoreEntry() {
                         </td>
                         <td className="py-2 px-2 text-center">
                           <span
-                            className={`text-[11px] font-semibold px-2 py-0.5 rounded-full ${
+                            className={`text-xs font-semibold px-2 py-0.5 rounded-full ${
                               hasBothScores ? "bg-brand/10 text-brand" : "bg-surface-2 text-muted"
                             }`}
                           >

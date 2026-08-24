@@ -8,8 +8,8 @@ import {
   useCreateSeasonTeams,
   useDeleteSeasonTeam,
 } from "@/lib/hooks/use-competitions";
-import { Shield, Plus, X, AlertCircle } from "lucide-react";
-import { PageSkeleton } from "@/components/shared/skeleton";
+import { Plus, X, AlertCircle } from "lucide-react";
+import { PageSkeleton, EmptyState } from "@/components/shared/skeleton";
 import { useConfirm } from "@/components/shared/confirm-dialog";
 
 export default function CompTeamsPage() {
@@ -168,9 +168,11 @@ export default function CompTeamsPage() {
       )}
 
       {seasonTeams.length === 0 ? (
-        <div className="text-center py-16">
-          <Shield size={48} className="mx-auto text-ink-3/40 mb-4" />
-          <p className="text-ink-2">No teams registered for this season yet.</p>
+        <div className="card">
+          <EmptyState
+            title="No teams registered yet"
+            description="Register teams for this season to build fixtures and standings."
+          />
         </div>
       ) : (
         <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">

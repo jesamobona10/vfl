@@ -72,7 +72,7 @@ export function TimeInput({ value, onChange, label = "Time" }: TimeInputProps) {
             setP12(p.period);
             setMode("12h");
           }}
-          className="text-[11px] text-muted hover:text-text px-1.5 py-1 shrink-0 font-medium"
+          className="text-xs text-muted hover:text-text px-1.5 py-1 shrink-0 font-medium"
           title="Switch to 12-hour format"
         >
           12h
@@ -135,7 +135,7 @@ export function TimeInput({ value, onChange, label = "Time" }: TimeInputProps) {
           onChange(to24h(h12, m12, p12));
           setMode("24h");
         }}
-        className="text-[11px] text-muted hover:text-text px-1.5 py-1 shrink-0 font-medium"
+        className="text-xs text-muted hover:text-text px-1.5 py-1 shrink-0 font-medium"
         title="Switch to 24-hour format"
       >
         24h

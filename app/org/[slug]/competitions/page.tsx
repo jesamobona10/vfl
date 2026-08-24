@@ -124,7 +124,7 @@ export default function CompetitionsPage() {
                         <span className="text-xs uppercase tracking-wider">{cfg.label}</span>
                       </div>
                       <span
-                        className={`text-[11px] font-medium px-2 py-0.5 rounded-full ${statusColors[comp.status] ?? statusColors.draft}`}
+                        className={`text-xs font-medium px-2 py-0.5 rounded-full ${statusColors[comp.status] ?? statusColors.draft}`}
                       >
                         {comp.status}
                       </span>

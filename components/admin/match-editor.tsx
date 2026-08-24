@@ -115,7 +115,7 @@ export function MatchEditor() {
                 ) : (
                   <ChevronRight size={16} className="shrink-0 text-muted" />
                 )}
-                <div className="text-[11px] uppercase tracking-[0.25em] text-muted">
+                <div className="text-xs uppercase tracking-[0.25em] text-muted">
                   {statusLabel[match.status] || match.status}
                 </div>
               </div>
@@ -178,29 +178,29 @@ export function MatchEditor() {
 
               <div className="flex flex-col items-end gap-2 text-right">
                 <span
-                  className={`rounded-full px-3 py-1 text-[11px] font-semibold ${statusTone[match.status]}`}
+                  className={`rounded-full px-3 py-1 text-xs font-semibold ${statusTone[match.status]}`}
                 >
                   {statusLabel[match.status] || match.status}
                 </span>
                 <div className="flex flex-wrap gap-1 justify-end">
                   {issue && (
-                    <span className="rounded-full bg-danger/10 text-danger px-2 py-1 text-[11px] font-medium flex items-center gap-1">
+                    <span className="rounded-full bg-danger/10 text-danger px-2 py-1 text-xs font-medium flex items-center gap-1">
                       <AlertCircle size={12} />
                       {issue}
                     </span>
                   )}
                   {match.manualEdited && (
-                    <span className="rounded-full bg-accent/10 text-accent px-2 py-1 text-[11px] font-medium">
+                    <span className="rounded-full bg-accent/10 text-accent px-2 py-1 text-xs font-medium">
                       Manual
                     </span>
                   )}
                   {match.autoAdjusted && (
-                    <span className="rounded-full bg-brand/10 text-brand px-2 py-1 text-[11px] font-medium">
+                    <span className="rounded-full bg-brand/10 text-brand px-2 py-1 text-xs font-medium">
                       Adjusted
                     </span>
                   )}
                   {locked && (
-                    <span className="rounded-full bg-muted/10 text-muted px-2 py-1 text-[11px] font-medium">
+                    <span className="rounded-full bg-muted/10 text-muted px-2 py-1 text-xs font-medium">
                       Locked
                     </span>
                   )}

@@ -99,14 +99,14 @@ export default function CompetitionLayout({ children }: { children: React.ReactN
               {typeLabels[currentCompetition.type] ?? "Competition"}
             </span>
             <span
-              className={`text-[11px] font-medium px-2 py-0.5 rounded-full ${
+              className={`text-xs font-medium px-2 py-0.5 rounded-full ${
                 statusColors[currentCompetition.status] ?? statusColors.draft
               }`}
             >
               {currentCompetition.status}
             </span>
             {currentSeason && (
-              <span className="text-[11px] font-medium px-2 py-0.5 rounded-full bg-brand-50 text-brand-700">
+              <span className="text-xs font-medium px-2 py-0.5 rounded-full bg-brand-50 text-brand-700">
                 Current Season
               </span>
             )}

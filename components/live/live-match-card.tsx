@@ -157,7 +157,7 @@ export function LiveMatchCard({
             <div className="text-2xl font-bold tabular-nums">
               {match.homeScore ?? 0} - {match.awayScore ?? 0}
             </div>
-            <div className="text-[11px] uppercase tracking-widest text-muted">
+            <div className="text-xs uppercase tracking-widest text-muted">
               {phase?.label === "HT" ? "Half-time" : phase?.label === "FT" ? "Full Time" : "Live"}
             </div>
           </div>
@@ -188,11 +188,11 @@ export function LiveMatchCard({
               const color = EVENT_COLOR[event.type] || "bg-muted/20 text-muted";
               return (
                 <div key={i} className="flex items-center gap-2 text-sm">
-                  <span className="w-9 shrink-0 text-[11px] text-muted tabular-nums text-right">
+                  <span className="w-9 shrink-0 text-xs text-muted tabular-nums text-right">
                     {event.minute ? `${event.minute}'` : "—"}
                   </span>
                   <span
-                    className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-medium ${color}`}
+                    className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium ${color}`}
                   >
                     <span className="font-semibold">{EVENT_ABBR[event.type] || event.type}</span>
                   </span>

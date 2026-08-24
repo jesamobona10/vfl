@@ -186,6 +186,28 @@ body {
   }
 }
 
+/* Subtle page-enter fade used by app/template.tsx */
+@keyframes page-in {
+  from {
+    opacity: 0;
+    transform: translateY(4px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.animate-page-in {
+  animation: page-in 180ms ease-out;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .animate-page-in {
+    animation: none;
+  }
+}
+
 @media print {
   header,
   nav,

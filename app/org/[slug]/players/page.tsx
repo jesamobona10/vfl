@@ -7,7 +7,8 @@ import { useOrg } from "@/lib/hooks/use-org";
 import { PlayerCard } from "@/components/players/player-card";
 import { PlayerModal } from "@/components/players/player-modal";
 import { PlayerImportModal } from "@/components/players/player-import-modal";
-import { Users, Plus, AlertCircle, Upload } from "lucide-react";
+import { Plus, AlertCircle, Upload } from "lucide-react";
+import { EmptyState } from "@/components/shared/skeleton";
 import { useConfirm } from "@/components/shared/confirm-dialog";
 import type { Player } from "@/lib/types";
 
@@ -113,9 +114,11 @@ export default function OrgPlayersPage() {
       )}
 
       {grouped.length === 0 ? (
-        <div className="text-center py-16">
-          <Users size={48} className="mx-auto text-ink-3/40 mb-4" />
-          <p className="text-ink-2">No players yet.</p>
+        <div className="card">
+          <EmptyState
+            title="No players yet"
+            description="Register players to see them grouped by team here."
+          />
         </div>
       ) : (
         <div className="space-y-8">

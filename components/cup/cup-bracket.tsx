@@ -49,7 +49,7 @@ export function CupBracket({
             <div key={round.key}>
               <div className="flex items-center gap-2 mb-3">
                 <span className="w-1.5 h-1.5 rounded-full bg-muted/40" />
-                <span className="text-[10px] font-semibold uppercase tracking-wider text-muted">
+                <span className="text-xs font-semibold uppercase tracking-wider text-muted">
                   {round.label}
                 </span>
                 {ri < roundConfig.length - 1 && <ArrowRight size={12} className="text-muted/30" />}
@@ -77,7 +77,7 @@ export function CupBracket({
                 <div className="mt-3 pt-3 border-t border-line text-center">
                   <Trophy size={20} className="mx-auto text-accent mb-1" />
                   <p className="text-xs font-bold text-text">{getTeamName(champion)}</p>
-                  <p className="text-[10px] text-muted">Champion</p>
+                  <p className="text-xs text-muted">Champion</p>
                 </div>
               )}
             </div>
@@ -94,7 +94,7 @@ export function CupBracket({
           return (
             <div key={round.key} className="space-y-3">
               <div className="flex items-center gap-2">
-                <span className="text-[10px] font-semibold uppercase tracking-wider text-muted">
+                <span className="text-xs font-semibold uppercase tracking-wider text-muted">
                   {round.label}
                 </span>
                 {ri < roundConfig.length - 1 && (
@@ -137,7 +137,7 @@ export function CupBracket({
                 <div className="mt-4 pt-3 border-t border-line text-center">
                   <Trophy size={24} className="mx-auto text-accent mb-1" />
                   <p className="text-xs font-bold text-text">{getTeamName(champion)}</p>
-                  <p className="text-[10px] text-muted">Champion</p>
+                  <p className="text-xs text-muted">Champion</p>
                 </div>
               )}
             </div>

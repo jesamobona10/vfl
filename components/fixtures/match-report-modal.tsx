@@ -284,7 +284,7 @@ export function MatchReportModal({
                 }
                 className="input w-full resize-y text-sm min-h-40"
               />
-              <p className="text-[11px] text-muted text-right">
+              <p className="text-xs text-muted text-right">
                 {report.length.toLocaleString()} / 4,000
               </p>
               <div className="flex items-center gap-2 rounded-lg bg-surface-2 px-3 py-2.5 text-xs text-muted">
@@ -305,7 +305,7 @@ export function MatchReportModal({
                   <p className="text-xs text-muted">Model: {analysis.model}</p>
                 </div>
                 <span
-                  className={`px-2.5 py-1 rounded-full text-[11px] font-semibold ${
+                  className={`px-2.5 py-1 rounded-full text-xs font-semibold ${
                     analysis.status === "REVIEW_REQUIRED"
                       ? "bg-warn-500/15 text-warn-500"
                       : "bg-brand/15 text-brand"
@@ -336,15 +336,15 @@ export function MatchReportModal({
                     };
                     const statusBadge =
                       ev.playerStatus === "RESOLVED" ? (
-                        <span className="inline-flex items-center gap-1 text-[10px] font-semibold text-brand">
+                        <span className="inline-flex items-center gap-1 text-xs font-semibold text-brand">
                           <CheckCircle2 size={11} /> resolved
                         </span>
                       ) : ev.playerStatus === "AMBIGUOUS" ? (
-                        <span className="inline-flex items-center gap-1 text-[10px] font-semibold text-warn-500">
+                        <span className="inline-flex items-center gap-1 text-xs font-semibold text-warn-500">
                           <AlertTriangle size={11} /> ambiguous
                         </span>
                       ) : (
-                        <span className="inline-flex items-center gap-1 text-[10px] font-semibold text-danger">
+                        <span className="inline-flex items-center gap-1 text-xs font-semibold text-danger">
                           <UserX size={11} /> unresolved
                         </span>
                       );
@@ -394,7 +394,7 @@ export function MatchReportModal({
                           <span className="ml-auto">
                             {ev.minuteInference ? (
                               <span
-                                className="text-[10px] text-muted"
+                                className="text-xs text-muted"
                                 title={`Inferred from: ${ev.minuteInference.text}`}
                               >
                                 ⏱ inferred
@@ -405,7 +405,7 @@ export function MatchReportModal({
 
                         <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                           <div>
-                            <label className="text-[10px] uppercase tracking-wide text-muted font-semibold">
+                            <label className="text-xs uppercase tracking-wide text-muted font-semibold">
                               Player {statusBadge}
                             </label>
                             <select
@@ -449,7 +449,7 @@ export function MatchReportModal({
 
                           {(ev.type === "GOAL" || ev.type === "PENALTY_GOAL") && (
                             <div>
-                              <label className="text-[10px] uppercase tracking-wide text-muted font-semibold">
+                              <label className="text-xs uppercase tracking-wide text-muted font-semibold">
                                 Assist
                               </label>
                               <select
@@ -476,7 +476,7 @@ export function MatchReportModal({
                           )}
 
                           <div>
-                            <label className="text-[10px] uppercase tracking-wide text-muted font-semibold">
+                            <label className="text-xs uppercase tracking-wide text-muted font-semibold">
                               Confidence
                             </label>
                             <div className="mt-1 text-sm">

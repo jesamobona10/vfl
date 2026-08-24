@@ -276,7 +276,7 @@ function FixtureManager() {
                             </div>
                           </div>
                           <span
-                            className={`rounded-full px-2.5 py-0.5 text-[11px] font-semibold shrink-0 ${statusTone[match.status]}`}
+                            className={`rounded-full px-2.5 py-0.5 text-xs font-semibold shrink-0 ${statusTone[match.status]}`}
                           >
                             {statusLabel[match.status] || match.status}
                           </span>
@@ -313,7 +313,7 @@ function FixtureManager() {
                                       key={i}
                                       className="inline-flex items-center gap-1 rounded-full bg-surface-2 px-2 py-0.5 text-xs"
                                     >
-                                      <span className="font-mono font-bold text-[10px] uppercase">
+                                      <span className="font-mono font-bold text-xs uppercase">
                                         {event.type.slice(0, 3).toUpperCase()}
                                       </span>
                                       <span>#{event.playerId}</span>

@@ -177,7 +177,7 @@ export function FixtureCard({
     return (
       <span
         key={i}
-        className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-medium ${color}`}
+        className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium ${color}`}
       >
         <span className="font-semibold">{EVENT_ABBR[event.type] || event.type}</span>
         {getPlayerName(event.playerId)}
@@ -212,7 +212,7 @@ export function FixtureCard({
             {match.status === "live" || match.status === "in-progress" ? (
               <LiveBadge match={match} />
             ) : (
-              <span className={`rounded-full px-2 py-1 text-[11px] font-semibold ${statusColor}`}>
+              <span className={`rounded-full px-2 py-1 text-xs font-semibold ${statusColor}`}>
                 {titleCase(match.status)}
               </span>
             )}

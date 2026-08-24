@@ -1,7 +1,7 @@
 -- ============================================================
 -- Migration: Close public RLS policies that leak cross-org data
 --
--- Drops the public read policies (USING true) on teams and
+-- Drops the public read poli cies (USING true) on teams and
 -- fixtures that were left from the single-tenant era, and
 -- replaces the fixtures policy with an org-membership-scoped
 -- one matching the existing teams_read_org_members pattern.

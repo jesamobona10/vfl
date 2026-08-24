@@ -30,7 +30,7 @@ export function LiveBadge({ match, settings }: LiveBadgeProps) {
 
   return (
     <span
-      className={`inline-flex items-center gap-1.5 rounded-full border px-2 py-1 text-[11px] font-bold uppercase tracking-wide animate-pulse ${active.ring}`}
+      className={`inline-flex items-center gap-1.5 rounded-full border px-2 py-1 text-xs font-bold uppercase tracking-wide animate-pulse ${active.ring}`}
     >
       <span className="relative flex h-2 w-2">
         <span

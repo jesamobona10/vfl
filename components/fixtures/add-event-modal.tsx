@@ -267,7 +267,7 @@ export function AddEventModal({
           <div className="space-y-4 max-h-80 overflow-y-auto">
             {EVENT_CATEGORIES.map((category) => (
               <div key={category.label}>
-                <p className="text-[11px] uppercase tracking-wider text-muted font-semibold mb-2">
+                <p className="text-xs uppercase tracking-wider text-muted font-semibold mb-2">
                   {category.label}
                 </p>
                 <div className="grid grid-cols-2 gap-2">
@@ -292,7 +292,7 @@ export function AddEventModal({
           <div className="space-y-3 max-h-80 overflow-y-auto">
             {homePlayers.length > 0 && (
               <div>
-                <p className="text-[11px] uppercase tracking-wider text-muted font-semibold mb-1">
+                <p className="text-xs uppercase tracking-wider text-muted font-semibold mb-1">
                   {homeTeamName}
                 </p>
                 {homePlayers.map((p) => (
@@ -305,14 +305,14 @@ export function AddEventModal({
                       {p.number || "?"}
                     </span>
                     <span className="text-sm font-medium">{p.name}</span>
-                    <span className="text-[11px] text-muted ml-auto">{p.position}</span>
+                    <span className="text-xs text-muted ml-auto">{p.position}</span>
                   </button>
                 ))}
               </div>
             )}
             {awayPlayers.length > 0 && (
               <div>
-                <p className="text-[11px] uppercase tracking-wider text-muted font-semibold mb-1">
+                <p className="text-xs uppercase tracking-wider text-muted font-semibold mb-1">
                   {awayTeamName}
                 </p>
                 {awayPlayers.map((p) => (
@@ -325,7 +325,7 @@ export function AddEventModal({
                       {p.number || "?"}
                     </span>
                     <span className="text-sm font-medium">{p.name}</span>
-                    <span className="text-[11px] text-muted ml-auto">{p.position}</span>
+                    <span className="text-xs text-muted ml-auto">{p.position}</span>
                   </button>
                 ))}
               </div>

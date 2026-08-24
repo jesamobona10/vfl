@@ -61,14 +61,14 @@ export function MobileNavDrawer({ items, footer, isOpen, onClose }: MobileNavDra
       aria-label="Navigation"
     >
       <div className="fixed inset-0 bg-black/40" onClick={onClose} aria-hidden="true" />
-      <aside className="fixed inset-y-0 left-0 w-[280px] max-w-[85vw] bg-white border-r border-line flex flex-col shadow-2xl">
+      <aside className="fixed inset-y-0 left-0 w-[280px] max-w-[85vw] bg-surface border-r border-line flex flex-col shadow-2xl">
         <div className="flex items-center gap-2.5 px-5 py-5 border-b border-line">
           <div className="w-8 h-8 rounded-lg bg-brand-600 text-white flex items-center justify-center font-bold text-sm shrink-0">
             V
           </div>
           <div className="min-w-0 flex-1">
             <div className="text-[13.5px] font-semibold leading-tight">LeagueForge</div>
-            <div className="text-[11px] text-ink-3 mt-0.5">School league management</div>
+            <div className="text-xs text-ink-3 mt-0.5">School league management</div>
           </div>
           <button onClick={onClose} className="btn-icon" aria-label="Close navigation">
             <X size={18} />
@@ -110,7 +110,7 @@ export function MobileNavDrawer({ items, footer, isOpen, onClose }: MobileNavDra
                 <div className="text-[12.5px] font-semibold leading-tight truncate">
                   {footer.title}
                 </div>
-                <div className="text-[11px] text-ink-3 mt-0.5 truncate">{footer.subtitle}</div>
+                <div className="text-xs text-ink-3 mt-0.5 truncate">{footer.subtitle}</div>
               </div>
             </div>
           </div>

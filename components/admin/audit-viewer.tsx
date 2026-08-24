@@ -127,7 +127,7 @@ function AuditRow({ log }: { log: AuditLog }) {
           })}
         </span>
         <span
-          className={`inline-flex items-center px-1.5 py-0.5 rounded-full text-[10px] font-semibold uppercase tracking-wide ${
+          className={`inline-flex items-center px-1.5 py-0.5 rounded-full text-xs font-semibold uppercase tracking-wide ${
             SEVERITY_STYLES[log.severity || "LOW"] || SEVERITY_STYLES.LOW
           }`}
         >
@@ -170,14 +170,14 @@ function AuditRow({ log }: { log: AuditLog }) {
               )}
               {(log.before || log.after) && (
                 <div>
-                  <div className="text-[10px] uppercase tracking-wide text-ink-3 mb-1.5">
+                  <div className="text-xs uppercase tracking-wide text-ink-3 mb-1.5">
                     Changes
                   </div>
                   <ChangesList before={log.before} after={log.after} />
                 </div>
               )}
               {log.metadata && Object.keys(log.metadata).length > 0 && (
-                <pre className="text-[10px] bg-bg border border-line rounded-lg p-3 overflow-x-auto">
+                <pre className="text-xs bg-bg border border-line rounded-lg p-3 overflow-x-auto">
                   {JSON.stringify(log.metadata, null, 2)}
                 </pre>
               )}

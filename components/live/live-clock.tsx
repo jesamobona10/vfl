@@ -39,7 +39,7 @@ export function LiveClock({ match, settings }: LiveClockProps) {
 
   return (
     <span
-      className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[11px] font-semibold tabular-nums ${tone}`}
+      className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-semibold tabular-nums ${tone}`}
     >
       <span className="relative flex h-1.5 w-1.5">
         {phase.label !== "HT" && phase.label !== "FT" && (

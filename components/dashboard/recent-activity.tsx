@@ -74,7 +74,7 @@ export function RecentActivity({ orgSlug }: { orgSlug: string }) {
             <span className="w-1.5 h-1.5 rounded-full bg-gold-500 mt-1.5 shrink-0" />
             <div className="min-w-0">
               <div className="text-[12.5px] leading-snug">{activityText(log)}</div>
-              <div className="text-[11px] text-ink-3 mt-0.5">{relativeTime(log.created_at)}</div>
+              <div className="text-xs text-ink-3 mt-0.5">{relativeTime(log.created_at)}</div>
             </div>
           </div>
         ))}

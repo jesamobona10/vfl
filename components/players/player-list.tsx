@@ -6,6 +6,7 @@ import { useResolvedTeams } from "@/lib/hooks/use-resolved-teams";
 import { PlayerCard } from "./player-card";
 import { PlayerModal } from "./player-modal";
 import { CsvImport } from "./csv-import";
+import { EmptyState } from "@/components/shared/skeleton";
 import { sanitizeCsvCell } from "@/lib/utils/csv";
 import { useToast } from "@/components/ui/toast";
 import { useConfirm } from "@/components/shared/confirm-dialog";
@@ -199,14 +200,14 @@ export function PlayerList() {
       </div>
 
       {filtered.length === 0 ? (
-        <div className="text-center py-16">
-          <Users size={48} className="mx-auto text-muted/30 mb-4" />
-          <p className="text-muted">
-            {players.length === 0
-              ? "No players yet. Add one or import from CSV."
-              : "No players match the selected filters."}
-          </p>
-        </div>
+        <EmptyState
+          title={players.length === 0 ? "No players yet" : "No players match your filters"}
+          description={
+            players.length === 0
+              ? "Add a player or import your registration sheet from CSV to get started."
+              : "Try adjusting or clearing the filters above."
+          }
+        />
       ) : (
         <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-3">
           {filtered.map((p) => (

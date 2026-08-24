@@ -59,7 +59,7 @@ export function PlayerFormGuide({ teamFixtures, teamId, matchRatings }: PlayerFo
                   title={`Rating: ${rating.toFixed(1)}`}
                 />
               )}
-              <span className="text-[10px] text-muted">R{m.round}</span>
+              <span className="text-xs text-muted">R{m.round}</span>
             </div>
           );
         })}

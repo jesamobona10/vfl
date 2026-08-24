@@ -472,7 +472,7 @@ export function CompManager() {
                         </span>
                         <span className="font-medium truncate">{s.name}</span>
                         {s.is_current && (
-                          <span className="text-brand text-[10px] font-semibold">(Current)</span>
+                          <span className="text-brand text-xs font-semibold">(Current)</span>
                         )}
                       </div>
                       <div className="flex items-center gap-1 shrink-0">
@@ -480,7 +480,7 @@ export function CompManager() {
                           <button
                             type="button"
                             onClick={() => handleActivateSeason(s)}
-                            className="btn-ghost text-[11px] py-0.5 px-1.5"
+                            className="btn-ghost text-xs py-0.5 px-1.5"
                           >
                             Activate
                           </button>
@@ -489,7 +489,7 @@ export function CompManager() {
                           <button
                             type="button"
                             onClick={() => handleCompleteSeason(s)}
-                            className="btn-ghost text-[11px] py-0.5 px-1.5 text-danger"
+                            className="btn-ghost text-xs py-0.5 px-1.5 text-danger"
                           >
                             Complete
                           </button>

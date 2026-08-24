@@ -17,7 +17,10 @@ import {
   Users,
   Calendar,
   Database,
+  RotateCcw,
 } from "lucide-react";
+import { useToast } from "@/components/ui/toast";
+import { useConfirm } from "@/components/shared/confirm-dialog";
 
 type Step = "upload" | "preview" | "confirm" | "done";
 
@@ -27,6 +30,10 @@ export function DataImporter() {
   const setTeams = useAppStore((s) => s.setTeams);
   const setFixtures = useAppStore((s) => s.setFixtures);
   const setPlayers = useAppStore((s) => s.setPlayers);
+  const resetTeams = useAppStore((s) => s.resetTeams);
+  const deleteAllPlayers = useAppStore((s) => s.deleteAllPlayers);
+  const toast = useToast();
+  const { confirm, dialog: confirmDialog } = useConfirm();
 
   const [step, setStep] = useState<Step>("upload");
   const [error, setError] = useState("");
@@ -44,6 +51,21 @@ export function DataImporter() {
   const [syncMessage, setSyncMessage] = useState("");
   const [syncError, setSyncError] = useState("");
   const fileRef = useRef<HTMLInputElement>(null);
+
+  const handleFactoryReset = async () => {
+    if (
+      !(await confirm({
+        title: "Reset all data to defaults?",
+        description: "This clears all teams, fixtures, and players from local data. This cannot be undone.",
+        confirmLabel: "Reset",
+      }))
+    )
+      return;
+    resetTeams();
+    setFixtures([]);
+    deleteAllPlayers();
+    toast.success("Data reset to defaults.");
+  };
 
   const handleFile = (e: React.ChangeEvent<HTMLInputElement>) => {
     setError("");
@@ -394,6 +416,18 @@ export function DataImporter() {
           </div>
         </div>
       )}
+
+      {confirmDialog}
+
+      <div className="card p-5 border-danger/30">
+        <h2 className="text-sm font-semibold text-danger mb-1">Danger zone</h2>
+        <p className="text-sm text-muted mb-4">
+          Clears all local teams, fixtures, and players and restores the default demo data.
+        </p>
+        <button onClick={handleFactoryReset} className="btn-danger">
+          <RotateCcw size={15} /> Reset to defaults
+        </button>
+      </div>
     </div>
   );
 }

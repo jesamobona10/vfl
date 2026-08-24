@@ -625,7 +625,7 @@ export default function CompetitionSettingsPage() {
               >
                 <div className="flex items-center gap-3 min-w-0">
                   <span
-                    className={`text-[11px] font-medium px-2 py-0.5 rounded-full shrink-0 ${
+                    className={`text-xs font-medium px-2 py-0.5 rounded-full shrink-0 ${
                       seasonStatusColors[season.status] || seasonStatusColors.upcoming
                     }`}
                   >

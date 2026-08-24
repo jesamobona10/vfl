@@ -42,7 +42,7 @@ export function PlayerHero({ player, team }: PlayerHeroProps) {
         <div className="flex items-center gap-2 justify-center sm:justify-start">
           <h2 className="text-xl font-bold">{player.name}</h2>
           {player.captain && (
-            <span className="text-[10px] font-semibold uppercase bg-accent/10 text-accent px-2 py-0.5 rounded">
+            <span className="text-xs font-semibold uppercase bg-accent/10 text-accent px-2 py-0.5 rounded">
               C
             </span>
           )}
