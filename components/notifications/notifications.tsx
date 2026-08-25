@@ -60,7 +60,7 @@ export default function Notifications() {
       </button>
 
       {open && (
-        <div className="fixed left-3 right-3 top-16 z-50 sm:absolute sm:left-auto sm:right-0 sm:top-auto sm:mt-2 sm:w-80 glass-panel rounded-xl">
+        <div className="fixed left-3 right-3 top-16 z-50 sm:absolute sm:left-auto sm:right-0 sm:top-auto sm:mt-2 sm:w-80 floating-panel rounded-xl">
           <div className="p-3">
             <div className="flex items-center justify-between mb-2">
               <strong>Notifications</strong>

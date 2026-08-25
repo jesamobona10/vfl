@@ -337,7 +337,7 @@ export function TeamCard({ team, index, isManaged, showAdmin, onDelete }: TeamCa
                                               key={slot ? slot.slotId : `empty-${roleLabel}-${idx}`}
                                               className="flex flex-col items-center text-center"
                                             >
-                                              <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-full bg-surface/90 flex items-center justify-center text-xs font-semibold text-text ring-1 ring-line">
+                                              <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-full bg-surface flex items-center justify-center text-xs font-semibold text-text ring-1 ring-line">
                                                 <div>
                                                   <div className="text-sm">
                                                     {player ? player.number : ""}
@@ -382,7 +382,7 @@ export function TeamCard({ team, index, isManaged, showAdmin, onDelete }: TeamCa
                                                   .join("");
                                             return (
                                               <div className="flex flex-col items-center">
-                                                <div className="w-14 h-14 rounded-full bg-surface/90 flex items-center justify-center text-sm font-semibold text-text ring-1 ring-line">
+                                                <div className="w-14 h-14 rounded-full bg-surface flex items-center justify-center text-sm font-semibold text-text ring-1 ring-line">
                                                   <div>
                                                     <div className="text-sm">
                                                       {p ? p.number : ""}

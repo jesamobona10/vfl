@@ -145,10 +145,10 @@ body {
     @apply transition-[box-shadow,border-color] duration-150 hover:shadow-md hover:border-brand-600/30;
   }
 
-  /* Glass surface for floating layers only (modals, drawers, popovers, toasts).
+  /* Opaque surface for floating layers only (modals, drawers, popovers, toasts).
      Never applied to page-level panels — keeps data screens crisp and cheap. */
-  .glass-panel {
-    @apply bg-surface/85 backdrop-blur-md border border-line/70 shadow-lg;
+  .floating-panel {
+    @apply bg-surface border border-line shadow-lg;
   }
 
   /* Page head pattern (from the redesign mockup) */
@@ -270,15 +270,6 @@ body {
 @media (prefers-reduced-motion: reduce) {
   .animate-page-in {
     animation: none;
-  }
-}
-
-/* Users who opt out of transparency get solid glass panels. */
-@media (prefers-reduced-transparency: reduce) {
-  .glass-panel {
-    background: rgb(var(--surface));
-    backdrop-filter: none;
-    -webkit-backdrop-filter: none;
   }
 }
 
