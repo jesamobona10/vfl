@@ -3,6 +3,7 @@ import { Inter } from "next/font/google";
 import "./globals.css";
 import { AppShell } from "@/components/layout/app-shell";
 import AuthBootstrap from "@/components/layout/auth-bootstrap";
+import DataBootstrap from "@/components/layout/data-bootstrap";
 import { QueryProvider } from "@/components/providers/query-provider";
 import { ToastProvider } from "@/components/ui/toast";
 
@@ -52,6 +53,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <QueryProvider>
           <ToastProvider>
             <AuthBootstrap />
+            <DataBootstrap />
             <AppShell>{children}</AppShell>
           </ToastProvider>
         </QueryProvider>

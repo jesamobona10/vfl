@@ -7,7 +7,20 @@ import { logApiError } from "@/lib/security";
  * path and the SSR path resolve identities identically.
  */
 export type SessionResult =
-  | { authenticated: true; role: string; profile: Record<string, unknown> }
+  | {
+      authenticated: true;
+      role: string;
+      profile: {
+        id: string;
+        role?: string;
+        displayName?: string;
+        username?: string;
+        teamId?: number;
+        playerId?: number | null;
+        orgRole?: string;
+        org?: { id: string; name: string; slug: string; type: string };
+      };
+    }
   | { authenticated: false; definitive: boolean };
 
 /**

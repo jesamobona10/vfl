@@ -3,6 +3,7 @@ import type { StateCreator } from "zustand";
 import type { TeamAccount, UserProfile } from "../types";
 import type { AppStore } from "./index";
 import type { SessionResult } from "@/lib/auth/session-resolver";
+import type { DataResult } from "@/lib/auth/data-resolver";
 
 /** Authentication state slice managing login sessions and user profiles. */
 export interface AuthSlice {
@@ -25,6 +26,8 @@ export interface AuthSlice {
   initializeAuth: () => Promise<void>;
   /** Seeds auth state from a server-resolved session (SSR hint). */
   applyServerSession: (result: SessionResult) => void;
+  /** Seeds team/player/fixture data from a server-resolved query (SSR hint). */
+  applyServerData: (result: DataResult) => void;
   /** Authenticates a super admin via email/password. */
   loginAdmin: (email: string, password: string) => Promise<{ error?: string }>;
   /** Authenticates an organization admin via email/password. */
@@ -149,6 +152,16 @@ export const createAuthSlice: StateCreator<AppStore, [], [], AuthSlice> = (set, 
         teamDataLoaded: false,
       });
     }
+  },
+
+  applyServerData: (result: DataResult) => {
+    if (!result.ok) return;
+    set({
+      teams: result.teams,
+      players: result.players,
+      fixtures: result.fixtures as any,
+      teamDataLoaded: true,
+    });
   },
 
   initializeAuth: async () => {
