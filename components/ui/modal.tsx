@@ -91,7 +91,7 @@ export function Modal({ open, onClose, title, subtitle, children, headerActions,
 
   return createPortal(
     <div
-      className="fixed inset-0 z-[80] flex items-center justify-center bg-black/40 p-4"
+      className="fixed inset-0 z-[80] flex items-center justify-center bg-black/30 p-4"
       onMouseDown={(e) => {
         if (e.target === e.currentTarget) onClose();
       }}
