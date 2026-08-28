@@ -1,13 +1,13 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, Suspense } from "react";
+import dynamic from "next/dynamic";
 import { usePathname, useRouter } from "next/navigation";
 import { useAppStore } from "@/lib/store";
 import { refreshAdminData } from "@/lib/hooks/use-team-data";
 import { installAuthGuard } from "@/lib/auth-guard";
 import { AppHeader } from "./app-header";
 import { LoginForm } from "./login-form";
-import { SearchModal } from "../search/search-modal";
 import { Sidebar, type SidebarItem } from "./sidebar";
 import { MobileNavDrawer } from "./mobile-nav-drawer";
 import {
@@ -21,6 +21,11 @@ import {
   ScrollText,
   FileDown,
 } from "lucide-react";
+
+const SearchModal = dynamic(() => import("../search/search-modal").then(m => m.SearchModal), {
+  ssr: false,
+  loading: () => null,
+});
 
 const adminNav: SidebarItem[] = [
   { href: "/admin?tab=dashboard", label: "Dashboard", icon: LayoutDashboard },

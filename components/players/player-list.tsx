@@ -1,17 +1,26 @@
 "use client";
 
-import { useState } from "react";
+import { useState, Suspense } from "react";
+import dynamic from "next/dynamic";
 import { useAppStore } from "@/lib/store";
 import { useResolvedTeams } from "@/lib/hooks/use-resolved-teams";
 import { PlayerCard } from "./player-card";
-import { PlayerModal } from "./player-modal";
-import { CsvImport } from "./csv-import";
 import { EmptyState } from "@/components/shared/skeleton";
 import { sanitizeCsvCell } from "@/lib/utils/csv";
 import { useToast } from "@/components/ui/toast";
 import { useConfirm } from "@/components/shared/confirm-dialog";
 import type { Player } from "@/lib/types";
 import { Plus, Trash2, Users, Download } from "lucide-react";
+
+const PlayerModal = dynamic(() => import("./player-modal").then(m => m.PlayerModal), {
+  ssr: false,
+  loading: () => null,
+});
+
+const CsvImport = dynamic(() => import("./csv-import").then(m => m.CsvImport), {
+  ssr: false,
+  loading: () => null,
+});
 
 export function PlayerList() {
   const toast = useToast();

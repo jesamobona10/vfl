@@ -1,16 +1,25 @@
 "use client";
 
-import { useState } from "react";
+import { useState, Suspense } from "react";
+import dynamic from "next/dynamic";
 import { useParams } from "next/navigation";
 import { useAppStore } from "@/lib/store";
 import { useOrg } from "@/lib/hooks/use-org";
 import { PlayerCard } from "@/components/players/player-card";
-import { PlayerModal } from "@/components/players/player-modal";
-import { PlayerImportModal } from "@/components/players/player-import-modal";
 import { Plus, AlertCircle, Upload } from "lucide-react";
 import { EmptyState } from "@/components/shared/skeleton";
 import { useConfirm } from "@/components/shared/confirm-dialog";
 import type { Player } from "@/lib/types";
+
+const PlayerModal = dynamic(() => import("@/components/players/player-modal").then(m => m.PlayerModal), {
+  ssr: false,
+  loading: () => null,
+});
+
+const PlayerImportModal = dynamic(() => import("@/components/players/player-import-modal").then(m => m.PlayerImportModal), {
+  ssr: false,
+  loading: () => null,
+});
 
 export default function OrgPlayersPage() {
   const params = useParams();

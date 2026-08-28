@@ -1,15 +1,24 @@
 "use client";
 
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, Suspense } from "react";
+import dynamic from "next/dynamic";
 import { useAppStore } from "@/lib/store";
 import { useOrg } from "@/lib/hooks/use-org";
 import { useParams } from "next/navigation";
 import { FixtureList } from "@/components/fixtures/fixture-list";
-import { MatchEditor } from "@/components/admin/match-editor";
-import { BulkScoreEntry } from "@/components/fixtures/bulk-score-entry";
 import { RefreshCw, Pencil, Eye, Table2, AlertCircle, Trash2, Lock } from "lucide-react";
 import { useConfirm } from "@/components/shared/confirm-dialog";
 import { useToast } from "@/components/ui/toast";
+
+const MatchEditor = dynamic(() => import("@/components/admin/match-editor").then(m => m.MatchEditor), {
+  ssr: false,
+  loading: () => null,
+});
+
+const BulkScoreEntry = dynamic(() => import("@/components/fixtures/bulk-score-entry").then(m => m.BulkScoreEntry), {
+  ssr: false,
+  loading: () => null,
+});
 
 interface CompOption {
   id: string;

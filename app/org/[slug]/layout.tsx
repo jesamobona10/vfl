@@ -1,14 +1,19 @@
 "use client";
 
-import { useState } from "react";
+import { useState, Suspense } from "react";
+import dynamic from "next/dynamic";
 import { useParams } from "next/navigation";
 import { useOrg } from "@/lib/hooks/use-org";
 import { useAppStore } from "@/lib/store";
 import { AppHeader } from "@/components/layout/app-header";
 import { Sidebar, type SidebarItem } from "@/components/layout/sidebar";
 import { MobileNavDrawer } from "@/components/layout/mobile-nav-drawer";
-import { SearchModal } from "@/components/search/search-modal";
 import { LayoutDashboard, Trophy, Users, Shield, UserCog, Swords, ScrollText } from "lucide-react";
+
+const SearchModal = dynamic(() => import("@/components/search/search-modal").then(m => m.SearchModal), {
+  ssr: false,
+  loading: () => null,
+});
 
 const tabs: SidebarItem[] = [
   { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard },

@@ -1,8 +1,8 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, Suspense } from "react";
+import dynamic from "next/dynamic";
 import { useSearchParams } from "next/navigation";
-import { DataImporter } from "./data-importer";
 import { DashboardOverview } from "./dashboard-overview";
 import { OrgManager } from "./org-manager";
 import { AdminTeamManager } from "./team-manager";
@@ -13,6 +13,11 @@ import { UsersManager } from "./users-manager";
 import { AdminTeamAccountManager } from "./admin-team-account-manager";
 import { ChevronDown, ChevronRight, Building2, Calendar, Trash2, Search } from "lucide-react";
 import { PageSkeleton } from "@/components/shared/skeleton";
+
+const DataImporter = dynamic(() => import("./data-importer").then(m => m.DataImporter), {
+  ssr: false,
+  loading: () => null,
+});
 import { useToast } from "@/components/ui/toast";
 import { useConfirm } from "@/components/shared/confirm-dialog";
 import type { Team, Player } from "@/lib/types";
