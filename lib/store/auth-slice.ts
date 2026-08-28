@@ -2,6 +2,7 @@ import { describeFetchError } from "@/lib/utils/error-message";
 import type { StateCreator } from "zustand";
 import type { TeamAccount, UserProfile } from "../types";
 import type { AppStore } from "./index";
+import type { SessionResult } from "@/lib/auth/session-resolver";
 
 /** Authentication state slice managing login sessions and user profiles. */
 export interface AuthSlice {
@@ -22,6 +23,8 @@ export interface AuthSlice {
   getManagedTeamId: () => number | null;
   /** Initializes auth state by fetching the session endpoint. */
   initializeAuth: () => Promise<void>;
+  /** Seeds auth state from a server-resolved session (SSR hint). */
+  applyServerSession: (result: SessionResult) => void;
   /** Authenticates a super admin via email/password. */
   loginAdmin: (email: string, password: string) => Promise<{ error?: string }>;
   /** Authenticates an organization admin via email/password. */
@@ -50,7 +53,109 @@ export const createAuthSlice: StateCreator<AppStore, [], [], AuthSlice> = (set, 
 
   getManagedTeamId: () => get().currentTeamAccount?.teamId ?? null,
 
+  applyServerSession: (result: SessionResult) => {
+    if (!("authenticated" in result)) return;
+    if (!result.authenticated) {
+      // Server definitively resolved no session (it and the proxy read the
+      // same cookie set), so auth can be marked loaded now. This lets the
+      // AppShell skip its client /api/auth/session request entirely on
+      // public pages (e.g. the marketing landing page).
+      if (!result.definitive) {
+        // Resolution was inconclusive (transient failure or a cookie with no
+        // matching account) — leave authLoading true so the normal client
+        // initializeAuth fallback re-resolves the session.
+        return;
+      }
+      set({
+        isAdmin: false,
+        currentTeamAccount: null,
+        userProfile: null,
+        authLoading: false,
+        teamDataLoaded: false,
+      });
+      return;
+    }
+    const data = result as unknown as {
+      authenticated: true;
+      role: string;
+      profile: {
+        id: string;
+        role?: string;
+        displayName?: string;
+        username?: string;
+        teamId?: number;
+        playerId?: number | null;
+        orgRole?: string;
+        org?: { id: string; name: string; slug: string; type: string };
+      };
+    };
+    const profile = data.profile;
+    if (data.role === "super_admin") {
+      set({
+        isAdmin: true,
+        currentTeamAccount: null,
+        userProfile: { id: profile.id, role: "super_admin", displayName: profile.displayName },
+        authLoading: false,
+        teamDataLoaded: false,
+      });
+    } else if (data.role === "team_account") {
+      set({
+        isAdmin: false,
+        currentTeamAccount: {
+          id: profile.id,
+          teamId: profile.teamId ?? 0,
+          name: profile.displayName || "",
+          role: "coach",
+          username: profile.username || "",
+          password: "",
+        },
+        userProfile: {
+          id: profile.id,
+          role: "team_account",
+          displayName: profile.displayName,
+          teamId: profile.teamId ?? null,
+          username: profile.username,
+          orgSlug: profile.org?.slug,
+        },
+        authLoading: false,
+        teamDataLoaded: false,
+      });
+    } else if (data.role === "org_admin") {
+      set({
+        isAdmin: false,
+        currentTeamAccount: null,
+        userProfile: {
+          id: profile.id,
+          role: "org_admin",
+          displayName: profile.displayName,
+          orgRole: profile.orgRole,
+          org: profile.org,
+        },
+        authLoading: false,
+        teamDataLoaded: false,
+      });
+    } else if (data.role === "player") {
+      set({
+        isAdmin: false,
+        currentTeamAccount: null,
+        userProfile: {
+          id: profile.id,
+          role: "player",
+          displayName: profile.displayName,
+          username: profile.username,
+          playerId: profile.playerId ?? null,
+        },
+        authLoading: false,
+        teamDataLoaded: false,
+      });
+    }
+  },
+
   initializeAuth: async () => {
+    // If auth was already resolved (e.g. server-side AuthBootstrap hydrated
+    // the store before this ran, or a previous call succeeded), skip the
+    // redundant /api/auth/session request entirely.
+    if (!get().authLoading) return;
     try {
       const res = await fetch("/api/auth/session");
       if (!res.ok) {

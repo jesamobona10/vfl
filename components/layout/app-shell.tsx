@@ -34,7 +34,10 @@ const adminNav: SidebarItem[] = [
   { href: "/admin?tab=import", label: "Import", icon: FileDown },
 ];
 
-const publicPaths: Set<string> = new Set();
+// Root marketing page is public; authenticated users are redirected away by
+// the landing page itself. Everything else requires a session unless it is an
+// explicit /auth/* route.
+const publicPaths: Set<string> = new Set(["/"]);
 
 async function refreshOrgData(orgId?: string) {
   const store = useAppStore.getState();
@@ -111,6 +114,13 @@ export function AppShell({ children }: { children: React.ReactNode }) {
     }
   }, [isOrgAdmin, isOrgRoute, authLoading, userProfile, router]);
 
+  // Public routes (marketing page, explicit auth pages) render immediately —
+  // no session round-trip, no spinner. Authenticated areas below wait for the
+  // client-side session check (initializeAuth) to finish.
+  if (isPublicPath || pathname.startsWith("/auth/")) {
+    return <>{children}</>;
+  }
+
   if (authLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-bg">
@@ -120,9 +130,6 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   }
 
   if (!isAuthenticated) {
-    if (isPublicPath || pathname.startsWith("/auth/")) {
-      return <>{children}</>;
-    }
     return (
       <div className="min-h-screen flex items-center justify-center bg-bg p-4">
         <LoginForm />

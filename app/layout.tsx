@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Inter } from "next/font/google";
 import "./globals.css";
 import { AppShell } from "@/components/layout/app-shell";
+import AuthBootstrap from "@/components/layout/auth-bootstrap";
 import { QueryProvider } from "@/components/providers/query-provider";
 import { ToastProvider } from "@/components/ui/toast";
 
@@ -50,6 +51,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       </head>      <body className="font-sans antialiased">
         <QueryProvider>
           <ToastProvider>
+            <AuthBootstrap />
             <AppShell>{children}</AppShell>
           </ToastProvider>
         </QueryProvider>

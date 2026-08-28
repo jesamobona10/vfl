@@ -1,10 +1,9 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useAppStore } from "@/lib/store";
 import { Shield, School, Building2, Users, ArrowRight } from "lucide-react";
-import { Skeleton } from "@/components/shared/skeleton";
 
 export default function LandingPage() {
   const router = useRouter();
@@ -14,8 +13,10 @@ export default function LandingPage() {
   const currentTeamAccount = useAppStore((s) => s.currentTeamAccount);
   const fetchMyOrgs = useAppStore((s) => s.fetchMyOrgs);
   const myOrgs = useAppStore((s) => s.myOrgs);
-  const [loadingOrgs, setLoadingOrgs] = useState(false);
 
+  // Redirect authenticated users to their home automatically. For anonymous
+  // visitors we deliberately do NOT block on auth/org resolution — the
+  // marketing content below renders instantly so first paint is immediate.
   useEffect(() => {
     if (!authLoading && isAdmin) {
       router.replace("/admin");
@@ -23,36 +24,21 @@ export default function LandingPage() {
   }, [authLoading, isAdmin, router]);
 
   useEffect(() => {
-    if (!authLoading && userProfile && !isAdmin) {
-      setLoadingOrgs(true);
-      fetchMyOrgs().finally(() => setLoadingOrgs(false));
+    if (authLoading || isAdmin || !userProfile) return;
+    // Discover orgs for the session so we can redirect to the right org.
+    if (myOrgs.length === 0) {
+      fetchMyOrgs();
     }
-  }, [authLoading, userProfile, isAdmin, fetchMyOrgs]);
-
-  useEffect(() => {
-    if (loadingOrgs || authLoading) return;
-    if (myOrgs.length === 1 && currentTeamAccount) {
-      router.replace(`/org/${myOrgs[0].slug}/dashboard`);
-    } else if (myOrgs.length > 0 && !isAdmin) {
+    if (currentTeamAccount) {
+      router.replace(`/org/${myOrgs[0]?.slug ?? userProfile?.org?.slug ?? ""}/dashboard`);
+    } else if (userProfile?.org?.slug) {
+      router.replace(`/org/${userProfile.org.slug}/dashboard`);
+    } else if (myOrgs.length > 0) {
       router.replace(`/org/${myOrgs[0].slug}/dashboard`);
     }
-  }, [myOrgs, loadingOrgs, authLoading, currentTeamAccount, isAdmin, router]);
-
-  if (authLoading || loadingOrgs) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-bg">
-        <div className="w-6 h-6 bg-surface-2 rounded-lg animate-pulse" />
-      </div>
-    );
-  }
-
-  if (isAdmin || userProfile) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-bg">
-        <Skeleton className="w-7 h-7" />
-      </div>
-    );
-  }
+    // Anonymous visitors skip all of this: the marketing content renders
+    // instantly with zero network requests on first paint.
+  }, [authLoading, isAdmin, userProfile, currentTeamAccount, myOrgs, router, fetchMyOrgs]);
 
   const orgTypes = [
     {
