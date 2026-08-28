@@ -48,6 +48,10 @@ export function TeamDashboard({ team, teamPlayerCount, competitions }: TeamDashb
                     src={team.logo_url || team.logo!}
                     alt={team.name}
                     className="w-14 h-14 rounded-full object-cover"
+                    width={56}
+                    height={56}
+                    loading="lazy"
+                    decoding="async"
                   />
                 ) : (
                   <div className="w-14 h-14 rounded-full bg-surface-2 flex items-center justify-center">

@@ -214,6 +214,10 @@ export function StandingsTable() {
                           src={t.logo_url}
                           alt=""
                           className="w-5 h-5 rounded-full object-cover"
+                          width={20}
+                          height={20}
+                          loading="lazy"
+                          decoding="async"
                         />
                       ) : (
                         <span className="w-5 h-5 rounded-full bg-surface-2 inline-block shrink-0" />

@@ -91,6 +91,9 @@ export default function CompetitionLayout({ children }: { children: React.ReactN
             src={currentCompetition.logo_url}
             alt={currentCompetition.name}
             className="w-14 h-14 rounded-xl object-cover shrink-0"
+            width={56}
+            height={56}
+            decoding="async"
           />
         )}
         <div className="flex flex-col gap-2 min-w-0">

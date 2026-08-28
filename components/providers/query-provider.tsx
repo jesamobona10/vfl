@@ -9,9 +9,15 @@ export function QueryProvider({ children }: { children: React.ReactNode }) {
       new QueryClient({
         defaultOptions: {
           queries: {
-            staleTime: 30_000,
+            // Metadata, fixtures, and roster data change infrequently; keep
+            // them fresh for a minute and retain cached values while a tab is
+            // closed so remounts don't re-fetch. Live-scoring hooks override
+            // this with low staleTime explicitly.
+            staleTime: 60_000,
+            gcTime: 5 * 60_000,
             retry: 1,
             refetchOnWindowFocus: false,
+            refetchOnReconnect: false,
           },
         },
       })

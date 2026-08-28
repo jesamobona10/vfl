@@ -168,14 +168,17 @@ export function useSeasonStandings(seasonId: string | undefined) {
         (d) => d.standings
       ),
     enabled: !!seasonId,
+    // Standings recompute can be expensive. Refresh on a modest interval only
+    // while the tab is visible (live match-day), with a 30s stale window so a
+    // burst of refocuses doesn't hammer the compute endpoint.
+    staleTime: 30_000,
     refetchInterval: (query) => {
-      // Only poll when the document is visible and the query is active
       if (typeof document !== "undefined" && document.visibilityState === "visible") {
-        return 10_000;
+        return 30_000;
       }
       return false;
     },
-    refetchOnWindowFocus: true,
+    refetchOnWindowFocus: false,
   });
 }
 
@@ -187,13 +190,14 @@ export function useSeasonStatistics(seasonId: string | undefined) {
         `/api/seasons/${seasonId}/statistics`
       ).then((d) => d.statistics),
     enabled: !!seasonId,
+    staleTime: 60_000,
     refetchInterval: (query) => {
       if (typeof document !== "undefined" && document.visibilityState === "visible") {
-        return 10_000;
+        return 60_000;
       }
       return false;
     },
-    refetchOnWindowFocus: true,
+    refetchOnWindowFocus: false,
   });
 }
 

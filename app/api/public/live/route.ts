@@ -51,12 +51,18 @@ export async function GET() {
       }
     }
 
-    return json({
+    const res = json({
       live: sortMatchesByDateTime(live),
       upcoming: sortMatchesByDateTime(upcoming),
       today: new Date().toISOString().split("T")[0],
       fetchedAt: new Date().toISOString(),
     });
+    // Public read-only feed: cache at the edge for a short TTL. Live scores
+    // only change during match windows, so 20s staleness is an acceptable
+    // trade for absorbing the repeated unauthenticated polling bursts that
+    // would otherwise hit the database view on every request.
+    res.headers.set("Cache-Control", "public, max-age=20, s-maxage=20, stale-while-revalidate=60");
+    return res;
   } catch (error) {
     logApiError("public_live_error", error);
     return json({ error: "Something went wrong. Please try again." }, { status: 500 });

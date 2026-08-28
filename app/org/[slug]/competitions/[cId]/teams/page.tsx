@@ -143,7 +143,7 @@ export default function CompTeamsPage() {
                     className="accent-brand"
                   />
                   {t.logo_url ? (
-                    <img src={t.logo_url} alt="" className="w-7 h-7 rounded-full object-cover" />
+                    <img src={t.logo_url} alt="" className="w-7 h-7 rounded-full object-cover" width={28} height={28} loading="lazy" decoding="async" />
                   ) : (
                     <div className="w-7 h-7 rounded-full bg-surface-2 flex items-center justify-center text-xs text-muted">
                       {t.name.charAt(0)}
@@ -184,6 +184,10 @@ export default function CompTeamsPage() {
                     src={st.team?.logo_url || st.logo_url}
                     alt=""
                     className="w-9 h-9 rounded-full object-cover shrink-0"
+                    width={36}
+                    height={36}
+                    loading="lazy"
+                    decoding="async"
                   />
                 ) : (
                   <div className="w-9 h-9 rounded-full bg-surface-2 flex items-center justify-center text-sm text-muted shrink-0">

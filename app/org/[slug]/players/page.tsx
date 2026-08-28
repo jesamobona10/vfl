@@ -126,7 +126,7 @@ export default function OrgPlayersPage() {
             <div key={team.id}>
               <div className="flex items-center gap-3 mb-3">
                 {team.logo_url ? (
-                  <img src={team.logo_url} alt="" className="w-8 h-8 rounded-full object-cover" />
+                  <img src={team.logo_url} alt="" className="w-8 h-8 rounded-full object-cover" width={32} height={32} loading="lazy" decoding="async" />
                 ) : (
                   <div className="w-8 h-8 rounded-full bg-surface-2 flex items-center justify-center text-xs text-muted">
                     {team.name.charAt(0)}

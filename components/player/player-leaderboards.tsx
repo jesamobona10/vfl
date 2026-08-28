@@ -109,7 +109,7 @@ function LeaderboardTable({
               <span className="w-5 text-center text-xs">{i < 3 ? rankIcons[i] : `#${i + 1}`}</span>
               <div className="w-6 h-6 rounded-full bg-surface-2 overflow-hidden shrink-0">
                 {p.teamLogo ? (
-                  <img src={p.teamLogo} alt="" className="w-full h-full object-cover" />
+                  <img src={p.teamLogo} alt="" className="w-full h-full object-cover" width={24} height={24} loading="lazy" decoding="async" />
                 ) : (
                   <div className="w-full h-full flex items-center justify-center text-[8px] text-muted">
                     {p.teamName[0]}
