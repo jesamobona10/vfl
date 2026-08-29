@@ -4,13 +4,13 @@
 
 :root {
   /* Neutrals — RGB triplets kept for alpha compositing in Tailwind */
-  --bg: 247, 250, 246; /* --page #F7FAF6 */
-  --surface: 255, 255, 255; /* --panel #FFFFFF */
-  --surface-2: 237, 242, 236; /* subtle fill */
-  --text: 22, 33, 26; /* --ink #16211A */
-  --muted: 91, 106, 93; /* --ink-2 #5B6A5D */
-  --ink-3: 147, 160, 146; /* #93A092 — faintest text tier */
-  --line: 225, 232, 224; /* #E1E8E0 */
+  --bg: 247 250 246; /* --page #F7FAF6 */
+  --surface: 255 255 255; /* --panel #FFFFFF */
+  --surface-2: 237 242 236; /* subtle fill */
+  --text: 22 33 26; /* --ink #16211A */
+  --muted: 91 106 93; /* --ink-2 #5B6A5D */
+  --ink-3: 147 160 146; /* #93A092 — faintest text tier */
+  --line: 225 232 224; /* #E1E8E0 */
 
   /* Elevation scale — the single source for all shadows (mapped in tailwind.config) */
   --shadow-xs: 0 1px 2px rgba(22, 33, 26, 0.05);
@@ -26,18 +26,18 @@
   --brand-500: #0F7C45;
   --brand-600: #0B5F35;
   /* RGB triplet mirror of brand-600 for Tailwind alpha compositing (/30 etc.) */
-  --brand-600-rgb: 11, 95, 53;
+  --brand-600-rgb: 11 95 53;
   --brand-700: #084526;
 
   /* Tint mirrors for Tailwind — triplets so opacity modifiers resolve.
      Named hex twins above stay untouched for direct CSS consumers
      (e.g. the always-light shareable flyer). */
-  --brand-50-rgb: 234, 246, 238;
-  --brand-100-rgb: 207, 235, 216;
-  --gold-tint-rgb: 251, 240, 220;
-  --live-tint-rgb: 228, 246, 238;
-  --danger-tint-rgb: 251, 234, 232;
-  --warn-tint-rgb: 251, 240, 220;
+  --brand-50-rgb: 234 246 238;
+  --brand-100-rgb: 207 235 216;
+  --gold-tint-rgb: 251 240 220;
+  --live-tint-rgb: 228 246 238;
+  --danger-tint-rgb: 251 234 232;
+  --warn-tint-rgb: 251 240 220;
 
   /* Gold accent — used sparingly, never as a second primary action color */
   --gold-500: #D99A21;
@@ -60,29 +60,29 @@
 /* Dark theme — flips the neutral tokens; brand/status colors carry over.
    Tints (brand-50, gold-tint, etc.) become translucent so badges read on dark. */
 .dark {
-  --bg: 10, 15, 11; /* deep green-black */
-  --surface: 20, 27, 21;
-  --surface-2: 30, 39, 31;
-  --text: 232, 238, 231;
-  --muted: 154, 168, 155;
-  --ink-3: 110, 122, 112;
-  --line: 44, 55, 46;
+  --bg: 10 15 11; /* deep green-black */
+  --surface: 20 27 21;
+  --surface-2: 30 39 31;
+  --text: 232 238 231;
+  --muted: 154 168 155;
+  --ink-3: 110 122 112;
+  --line: 44 55 46;
 
   /* Brand re-tuned for dark: mid-green actions (brighter hover), soft tints
      become pre-blended dark-surface colors so badges sit quietly. */
   --brand-dark: #0b5f35;
   --brand-600: #1f8a54;
-  --brand-600-rgb: 31, 138, 84;
+  --brand-600-rgb: 31 138 84;
   --brand-700: #7bc89a;
 
   --gold-700: #e8b54d;
 
-  --brand-50-rgb: 26, 46, 33;
-  --brand-100-rgb: 34, 60, 43;
-  --gold-tint-rgb: 58, 47, 22;
-  --live-tint-rgb: 19, 48, 36;
-  --danger-tint-rgb: 56, 28, 25;
-  --warn-tint-rgb: 54, 42, 20;
+  --brand-50-rgb: 26 46 33;
+  --brand-100-rgb: 34 60 43;
+  --gold-tint-rgb: 58 47 22;
+  --live-tint-rgb: 19 48 36;
+  --danger-tint-rgb: 56 28 25;
+  --warn-tint-rgb: 54 42 20;
 
   --shadow-xs: 0 1px 2px rgba(0, 0, 0, 0.4);
   --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.45), 0 1px 2px rgba(0, 0, 0, 0.35);

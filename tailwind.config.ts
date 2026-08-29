@@ -50,7 +50,7 @@ const config: Config = {
         ink: {
           DEFAULT: "rgb(var(--text) / <alpha-value>)",
           2: "rgb(var(--muted) / <alpha-value>)",
-          3: "rgb(var(--ink-3, 147, 160, 146) / <alpha-value>)",
+          3: "rgb(var(--ink-3, 147 160 146) / <alpha-value>)",
         },
         page: "rgb(var(--bg) / <alpha-value>)",
         panel: "rgb(var(--surface) / <alpha-value>)",
