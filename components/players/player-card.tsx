@@ -15,13 +15,16 @@ import {
   Trophy,
   Swords,
   Users,
+  UserCog,
 } from "lucide-react";
+import { RatingExplanation } from "./rating-explanation";
 
 interface PlayerCardProps {
   player: Player;
   teamName: string;
   onEdit?: (player: Player) => void;
   onDelete?: (id: number) => void;
+  onAnonymize?: (player: Player) => void;
 }
 
 function stat(label: string, value: string | number, icon?: React.ReactNode) {
@@ -36,7 +39,7 @@ function stat(label: string, value: string | number, icon?: React.ReactNode) {
   );
 }
 
-export function PlayerCard({ player, teamName, onEdit, onDelete }: PlayerCardProps) {
+export function PlayerCard({ player, teamName, onEdit, onDelete, onAnonymize }: PlayerCardProps) {
   const [expanded, setExpanded] = useState(false);
 
   const pos = player.position;
@@ -115,9 +118,12 @@ export function PlayerCard({ player, teamName, onEdit, onDelete }: PlayerCardPro
           </div>
 
           <div className="flex flex-col items-end gap-1 shrink-0 min-w-0">
-            <span className="rounded-full bg-brand/10 text-brand px-2 py-0.5 text-xs font-semibold">
-              {player.rating.toFixed(1)}
-            </span>
+            <div className="flex items-center gap-1">
+              <span className="rounded-full bg-brand/10 text-brand px-2 py-0.5 text-xs font-semibold">
+                {player.rating.toFixed(1)}
+              </span>
+              <RatingExplanation position={pos} />
+            </div>
             <span className="rounded-full bg-surface-2 px-2 py-0.5 text-xs text-muted max-w-[110px] truncate">
               {teamName}
             </span>
@@ -198,7 +204,7 @@ export function PlayerCard({ player, teamName, onEdit, onDelete }: PlayerCardPro
             </div>
           </div>
 
-          {(onEdit || onDelete) && (
+          {(onEdit || onDelete || onAnonymize) && !player.anonymized_at && (
             <div className="flex gap-2 pt-1 border-t border-line">
               {onEdit && (
                 <button
@@ -209,6 +215,17 @@ export function PlayerCard({ player, teamName, onEdit, onDelete }: PlayerCardPro
                   className="btn-ghost text-xs py-1.5 px-3"
                 >
                   <Pencil size={13} /> Edit
+                </button>
+              )}
+              {onAnonymize && (
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onAnonymize(player);
+                  }}
+                  className="btn-ghost text-xs py-1.5 px-3 text-warning"
+                >
+                  <UserCog size={13} /> Anonymize
                 </button>
               )}
               {onDelete && (

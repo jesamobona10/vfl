@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { Calendar, ChevronDown, ChevronRight } from "lucide-react";
+import { RatingExplanation } from "@/components/players/rating-explanation";
 
 interface Match {
   id: number;
@@ -89,19 +90,20 @@ export function PlayerMatchHistory({
                 </p>
               </div>
               <div className="flex items-center gap-2 shrink-0">
-                {rating != null && (
-                  <span
-                    className={`text-xs font-medium px-2 py-0.5 rounded ${
-                      rating >= 7
-                        ? "bg-brand/10 text-brand"
-                        : rating >= 5
-                          ? "bg-accent/10 text-accent"
-                          : "bg-danger/10 text-danger"
-                    }`}
-                  >
-                    {rating.toFixed(1)}
-                  </span>
-                )}
+{rating != null && (
+                    <span
+                      className={`text-xs font-medium px-2 py-0.5 rounded ${
+                        rating >= 7
+                          ? "bg-brand/10 text-brand"
+                          : rating >= 5
+                            ? "bg-accent/10 text-accent"
+                            : "bg-danger/10 text-danger"
+                      }`}
+                    >
+                      {rating.toFixed(1)}
+                      <RatingExplanation position="MID" />
+                    </span>
+                  )}
                 {hasEvents && (
                   <span className="text-xs text-muted bg-surface-2 px-1.5 py-0.5 rounded">
                     Events

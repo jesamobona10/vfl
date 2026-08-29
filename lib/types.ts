@@ -193,6 +193,12 @@ export interface Player {
   rating: number;
   /** Per-match rating history keyed by match ID. */
   matchRatings: Record<string, number>;
+  /** Timestamp when player was anonymized (PII removed). */
+  anonymized_at?: string;
+  /** User ID who performed anonymization. */
+  anonymized_by?: string;
+  /** Original name before anonymization (for audit). */
+  original_name?: string;
 }
 
 /** A team account (login credentials for team coaches/captains). */

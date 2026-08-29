@@ -2,6 +2,7 @@
 
 import { Shield, Star } from "lucide-react";
 import Image from "next/image";
+import { RatingExplanation } from "@/components/players/rating-explanation";
 
 interface PlayerHeroProps {
   player: {
@@ -57,6 +58,7 @@ export function PlayerHero({ player, team }: PlayerHeroProps) {
           <Star size={14} className="text-accent" />
           <span className="font-semibold text-sm">{player.rating.toFixed(1)}</span>
           <span className="text-xs text-muted">rating</span>
+          <RatingExplanation position={player.position as "GK" | "DEF" | "MID" | "ATT"} />
         </div>
         {team?.logo_url && (
           <Image

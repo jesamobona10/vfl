@@ -1,5 +1,7 @@
 "use client";
 
+import { RatingExplanation } from "@/components/players/rating-explanation";
+
 interface PlayerStatsSummaryProps {
   player: {
     goals: number;
@@ -96,7 +98,10 @@ export function PlayerStatsSummary({ player }: PlayerStatsSummaryProps) {
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
               {group.items.map((item) => (
                 <div key={item.label} className="bg-surface-2 rounded-lg px-3 py-2.5 flex flex-col">
-                  <span className="text-lg font-bold text-text">{item.value}</span>
+                  <div className="flex items-center gap-1">
+                    <span className="text-lg font-bold text-text">{item.value}</span>
+                    {item.label === "Avg Rating" && <RatingExplanation position="MID" />}
+                  </div>
                   <span className="text-xs text-muted leading-tight">{item.label}</span>
                 </div>
               ))}

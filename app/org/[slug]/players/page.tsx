@@ -6,6 +6,7 @@ import { useParams } from "next/navigation";
 import { useAppStore } from "@/lib/store";
 import { useOrg } from "@/lib/hooks/use-org";
 import { PlayerCard } from "@/components/players/player-card";
+import { AnonymizeConfirm } from "@/components/players/anonymize-confirm";
 import { Plus, AlertCircle, Upload } from "lucide-react";
 import { EmptyState } from "@/components/shared/skeleton";
 import { useConfirm } from "@/components/shared/confirm-dialog";
@@ -29,12 +30,15 @@ export default function OrgPlayersPage() {
   const players = useAppStore((s) => s.players);
   const teams = useAppStore((s) => s.teams);
   const teamName = useAppStore((s) => s.teamName);
+  const userProfile = useAppStore((s) => s.userProfile);
+  const isOrgAdmin = userProfile?.role === "org_admin";
   const deletePlayer = useAppStore((s) => s.deletePlayer);
   const setPlayers = useAppStore((s) => s.setPlayers);
   const setTeams = useAppStore((s) => s.setTeams);
   const [modalPlayer, setModalPlayer] = useState<Player | null>(null);
   const [addModalOpen, setAddModalOpen] = useState(false);
   const [importOpen, setImportOpen] = useState(false);
+  const [anonymizePlayer, setAnonymizePlayer] = useState<Player | null>(null);
   const [error, setError] = useState("");
 
   const handleImported = async () => {
@@ -84,6 +88,45 @@ export default function OrgPlayersPage() {
     } catch {
       setError("Failed to delete player. Please try again.");
     }
+  };
+
+  const handleAnonymize = (player: Player) => {
+    setAnonymizePlayer(player);
+  };
+
+  const handleAnonymizeConfirm = async () => {
+    if (!anonymizePlayer || !currentOrg?.id) return;
+    setError("");
+    try {
+      const res = await fetch(`/api/players/${anonymizePlayer.id}/anonymize`, {
+        method: "POST",
+      });
+      const body = await res.json();
+      if (!res.ok) {
+        setError(body.error || "Failed to anonymize player.");
+        return;
+      }
+      // Refresh players list from API
+      const [teamsRes, playersRes] = await Promise.all([
+        fetch(`/api/teams?org_id=${currentOrg.id}`),
+        fetch(`/api/players?org_id=${currentOrg.id}`),
+      ]);
+      if (teamsRes.ok) {
+        const t = await teamsRes.json();
+        setTeams(t.teams || []);
+      }
+      if (playersRes.ok) {
+        const p = await playersRes.json();
+        setPlayers(p.players || []);
+      }
+      setAnonymizePlayer(null);
+    } catch {
+      setError("Unable to anonymize player. Please try again.");
+    }
+  };
+
+  const handleAnonymizeCancel = () => {
+    setAnonymizePlayer(null);
   };
 
   const grouped = teams
@@ -154,6 +197,7 @@ export default function OrgPlayersPage() {
                     teamName={teamName(p.teamId)}
                     onEdit={handleEdit}
                     onDelete={handleDelete}
+                    onAnonymize={isOrgAdmin ? handleAnonymize : undefined}
                   />
                 ))}
               </div>
@@ -179,6 +223,12 @@ export default function OrgPlayersPage() {
           onImported={handleImported}
         />
       )}
+      <AnonymizeConfirm
+        playerName={anonymizePlayer?.name ?? ""}
+        onConfirm={handleAnonymizeConfirm}
+        onCancel={handleAnonymizeCancel}
+        isOpen={anonymizePlayer !== null}
+      />
     </div>
   );
 }

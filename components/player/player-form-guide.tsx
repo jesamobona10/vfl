@@ -1,5 +1,7 @@
 "use client";
 
+import { RatingExplanation } from "@/components/players/rating-explanation";
+
 interface Match {
   id: number;
   round: number;

@@ -1,5 +1,7 @@
 "use client";
 
+import { RatingExplanation } from "@/components/players/rating-explanation";
+
 interface Match {
   id: number;
   round: number;
@@ -51,9 +53,12 @@ export function PlayerPerformanceChart({
 
   return (
     <div className="card p-5">
-      <h3 className="text-sm font-semibold text-muted uppercase tracking-wider mb-4">
-        Rating Trend
-      </h3>
+      <div className="flex items-center justify-between mb-4">
+        <h3 className="text-sm font-semibold text-muted uppercase tracking-wider">
+          Rating Trend
+        </h3>
+        <RatingExplanation position="MID" />
+      </div>
       <svg viewBox={`0 0 ${w} ${h}`} className="w-full max-w-sm mx-auto" style={{ height: h }}>
         {yTicks.map((tick) => {
           const y = pad.t + plotH - ((tick - min) / range) * plotH;

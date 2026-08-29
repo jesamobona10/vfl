@@ -5,12 +5,13 @@ import dynamic from "next/dynamic";
 import { useAppStore } from "@/lib/store";
 import { useResolvedTeams } from "@/lib/hooks/use-resolved-teams";
 import { PlayerCard } from "./player-card";
+import { AnonymizeConfirm } from "./anonymize-confirm";
 import { EmptyState } from "@/components/shared/skeleton";
 import { sanitizeCsvCell } from "@/lib/utils/csv";
 import { useToast } from "@/components/ui/toast";
 import { useConfirm } from "@/components/shared/confirm-dialog";
 import type { Player } from "@/lib/types";
-import { Plus, Trash2, Users, Download } from "lucide-react";
+import { Plus, Trash2, Users, Download, ShieldAlert } from "lucide-react";
 
 const PlayerModal = dynamic(() => import("./player-modal").then(m => m.PlayerModal), {
   ssr: false,
@@ -29,6 +30,7 @@ export function PlayerList() {
   const [posFilter, setPosFilter] = useState("all");
   const [modalPlayer, setModalPlayer] = useState<Player | null>(null);
   const [modalOpen, setModalOpen] = useState(false);
+  const [anonymizePlayer, setAnonymizePlayer] = useState<Player | null>(null);
 
   const players = useAppStore((s) => s.players);
   const currentSeasonId = useAppStore((s) => s.currentSeasonId);
@@ -109,6 +111,45 @@ export function PlayerList() {
     } catch {
       toast.error("Unable to delete players. Please try again.");
     }
+  };
+
+  const handleAnonymize = async (player: Player) => {
+    setAnonymizePlayer(player);
+  };
+
+  const handleAnonymizeConfirm = async () => {
+    if (!anonymizePlayer) return;
+    try {
+      const res = await fetch(`/api/players/${anonymizePlayer.id}/anonymize`, {
+        method: "POST",
+      });
+      const body = await res.json();
+      if (!res.ok) {
+        toast.error(body.error || "Failed to anonymize player.");
+        return;
+      }
+      toast.success(body.message || "Player anonymized.");
+      // Refresh players list from API
+      const [teamsRes, playersRes] = await Promise.all([
+        fetch(`/api/teams?org_id=${currentSeasonId}`),
+        fetch(`/api/players?org_id=${currentSeasonId}`),
+      ]);
+      if (teamsRes.ok) {
+        const t = await teamsRes.json();
+        useAppStore.getState().setTeams(t.teams || []);
+      }
+      if (playersRes.ok) {
+        const p = await playersRes.json();
+        useAppStore.getState().setPlayers(p.players || []);
+      }
+      setAnonymizePlayer(null);
+    } catch {
+      toast.error("Unable to anonymize player. Please try again.");
+    }
+  };
+
+  const handleAnonymizeCancel = () => {
+    setAnonymizePlayer(null);
   };
 
   const handleDownload = () => {
@@ -226,12 +267,19 @@ export function PlayerList() {
               teamName={teamName(p.teamId)}
               onEdit={openEdit}
               onDelete={handleDelete}
+              onAnonymize={handleAnonymize}
             />
           ))}
         </div>
       )}
 
       {modalOpen && <PlayerModal player={modalPlayer} onClose={() => setModalOpen(false)} />}
+      <AnonymizeConfirm
+        playerName={anonymizePlayer?.name ?? ""}
+        onConfirm={handleAnonymizeConfirm}
+        onCancel={handleAnonymizeCancel}
+        isOpen={anonymizePlayer !== null}
+      />
     </div>
   );
 }

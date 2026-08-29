@@ -1,6 +1,7 @@
 "use client";
 
 import { Trophy, Medal, Star } from "lucide-react";
+import { RatingExplanation } from "@/components/players/rating-explanation";
 
 interface LeaderboardEntry {
   id: number;
@@ -122,7 +123,7 @@ function LeaderboardTable({
               </span>
               <span className="text-xs text-muted font-mono">
                 {String(p[valueKey])}
-                {valueLabel === "Rt" ? "" : ""}
+                {valueKey === "rating" && <RatingExplanation position="MID" />}
               </span>
             </div>
           );
