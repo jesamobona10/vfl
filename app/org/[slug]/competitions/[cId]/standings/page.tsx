@@ -5,7 +5,8 @@ import { useEffect, useState } from "react";
 import { useParams, useSearchParams } from "next/navigation";
 import { useAppStore } from "@/lib/store";
 import type { SeasonTeam } from "@/lib/types";
-import { LoadingState } from "@/components/shared/skeleton";
+import { LoadingState, EmptyState } from "@/components/shared/skeleton";
+import { calculateStandings } from "@/lib/logic/standings";
 
 export default function CompStandingsPage() {
   const params = useParams();
@@ -15,6 +16,8 @@ export default function CompStandingsPage() {
   const seasonId = searchParams.get("seasonId");
   const setFixtures = useAppStore((s) => s.setFixtures);
   const setTeams = useAppStore((s) => s.setTeams);
+  const fixtures = useAppStore((s) => s.fixtures);
+  const teams = useAppStore((s) => s.teams);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -50,6 +53,19 @@ export default function CompStandingsPage() {
   }, [slug, cId, seasonId]);
 
   if (loading) return <LoadingState label="Loading standings" />;
+
+  const standings = calculateStandings(teams, fixtures);
+
+  if (!standings.length) {
+    return (
+      <div className="card p-8 sm:p-12 text-center">
+        <EmptyState
+          title="No standings data available"
+          description="Register teams and generate fixtures to build the league table."
+        />
+      </div>
+    );
+  }
 
   return (
     <div>

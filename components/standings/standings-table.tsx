@@ -7,7 +7,7 @@ import { useResolvedTeams } from "@/lib/hooks/use-resolved-teams";
 import { calculateStandings, completedMatches } from "@/lib/logic/standings";
 import { Download, ChevronDown, ChevronRight, Crown, ChevronLeft, Eye } from "lucide-react";
 import { exportAsJSON, exportAsPNG, exportAsPDF } from "@/lib/utils/export";
-import { SkeletonTable } from "@/components/shared/skeleton";
+import { SkeletonTable, EmptyState } from "@/components/shared/skeleton";
 import type { StandingRow } from "@/lib/types";
 
 function computeForm(
@@ -288,8 +288,11 @@ export function StandingsTable({ overviewMode = false }: StandingsTableProps) {
 
   if (!standings.length) {
     return (
-      <div className="card p-5 sm:p-8 text-center text-muted">
-        <p>No teams to display.</p>
+      <div className="card p-8 sm:p-12 text-center">
+        <EmptyState
+          title="No standings data available"
+          description="Register teams and generate fixtures to build the league table."
+        />
       </div>
     );
   }

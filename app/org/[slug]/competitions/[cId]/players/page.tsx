@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { useParams, useSearchParams } from "next/navigation";
+import Link from "next/link";
 import { useOrg } from "@/lib/hooks/use-org";
 import {
   useSeasonTeams,
@@ -66,11 +67,19 @@ export default function CompPlayersPage() {
 
   if (seasonTeams.length === 0) {
     return (
-      <div className="text-center py-16">
+      <div className="card p-8 sm:p-12 text-center">
         <Users size={48} className="mx-auto text-ink-3/40 mb-4" />
-        <p className="text-ink-2">
-          No teams registered yet. Register teams in the Teams tab first.
+        <h2 className="text-lg font-semibold mb-1">No teams registered yet</h2>
+        <p className="text-sm text-muted mb-6">
+          Register teams for this season first, then come back to add players.
         </p>
+        <Link
+          href={`/org/${slug}/competitions/${params.cId}/teams?seasonId=${seasonId}`}
+          className="btn-primary inline-flex items-center gap-2"
+        >
+          <Plus size={16} />
+          Register Teams
+        </Link>
       </div>
     );
   }
