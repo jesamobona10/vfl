@@ -18,92 +18,213 @@ export function exportAsJSON(data: unknown, filename: string) {
   URL.revokeObjectURL(url);
 }
 
-/** @internal Shared html2canvas clone-overrides used by PNG and PDF export. */
-function cloneOverrides(_doc: Document, clonedElement: HTMLElement) {
-  const style = _doc.createElement("style");
-  style.textContent = `
-    [class*="max-w-"] { max-width: 100% !important; width: 100% !important; }
-    .overflow-hidden { overflow: visible !important; }
-    .overflow-x-auto { overflow: visible !important; }
-    .overflow-y-auto { overflow: visible !important; }
-  `;
-  _doc.head.appendChild(style);
+/**
+ * Wait for all images and fonts to load within an element before capturing.
+ */
+async function waitForAssets(element: HTMLElement): Promise<void> {
+  const images = Array.from(element.querySelectorAll("img"));
 
-  clonedElement.style.overflow = "visible";
-  clonedElement.style.maxHeight = "none";
-
-  const all = clonedElement.querySelectorAll("*");
-  all.forEach((el) => {
-    const htmlEl = el as HTMLElement;
-    const cs = _doc.defaultView?.getComputedStyle(htmlEl);
-    if (cs) {
-      const ov = cs.overflow;
-      if (ov === "hidden" || ov === "clip" || ov === "auto" || ov === "scroll") {
-        htmlEl.style.overflow = "visible";
+  await Promise.all(
+    images.map((image) => {
+      if (image.complete) {
+        return Promise.resolve();
       }
-    }
+
+      return new Promise<void>((resolve) => {
+        image.onload = () => resolve();
+        image.onerror = () => resolve();
+      });
+    })
+  );
+
+  if ("fonts" in document) {
+    await document.fonts.ready;
+  }
+}
+
+/**
+ * Create a canvas from an element using html2canvas with proper settings.
+ */
+async function createExportCanvas(element: HTMLElement) {
+  const { default: html2canvas } = await import("html2canvas");
+
+  await waitForAssets(element);
+
+  const width = element.scrollWidth;
+  const height = element.scrollHeight;
+
+  return html2canvas(element, {
+    scale: 2,
+    useCORS: true,
+    allowTaint: false,
+
+    backgroundColor: "#ffffff",
+
+    width,
+    height,
+
+    windowWidth: width,
+    windowHeight: height,
+
+    scrollX: 0,
+    scrollY: 0,
+
+    onclone: (clonedDocument) => {
+      const style = clonedDocument.createElement("style");
+
+      style.textContent = `
+        * {
+          animation: none !important;
+          transition: none !important;
+        }
+
+        .sticky {
+          position: static !important;
+          left: auto !important;
+          right: auto !important;
+          top: auto !important;
+          bottom: auto !important;
+        }
+
+        .overflow-hidden,
+        .overflow-auto,
+        .overflow-x-auto,
+        .overflow-y-auto {
+          overflow: visible !important;
+        }
+      `;
+
+      clonedDocument.head.appendChild(style);
+    },
   });
 }
 
-export async function exportAsPNG(element: HTMLElement, filename: string, width = 390) {
-  const { default: html2canvas } = await import("html2canvas");
-  const canvas = await html2canvas(element, {
-    scale: 2,
-    useCORS: true,
-    backgroundColor: "#ffffff",
-    windowWidth: width,
-    onclone: cloneOverrides,
-  });
-  const blob = await new Promise<Blob | null>((resolve) => canvas.toBlob(resolve, "image/png"));
-  if (!blob) return;
+export async function exportAsPNG(
+  element: HTMLElement,
+  filename: string
+): Promise<void> {
+  const canvas = await createExportCanvas(element);
+
+  const blob = await new Promise<Blob | null>((resolve) =>
+    canvas.toBlob(resolve, "image/png")
+  );
+
+  if (!blob) {
+    throw new Error("Failed to generate PNG");
+  }
+
   const url = URL.createObjectURL(blob);
+
   const a = document.createElement("a");
+
   a.href = url;
   a.download = filename;
+
+  document.body.appendChild(a);
   a.click();
+  document.body.removeChild(a);
+
   URL.revokeObjectURL(url);
 }
 
-export async function exportAsPDF(element: HTMLElement, filename: string, title?: string) {
-  const [{ default: html2canvas }, { default: jsPDF }] = await Promise.all([
-    import("html2canvas"),
+export async function exportAsPDF(
+  element: HTMLElement,
+  filename: string,
+  title?: string
+): Promise<void> {
+  const [
+    canvas,
+    { default: jsPDF },
+  ] = await Promise.all([
+    createExportCanvas(element),
     import("jspdf"),
   ]);
-  const canvas = await html2canvas(element, {
-    scale: 2,
-    useCORS: true,
-    backgroundColor: "#ffffff",
-    windowWidth: 390,
-    onclone: cloneOverrides,
+
+  const pdf = new jsPDF({
+    orientation: "landscape",
+    unit: "mm",
+    format: "a4",
   });
-  const imgData = canvas.toDataURL("image/png");
-  const pdf = new jsPDF("p", "mm", "a4");
+
   const pageWidth = pdf.internal.pageSize.getWidth();
   const pageHeight = pdf.internal.pageSize.getHeight();
-  const imgWidth = pageWidth - 20;
-  const imgHeight = (canvas.height * imgWidth) / canvas.width;
+
+  const margin = 10;
+
+  const usableWidth = pageWidth - margin * 2;
+
+  const imageHeight = (canvas.height * usableWidth) / canvas.width;
+
+  const imageData = canvas.toDataURL("image/png");
 
   if (title) {
-    pdf.setFontSize(14);
-    pdf.text(title, 10, 10);
-    const remaining = pageHeight - 20;
-    if (imgHeight > remaining) {
-      const adjustedHeight = remaining;
-      const adjustedWidth = (canvas.width * adjustedHeight) / canvas.height;
-      const xOffset = (pageWidth - adjustedWidth) / 2;
-      pdf.addImage(imgData, "PNG", xOffset, 15, adjustedWidth, adjustedHeight);
-    } else {
-      pdf.addImage(imgData, "PNG", 10, 15, imgWidth, imgHeight);
+    pdf.setFontSize(16);
+    pdf.text(title, margin, margin);
+  }
+
+  let positionY = title ? 20 : margin;
+
+  // Check if content fits on one page
+  const remainingHeight = pageHeight - positionY;
+  if (imageHeight > remainingHeight) {
+    // Need multiple pages - split the image
+    const scale = canvas.width / canvas.height;
+    let sourceY = 0;
+    let isFirstPage = true;
+
+    while (sourceY < canvas.height) {
+      if (!isFirstPage) {
+        pdf.addPage();
+        positionY = margin;
+      }
+
+      const pageRemainingHeight = pageHeight - positionY;
+      const destHeight = Math.min(
+        imageHeight - (sourceY / canvas.height) * imageHeight,
+        pageRemainingHeight
+      );
+      const sourceHeight = (destHeight * canvas.height) / imageHeight;
+
+      const tempCanvas = document.createElement("canvas");
+      tempCanvas.width = canvas.width;
+      tempCanvas.height = sourceHeight;
+      const tempCtx = tempCanvas.getContext("2d")!;
+      tempCtx.drawImage(
+        canvas,
+        0,
+        sourceY,
+        canvas.width,
+        sourceHeight,
+        0,
+        0,
+        canvas.width,
+        sourceHeight
+      );
+
+      const pageImageData = tempCanvas.toDataURL("image/png");
+      const pageUsableWidth = pdf.internal.pageSize.getWidth() - margin * 2;
+
+      pdf.addImage(
+        pageImageData,
+        "PNG",
+        margin,
+        positionY,
+        pageUsableWidth,
+        destHeight
+      );
+
+      sourceY += sourceHeight;
+      isFirstPage = false;
     }
   } else {
-    if (imgHeight > pageHeight - 20) {
-      const adjustedHeight = pageHeight - 20;
-      const adjustedWidth = (canvas.width * adjustedHeight) / canvas.height;
-      const xOffset = (pageWidth - adjustedWidth) / 2;
-      pdf.addImage(imgData, "PNG", xOffset, 10, adjustedWidth, adjustedHeight);
-    } else {
-      pdf.addImage(imgData, "PNG", 10, 10, imgWidth, imgHeight);
-    }
+    pdf.addImage(
+      imageData,
+      "PNG",
+      margin,
+      positionY,
+      usableWidth,
+      imageHeight
+    );
   }
 
   pdf.save(filename);

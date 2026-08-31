@@ -4,6 +4,7 @@ import { StandingsTable } from "@/components/standings/standings-table";
 import { useEffect, useState } from "react";
 import { useParams, useSearchParams } from "next/navigation";
 import { useAppStore } from "@/lib/store";
+import { useSeasons } from "@/lib/hooks/use-competitions";
 import type { SeasonTeam } from "@/lib/types";
 import { LoadingState, EmptyState } from "@/components/shared/skeleton";
 import { calculateStandings } from "@/lib/logic/standings";
@@ -19,6 +20,10 @@ export default function CompStandingsPage() {
   const fixtures = useAppStore((s) => s.fixtures);
   const teams = useAppStore((s) => s.teams);
   const [loading, setLoading] = useState(true);
+
+  const { data: seasons = [] } = useSeasons(cId);
+  const currentSeason = seasons.find((s) => s.id === seasonId) || seasons.find((s) => s.is_current) || seasons[0];
+  const seasonName = currentSeason?.name;
 
   useEffect(() => {
     let cancelled = false;
@@ -69,7 +74,7 @@ export default function CompStandingsPage() {
 
   return (
     <div>
-      <StandingsTable />
+      <StandingsTable seasonName={seasonName} />
     </div>
   );
 }

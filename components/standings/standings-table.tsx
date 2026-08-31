@@ -9,6 +9,7 @@ import { Download, ChevronDown, ChevronRight, Crown, ChevronLeft, Eye } from "lu
 import { exportAsJSON, exportAsPNG, exportAsPDF } from "@/lib/utils/export";
 import { SkeletonTable, EmptyState } from "@/components/shared/skeleton";
 import type { StandingRow } from "@/lib/types";
+import { StandingsExport } from "./standings-export";
 
 function computeForm(
   teamId: number,
@@ -53,15 +54,16 @@ function FormGuide({ form }: { form: string[] }) {
 
 interface StandingsTableProps {
   overviewMode?: boolean;
+  seasonName?: string;
 }
 
-export function StandingsTable({ overviewMode = false }: StandingsTableProps) {
+export function StandingsTable({ overviewMode = false, seasonName }: StandingsTableProps) {
   const [menuOpen, setMenuOpen] = useState(false);
   const [showAdvanced, setShowAdvanced] = useState(false);
   const [expandedRows, setExpandedRows] = useState<Set<number>>(new Set());
   const menuRef = useRef<HTMLDivElement>(null);
   const tableRef = useRef<HTMLDivElement>(null);
-  const tableElementRef = useRef<HTMLTableElement>(null);
+  const exportRef = useRef<HTMLDivElement>(null);
 
   const currentSeasonId = useAppStore((s) => s.currentSeasonId);
   const fixtures = useAppStore((s) => s.fixtures);
@@ -113,14 +115,22 @@ export function StandingsTable({ overviewMode = false }: StandingsTableProps) {
 
   const handleDownloadPNG = async () => {
     setMenuOpen(false);
-    if (!tableElementRef.current) return;
-    await exportAsPNG(tableElementRef.current, "leagueforge-standings.png");
+    if (!exportRef.current) return;
+    try {
+      await exportAsPNG(exportRef.current, "leagueforge-standings.png");
+    } catch (error) {
+      console.error("Failed to export standings PNG:", error);
+    }
   };
 
   const handleDownloadPDF = async () => {
     setMenuOpen(false);
-    if (!tableElementRef.current) return;
-    await exportAsPDF(tableElementRef.current, "leagueforge-standings.pdf", "League Standings");
+    if (!exportRef.current) return;
+    try {
+      await exportAsPDF(exportRef.current, "leagueforge-standings.pdf", "League Standings");
+    } catch (error) {
+      console.error("Failed to export standings PDF:", error);
+    }
   };
 
   const toggleRow = (teamId: number) => {
@@ -298,7 +308,8 @@ export function StandingsTable({ overviewMode = false }: StandingsTableProps) {
   }
 
   return (
-    <div className="panel" ref={tableRef}>
+    <>
+      <div className="panel" ref={tableRef}>
       <div className="panel-head flex flex-wrap items-center justify-between gap-2 mb-4">
         <span className="panel-title">Full League Table</span>
         <div className="flex items-center gap-2">
@@ -345,7 +356,7 @@ export function StandingsTable({ overviewMode = false }: StandingsTableProps) {
       </div>
 
       <div className="overflow-x-auto">
-        <table className="w-full text-sm" ref={tableElementRef}>
+        <table className="w-full text-sm">
           <thead>
             <tr className="text-xs uppercase tracking-[0.04em] text-ink-3 font-semibold">
               <th className="text-left px-4 py-2.5 font-semibold border-b border-line sticky left-0 bg-panel z-10 w-12">
@@ -429,6 +440,14 @@ export function StandingsTable({ overviewMode = false }: StandingsTableProps) {
         })}
       </div>
     </div>
+    <StandingsExport
+      ref={exportRef}
+      standings={rows}
+      teams={teams}
+      leagueName="VUNA LEAGUE"
+      seasonName={seasonName || "2026 Season"}
+    />
+  </>
   );
 }
 
