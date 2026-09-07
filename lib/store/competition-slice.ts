@@ -10,11 +10,15 @@ export interface CompetitionSlice {
   currentCompetition: Competition | null;
   /** The currently active season ID. */
   currentSeasonId: string | null;
+  /** The currently selected org-level season ID (organization_seasons.id). */
+  currentOrgSeasonId: string | null;
 
   /** Set the current competition. */
   setCurrentCompetition: (comp: Competition | null) => void;
   /** Set the current season ID. */
   setCurrentSeasonId: (seasonId: string | null) => void;
+  /** Set the current org-level season ID. */
+  setCurrentOrgSeasonId: (seasonId: string | null) => void;
   /** Fetch all competitions for an organization. */
   fetchCompetitions: (orgId: string) => Promise<void>;
   /** Fetch a single competition by ID. */
@@ -25,9 +29,11 @@ export const createCompetitionSlice: StateCreator<AppStore, [], [], CompetitionS
   competitions: [],
   currentCompetition: null,
   currentSeasonId: null,
+  currentOrgSeasonId: null,
 
   setCurrentCompetition: (comp) => set({ currentCompetition: comp }),
   setCurrentSeasonId: (seasonId) => set({ currentSeasonId: seasonId }),
+  setCurrentOrgSeasonId: (seasonId) => set({ currentOrgSeasonId: seasonId }),
 
   fetchCompetitions: async (orgId) => {
     try {

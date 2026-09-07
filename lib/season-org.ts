@@ -41,6 +41,35 @@ export async function resolveSeasonOrganization(sb: SupabaseClient, seasonId: st
   };
 }
 
+/**
+ * Resolve an org season (`organization_seasons.id`) to the competition
+ * `seasons` that belong to it. Optionally verify the org season is owned by a
+ * specific organization (used to scope read-only queries by access).
+ *
+ * @param sb - Supabase client instance
+ * @param orgSeasonId - UUID of the `organization_seasons` row
+ * @param orgId - Optional owning org to require (`organization_seasons.organization_id`)
+ * @returns The matched season IDs, or `[]` when the org season doesn't exist /
+ *          belongs to another org / has no competition seasons.
+ */
+export async function resolveOrgSeasonIds(
+  sb: SupabaseClient,
+  orgSeasonId: string,
+  orgId?: string
+): Promise<string[]> {
+  let query = sb.from("organization_seasons").select("id").eq("id", orgSeasonId);
+  if (orgId) query = query.eq("organization_id", orgId);
+
+  const { data: orgSeason } = await query.maybeSingle();
+  if (!orgSeason) return [];
+
+  const { data: seasons } = await sb
+    .from("seasons")
+    .select("id")
+    .eq("organization_season_id", orgSeasonId);
+  return (seasons || []).map((s) => s.id as string);
+}
+
 /** Resolve a season team's organization via its season + competition. */
 export async function resolveSeasonTeamOrganization(sb: SupabaseClient, seasonTeamId: string) {
   const { data: st } = await sb

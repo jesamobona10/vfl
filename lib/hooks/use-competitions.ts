@@ -6,6 +6,9 @@ import type {
   SeasonTeam,
   SeasonPlayerStats,
   SeasonTeamPlayer,
+  Team,
+  Player,
+  FixtureRound,
 } from "@/lib/types";
 import { fetchJson } from "@/lib/utils/fetch";
 
@@ -427,5 +430,48 @@ export function useDeleteOrgSeason(slug: string) {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["org-seasons", slug] });
     },
+  });
+}
+
+// ============================================================
+// Org-season-scoped data (teams / players / fixtures)
+// ============================================================
+
+export function useOrgSeasonTeams(
+  orgId: string | undefined,
+  orgSeasonId: string | undefined
+) {
+  return useQuery({
+    queryKey: ["org-season-teams", orgId, orgSeasonId],
+    queryFn: () =>
+      fetchJson<{ teams: Team[] }>(
+        `/api/teams?org_id=${orgId}&org_season_id=${orgSeasonId}`
+      ).then((d) => d.teams),
+    enabled: !!orgId && !!orgSeasonId,
+  });
+}
+
+export function useOrgSeasonPlayers(
+  orgId: string | undefined,
+  orgSeasonId: string | undefined
+) {
+  return useQuery({
+    queryKey: ["org-season-players", orgId, orgSeasonId],
+    queryFn: () =>
+      fetchJson<{ players: Player[] }>(
+        `/api/players?org_id=${orgId}&org_season_id=${orgSeasonId}`
+      ).then((d) => d.players),
+    enabled: !!orgId && !!orgSeasonId,
+  });
+}
+
+export function useOrgSeasonFixtures(slug: string | undefined, orgSeasonId: string | undefined) {
+  return useQuery({
+    queryKey: ["org-season-fixtures", slug, orgSeasonId],
+    queryFn: () =>
+      fetchJson<{ fixtures: FixtureRound[] }>(
+        `/api/organizations/${slug}/fixtures?org_season_id=${orgSeasonId}`
+      ).then((d) => d.fixtures),
+    enabled: !!slug && !!orgSeasonId,
   });
 }

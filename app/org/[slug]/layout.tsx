@@ -8,6 +8,7 @@ import { useAppStore } from "@/lib/store";
 import { AppHeader } from "@/components/layout/app-header";
 import { Sidebar, type SidebarItem } from "@/components/layout/sidebar";
 import { MobileNavDrawer } from "@/components/layout/mobile-nav-drawer";
+import { OrgSeasonProvider } from "@/components/competitions/org-season-provider";
 import { LayoutDashboard, Trophy, Users, Shield, UserCog, Swords, ScrollText } from "lucide-react";
 
 const SearchModal = dynamic(() => import("@/components/search/search-modal").then(m => m.SearchModal), {
@@ -89,22 +90,26 @@ export default function OrgLayout({ children }: { children: React.ReactNode }) {
   }
 
   return (
-    <div className="min-h-screen bg-page flex">
-      <Sidebar items={items} footer={footer} />
-      <div className="flex-1 min-w-0 flex flex-col">
-        <AppHeader
-          onOpenSearch={() => setSearchOpen(true)}
-          onOpenMenu={() => setDrawerOpen(true)}
-        />
-        <main className="flex-1 px-4 sm:px-6 py-6">{children}</main>
-      </div>
-      <MobileNavDrawer
-        items={items}
-        footer={footer}
-        isOpen={isDrawerOpen}
-        onClose={() => setDrawerOpen(false)}
-      />
-      <SearchModal isOpen={isSearchOpen} onClose={() => setSearchOpen(false)} />
-    </div>
+    <Suspense>
+      <OrgSeasonProvider>
+        <div className="min-h-screen bg-page flex">
+          <Sidebar items={items} footer={footer} />
+          <div className="flex-1 min-w-0 flex flex-col">
+            <AppHeader
+              onOpenSearch={() => setSearchOpen(true)}
+              onOpenMenu={() => setDrawerOpen(true)}
+            />
+            <main className="flex-1 px-4 sm:px-6 py-6">{children}</main>
+          </div>
+          <MobileNavDrawer
+            items={items}
+            footer={footer}
+            isOpen={isDrawerOpen}
+            onClose={() => setDrawerOpen(false)}
+          />
+          <SearchModal isOpen={isSearchOpen} onClose={() => setSearchOpen(false)} />
+        </div>
+      </OrgSeasonProvider>
+    </Suspense>
   );
 }

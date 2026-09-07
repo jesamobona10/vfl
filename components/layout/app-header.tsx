@@ -17,6 +17,8 @@ import {
 } from "lucide-react";
 import { useResolvedTeams } from "@/lib/hooks/use-resolved-teams";
 import { useToast } from "@/components/ui/toast";
+import { useOrgSeason } from "@/components/competitions/org-season-provider";
+import { OrgSeasonSelector } from "@/components/competitions/org-season-selector";
 
 interface AppHeaderProps {
   onOpenSearch: () => void;
@@ -42,6 +44,14 @@ export function AppHeader({ onOpenSearch, onOpenMenu }: AppHeaderProps) {
   const [importing, setImporting] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
+
+  const {
+    seasons: orgSeasons,
+    selectedOrgSeasonId,
+    setSelectedOrgSeason,
+    isOrgAdmin,
+    isCompetitionPage,
+  } = useOrgSeason();
 
   useEffect(() => {
     const onClick = (e: MouseEvent) => {
@@ -153,8 +163,16 @@ export function AppHeader({ onOpenSearch, onOpenMenu }: AppHeaderProps) {
           className="flex items-center gap-2 text-sm text-ink-3 bg-page border border-line rounded-lg px-3.5 py-2 hover:border-brand-600/30 transition-colors"
         >
           <Search size={15} />
-          <span className="hidden sm:inline">Search teams, players, fixtures&hellip;</span>
+          <span className="hidden md:inline">Search teams, players, fixtures&hellip;</span>
         </button>
+
+        {isOrgAdmin && !isCompetitionPage && orgSeasons.length > 0 && (
+          <OrgSeasonSelector
+            seasons={orgSeasons}
+            selectedSeasonId={selectedOrgSeasonId}
+            onSeasonChange={setSelectedOrgSeason}
+          />
+        )}
       </div>
 
       <div className="flex items-center gap-1">

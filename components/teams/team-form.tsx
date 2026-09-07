@@ -10,7 +10,7 @@ import { SkeletonForm } from "@/components/shared/skeleton";
 import { useConfirm } from "@/components/shared/confirm-dialog";
 import type { Team } from "@/lib/types";
 
-export function TeamForm() {
+export function TeamForm({ orgSeasonId }: { orgSeasonId?: string | null }) {
   const { confirm, dialog: confirmDialog } = useConfirm();
   const params = useParams();
   const slug = params.slug as string;
@@ -38,14 +38,15 @@ export function TeamForm() {
   useEffect(() => {
     if (!currentOrg?.id) return;
     setLoadingTeams(true);
-    fetch(`/api/teams?org_id=${currentOrg.id}`)
+    const orgSeasonQuery = orgSeasonId ? `&org_season_id=${orgSeasonId}` : "";
+    fetch(`/api/teams?org_id=${currentOrg.id}${orgSeasonQuery}`)
       .then((r) => r.json())
       .then((data) => {
         if (data.teams) setTeams(data.teams);
       })
       .catch(() => {})
       .finally(() => setLoadingTeams(false));
-  }, [currentOrg?.id, setTeams]);
+  }, [currentOrg?.id, setTeams, orgSeasonId]);
 
   const visibleTeams = isTeam ? teams.filter((t) => t.id === managedId) : teams;
 

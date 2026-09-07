@@ -17,6 +17,7 @@ import {
   writeAuditRecord,
 } from "@/lib/security";
 import { AUDIT_ACTIONS } from "@/lib/audit/actions";
+import { resolveOrgSeasonIds } from "@/lib/season-org";
 
 export const dynamic = "force-dynamic";
 
@@ -55,6 +56,40 @@ export async function GET(request: Request) {
     }
 
     const sb = createServiceRoleClient();
+
+    // Optional season scoping: limit to teams registered in the org season's
+    // competition seasons. The org season must belong to the resolved org to
+    // prevent reading another org's registrations.
+    const orgSeasonId = url.searchParams.get("org_season_id");
+    if (orgSeasonId) {
+      const seasonIds = await resolveOrgSeasonIds(sb, orgSeasonId, orgId);
+      if (seasonIds.length === 0) {
+        return json({ teams: [] });
+      }
+
+      const { data: seasonTeams } = await sb
+        .from("season_teams")
+        .select("team_id")
+        .in("season_id", seasonIds);
+      const teamIds = (seasonTeams || []).map((st) => st.team_id as number);
+      if (teamIds.length === 0) {
+        return json({ teams: [] });
+      }
+
+      const { data, error } = await sb
+        .from("teams")
+        .select("*")
+        .eq("organization_id", orgId)
+        .in("id", teamIds)
+        .order("id");
+
+      if (error) {
+        logApiError("teams_list_failed", error);
+        return json({ error: "Unable to load teams." }, { status: 500 });
+      }
+      return json({ teams: data });
+    }
+
     const { data, error } = await sb
       .from("teams")
       .select("*")

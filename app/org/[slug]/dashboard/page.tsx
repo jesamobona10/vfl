@@ -4,7 +4,7 @@ import { useState, useRef, useEffect } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import { useAppStore } from "@/lib/store";
 import { useOrg } from "@/lib/hooks/use-org";
-import { useCompetitions, useOrgSeasons } from "@/lib/hooks/use-competitions";
+import { useCompetitions } from "@/lib/hooks/use-competitions";
 import { MetricCards } from "@/components/dashboard/metric-cards";
 import { LeagueStats } from "@/components/dashboard/league-stats";
 import { UpcomingMatches } from "@/components/dashboard/upcoming-matches";
@@ -14,10 +14,11 @@ import { CompetitionsCard } from "@/components/dashboard/competitions-card";
 import { CalendarView } from "@/components/calendar/calendar-view";
 import { PlayerDashboard } from "@/components/player/player-dashboard";
 import { TeamDashboard } from "@/components/team/team-dashboard";
-import { OrgSeasonSelector } from "@/components/competitions/org-season-selector";
+import { SeasonEmptyState } from "@/components/dashboard/season-empty-state";
 import { SetupChecklist } from "@/components/dashboard/setup-checklist";
-import { Shield, RefreshCw, Plus, Upload } from "lucide-react";
+import { Shield, RefreshCw, Plus, Upload, Loader2 } from "lucide-react";
 import { DashboardSkeleton } from "@/components/shared/skeleton";
+import { useOrgSeason } from "@/components/competitions/org-season-provider";
 import { useToast } from "@/components/ui/toast";
 import { useParams, useRouter } from "next/navigation";
 import Image from "next/image";
@@ -30,8 +31,7 @@ export default function OrgDashboardPage() {
   const queryClient = useQueryClient();
   const { data: currentOrg } = useOrg(slug);
   const { data: competitions = [] } = useCompetitions(currentOrg?.id);
-  const { data: orgSeasons = [] } = useOrgSeasons(currentOrg?.slug);
-  const [selectedOrgSeasonId, setSelectedOrgSeasonId] = useState<string | null>(null);
+  const { loading: seasonLoading, hasFixtures, hasTeams, isOrgAdmin } = useOrgSeason();
   const teams = useAppStore((s) => s.teams);
   const players = useAppStore((s) => s.players);
   const fixtures = useAppStore((s) => s.fixtures);
@@ -48,43 +48,8 @@ export default function OrgDashboardPage() {
   useEffect(() => {
     if (currentTeamAccount) {
       refreshTeamData();
-      return;
     }
-    if (!currentOrg?.id) return;
-    const store = useAppStore.getState();
-    const orgQuery = `?org_id=${currentOrg.id}`;
-    const fixturesQuery = `${orgQuery}${selectedOrgSeasonId ? `&org_season_id=${selectedOrgSeasonId}` : ""}`;
-    Promise.all([
-      fetch(`/api/teams${orgQuery}`),
-      fetch(`/api/players${orgQuery}`),
-      fetch(`/api/fixtures${fixturesQuery}`),
-    ])
-      .then(async ([teamsRes, playersRes, fixturesRes]) => {
-        if (teamsRes.ok) {
-          const data = await teamsRes.json();
-          store.setTeams(data.teams || []);
-        }
-        if (playersRes.ok) {
-          const data = await playersRes.json();
-          store.setPlayers(data.players || []);
-        }
-        if (fixturesRes.ok) {
-          const data = await fixturesRes.json();
-          store.setFixtures(data.fixtures || []);
-        }
-        store.setTeamDataLoaded(true);
-      })
-      .catch(() => {
-        store.setTeamDataLoaded(true);
-      });
-  }, [slug, currentOrg?.id, selectedOrgSeasonId, currentTeamAccount]);
-
-  useEffect(() => {
-    if (!selectedOrgSeasonId && orgSeasons.length > 0) {
-      const current = orgSeasons.find((s) => s.is_current) || orgSeasons[0];
-      if (current) setSelectedOrgSeasonId(current.id);
-    }
-  }, [orgSeasons, selectedOrgSeasonId]);
+  }, [currentTeamAccount]);
 
   const handleOrgLogoUpload = async (file: File) => {
     if (!file.type.startsWith("image/")) {
@@ -197,12 +162,11 @@ export default function OrgDashboardPage() {
               <h1 className="text-xl font-semibold tracking-[-0.01em]">
                 {currentTeamAccount ? `${currentTeamAccount.name}` : "Dashboard"}
               </h1>
-              {!currentTeamAccount && (
-                <OrgSeasonSelector
-                  seasons={orgSeasons}
-                  selectedSeasonId={selectedOrgSeasonId}
-                  onSeasonChange={setSelectedOrgSeasonId}
-                />
+              {!currentTeamAccount && isOrgAdmin && seasonLoading && (
+                <span className="flex items-center gap-1.5 text-xs text-ink-3">
+                  <Loader2 size={13} className="animate-spin" />
+                  Loading season&hellip;
+                </span>
               )}
             </div>
           </div>
@@ -256,6 +220,14 @@ export default function OrgDashboardPage() {
 
       {!currentTeamAccount && (
         <>
+          {isOrgAdmin && !seasonLoading && !hasFixtures && (
+            <SeasonEmptyState
+              hasTeams={hasTeams}
+              sheetHref={`/org/${slug}/teams`}
+              fixturesHref={`/org/${slug}/fixtures`}
+            />
+          )}
+
           <SetupChecklist
             slug={slug}
             competitionCount={competitions.length}

@@ -6,6 +6,8 @@ import { useAppStore } from "@/lib/store";
 import { useOrg } from "@/lib/hooks/use-org";
 import { useParams } from "next/navigation";
 import { FixtureList } from "@/components/fixtures/fixture-list";
+import { SeasonEmptyState } from "@/components/dashboard/season-empty-state";
+import { useOrgSeason } from "@/components/competitions/org-season-provider";
 import { RefreshCw, Pencil, Eye, Table2, AlertCircle, Trash2, Lock } from "lucide-react";
 import { useConfirm } from "@/components/shared/confirm-dialog";
 import { useToast } from "@/components/ui/toast";
@@ -39,6 +41,14 @@ export default function OrgFixturesPage() {
   const userProfile = useAppStore((s) => s.userProfile);
   const isOrgAdmin = isAdmin || userProfile?.role === "org_admin";
 
+  const {
+    selectedOrgSeasonId,
+    loading: seasonLoading,
+    hasTeams,
+    hasFixtures: ctxHasFixtures,
+    isOrgAdmin: ctxIsOrgAdmin,
+  } = useOrgSeason();
+
   const [viewMode, setViewMode] = useState<"view" | "edit" | "table">("view");
   const [generating, setGenerating] = useState(false);
   const [resetting, setResetting] = useState(false);
@@ -49,7 +59,7 @@ export default function OrgFixturesPage() {
   const autoSaveTimer = useRef<ReturnType<typeof setTimeout>>(undefined);
   const prevFixturesRef = useRef("");
 
-  useEffect(() => {
+  const loadDbFixtures = (seasonId?: string) => {
     if (!currentOrg?.id) return;
     setLoadingDb(true);
     fetch(`/api/competitions?org_id=${currentOrg.id}`)
@@ -59,7 +69,12 @@ export default function OrgFixturesPage() {
           (c: any) => c.type === "league"
         );
         setComps(list);
-        const params = list.length === 1 ? `?competition_id=${list[0].id}` : "";
+        let params = "";
+        if (seasonId) {
+          params = `?org_season_id=${seasonId}`;
+        } else if (list.length === 1) {
+          params = `?competition_id=${list[0].id}`;
+        }
         return fetch(`/api/organizations/${slug}/fixtures${params}`);
       })
       .then((r) => r.json())
@@ -71,7 +86,12 @@ export default function OrgFixturesPage() {
       })
       .catch(() => {})
       .finally(() => setLoadingDb(false));
-  }, [currentOrg?.id]);
+  };
+
+  useEffect(() => {
+    loadDbFixtures(selectedOrgSeasonId ?? undefined);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [currentOrg?.id, selectedOrgSeasonId]);
 
   useEffect(() => {
     if (!fixtures.length || !currentOrg?.id) return;
@@ -141,7 +161,11 @@ export default function OrgFixturesPage() {
         return;
       }
 
-      const params = selectedCompId ? `?competition_id=${selectedCompId}` : "";
+      const params = selectedOrgSeasonId
+        ? `?org_season_id=${selectedOrgSeasonId}`
+        : selectedCompId
+          ? `?competition_id=${selectedCompId}`
+          : "";
       const fres = await fetch(`/api/organizations/${slug}/fixtures${params}`);
       const fd = await fres.json();
       if (fd.fixtures?.length) {
@@ -196,6 +220,16 @@ export default function OrgFixturesPage() {
         <div className="flex items-center gap-2 mb-4 px-4 py-3 bg-danger/10 text-danger text-sm rounded-lg border border-danger/20">
           <AlertCircle size={16} />
           {error}
+        </div>
+      )}
+
+      {ctxIsOrgAdmin && selectedOrgSeasonId && !seasonLoading && !ctxHasFixtures && (
+        <div className="mb-4">
+          <SeasonEmptyState
+            hasTeams={hasTeams}
+            sheetHref={`/org/${slug}/teams`}
+            fixturesHref={`/org/${slug}/fixtures`}
+          />
         </div>
       )}
 

@@ -19,6 +19,7 @@ import {
   writeAuditRecord,
 } from "@/lib/security";
 import { AUDIT_ACTIONS } from "@/lib/audit/actions";
+import { resolveOrgSeasonIds } from "@/lib/season-org";
 
 export const dynamic = "force-dynamic";
 
@@ -34,7 +35,32 @@ export async function GET(request: Request) {
 
     let query = supabase.from("players").select("*").order("id");
 
-    if (orgId) {
+    // Optional season scoping: limit to players registered in the org season's
+    // competition seasons (via season_teams → season_team_players).
+    const orgSeasonId = url.searchParams.get("org_season_id");
+    if (orgSeasonId) {
+      if (!orgId) return json({ error: "Organization ID is required." }, { status: 400 });
+
+      const sb = createServiceRoleClient();
+      const seasonIds = await resolveOrgSeasonIds(sb, orgSeasonId, orgId);
+      if (seasonIds.length === 0) return json({ players: [] });
+
+      const { data: seasonTeams } = await sb
+        .from("season_teams")
+        .select("id")
+        .in("season_id", seasonIds);
+      const seasonTeamIds = (seasonTeams || []).map((st) => st.id as string);
+      if (seasonTeamIds.length === 0) return json({ players: [] });
+
+      const { data: registrations } = await sb
+        .from("season_team_players")
+        .select("player_id")
+        .in("season_team_id", seasonTeamIds);
+      const playerIds = (registrations || []).map((r) => r.player_id as number);
+      if (playerIds.length === 0) return json({ players: [] });
+
+      query = query.in("id", playerIds);
+    } else if (orgId) {
       const { data: orgTeams } = await supabase
         .from("teams")
         .select("id")

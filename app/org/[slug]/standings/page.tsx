@@ -1,8 +1,15 @@
 "use client";
 
+import { useParams } from "next/navigation";
 import { StandingsTable } from "@/components/standings/standings-table";
+import { SeasonEmptyState } from "@/components/dashboard/season-empty-state";
+import { useOrgSeason } from "@/components/competitions/org-season-provider";
 
 export default function OrgStandingsPage() {
+  const params = useParams();
+  const slug = params.slug as string;
+  const { selectedSeasonName, loading: seasonLoading, hasTeams, hasFixtures, isOrgAdmin } = useOrgSeason();
+
   return (
     <div className="space-y-5">
       <div className="page-head">
@@ -11,7 +18,16 @@ export default function OrgStandingsPage() {
           <p className="page-sub">League table and positions</p>
         </div>
       </div>
-      <StandingsTable />
+
+      {isOrgAdmin && !seasonLoading && !hasFixtures && (
+        <SeasonEmptyState
+          hasTeams={hasTeams}
+          sheetHref={`/org/${slug}/teams`}
+          fixturesHref={`/org/${slug}/fixtures`}
+        />
+      )}
+
+      <StandingsTable seasonName={selectedSeasonName ?? undefined} />
     </div>
   );
 }

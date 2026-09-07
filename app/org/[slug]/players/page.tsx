@@ -7,6 +7,8 @@ import { useAppStore } from "@/lib/store";
 import { useOrg } from "@/lib/hooks/use-org";
 import { PlayerCard } from "@/components/players/player-card";
 import { AnonymizeConfirm } from "@/components/players/anonymize-confirm";
+import { SeasonEmptyState } from "@/components/dashboard/season-empty-state";
+import { useOrgSeason } from "@/components/competitions/org-season-provider";
 import { Plus, AlertCircle, Upload } from "lucide-react";
 import { EmptyState } from "@/components/shared/skeleton";
 import { useConfirm } from "@/components/shared/confirm-dialog";
@@ -32,6 +34,7 @@ export default function OrgPlayersPage() {
   const teamName = useAppStore((s) => s.teamName);
   const userProfile = useAppStore((s) => s.userProfile);
   const isOrgAdmin = userProfile?.role === "org_admin";
+  const { selectedOrgSeasonId, loading: seasonLoading, hasTeams, isOrgAdmin: ctxIsOrgAdmin } = useOrgSeason();
   const deletePlayer = useAppStore((s) => s.deletePlayer);
   const setPlayers = useAppStore((s) => s.setPlayers);
   const setTeams = useAppStore((s) => s.setTeams);
@@ -45,8 +48,8 @@ export default function OrgPlayersPage() {
     if (!currentOrg?.id) return;
     try {
       const [teamsRes, playersRes] = await Promise.all([
-        fetch(`/api/teams?org_id=${currentOrg.id}`),
-        fetch(`/api/players?org_id=${currentOrg.id}`),
+        fetch(`/api/teams?org_id=${currentOrg.id}${selectedOrgSeasonId ? `&org_season_id=${selectedOrgSeasonId}` : ""}`),
+        fetch(`/api/players?org_id=${currentOrg.id}${selectedOrgSeasonId ? `&org_season_id=${selectedOrgSeasonId}` : ""}`),
       ]);
       if (teamsRes.ok) {
         const t = await teamsRes.json();
@@ -108,8 +111,8 @@ export default function OrgPlayersPage() {
       }
       // Refresh players list from API
       const [teamsRes, playersRes] = await Promise.all([
-        fetch(`/api/teams?org_id=${currentOrg.id}`),
-        fetch(`/api/players?org_id=${currentOrg.id}`),
+        fetch(`/api/teams?org_id=${currentOrg.id}${selectedOrgSeasonId ? `&org_season_id=${selectedOrgSeasonId}` : ""}`),
+        fetch(`/api/players?org_id=${currentOrg.id}${selectedOrgSeasonId ? `&org_season_id=${selectedOrgSeasonId}` : ""}`),
       ]);
       if (teamsRes.ok) {
         const t = await teamsRes.json();
@@ -163,6 +166,14 @@ export default function OrgPlayersPage() {
         <div className="flex items-center gap-2 text-sm text-danger bg-danger/10 rounded-lg px-4 py-3 mb-4">
           <AlertCircle size={16} /> {error}
         </div>
+      )}
+
+      {ctxIsOrgAdmin && selectedOrgSeasonId && !seasonLoading && !hasTeams && (
+        <SeasonEmptyState
+          hasTeams={false}
+          sheetHref={`/org/${slug}/teams`}
+          fixturesHref={`/org/${slug}/fixtures`}
+        />
       )}
 
       {grouped.length === 0 ? (
