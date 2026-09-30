@@ -27,10 +27,29 @@ interface OrgSeasonContextValue {
 
 const OrgSeasonContext = createContext<OrgSeasonContextValue | null>(null);
 
-export function useOrgSeason() {
-  const ctx = useContext(OrgSeasonContext);
-  if (!ctx) throw new Error("useOrgSeason must be used within OrgSeasonProvider");
-  return ctx;
+const NO_ORG_SEASON: OrgSeasonContextValue = {
+  seasons: [],
+  selectedOrgSeasonId: null,
+  selectedSeasonName: null,
+  setSelectedOrgSeason: () => {},
+  loading: false,
+  hasTeams: false,
+  hasPlayers: false,
+  hasFixtures: false,
+  isOrgAdmin: false,
+  isCompetitionPage: false,
+};
+
+/**
+ * Safe to call outside OrgSeasonProvider.
+ *
+ * AppHeader is rendered by both the org layout (inside the provider) and the
+ * root AppShell for non-org routes such as /admin, where no provider exists.
+ * Returning an inert default keeps that second instance rendering instead of
+ * throwing out of the root layout, which would take down the whole app.
+ */
+export function useOrgSeason(): OrgSeasonContextValue {
+  return useContext(OrgSeasonContext) ?? NO_ORG_SEASON;
 }
 
 /**
