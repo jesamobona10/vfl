@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useOrg } from "@/lib/hooks/use-org";
 import { parsePlayerImportCSV } from "@/lib/utils/csv";
-import type { PlayerImportRow } from "@/lib/types";
+import type { Player, PlayerImportRow, Team } from "@/lib/types";
 import { Upload, FileSpreadsheet, AlertCircle, CheckCircle2, Loader2 } from "lucide-react";
 import { Modal } from "@/components/ui/modal";
 
@@ -28,8 +28,8 @@ export function PlayerImportModal({ slug, onClose, onImported }: PlayerImportMod
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [step, setStep] = useState<Step>("upload");
   const [csvText, setCsvText] = useState("");
-  const [teams, setTeams] = useState<any[]>([]);
-  const [existingPlayers, setExistingPlayers] = useState<any[]>([]);
+  const [teams, setTeams] = useState<Team[]>([]);
+  const [existingPlayers, setExistingPlayers] = useState<Player[]>([]);
   const [parseResult, setParseResult] = useState<{
     rows: PlayerImportRow[];
     errors: string[];
@@ -81,7 +81,7 @@ export function PlayerImportModal({ slug, onClose, onImported }: PlayerImportMod
           try {
             const res = await fetch(`/api/competitions/${comp.id}/seasons`);
             const sData = await res.json();
-            (sData.seasons || []).forEach((s: any) => {
+            (sData.seasons || []).forEach((s: { id: string; name: string }) => {
               seasons.push({ id: s.id, name: s.name, competitionName: comp.name });
             });
           } catch {
@@ -108,8 +108,8 @@ export function PlayerImportModal({ slug, onClose, onImported }: PlayerImportMod
           return;
         }
         parseCsv(text);
-      } catch (err: any) {
-        setParseError(err?.message || "Error reading file.");
+      } catch (err) {
+        setParseError(err instanceof Error ? err.message : "Error reading file.");
       }
     };
     reader.readAsText(file);
@@ -123,8 +123,8 @@ export function PlayerImportModal({ slug, onClose, onImported }: PlayerImportMod
       setCsvText(text);
       setParseResult(result);
       setStep("preview");
-    } catch (err: any) {
-      setParseError(err?.message || "Unable to parse CSV.");
+    } catch (err) {
+      setParseError(err instanceof Error ? err.message : "Unable to parse CSV.");
     }
   };
 

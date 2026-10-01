@@ -149,7 +149,7 @@ export default function StatsPage() {
           rowKey={(entry) => String(entry.playerId)}
           headClassName="text-muted font-medium normal-case tracking-normal"
           mobileCard={(entry, i) => (
-            <div key={entry.playerId} className="card px-3 py-2.5 flex items-center gap-3 text-sm">
+            <div className="card px-3 py-2.5 flex items-center gap-3 text-sm">
               <span className="text-muted shrink-0 w-5">{i + 1}</span>
               <span className="flex items-center gap-2 min-w-0 flex-1">
                 <span className="font-medium truncate">{entry.name}</span>

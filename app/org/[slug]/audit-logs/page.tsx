@@ -372,7 +372,6 @@ export default function OrgAuditLogsPage() {
               columns={auditColumns}
               mobileCard={(log) => (
                 <button
-                  key={log.id}
                   onClick={() => setSelected(log)}
                   className="w-full text-left card px-3 py-2.5 space-y-1.5 active:bg-surface-2/50 transition-colors"
                 >

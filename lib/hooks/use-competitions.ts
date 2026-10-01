@@ -4,11 +4,11 @@ import type {
   Season,
   OrganizationSeason,
   SeasonTeam,
-  SeasonPlayerStats,
   SeasonTeamPlayer,
   Team,
   Player,
   FixtureRound,
+  StandingRow,
 } from "@/lib/types";
 import { fetchJson } from "@/lib/utils/fetch";
 
@@ -175,7 +175,7 @@ export function useSeasonStandings(seasonId: string | undefined) {
   return useQuery({
     queryKey: ["season-standings", seasonId],
     queryFn: () =>
-      fetchJson<{ standings: SeasonPlayerStats[] }>(`/api/seasons/${seasonId}/standings`).then(
+      fetchJson<{ standings: StandingRow[] }>(`/api/seasons/${seasonId}/standings`).then(
         (d) => d.standings
       ),
     enabled: !!seasonId,

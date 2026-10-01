@@ -74,7 +74,7 @@ export function TopFiveStandings() {
         columns={columns}
         rowKey={(team) => String(team.id)}
         mobileCard={(team, index) => (
-          <div key={team.id} className="card px-3 py-2.5 flex items-center gap-2 text-[12.5px]">
+          <div className="card px-3 py-2.5 flex items-center gap-2 text-[12.5px]">
             <span className="w-5 text-ink-3 shrink-0">{index + 1}</span>
             <span className="flex items-center gap-2 min-w-0 flex-1 font-medium">
               {crest(team)}

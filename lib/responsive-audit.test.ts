@@ -11,6 +11,11 @@ import { join, relative } from "node:path";
  *
  * A real browser check is not possible here (no Supabase credentials, so the
  * authenticated routes redirect to login), so this scans the source instead.
+ *
+ * Scope: this covers a specific set of regressions that have actually shipped
+ * in this codebase. It is not a general overflow proof -- it cannot see tables
+ * rendered through a component, non-table overflow (wide `pre`, flex rows
+ * without `min-w-0`, fixed-size inline SVG), or anything dynamic at runtime.
  */
 
 const ROOT = join(__dirname, "..");
@@ -75,6 +80,46 @@ const FOREIGN_PALETTES = new Set([
 ]);
 
 /**
+ * Extracts the top-level keys of a named object literal from the Tailwind
+ * config, e.g. the colour families under `colors: { ... }`.
+ *
+ * This tracks brace depth instead of matching indentation, because the config
+ * is formatted by Prettier and re-indenting it must not silently change which
+ * families this test considers valid.
+ */
+function topLevelKeysOf(source: string, objectName: string): Set<string> {
+  const start = source.indexOf(`${objectName}: {`);
+  if (start === -1) throw new Error(`tailwind.config.ts has no \`${objectName}\` block`);
+
+  const keys = new Set<string>();
+  let depth = 0;
+  let started = false;
+  const body = source.slice(start + objectName.length + 1);
+
+  for (const line of body.split("\n")) {
+    const trimmed = line.trim();
+    if (trimmed.startsWith("//")) continue;
+
+    const keyMatch = trimmed.match(/^([a-zA-Z][a-zA-Z0-9-]*):/);
+    // Depth 1 means the key is a direct child of the object literal, so nested
+    // shades such as `500:` inside a family are not mistaken for families.
+    if (started && depth === 1 && keyMatch) keys.add(keyMatch[1]);
+
+    for (const ch of line) {
+      if (ch === "{") {
+        depth += 1;
+        started = true;
+      } else if (ch === "}") depth -= 1;
+    }
+    // The opening brace of the object literal itself lives on the first line,
+    // so once we return to depth 0 having descended, we are done.
+    if (started && depth === 0) break;
+  }
+
+  return keys;
+}
+
+/**
  * Line-scoped exceptions, as [file, class substring, reason]. Used where a
  * narrow grid is deliberate rather than an oversight.
  */
@@ -85,6 +130,31 @@ const ALLOWED_LINES: Array<[string, string, string]> = [
     "compact 3-up summary inside a modal: ~95px per tile, stacks would make the modal taller for no gain",
   ],
 ];
+
+/**
+ * Lines above a `<table>` to inspect for a wrapper or card fallback. Wide
+ * enough for a wrapper div plus the props of the elements between them.
+ *
+ * Known limitation: this is a line window, not a parsed ancestor chain, so a
+ * scroller less than this many lines above an unhandled table still excuses it.
+ * It fixes the failure that actually occurs in practice -- an unrelated
+ * scroller hundreds of lines away in the same file -- without pulling in a JSX
+ * parser. Tighten the window if a future case needs it.
+ */
+const TABLE_CONTEXT_LINES = 6;
+
+/** Whether the table on `lineIndex` has a scroll wrapper or mobile card fallback. */
+function hasMobileTreatment(lines: string[], lineIndex: number): boolean {
+  const context = lines
+    .slice(Math.max(0, lineIndex - TABLE_CONTEXT_LINES), lineIndex + 1)
+    .join("\n");
+  return (
+    /overflow-x-auto/.test(context) ||
+    /<DataTable/.test(context) ||
+    /lg:hidden/.test(context) ||
+    /min-w-\[\d+px\]/.test(context)
+  );
+}
 
 const COLOR_UTILITIES =
   "text|bg|border|ring|fill|stroke|divide|placeholder|decoration|accent|caret|outline|from|via|to|shadow";
@@ -109,13 +179,24 @@ describe("responsive source audit", () => {
     expect(FILES.length).toBeGreaterThan(100);
   });
 
-  it("only uses palettes defined in the Tailwind theme", () => {
-    // Families come from top-level keys of theme.extend.colors, e.g. "brand", "ink".
+  it("parses the theme colours out of tailwind.config.ts", () => {
+    // Guards the palette rule below: if the parse silently returns nothing,
+    // every foreign palette would be reported forever and the rule would be
+    // deleted as noise rather than fixed.
     const config = readFileSync(join(ROOT, "tailwind.config.ts"), "utf8");
-    const colorsBlock = config.slice(config.indexOf("colors:"));
-    const defined = new Set(
-      [...colorsBlock.matchAll(/^\s{6}([a-z][a-z0-9-]*):/gm)].map((m) => m[1])
-    );
+    const defined = topLevelKeysOf(config, "colors");
+
+    expect(defined).toContain("brand");
+    expect(defined).toContain("danger");
+    expect(defined).toContain("ink");
+    // Nested shades must not be mistaken for families.
+    expect(defined).not.toContain("DEFAULT");
+    expect(defined).not.toContain("500");
+  });
+
+  it("only uses palettes defined in the Tailwind theme", () => {
+    const config = readFileSync(join(ROOT, "tailwind.config.ts"), "utf8");
+    const defined = topLevelKeysOf(config, "colors");
 
     const findings = scan((line) => {
       // Requires a <family>-<shade> shape, which excludes directional
@@ -132,6 +213,20 @@ describe("responsive source audit", () => {
     });
 
     expect(findings).toEqual([]);
+  });
+
+  it("accepts a foreign palette once it is defined in the theme", () => {
+    // The inverse of the rule above, proving the check consults the config
+    // rather than rejecting every foreign palette unconditionally.
+    const config = readFileSync(join(ROOT, "tailwind.config.ts"), "utf8");
+    const defined = topLevelKeysOf(config, "colors");
+    expect(defined.has("blue")).toBe(false);
+
+    const patched = config.replace(
+      "        gold: {",
+      '        blue: {\n          500: "#2563eb",\n        },\n        gold: {'
+    );
+    expect(topLevelKeysOf(patched, "colors").has("blue")).toBe(true);
   });
 
   it("does not use fixed widths wider than a small phone", () => {
@@ -189,22 +284,42 @@ describe("responsive source audit", () => {
 
   it("gives every on-screen table a mobile treatment", () => {
     const findings: string[] = [];
+
     for (const file of FILES) {
       const rel = relative(ROOT, file);
       if (ALLOWED.has(rel)) continue;
+
       const source = readFileSync(file, "utf8");
-      if (!/<table[\s>]/.test(source)) continue;
+      const lines = source.split("\n");
 
-      const hasScrollWrapper = /overflow-x-auto/.test(source);
-      const hasCardFallback =
-        /<DataTable/.test(source) || /lg:hidden/.test(source) || /min-w-\[\d+px\]/.test(source);
+      lines.forEach((line, i) => {
+        if (!/<table[\s>]/.test(line)) return;
 
-      if (!hasScrollWrapper && !hasCardFallback) {
-        findings.push(
-          `${rel} has a <table> with no overflow-x-auto wrapper and no mobile card layout`
-        );
-      }
+        // Scope the search to this table's own neighbourhood. A file-level check
+        // is wrong: one `overflow-x-auto` anywhere would excuse every other
+        // table in the file, which is exactly the bug this rule must catch.
+        if (!hasMobileTreatment(lines, i)) {
+          findings.push(
+            `${rel}:${i + 1} <table> has no overflow-x-auto wrapper and no mobile card layout`
+          );
+        }
+      });
     }
     expect(findings).toEqual([]);
+  });
+
+  it("does not excuse a table just because the file mentions overflow-x-auto", () => {
+    // Guards the scoping of the rule above: an unrelated scroller earlier in the
+    // file must not launder a genuinely unhandled table further down.
+    const filler = Array.from({ length: TABLE_CONTEXT_LINES }, (_, i) => `const x${i} = ${i};`);
+    const source = [
+      '<div className="overflow-x-auto"><table className="w-full" /></div>',
+      ...filler,
+      '<div><table className="w-full" /></div>',
+    ].join("\n");
+    const lines = source.split("\n");
+
+    expect(hasMobileTreatment(lines, 0)).toBe(true);
+    expect(hasMobileTreatment(lines, filler.length + 1)).toBe(false);
   });
 });

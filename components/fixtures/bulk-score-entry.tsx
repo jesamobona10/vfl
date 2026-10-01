@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useCallback, useMemo, useState } from "react";
 import { useAppStore } from "@/lib/store";
 import { Check } from "lucide-react";
 import { TimeInput } from "../shared/time-input";
@@ -37,18 +37,27 @@ export function BulkScoreEntry() {
 
   const [savedRounds, setSavedRounds] = useState<Set<number>>(new Set());
 
-  const handleScoreChange = (matchId: number, field: "homeScore" | "awayScore", value: string) => {
-    const num = value === "" ? null : Math.max(0, Math.min(99, Number(value) || 0));
-    updateMatch(matchId, field, num);
-  };
+  const handleScoreChange = useCallback(
+    (matchId: number, field: "homeScore" | "awayScore", value: string) => {
+      const num = value === "" ? null : Math.max(0, Math.min(99, Number(value) || 0));
+      updateMatch(matchId, field, num);
+    },
+    [updateMatch]
+  );
 
-  const handleDateChange = (matchId: number, value: string) => {
-    updateMatch(matchId, "date", value || null);
-  };
+  const handleDateChange = useCallback(
+    (matchId: number, value: string) => {
+      updateMatch(matchId, "date", value || null);
+    },
+    [updateMatch]
+  );
 
-  const handleTimeChange = (matchId: number, value: string) => {
-    updateMatch(matchId, "time", value || null);
-  };
+  const handleTimeChange = useCallback(
+    (matchId: number, value: string) => {
+      updateMatch(matchId, "time", value || null);
+    },
+    [updateMatch]
+  );
 
   const saveRound = (round: number) => {
     const roundMatches = fixtures.find((r) => r.round === round)?.matches || [];
@@ -60,90 +69,95 @@ export function BulkScoreEntry() {
     setSavedRounds((prev) => new Set(prev).add(round));
   };
 
-  const scoreColumns: DataTableColumn<Match>[] = [
-    {
-      key: "home",
-      header: "Home",
-      className: "text-left",
-      render: (match) => <TeamCell team={getTeam(match.homeId)} align="left" />,
-    },
-    {
-      key: "score",
-      header: "Score",
-      width: "8rem",
-      className: "text-center",
-      render: (match) => (
-        <div className="flex items-center justify-center gap-1">
+  // Rebuilt only when the store actions change: score inputs are controlled, so
+  // a fresh column array on every keystroke re-renders every cell in the round.
+  const scoreColumns: DataTableColumn<Match>[] = useMemo(
+    () => [
+      {
+        key: "home",
+        header: "Home",
+        className: "text-left",
+        render: (match) => <TeamCell team={getTeam(match.homeId)} align="left" />,
+      },
+      {
+        key: "score",
+        header: "Score",
+        width: "8rem",
+        className: "text-center",
+        render: (match) => (
+          <div className="flex items-center justify-center gap-1">
+            <input
+              type="number"
+              min={0}
+              max={99}
+              value={match.homeScore ?? ""}
+              onChange={(e) => handleScoreChange(match.id, "homeScore", e.target.value)}
+              className="input w-12 text-center text-base font-bold py-1"
+              aria-label={`${getTeam(match.homeId)?.name || "Home"} goals`}
+            />
+            <span className="text-muted font-bold">-</span>
+            <input
+              type="number"
+              min={0}
+              max={99}
+              value={match.awayScore ?? ""}
+              onChange={(e) => handleScoreChange(match.id, "awayScore", e.target.value)}
+              className="input w-12 text-center text-base font-bold py-1"
+              aria-label={`${getTeam(match.awayId)?.name || "Away"} goals`}
+            />
+          </div>
+        ),
+      },
+      {
+        key: "away",
+        header: "Away",
+        className: "text-right",
+        render: (match) => <TeamCell team={getTeam(match.awayId)} align="right" />,
+      },
+      {
+        key: "date",
+        header: "Date",
+        width: "7rem",
+        className: "text-center",
+        render: (match) => (
           <input
-            type="number"
-            min={0}
-            max={99}
-            value={match.homeScore ?? ""}
-            onChange={(e) => handleScoreChange(match.id, "homeScore", e.target.value)}
-            className="input w-12 text-center text-base font-bold py-1"
-            aria-label={`${getTeam(match.homeId)?.name || "Home"} goals`}
+            type="date"
+            value={match.date || ""}
+            onChange={(e) => handleDateChange(match.id, e.target.value)}
+            className="input text-xs py-1 w-full text-center"
+            aria-label={`Match date for ${getTeam(match.homeId)?.name || "home"} vs ${getTeam(match.awayId)?.name || "away"}`}
           />
-          <span className="text-muted font-bold">-</span>
-          <input
-            type="number"
-            min={0}
-            max={99}
-            value={match.awayScore ?? ""}
-            onChange={(e) => handleScoreChange(match.id, "awayScore", e.target.value)}
-            className="input w-12 text-center text-base font-bold py-1"
-            aria-label={`${getTeam(match.awayId)?.name || "Away"} goals`}
-          />
-        </div>
-      ),
-    },
-    {
-      key: "away",
-      header: "Away",
-      className: "text-right",
-      render: (match) => <TeamCell team={getTeam(match.awayId)} align="right" />,
-    },
-    {
-      key: "date",
-      header: "Date",
-      width: "7rem",
-      className: "text-center",
-      render: (match) => (
-        <input
-          type="date"
-          value={match.date || ""}
-          onChange={(e) => handleDateChange(match.id, e.target.value)}
-          className="input text-xs py-1 w-full text-center"
-          aria-label={`Match date for ${getTeam(match.homeId)?.name || "home"} vs ${getTeam(match.awayId)?.name || "away"}`}
-        />
-      ),
-    },
-    {
-      key: "time",
-      header: "Time",
-      width: "5rem",
-      className: "text-center",
-      render: (match) => (
-        <TimeInput value={match.time || ""} onChange={(val) => handleTimeChange(match.id, val)} />
-      ),
-    },
-    {
-      key: "status",
-      header: "Status",
-      width: "5rem",
-      className: "text-center",
-      render: (match) => (
-        <span
-          className={`text-xs font-semibold px-2 py-0.5 rounded-full ${
-            match.homeScore != null && match.awayScore != null
-              ? "bg-brand/10 text-brand"
-              : "bg-surface-2 text-muted"
-          }`}
-        >
-          {match.homeScore != null && match.awayScore != null ? "Done" : "—"}
-        </span>
-      ),
-    },
-  ];
+        ),
+      },
+      {
+        key: "time",
+        header: "Time",
+        width: "5rem",
+        className: "text-center",
+        render: (match) => (
+          <TimeInput value={match.time || ""} onChange={(val) => handleTimeChange(match.id, val)} />
+        ),
+      },
+      {
+        key: "status",
+        header: "Status",
+        width: "5rem",
+        className: "text-center",
+        render: (match) => (
+          <span
+            className={`text-xs font-semibold px-2 py-0.5 rounded-full ${
+              match.homeScore != null && match.awayScore != null
+                ? "bg-brand/10 text-brand"
+                : "bg-surface-2 text-muted"
+            }`}
+          >
+            {match.homeScore != null && match.awayScore != null ? "Done" : "—"}
+          </span>
+        ),
+      },
+    ],
+    [getTeam, handleScoreChange, handleDateChange, handleTimeChange]
+  );
 
   if (!fixtures.length) return null;
 
@@ -181,7 +195,7 @@ export function BulkScoreEntry() {
                 const home = getTeam(match.homeId);
                 const away = getTeam(match.awayId);
                 return (
-                  <div key={match.id} className="rounded-lg border border-line p-3 space-y-3">
+                  <div className="rounded-lg border border-line p-3 space-y-3">
                     <div className="flex items-center justify-between gap-2">
                       <TeamCell team={home} align="left" />
                       <TeamCell team={away} align="right" />

@@ -80,18 +80,21 @@ export function StandingsTable({
   const teams = useResolvedTeams(currentSeasonId);
 
   const standings = seasonStandings?.length
-    ? seasonStandings.map((s: any, i: number) => ({
-        id: s.team_id ?? s.id,
-        name: s.team_name ?? s.name,
-        played: s.played ?? s.p,
-        won: s.won ?? s.w,
-        drawn: s.drawn ?? s.d,
-        lost: s.lost ?? s.l,
-        gf: s.goals_for ?? s.gf,
-        ga: s.goals_against ?? s.ga,
-        gd: s.goal_difference ?? s.gd,
-        points: s.points ?? s.pts,
-        rating: s.rating ?? 6.0,
+    ? // calculateStandings already returns StandingRow with these exact names;
+      // the previous team_id/p/goals_for fallbacks were unreachable and hid a
+      // mismatch between this hook and the route it calls.
+      seasonStandings.map((s: StandingRow) => ({
+        id: s.id,
+        name: s.name,
+        played: s.played,
+        won: s.won,
+        drawn: s.drawn,
+        lost: s.lost,
+        gf: s.gf,
+        ga: s.ga,
+        gd: s.gd,
+        points: s.points,
+        rating: s.rating || 6.0,
       }))
     : calculateStandings(teams, fixtures);
 

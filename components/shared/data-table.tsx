@@ -1,5 +1,6 @@
 "use client";
 
+import { Fragment } from "react";
 import { cn } from "@/lib/utils";
 
 export interface DataTableColumn<T> {
@@ -24,7 +25,12 @@ export interface DataTableProps<T> {
   headClassName?: string;
   /** Minimum width for the table so columns do not collapse when scrolled. */
   minWidth?: number;
-  /** Makes a whole row activatable, e.g. to open a detail drawer. */
+  /**
+   * Makes a desktop row activatable, e.g. to open a detail drawer.
+   *
+   * Desktop only: the mobile card is caller-supplied, so it must wire its own
+   * handler. Passing this alone does not make the card tappable.
+   */
   onRowClick?: (row: T, index: number) => void;
 }
 
@@ -46,7 +52,9 @@ export function DataTable<T>({
   minWidth,
   onRowClick,
 }: DataTableProps<T>) {
-  if (rows.length === 0 && empty) return <>{empty}</>;
+  if (rows.length === 0) {
+    return <>{empty ?? DEFAULT_EMPTY}</>;
+  }
 
   return (
     <div className={className}>
@@ -91,10 +99,16 @@ export function DataTable<T>({
         </table>
       </div>
 
-      <div className="lg:hidden space-y-2">{rows.map((row, index) => mobileCard(row, index))}</div>
+      <div className="lg:hidden space-y-2">
+        {rows.map((row, index) => (
+          <Fragment key={rowKey(row, index)}>{mobileCard(row, index)}</Fragment>
+        ))}
+      </div>
     </div>
   );
 }
+
+const DEFAULT_EMPTY = <p className="text-sm text-muted p-4 text-center">No records to show.</p>;
 
 /** Label/value pair used inside mobile cards. */
 export function DataField({
