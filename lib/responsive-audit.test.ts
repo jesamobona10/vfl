@@ -80,12 +80,12 @@ const FOREIGN_PALETTES = new Set([
 ]);
 
 /**
- * Extracts the top-level keys of a named object literal from the Tailwind
- * config, e.g. the colour families under `colors: { ... }`.
+ * Top-level keys of a named object literal in tailwind.config.ts, e.g. the
+ * colour families under `colors: { ... }`.
  *
- * This tracks brace depth instead of matching indentation, because the config
- * is formatted by Prettier and re-indenting it must not silently change which
- * families this test considers valid.
+ * Tracks brace depth rather than indentation: an earlier version matched six
+ * leading spaces and silently returned an empty set, since the config indents
+ * families eight. Re-indenting the config must not change the answer.
  */
 function topLevelKeysOf(source: string, objectName: string): Set<string> {
   const start = source.indexOf(`${objectName}: {`);
@@ -93,27 +93,23 @@ function topLevelKeysOf(source: string, objectName: string): Set<string> {
 
   const keys = new Set<string>();
   let depth = 0;
-  let started = false;
   const body = source.slice(start + objectName.length + 1);
 
   for (const line of body.split("\n")) {
     const trimmed = line.trim();
     if (trimmed.startsWith("//")) continue;
 
-    const keyMatch = trimmed.match(/^([a-zA-Z][a-zA-Z0-9-]*):/);
-    // Depth 1 means the key is a direct child of the object literal, so nested
-    // shades such as `500:` inside a family are not mistaken for families.
-    if (started && depth === 1 && keyMatch) keys.add(keyMatch[1]);
-
-    for (const ch of line) {
-      if (ch === "{") {
-        depth += 1;
-        started = true;
-      } else if (ch === "}") depth -= 1;
+    // Depth 1 keys are direct children, so a nested `500:` is not a family.
+    if (depth === 1) {
+      const key = trimmed.match(/^([a-zA-Z][a-zA-Z0-9-]*):/);
+      if (key) keys.add(key[1]);
     }
-    // The opening brace of the object literal itself lives on the first line,
-    // so once we return to depth 0 having descended, we are done.
-    if (started && depth === 0) break;
+
+    for (const char of line) {
+      if (char === "{") depth += 1;
+      else if (char === "}") depth -= 1;
+    }
+    if (depth === 0) break;
   }
 
   return keys;
