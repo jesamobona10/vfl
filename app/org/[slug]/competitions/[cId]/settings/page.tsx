@@ -12,6 +12,7 @@ import {
 } from "@/lib/hooks/use-competitions";
 import { useQueryClient } from "@tanstack/react-query";
 import { useParams } from "next/navigation";
+import Link from "next/link";
 import {
   Calendar,
   Check,
@@ -22,6 +23,10 @@ import {
   ChevronDown,
   Copy,
   Sparkles,
+  Shield,
+  Users,
+  BarChart3,
+  ChevronRight,
 } from "lucide-react";
 import { SkeletonForm } from "@/components/shared/skeleton";
 import { useToast } from "@/components/ui/toast";
@@ -45,6 +50,7 @@ const seasonStatusColors: Record<string, string> = {
 
 export default function CompetitionSettingsPage() {
   const params = useParams();
+  const slug = params.slug as string;
   const cId = params.cId as string;
   const toast = useToast();
   const { confirm, dialog: confirmDialog } = useConfirm();
@@ -359,9 +365,42 @@ export default function CompetitionSettingsPage() {
       ? savedFlyerTextColor
       : flyerTextColor;
 
+  const currentSeasonId = seasons.find((s) => s.is_current)?.id;
+  const seasonQuery = currentSeasonId ? `?seasonId=${currentSeasonId}` : "";
+
   return (
     <div className="max-w-xl space-y-6">
       {confirmDialog}
+      <div className="card p-6 space-y-3">
+        <div>
+          <h2 className="text-lg font-semibold">Competition Sections</h2>
+          <p className="text-sm text-muted">
+            Roster and performance data for this competition.
+          </p>
+        </div>
+        <div className="divide-y divide-line">
+          {[
+            { href: "teams", label: "Teams", icon: Shield },
+            { href: "players", label: "Players", icon: Users },
+            { href: "stats", label: "Statistics", icon: BarChart3 },
+          ].map((item) => {
+            const Icon = item.icon;
+            return (
+              <Link
+                key={item.href}
+                href={`/org/${slug}/competitions/${cId}/${item.href}${seasonQuery}`}
+                className="flex items-center justify-between gap-2 py-3 text-sm font-medium hover:text-brand transition-colors"
+              >
+                <span className="flex items-center gap-2.5">
+                  <Icon size={16} className="text-muted" />
+                  {item.label}
+                </span>
+                <ChevronRight size={16} className="text-muted" />
+              </Link>
+            );
+          })}
+        </div>
+      </div>
       <div className="card p-6 space-y-4">
         <h2 className="text-lg font-semibold">Competition Logo</h2>
         <div className="flex items-center gap-4">
