@@ -4,11 +4,13 @@ import { useParams } from "next/navigation";
 import { StandingsTable } from "@/components/standings/standings-table";
 import { SeasonEmptyState } from "@/components/dashboard/season-empty-state";
 import { useOrgSeason } from "@/components/competitions/org-season-provider";
+import { useAppStore } from "@/lib/store";
 
 export default function OrgStandingsPage() {
   const params = useParams();
   const slug = params.slug as string;
   const { selectedSeasonName, loading: seasonLoading, hasTeams, hasFixtures, isOrgAdmin } = useOrgSeason();
+  const currentOrg = useAppStore((s) => s.currentOrg);
 
   return (
     <div className="space-y-5">
@@ -27,7 +29,7 @@ export default function OrgStandingsPage() {
         />
       )}
 
-      <StandingsTable seasonName={selectedSeasonName ?? undefined} />
+      <StandingsTable seasonName={selectedSeasonName ?? undefined} leagueName={currentOrg?.name} />
     </div>
   );
 }

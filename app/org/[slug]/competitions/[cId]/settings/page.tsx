@@ -31,6 +31,7 @@ import {
 import { SkeletonForm } from "@/components/shared/skeleton";
 import { useToast } from "@/components/ui/toast";
 import { useConfirm } from "@/components/shared/confirm-dialog";
+import { useSeasonHasFixtures } from "@/lib/hooks/use-competition-stats";
 import type { Season } from "@/lib/types";
 
 const statusOptions: { value: string; label: string }[] = [
@@ -56,6 +57,10 @@ export default function CompetitionSettingsPage() {
   const { confirm, dialog: confirmDialog } = useConfirm();
   const { data: currentCompetition, isLoading } = useCompetition(cId);
   const { data: seasons = [] } = useSeasons(currentCompetition?.id);
+  const currentSeasonId = seasons.find((s) => s.is_current)?.id;
+  const { data: seasonHasFixtures, isLoading: checkingFixtures } = useSeasonHasFixtures(
+    currentSeasonId ?? undefined
+  );
   const updateMutation = useUpdateCompetition();
   const generateFixturesMutation = useGenerateFixtures();
   const createSeasonMutation = useCreateSeason();
@@ -63,9 +68,15 @@ export default function CompetitionSettingsPage() {
   const rolloverMutation = useCreateSeasonRollover(cId);
   const queryClient = useQueryClient();
 
-  const [status, setStatus] = useState<"draft" | "active" | "completed" | "archived">(
-    currentCompetition?.status ?? "draft"
-  );
+  // Derived until the admin actually edits it. Seeding this with useState ran
+  // before currentCompetition resolved, so an active competition showed "draft"
+  // and saving overwrote the real status.
+  const [statusOverride, setStatusOverride] = useState<
+    "draft" | "active" | "completed" | "archived" | null
+  >(null);
+  const status = statusOverride ?? currentCompetition?.status ?? "draft";
+  const setStatus = (value: "draft" | "active" | "completed" | "archived") =>
+    setStatusOverride(value);
   const [message, setMessage] = useState<{ type: "success" | "error"; text: string } | null>(null);
 
   const [compLogoUploading, setCompLogoUploading] = useState(false);
@@ -223,7 +234,10 @@ export default function CompetitionSettingsPage() {
     updateMutation.mutate(
       { id: cId, status },
       {
-        onSuccess: () => setMessage({ type: "success", text: "Status updated successfully." }),
+        onSuccess: () => {
+          setStatusOverride(null);
+          setMessage({ type: "success", text: "Status updated successfully." });
+        },
         onError: (err) =>
           setMessage({
             type: "error",
@@ -335,8 +349,9 @@ export default function CompetitionSettingsPage() {
     );
   };
 
-  const isLeague = currentCompetition.type === "league";
-  const canGenerateFixtures = isLeague && (status === "draft" || status === "active");
+  const isLeague = currentCompetition?.type === "league";
+  const canGenerateFixtures =
+    isLeague && (status === "draft" || status === "active") && !seasonHasFixtures;
   const pending =
     updateMutation.isPending ||
     generateFixturesMutation.isPending ||
@@ -365,7 +380,6 @@ export default function CompetitionSettingsPage() {
       ? savedFlyerTextColor
       : flyerTextColor;
 
-  const currentSeasonId = seasons.find((s) => s.is_current)?.id;
   const seasonQuery = currentSeasonId ? `?seasonId=${currentSeasonId}` : "";
 
   return (
@@ -768,7 +782,12 @@ export default function CompetitionSettingsPage() {
           </p>
           <button
             onClick={handleGenerateFixtures}
-            disabled={pending}
+            disabled={pending || checkingFixtures}
+            title={
+              seasonHasFixtures
+                ? "Fixtures have already been generated for this season. Delete them first to regenerate."
+                : undefined
+            }
             className="btn-primary flex items-center gap-2"
           >
             {pending ? (
@@ -776,7 +795,7 @@ export default function CompetitionSettingsPage() {
             ) : (
               <Calendar size={14} />
             )}
-            Generate Fixtures
+            {seasonHasFixtures ? "Fixtures Generated" : "Generate Fixtures"}
           </button>
         </div>
       )}

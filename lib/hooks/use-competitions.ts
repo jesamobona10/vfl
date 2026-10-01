@@ -140,8 +140,12 @@ export function useGenerateFixtures() {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ season_id: seasonId || undefined }),
-      }).then((res) => {
-        if (!res.ok) throw new Error("Failed to generate fixtures");
+      }).then(async (res) => {
+        if (!res.ok) {
+          // Surface the route's reason (e.g. the 409 already-generated guard).
+          const body = await res.json().catch(() => null);
+          throw new Error(body?.error || "Failed to generate fixtures");
+        }
         return res.json();
       }),
     onSuccess: (_data, variables) => {
@@ -149,6 +153,10 @@ export function useGenerateFixtures() {
       if (variables.seasonId) {
         queryClient.invalidateQueries({ queryKey: ["season", variables.seasonId] });
         queryClient.invalidateQueries({ queryKey: ["seasons", variables.competitionId] });
+        // Keeps the Generate button's disabled state in sync after generating.
+        queryClient.invalidateQueries({
+          queryKey: ["season-has-fixtures", variables.seasonId],
+        });
       }
     },
   });

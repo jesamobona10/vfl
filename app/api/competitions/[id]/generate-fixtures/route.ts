@@ -114,6 +114,27 @@ export async function POST(request: Request, props: { params: Promise<{ id: stri
       }
     }
 
+    // Idempotency guard: the client disables this button once fixtures exist,
+    // but the route must also refuse direct/duplicate calls so a generated
+    // calendar is never silently duplicated.
+    const { data: existingFixture } = await sb
+      .from("fixtures")
+      .select("id")
+      .eq("season_id", seasonId)
+      .eq("competition_id", params.id)
+      .limit(1)
+      .maybeSingle();
+
+    if (existingFixture) {
+      return json(
+        {
+          error:
+            "Fixtures have already been generated for this season. Delete them before regenerating.",
+        },
+        { status: 409 }
+      );
+    }
+
     const { data: seasonTeams } = await sb
       .from("season_teams")
       .select("team:team_id(id, name, rating)")

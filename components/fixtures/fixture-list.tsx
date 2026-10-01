@@ -7,7 +7,21 @@ import { FixtureCreator } from "./fixture-creator";
 import { FixtureRoundPanel } from "./fixture-round";
 import { EmptyState, LoadingState } from "@/components/shared/skeleton";
 
-export function FixtureList({ loading = false }: { loading?: boolean }) {
+interface FixtureListProps {
+  loading?: boolean;
+  /** When set, FixtureCreator persists via the API instead of the local store. */
+  competitionId?: string;
+  seasonId?: string | null;
+  /** Called after a fixture is created server-side so the list can refetch. */
+  onFixtureCreated?: () => void;
+}
+
+export function FixtureList({
+  loading = false,
+  competitionId,
+  seasonId,
+  onFixtureCreated,
+}: FixtureListProps) {
   const [roundFilter, setRoundFilter] = useState("all");
   const [teamFilter, setTeamFilter] = useState("all");
   const [statusFilter, setStatusFilter] = useState("all");
@@ -101,7 +115,11 @@ export function FixtureList({ loading = false }: { loading?: boolean }) {
 
       {showAdminFeatures && (
         <div className="mb-6">
-          <FixtureCreator />
+          <FixtureCreator
+            competitionId={competitionId}
+            seasonId={seasonId}
+            onCreated={onFixtureCreated}
+          />
         </div>
       )}
 

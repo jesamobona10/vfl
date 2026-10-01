@@ -86,7 +86,7 @@ function ChangesList({
             <div className="font-medium capitalize mb-1">{titleCase(key.replace(/_/g, " "))}</div>
             <div className="flex flex-col sm:flex-row sm:justify-between gap-1 sm:gap-4">
               <span className="text-ink-3 break-words min-w-0">Before: {render(b)}</span>
-              <span className="text-ink-1 break-words min-w-0">After: {render(a)}</span>
+              <span className="text-ink-3 break-words min-w-0">After: {render(a)}</span>
             </div>
           </div>
         );

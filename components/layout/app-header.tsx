@@ -207,7 +207,7 @@ export function AppHeader({ onOpenSearch, onOpenMenu }: AppHeaderProps) {
                   disabled={importing}
                   className="w-full flex items-center gap-2 px-3 py-2 text-sm text-ink hover:bg-surface-2 rounded-lg transition-colors disabled:opacity-50"
                 >
-                  <Upload size={15} /> {importing ? "Importing&hellip;" : "Import data"}
+                  <Upload size={15} /> {importing ? "Importing..." : "Import data"}
                 </button>
               </div>
             )}

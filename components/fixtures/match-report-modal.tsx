@@ -507,7 +507,7 @@ export function MatchReportModal({
               {analysis.warnings.length > 0 && (
                 <div className="rounded-xl border border-warn-500/30 bg-warn-500/5 p-3 space-y-1.5">
                   {analysis.warnings.map((w, i) => (
-                    <div key={i} className="flex items-start gap-2 text-xs text-warn-600">
+                    <div key={i} className="flex items-start gap-2 text-xs text-warn-500">
                       <AlertTriangle size={14} className="shrink-0 mt-0.5" />
                       <span>{w.message}</span>
                     </div>

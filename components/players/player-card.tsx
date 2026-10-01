@@ -223,7 +223,7 @@ export function PlayerCard({ player, teamName, onEdit, onDelete, onAnonymize }: 
                     e.stopPropagation();
                     onAnonymize(player);
                   }}
-                  className="btn-ghost text-xs py-1.5 px-3 text-warning"
+                  className="btn-ghost text-xs py-1.5 px-3 text-warn"
                 >
                   <UserCog size={13} /> Anonymize
                 </button>

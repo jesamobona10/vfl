@@ -88,7 +88,7 @@ const INITIALS_CSS = `
     font-size: 14px;
     font-weight: 700;
     text-align: center;
-    color: var(--ink);
+    color: rgb(var(--text));
   }
   .flyer-vs {
     font-size: 20px;
@@ -102,17 +102,17 @@ const INITIALS_CSS = `
   .flyer-divider {
     width: 80px;
     height: 2px;
-    background: var(--line);
+    background: rgb(var(--line));
     margin: 0 auto 16px;
   }
   .flyer-date {
     font-size: 15px;
     font-weight: 600;
-    color: var(--ink);
+    color: rgb(var(--text));
   }
   .flyer-time {
     font-size: 13px;
-    color: var(--ink-2);
+    color: rgb(var(--muted));
     margin-top: 4px;
   }
   .flyer-venue {
@@ -422,7 +422,7 @@ export function MatchFlyer({ match, homeTeam, awayTeam, onClose }: MatchFlyerPro
               alignItems: "center",
               gap: 8,
               fontSize: 13,
-              color: "var(--ink-2)",
+              color: "rgb(var(--muted))",
               fontWeight: 600,
             }}
           >

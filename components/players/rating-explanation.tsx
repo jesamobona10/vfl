@@ -104,7 +104,7 @@ export function RatingExplanation({ position, className = "" }: RatingExplanatio
       </button>
 
       {open && (
-        <div className="absolute z-20 mt-2 w-72 p-3 bg-popover border border-line rounded-lg shadow-lg text-xs text-text">
+        <div className="absolute z-20 mt-2 w-72 p-3 bg-surface border border-line rounded-lg shadow-lg text-xs text-text">
           <p className="font-semibold mb-2">
             {positionLabels[position]} Rating Factors
           </p>

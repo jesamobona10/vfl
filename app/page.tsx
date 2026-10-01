@@ -29,11 +29,14 @@ export default function LandingPage() {
     if (myOrgs.length === 0) {
       fetchMyOrgs();
     }
-    if (currentTeamAccount) {
-      router.replace(`/org/${myOrgs[0]?.slug ?? userProfile?.org?.slug ?? ""}/dashboard`);
-    } else if (userProfile?.org?.slug) {
+    // Only redirect once a real slug is known, otherwise this produced
+    // malformed paths like /org//dashboard.
+    const targetSlug = myOrgs[0]?.slug ?? userProfile?.org?.slug;
+    if (currentTeamAccount && targetSlug) {
+      router.replace(`/org/${targetSlug}/dashboard`);
+    } else if (!currentTeamAccount && userProfile?.org?.slug) {
       router.replace(`/org/${userProfile.org.slug}/dashboard`);
-    } else if (myOrgs.length > 0) {
+    } else if (!currentTeamAccount && myOrgs.length > 0) {
       router.replace(`/org/${myOrgs[0].slug}/dashboard`);
     }
     // Anonymous visitors skip all of this: the marketing content renders

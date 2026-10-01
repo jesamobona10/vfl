@@ -55,9 +55,15 @@ function FormGuide({ form }: { form: string[] }) {
 interface StandingsTableProps {
   overviewMode?: boolean;
   seasonName?: string;
+  /** Competition or organization name used on the exported image. */
+  leagueName?: string;
 }
 
-export function StandingsTable({ overviewMode = false, seasonName }: StandingsTableProps) {
+export function StandingsTable({
+  overviewMode = false,
+  seasonName,
+  leagueName,
+}: StandingsTableProps) {
   const [menuOpen, setMenuOpen] = useState(false);
   const [showAdvanced, setShowAdvanced] = useState(false);
   const [expandedRows, setExpandedRows] = useState<Set<number>>(new Set());
@@ -171,7 +177,7 @@ export function StandingsTable({ overviewMode = false, seasonName }: StandingsTa
     champion: { label: "🏆 Champion", color: "bg-gold-tint text-gold-700" },
     promotion: { label: "📈 Promotion", color: "bg-brand-50 text-brand-700" },
     mid: { label: "⚽ Mid-table", color: "bg-surface-2 text-ink-3" },
-    relegation: { label: "📉 Relegation", color: "bg-danger-tint text-danger-700" },
+    relegation: { label: "📉 Relegation", color: "bg-danger-tint text-danger" },
   };
 
   const renderTableRows = () => {
@@ -355,7 +361,7 @@ export function StandingsTable({ overviewMode = false, seasonName }: StandingsTa
         </div>
       </div>
 
-      <div className="overflow-x-auto">
+      <div className="hidden lg:block overflow-x-auto">
         <table className="w-full text-sm">
           <thead>
             <tr className="text-xs uppercase tracking-[0.04em] text-ink-3 font-semibold">
@@ -444,7 +450,7 @@ export function StandingsTable({ overviewMode = false, seasonName }: StandingsTa
       ref={exportRef}
       standings={rows}
       teams={teams}
-      leagueName="VUNA LEAGUE"
+      leagueName={leagueName || "League Standings"}
       seasonName={seasonName || "2026 Season"}
     />
   </>
@@ -455,7 +461,7 @@ const tierLabels: Record<string, { label: string; color: string }> = {
   champion: { label: "🏆 Champion", color: "bg-gold-tint text-gold-700" },
   promotion: { label: "📈 Promotion", color: "bg-brand-50 text-brand-700" },
   mid: { label: "⚽ Mid-table", color: "bg-surface-2 text-ink-3" },
-  relegation: { label: "📉 Relegation", color: "bg-danger-tint text-danger-700" },
+  relegation: { label: "📉 Relegation", color: "bg-danger-tint text-danger" },
 };
 
 function getTier(index: number, total: number) {

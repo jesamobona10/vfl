@@ -1,12 +1,28 @@
 "use client";
 
 import { useState } from "react";
+import { useParams } from "next/navigation";
 import { useAppStore } from "@/lib/store";
 import { useResolvedTeams } from "@/lib/hooks/use-resolved-teams";
 import { Plus, X, AlertCircle, CheckCircle } from "lucide-react";
 import { TimeInput } from "../shared/time-input";
 
-export function FixtureCreator() {
+interface FixtureCreatorProps {
+  /**
+   * When a competition is supplied the fixture is written through the API so it
+   * survives a reload. Without it the creator falls back to the shared store,
+   * which the org fixtures page persists via its own autosave.
+   */
+  competitionId?: string;
+  seasonId?: string | null;
+  onCreated?: () => void;
+}
+
+export function FixtureCreator({
+  competitionId,
+  seasonId,
+  onCreated,
+}: FixtureCreatorProps = {}) {
   const [open, setOpen] = useState(false);
   const [homeId, setHomeId] = useState("");
   const [awayId, setAwayId] = useState("");
@@ -22,10 +38,66 @@ export function FixtureCreator() {
   const fixtures = useAppStore((s) => s.fixtures);
   const addFixture = useAppStore((s) => s.addFixture);
   const isAdmin = useAppStore((s) => s.isAdmin);
+  const slug = useParams().slug as string | undefined;
+  const persistToServer = Boolean(competitionId && seasonId);
 
-  const handleSubmit = () => {
+  const [submitting, setSubmitting] = useState(false);
+
+  const resetForm = () => {
+    setHomeId("");
+    setAwayId("");
+    setRound("");
+    setDate("");
+    setTime("");
+    setVenue("");
+  };
+
+  const handleSubmit = async () => {
     setError("");
     setSuccess("");
+
+    if (persistToServer) {
+      if (!seasonId) {
+        setError("Select a season before adding a fixture.");
+        return;
+      }
+      setSubmitting(true);
+      try {
+        const res = await fetch(
+          `/api/organizations/${slug}/competitions/${competitionId}/fixtures`,
+          {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              season_id: seasonId,
+              home_team_id: Number(homeId),
+              away_team_id: Number(awayId),
+              // "Auto" mirrors the store path: append to the last round.
+              round:
+                Number(round) ||
+                (fixtures.length ? Math.max(...fixtures.map((r) => r.round)) + 1 : 1),
+              date: date || null,
+              time: time || null,
+              venue: venue || null,
+            }),
+          }
+        );
+        const body = await res.json().catch(() => ({}));
+        if (!res.ok) {
+          setError(body.error || "Failed to create fixture");
+          return;
+        }
+        resetForm();
+        setSuccess("Fixture added successfully.");
+        onCreated?.();
+        setTimeout(() => setSuccess(""), 3000);
+      } catch {
+        setError("Failed to create fixture. Please try again.");
+      } finally {
+        setSubmitting(false);
+      }
+      return;
+    }
 
     const result = addFixture(
       {
@@ -44,14 +116,8 @@ export function FixtureCreator() {
       return;
     }
 
+    resetForm();
     setSuccess("Fixture added successfully.");
-    setHomeId("");
-    setAwayId("");
-    setRound("");
-    setDate("");
-    setTime("");
-    setVenue("");
-
     setTimeout(() => setSuccess(""), 3000);
   };
 
@@ -147,9 +213,13 @@ export function FixtureCreator() {
             </div>
           )}
 
-          <button onClick={handleSubmit} className="btn-primary">
-            <Plus size={16} />
-            Add Fixture
+          <button onClick={handleSubmit} disabled={submitting} className="btn-primary">
+            {submitting ? (
+              <span className="block w-4 h-4 bg-surface-2 rounded animate-pulse" />
+            ) : (
+              <Plus size={16} />
+            )}
+            {submitting ? "Adding..." : "Add Fixture"}
           </button>
         </div>
       )}

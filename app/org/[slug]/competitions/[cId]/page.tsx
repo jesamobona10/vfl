@@ -214,7 +214,7 @@ const statsCards = [
               </Link>
             </div>
           </div>
-          <StandingsTable overviewMode />
+          <StandingsTable overviewMode leagueName={competition?.name} />
         </div>
 
         {/* Sidebar: Seasons with Enhanced UX */}
