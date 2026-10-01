@@ -5,6 +5,7 @@ import { useParams, useSearchParams } from "next/navigation";
 import { useSeasonStatistics } from "@/lib/hooks/use-competitions";
 import { Trophy, Target, EyeOff, AlertTriangle } from "lucide-react";
 import { EmptyState, LoadingState } from "@/components/shared/skeleton";
+import { DataTable, type DataTableColumn } from "@/components/shared/data-table";
 
 interface StatEntry {
   playerId: number;
@@ -68,10 +69,50 @@ export default function StatsPage() {
   }
 
   if (!seasonId) {
-    return <EmptyState title="Select a season" description="Choose a season to view its statistics." />;
+    return (
+      <EmptyState title="Select a season" description="Choose a season to view its statistics." />
+    );
   }
 
   const currentList = statMap[activeTab] || [];
+
+  const statLabel =
+    activeTab === "goals"
+      ? "Goals"
+      : activeTab === "assists"
+        ? "Assists"
+        : activeTab === "yellow"
+          ? "Yellow Cards"
+          : "Red Cards";
+
+  const statColumns: DataTableColumn<StatEntry>[] = [
+    {
+      key: "pos",
+      header: "#",
+      width: "3rem",
+      className: "text-left text-muted",
+      render: (_r, i) => i + 1,
+    },
+    {
+      key: "player",
+      header: "Player",
+      className: "text-left font-medium",
+      render: (entry) => <span className="truncate">{entry.name}</span>,
+    },
+    {
+      key: "team",
+      header: "Team",
+      className: "text-left text-muted",
+      render: (entry) => <span className="truncate">{entry.teamName}</span>,
+    },
+    {
+      key: "count",
+      header: statLabel,
+      width: "7rem",
+      className: "text-center font-bold",
+      render: (entry) => <span className="text-lg">{entry.count}</span>,
+    },
+  ];
 
   return (
     <div className="space-y-4">
@@ -97,41 +138,29 @@ export default function StatsPage() {
       </div>
 
       {currentList.length === 0 ? (
-        <EmptyState title="No statistics yet" description="Statistics will appear after match events are recorded." />
+        <EmptyState
+          title="No statistics yet"
+          description="Statistics will appear after match events are recorded."
+        />
       ) : (
-        <div className="overflow-x-auto">
-          <table className="w-full text-sm">
-            <thead>
-              <tr className="border-b border-line">
-                <th className="text-left px-3 py-2 text-muted font-medium">#</th>
-                <th className="text-left px-3 py-2 text-muted font-medium">Player</th>
-                <th className="text-left px-3 py-2 text-muted font-medium">Team</th>
-                <th className="text-center px-3 py-2 text-muted font-medium">
-                  {activeTab === "goals"
-                    ? "Goals"
-                    : activeTab === "assists"
-                      ? "Assists"
-                      : activeTab === "yellow"
-                        ? "Yellow Cards"
-                        : "Red Cards"}
-                </th>
-              </tr>
-            </thead>
-            <tbody>
-              {currentList.map((entry, i) => (
-                <tr
-                  key={entry.playerId}
-                  className="border-b border-line/50 hover:bg-surface-2/30 transition-colors"
-                >
-                  <td className="px-3 py-2.5 text-muted w-8">{i + 1}</td>
-                  <td className="px-3 py-2.5 font-medium">{entry.name}</td>
-                  <td className="px-3 py-2.5 text-muted">{entry.teamName}</td>
-                  <td className="px-3 py-2.5 text-center font-bold text-lg">{entry.count}</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
+        <DataTable
+          rows={currentList}
+          columns={statColumns}
+          rowKey={(entry) => String(entry.playerId)}
+          headClassName="text-muted font-medium normal-case tracking-normal"
+          mobileCard={(entry, i) => (
+            <div key={entry.playerId} className="card px-3 py-2.5 flex items-center gap-3 text-sm">
+              <span className="text-muted shrink-0 w-5">{i + 1}</span>
+              <span className="flex items-center gap-2 min-w-0 flex-1">
+                <span className="font-medium truncate">{entry.name}</span>
+                <span className="text-muted text-xs truncate shrink-0 max-w-[40%]">
+                  {entry.teamName}
+                </span>
+              </span>
+              <span className="font-bold text-lg shrink-0 w-10 text-right">{entry.count}</span>
+            </div>
+          )}
+        />
       )}
     </div>
   );

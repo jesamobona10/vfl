@@ -334,7 +334,7 @@ export function PlayerImportModal({ slug, onClose, onImported }: PlayerImportMod
               </div>
 
               {parseResult.warnings.length > 0 && (
-                <div className="space-y-1 text-xs text-amber-700 bg-amber-50 p-3 rounded-lg">
+                <div className="space-y-1 text-xs text-warn bg-warn-tint p-3 rounded-lg">
                   {parseResult.warnings.map((w, i) => (
                     <p key={i}>• {w}</p>
                   ))}
@@ -350,8 +350,8 @@ export function PlayerImportModal({ slug, onClose, onImported }: PlayerImportMod
                 </div>
               )}
 
-              <div className="border border-line rounded-lg overflow-hidden">
-                <table className="w-full text-sm">
+              <div className="border border-line rounded-lg overflow-x-auto">
+                <table className="w-full text-sm min-w-[460px]">
                   <thead>
                     <tr className="bg-surface-2 text-left text-xs text-muted">
                       <th className="px-3 py-2">Name</th>
@@ -430,7 +430,7 @@ export function PlayerImportModal({ slug, onClose, onImported }: PlayerImportMod
           {step === "done" && result && (
             <div className="space-y-4">
               {result.errors.length === 0 ? (
-                <div className="flex items-center gap-3 text-emerald-700 bg-emerald-50 p-4 rounded-lg">
+                <div className="flex items-center gap-3 text-brand bg-brand-50 p-4 rounded-lg">
                   <CheckCircle2 size={20} className="shrink-0" />
                   <div>
                     <p className="font-semibold">Import complete</p>

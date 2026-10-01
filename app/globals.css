@@ -167,10 +167,10 @@ body {
 
   /* Data table header pattern (from the redesign mockup) */
   .data-table th {
-    @apply text-left text-[10.5px] uppercase tracking-[0.04em] text-ink-3 font-semibold px-4 py-2.5 border-b border-line;
+    @apply text-left text-[10.5px] uppercase tracking-[0.04em] text-ink-3 font-semibold px-3 sm:px-4 py-2.5 border-b border-line;
   }
   .data-table td {
-    @apply px-4 py-2.5 border-b border-line;
+    @apply px-3 sm:px-4 py-2.5 border-b border-line;
   }
 
   /* Activity feed item pattern */

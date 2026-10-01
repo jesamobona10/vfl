@@ -98,7 +98,9 @@ export function CalendarView({ orgId }: CalendarViewProps) {
           <button onClick={prevMonth} className="btn-icon" title="Previous month">
             <ChevronLeft size={14} />
           </button>
-          <span className="text-sm font-medium w-32 text-center">{monthLabel}</span>
+          <span className="text-sm font-medium flex-1 min-w-0 truncate px-1 text-center sm:flex-none sm:w-32">
+            {monthLabel}
+          </span>
           <button onClick={nextMonth} className="btn-icon" title="Next month">
             <ChevronRight size={14} />
           </button>

@@ -5,8 +5,11 @@ import { useParams } from "next/navigation";
 import { useAppStore } from "@/lib/store";
 import { useResolvedTeams } from "@/lib/hooks/use-resolved-teams";
 import { calculateStandings } from "@/lib/logic/standings";
-import { ArrowUpRight } from "lucide-react";
+import { ArrowUpRight, Crown } from "lucide-react";
 import Image from "next/image";
+import { DataTable, type DataTableColumn } from "@/components/shared/data-table";
+
+type Row = ReturnType<typeof calculateStandings>[number];
 
 export function TopFiveStandings() {
   const params = useParams();
@@ -19,6 +22,44 @@ export function TopFiveStandings() {
 
   if (!topFive.length) return null;
 
+  const crest = (team: Row) => {
+    const t = teams.find((tt) => tt.id === team.id);
+    return t?.logo_url ? (
+      <Image
+        src={t.logo_url}
+        alt=""
+        width={20}
+        height={20}
+        className="w-5 h-5 rounded-full object-cover shrink-0"
+      />
+    ) : (
+      <span className="w-5 h-5 rounded-full bg-surface-2 inline-block shrink-0" />
+    );
+  };
+
+  const columns: DataTableColumn<Row>[] = [
+    { key: "pos", header: "#", className: "text-left w-10 text-ink-3", render: (_r, i) => i + 1 },
+    {
+      key: "team",
+      header: "Team",
+      className: "text-left font-medium",
+      render: (team) => (
+        <span className="flex items-center gap-2 min-w-0">
+          {crest(team)}
+          <span className="truncate">{team.name}</span>
+        </span>
+      ),
+    },
+    { key: "p", header: "P", className: "text-center w-12", render: (r) => r.played },
+    {
+      key: "gd",
+      header: "GD",
+      className: "text-center w-12",
+      render: (r) => (r.gd > 0 ? `+${r.gd}` : r.gd),
+    },
+    { key: "pts", header: "Pts", className: "text-right font-bold w-14", render: (r) => r.points },
+  ];
+
   return (
     <div className="panel">
       <div className="panel-head">
@@ -27,51 +68,27 @@ export function TopFiveStandings() {
           Full table <ArrowUpRight size={12} />
         </Link>
       </div>
-      <div className="overflow-x-auto">
-        <table className="w-full text-[12.5px]">
-          <thead>
-            <tr className="text-xs uppercase tracking-[0.04em] text-ink-3 font-semibold">
-              <th className="text-left px-4 py-2.5 font-semibold border-b border-line">#</th>
-              <th className="text-left px-4 py-2.5 font-semibold border-b border-line">Team</th>
-              <th className="text-center px-4 py-2.5 font-semibold border-b border-line">P</th>
-              <th className="text-center px-4 py-2.5 font-semibold border-b border-line">GD</th>
-              <th className="text-right px-4 py-2.5 font-semibold border-b border-line">Pts</th>
-            </tr>
-          </thead>
-          <tbody>
-            {topFive.map((team, index) => (
-              <tr
-                key={team.id}
-                className="border-b border-line last:border-0 hover:bg-surface-2/50 transition-colors"
-              >
-                <td className="px-4 py-2.5 text-ink-3">{index + 1}</td>
-                <td className="px-4 py-2.5 font-medium">
-                  <span className="flex items-center gap-2">
-                    {(() => {
-                      const t = teams.find((tt) => tt.id === team.id);
-                      return t?.logo_url ? (
-                        <Image
-                          src={t.logo_url}
-                          alt=""
-                          width={20}
-                          height={20}
-                          className="w-5 h-5 rounded-full object-cover"
-                        />
-                      ) : (
-                        <span className="w-5 h-5 rounded-full bg-surface-2 inline-block shrink-0" />
-                      );
-                    })()}
-                    {team.name}
-                  </span>
-                </td>
-                <td className="px-4 py-2.5 text-center">{team.played}</td>
-                <td className="px-4 py-2.5 text-center">{team.gd > 0 ? `+${team.gd}` : team.gd}</td>
-                <td className="px-4 py-2.5 text-right font-bold">{team.points}</td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
+
+      <DataTable
+        rows={topFive}
+        columns={columns}
+        rowKey={(team) => String(team.id)}
+        mobileCard={(team, index) => (
+          <div key={team.id} className="card px-3 py-2.5 flex items-center gap-2 text-[12.5px]">
+            <span className="w-5 text-ink-3 shrink-0">{index + 1}</span>
+            <span className="flex items-center gap-2 min-w-0 flex-1 font-medium">
+              {crest(team)}
+              <span className="truncate">{team.name}</span>
+              {index === 0 && <Crown size={13} className="fill-gold-500 text-gold-500 shrink-0" />}
+            </span>
+            <span className="text-ink-2 shrink-0 w-8 text-center">{team.played}P</span>
+            <span className="text-ink-2 shrink-0 w-10 text-center">
+              {team.gd > 0 ? `+${team.gd}` : team.gd}
+            </span>
+            <span className="font-bold shrink-0 w-8 text-right">{team.points}</span>
+          </div>
+        )}
+      />
     </div>
   );
 }

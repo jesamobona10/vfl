@@ -151,8 +151,8 @@ export function AppHeader({ onOpenSearch, onOpenMenu }: AppHeaderProps) {
       : currentTeamAccount?.name || currentOrg?.name || "LeagueForge";
 
   return (
-    <header className="bg-panel border-b border-line px-4 sm:px-6 py-3 flex items-center justify-between">
-      <div className="flex items-center gap-2 sm:gap-3">
+    <header className="bg-panel border-b border-line px-4 sm:px-6 py-3 flex items-center justify-between gap-2">
+      <div className="flex items-center gap-2 sm:gap-3 min-w-0 flex-1">
         {onOpenMenu && (
           <button onClick={onOpenMenu} className="btn-icon lg:hidden" aria-label="Open navigation">
             <Menu size={20} />
@@ -160,10 +160,10 @@ export function AppHeader({ onOpenSearch, onOpenMenu }: AppHeaderProps) {
         )}
         <button
           onClick={onOpenSearch}
-          className="flex items-center gap-2 text-sm text-ink-3 bg-page border border-line rounded-lg px-3.5 py-2 hover:border-brand-600/30 transition-colors"
+          className="flex items-center gap-2 text-sm text-ink-3 bg-page border border-line rounded-lg px-2 sm:px-3.5 py-2 hover:border-brand-600/30 transition-colors shrink-0 lg:min-w-0"
         >
-          <Search size={15} />
-          <span className="hidden md:inline">Search teams, players, fixtures&hellip;</span>
+          <Search size={15} className="shrink-0" />
+          <span className="hidden truncate md:inline">Search teams, players, fixtures&hellip;</span>
         </button>
 
         {isOrgAdmin && !isCompetitionPage && orgSeasons.length > 0 && (
@@ -175,7 +175,7 @@ export function AppHeader({ onOpenSearch, onOpenMenu }: AppHeaderProps) {
         )}
       </div>
 
-      <div className="flex items-center gap-1">
+      <div className="flex items-center gap-1 shrink-0">
         <ThemeToggle />
         <Notifications />
         {currentTeamAccount && (

@@ -42,9 +42,9 @@ export function SeasonSelector({
         onClick={() => setOpen(!open)}
         aria-expanded={open}
         aria-haspopup="menu"
-        className="flex items-center gap-2 px-3 py-1.5 text-sm font-medium border border-line rounded-lg bg-surface hover:bg-surface-2 transition-colors max-w-full min-w-[200px]"
+        className="flex items-center gap-2 px-2 sm:px-3 py-1.5 text-sm font-medium border border-line rounded-lg bg-surface hover:bg-surface-2 transition-colors max-w-full min-w-0 sm:min-w-[200px]"
       >
-        <span className="truncate">{activeLabel}</span>
+        <span className="truncate min-w-0">{activeLabel}</span>
         <ChevronDown size={14} className="text-muted shrink-0" />
       </button>
       {open && (

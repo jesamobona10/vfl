@@ -421,13 +421,17 @@ export function StandingsTable({
                 tier === "promotion" ? "border-brand/20" : tier === "relegation" ? "border-danger/20" : ""
               }`}
             >
-              <div className="flex items-center justify-between mb-2">
-                <div className="flex items-center gap-2">
-                  <span className="font-bold text-lg">{isChamp ? "🏆" : index + 1}</span>
-                  <span className="font-semibold">{team.name}</span>
-                  {isChamp && <Crown size={16} className="fill-gold-500 text-gold-500" />}
+              <div className="flex items-center justify-between gap-2 mb-2">
+                <div className="flex items-center gap-2 min-w-0">
+                  <span className="font-bold text-lg shrink-0">{isChamp ? "🏆" : index + 1}</span>
+                  <span className="font-semibold truncate">{team.name}</span>
+                  {isChamp && (
+                    <Crown size={16} className="fill-gold-500 text-gold-500 shrink-0" />
+                  )}
                 </div>
-                <span className={`text-xs font-medium px-2 py-0.5 rounded-full ${tierInfo.color}`}>
+                <span
+                  className={`text-xs font-medium px-2 py-0.5 rounded-full shrink-0 ${tierInfo.color}`}
+                >
                   {tierInfo.label}
                 </span>
               </div>

@@ -13,8 +13,9 @@ import { UsersManager } from "./users-manager";
 import { AdminTeamAccountManager } from "./admin-team-account-manager";
 import { ChevronDown, ChevronRight, Building2, Calendar, Trash2, Search } from "lucide-react";
 import { PageSkeleton } from "@/components/shared/skeleton";
+import { DashboardTabs } from "@/components/shared/dashboard-tabs";
 
-const DataImporter = dynamic(() => import("./data-importer").then(m => m.DataImporter), {
+const DataImporter = dynamic(() => import("./data-importer").then((m) => m.DataImporter), {
   ssr: false,
   loading: () => null,
 });
@@ -88,7 +89,8 @@ function FixtureManager() {
     if (
       !(await confirm({
         title: `Delete ALL fixtures for "${org.name}"?`,
-        description: "Every fixture in this organization will be permanently removed. This cannot be undone.",
+        description:
+          "Every fixture in this organization will be permanently removed. This cannot be undone.",
       }))
     )
       return;
@@ -357,22 +359,34 @@ const VALID_TABS: AdminTab[] = [
   "import",
 ];
 
+const ADMIN_TABS = VALID_TABS.map((key) => ({ key, label: TAB_LABELS[key] }));
+
+const TAB_LABELS: Record<AdminTab, string> = {
+  dashboard: "Dashboard",
+  orgs: "Orgs",
+  teams: "Teams",
+  players: "Players",
+  competitions: "Comps",
+  fixtures: "Fixtures",
+  users: "Users",
+  audit: "Audit",
+  import: "Import",
+};
+
 export function AdminPanel() {
   const searchParams = useSearchParams();
-  const [tab, setTab] = useState<AdminTab>("dashboard");
-
-  useEffect(() => {
-    const urlTab = searchParams.get("tab") as AdminTab | null;
-    if (urlTab && VALID_TABS.includes(urlTab)) {
-      setTab(urlTab);
-    }
-  }, [searchParams]);
+  const urlTab = searchParams.get("tab") as AdminTab | null;
+  const tab: AdminTab = urlTab && VALID_TABS.includes(urlTab) ? urlTab : "dashboard";
 
   return (
     <div>
-      <div className="flex flex-col gap-1 mb-6">
+      <div className="flex flex-col gap-1 mb-4">
         <h1 className="text-2xl font-bold">Admin Panel</h1>
         <p className="text-sm text-muted">Full system management</p>
+      </div>
+
+      <div className="mb-6">
+        <DashboardTabs tabs={ADMIN_TABS} defaultKey="dashboard" />
       </div>
 
       {tab === "dashboard" && <DashboardOverview />}

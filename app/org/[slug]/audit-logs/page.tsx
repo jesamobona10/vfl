@@ -15,6 +15,7 @@ import {
 import { SkeletonTable } from "@/components/shared/skeleton";
 import { AUDIT_ACTIONS } from "@/lib/audit/actions";
 import { titleCase } from "@/lib/utils/helpers";
+import { DataTable, type DataTableColumn } from "@/components/shared/data-table";
 
 interface AuditActor {
   label: string;
@@ -166,6 +167,95 @@ export default function OrgAuditLogsPage() {
 
   const pages = Math.max(1, Math.ceil(total / limit));
 
+  const auditColumns: DataTableColumn<AuditLog>[] = [
+    {
+      key: "date",
+      header: "Date",
+      className: "text-left text-ink-2 whitespace-nowrap",
+      render: (log) => (
+        <>
+          {new Date(log.created_at).toLocaleDateString()} ·{" "}
+          {new Date(log.created_at).toLocaleTimeString([], {
+            hour: "2-digit",
+            minute: "2-digit",
+          })}
+        </>
+      ),
+    },
+    {
+      key: "user",
+      header: "User",
+      className: "text-left",
+      render: (log) => (
+        <>
+          <span className="font-medium">{log.actor?.label || log.actor_role || "Unknown"}</span>
+          {log.actor?.role && (
+            <span className="block text-xs text-ink-3 capitalize">
+              {log.actor.role.replace(/_/g, " ")}
+            </span>
+          )}
+        </>
+      ),
+    },
+    {
+      key: "action",
+      header: "Action",
+      className: "text-left",
+      render: (log) => (
+        <>
+          <span className="inline-flex items-center gap-1.5">
+            <Shield size={13} className="text-ink-3 shrink-0" />
+            <span className="font-medium">{log.label || log.action}</span>
+          </span>
+          {log.description && (
+            <span className="block text-xs text-ink-2 truncate max-w-[240px]">
+              {log.description}
+            </span>
+          )}
+        </>
+      ),
+    },
+    {
+      key: "resource",
+      header: "Resource",
+      className: "text-left",
+      render: (log) => (
+        <>
+          <span className="text-[12px] uppercase tracking-wide text-ink-2">
+            {log.resource_type?.toLowerCase() || "—"}
+          </span>
+          {log.resource_id && (
+            <span className="block text-xs text-ink-3 font-mono">#{log.resource_id}</span>
+          )}
+        </>
+      ),
+    },
+    {
+      key: "severity",
+      header: "Severity",
+      width: "6rem",
+      className: "text-center",
+      render: (log) => severityBadge(log.severity),
+    },
+    {
+      key: "details",
+      header: "Details",
+      width: "5rem",
+      className: "text-right",
+      render: (log) => (
+        <button
+          className="btn-ghost text-xs"
+          onClick={(e) => {
+            e.stopPropagation();
+            setSelected(log);
+          }}
+        >
+          View
+        </button>
+      ),
+    },
+  ];
+
   const fetchLogs = useCallback(async () => {
     if (!currentOrg?.id) return;
     setLoading(true);
@@ -273,83 +363,42 @@ export default function OrgAuditLogsPage() {
 
       {logs.length > 0 ? (
         <div className="panel overflow-visible">
-          <div className="overflow-x-auto">
-            <table className="w-full text-sm">
-              <thead>
-                <tr className="text-left text-xs uppercase tracking-[0.04em] text-ink-3 font-semibold">
-                  <th className="px-4 py-2.5 font-semibold border-b border-line">Date</th>
-                  <th className="px-4 py-2.5 font-semibold border-b border-line">User</th>
-                  <th className="px-4 py-2.5 font-semibold border-b border-line">Action</th>
-                  <th className="px-4 py-2.5 font-semibold border-b border-line">Resource</th>
-                  <th className="px-4 py-2.5 font-semibold border-b border-line text-center">
-                    Severity
-                  </th>
-                  <th className="px-4 py-2.5 font-semibold border-b border-line text-right">
-                    Details
-                  </th>
-                </tr>
-              </thead>
-              <tbody>
-                {logs.map((log) => (
-                  <tr
-                    key={log.id}
-                    onClick={() => setSelected(log)}
-                    className="border-b border-line/50 last:border-0 hover:bg-surface-2/40 cursor-pointer transition-colors"
-                  >
-                    <td className="px-4 py-2.5 text-ink-2 whitespace-nowrap">
-                      {new Date(log.created_at).toLocaleDateString()} ·{" "}
-                      {new Date(log.created_at).toLocaleTimeString([], {
-                        hour: "2-digit",
-                        minute: "2-digit",
-                      })}
-                    </td>
-                    <td className="px-4 py-2.5">
-                      <span className="font-medium">
-                        {log.actor?.label || log.actor_role || "Unknown"}
+          <div className="p-3 lg:p-0">
+            <DataTable
+              rows={logs}
+              rowKey={(log) => log.id}
+              onRowClick={(log) => setSelected(log)}
+              headClassName="text-left"
+              columns={auditColumns}
+              mobileCard={(log) => (
+                <button
+                  key={log.id}
+                  onClick={() => setSelected(log)}
+                  className="w-full text-left card px-3 py-2.5 space-y-1.5 active:bg-surface-2/50 transition-colors"
+                >
+                  <div className="flex items-start justify-between gap-2">
+                    <span className="inline-flex items-center gap-1.5 min-w-0">
+                      <Shield size={13} className="text-ink-3 shrink-0" />
+                      <span className="font-medium text-sm truncate">
+                        {log.label || log.action}
                       </span>
-                      {log.actor?.role && (
-                        <span className="block text-xs text-ink-3 capitalize">
-                          {log.actor.role.replace(/_/g, " ")}
-                        </span>
-                      )}
-                    </td>
-                    <td className="px-4 py-2.5">
-                      <span className="inline-flex items-center gap-1.5">
-                        <Shield size={13} className="text-ink-3 shrink-0" />
-                        <span className="font-medium">{log.label || log.action}</span>
-                      </span>
-                      {log.description && (
-                        <span className="block text-xs text-ink-2 truncate max-w-[240px]">
-                          {log.description}
-                        </span>
-                      )}
-                    </td>
-                    <td className="px-4 py-2.5">
-                      <span className="text-[12px] uppercase tracking-wide text-ink-2">
-                        {log.resource_type?.toLowerCase() || "—"}
-                      </span>
-                      {log.resource_id && (
-                        <span className="block text-xs text-ink-3 font-mono">
-                          #{log.resource_id}
-                        </span>
-                      )}
-                    </td>
-                    <td className="px-4 py-2.5 text-center">{severityBadge(log.severity)}</td>
-                    <td className="px-4 py-2.5 text-right">
-                      <button
-                        className="btn-ghost text-xs"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          setSelected(log);
-                        }}
-                      >
-                        View
-                      </button>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
+                    </span>
+                    <span className="shrink-0">{severityBadge(log.severity)}</span>
+                  </div>
+                  {log.description && (
+                    <p className="text-xs text-ink-2 line-clamp-2">{log.description}</p>
+                  )}
+                  <div className="flex items-center justify-between gap-2 text-xs text-ink-3">
+                    <span className="truncate">
+                      {log.actor?.label || log.actor_role || "Unknown"}
+                    </span>
+                    <span className="shrink-0 whitespace-nowrap">
+                      {new Date(log.created_at).toLocaleDateString()}
+                    </span>
+                  </div>
+                </button>
+              )}
+            />
           </div>
 
           {pages > 1 && (

@@ -215,7 +215,7 @@ export function DataImporter() {
           </div>
           <h3 className="text-2xl font-bold">Import Complete</h3>
           <p className="text-muted">Your data has been imported successfully.</p>
-          <div className="grid grid-cols-3 gap-4 max-w-md mx-auto">
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4 max-w-md mx-auto">
             <div className="card p-4 text-center">
               <Shield size={20} className="mx-auto mb-1 text-brand" />
               <p className="text-2xl font-bold">{summary.teams}</p>

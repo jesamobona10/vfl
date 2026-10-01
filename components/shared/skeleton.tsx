@@ -9,7 +9,7 @@ export { Skeleton };
 function DashboardPattern() {
   return (
     <div className="flex h-80 w-full max-w-2xl overflow-hidden rounded-xl border">
-      <div className="flex w-48 shrink-0 flex-col gap-1 border-r bg-muted/30 p-3">
+      <div className="hidden sm:flex w-48 shrink-0 flex-col gap-1 border-r bg-muted/30 p-3">
         <div className="mb-2 flex items-center gap-2 px-1 py-1">
           <Skeleton className="size-6 rounded-md" />
           <Skeleton className="h-4 w-20" />
@@ -18,10 +18,7 @@ function DashboardPattern() {
         {[60, 44, 52, 36].map((w, i) => (
           <div className="flex items-center gap-2 rounded-md px-2 py-1.5" key={i}>
             <Skeleton className="size-4 rounded-sm" />
-            <Skeleton
-              className={`h-3.5 w-${w === 60 ? "full" : `[${w}%]`}`}
-              style={{ width: `${w}%` }}
-            />
+            <Skeleton className="h-3.5" style={{ width: `${w}%` }} />
           </div>
         ))}
 
@@ -53,7 +50,7 @@ function DashboardPattern() {
         </div>
 
         <div className="flex-1 space-y-4 p-5">
-          <div className="grid grid-cols-3 gap-3">
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
             {Array.from({ length: 3 }).map((_, i) => (
               <div className="space-y-2 rounded-lg border p-3" key={i}>
                 <Skeleton className="h-3 w-16" />
@@ -83,8 +80,15 @@ function DashboardPattern() {
 
 export function LoadingState({ label = "Loading" }: { label?: string }) {
   return (
-    <div className="flex items-center justify-center gap-2 py-10 text-sm text-muted" role="status" aria-live="polite">
-      <span className="h-4 w-4 animate-spin rounded-full border-2 border-line border-t-brand-600" aria-hidden="true" />
+    <div
+      className="flex items-center justify-center gap-2 py-10 text-sm text-muted"
+      role="status"
+      aria-live="polite"
+    >
+      <span
+        className="h-4 w-4 animate-spin rounded-full border-2 border-line border-t-brand-600"
+        aria-hidden="true"
+      />
       <span>{label}...</span>
     </div>
   );
@@ -194,19 +198,6 @@ export function DashboardSkeleton() {
         <SkeletonCard />
         <SkeletonCard />
       </div>
-    </div>
-  );
-}
-
-export function AdminPanelSkeleton() {
-  return (
-    <div className="space-y-6 p-6">
-      <div className="flex items-center gap-2 border-b border-line pb-3">
-        {Array.from({ length: 6 }).map((_, i) => (
-          <Skeleton key={i} className="h-8 w-24" />
-        ))}
-      </div>
-      <PageSkeleton />
     </div>
   );
 }
