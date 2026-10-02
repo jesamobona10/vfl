@@ -359,8 +359,6 @@ const VALID_TABS: AdminTab[] = [
   "import",
 ];
 
-const ADMIN_TABS = VALID_TABS.map((key) => ({ key, label: TAB_LABELS[key] }));
-
 const TAB_LABELS: Record<AdminTab, string> = {
   dashboard: "Dashboard",
   orgs: "Orgs",
@@ -372,6 +370,8 @@ const TAB_LABELS: Record<AdminTab, string> = {
   audit: "Audit",
   import: "Import",
 };
+
+const ADMIN_TABS = VALID_TABS.map((key) => ({ key, label: TAB_LABELS[key] }));
 
 export function AdminPanel() {
   const searchParams = useSearchParams();
