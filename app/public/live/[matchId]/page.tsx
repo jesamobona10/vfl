@@ -192,13 +192,9 @@ export default function PublicLiveMatchPage() {
         </h2>
         {liveEvents.length > 0 ? liveEvents.map((event) => (
           <div key={event.event_id} className="card flex items-center gap-3 p-3">
-            {event.player_photo_url ? (
-              <Image src={event.player_photo_url} alt="" width={36} height={36} className="h-9 w-9 shrink-0 rounded-full object-cover" />
-            ) : (
-              <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-surface-2 text-xs font-semibold text-ink-3">
-                {event.player_name?.slice(0, 1) || "•"}
-              </div>
-            )}
+            <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-surface-2 text-xs font-semibold text-ink-3">
+              {event.player_name?.slice(0, 1) || "•"}
+            </div>
             <div className="min-w-0 flex-1">
               <p className="text-sm font-medium">
                 {eventLabel(event, match.home_team_name, match.away_team_name)}

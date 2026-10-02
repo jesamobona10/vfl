@@ -138,17 +138,8 @@ export async function POST(request: Request, props: { params: Promise<{ id: stri
       return json({ error: "Unable to save event." }, { status: 400 });
     }
 
-    const { data: organization } = homeOrgId
-      ? await sb
-          .from("organizations")
-          .select("public_player_names_enabled")
-          .eq("id", homeOrgId)
-          .maybeSingle()
-      : { data: null };
-    const visiblePlayerName =
-      organization?.public_player_names_enabled && player.name ? player.name : null;
     const scoringTeamName = teamId === homeTeamId ? homeTeam.name : awayTeam.name;
-    const subject = visiblePlayerName || "A player";
+    const subject = player.name || "A player";
     const eventDescription: Record<string, string> = {
       goal: `${subject} scored for ${scoringTeamName}.`,
       assist: `${subject} assisted ${scoringTeamName}.`,

@@ -800,7 +800,6 @@ export interface PublicLiveEventRow {
   team_id: number;
   player_name: string | null;
   player_id: number | null;
-  player_photo_url?: string | null;
 }
 
 export interface PublicScheduledFixtureRow {
