@@ -110,11 +110,9 @@ export default function PublicLiveMatchPage() {
           router.replace("/public");
           return;
         }
-        const followsMatch = Boolean(loadedMatch && loadedMatch.organization_id === preferences.organizationId && (
-          !preferences.teamIds.length || preferences.teamIds.includes(loadedMatch.home_team_id || -1) || preferences.teamIds.includes(loadedMatch.away_team_id || -1)
-        ));
+        const followsMatch = Boolean(loadedMatch && loadedMatch.organization_id === preferences.organizationId);
         if (!followsMatch) {
-          setError("This match is outside your followed organization or teams. Update your preferences to see it.");
+          setError("This match is outside your followed organization. Update your preferences to see it.");
           setMatch(null);
           setEvents([]);
         } else {

@@ -10,7 +10,7 @@ import {
   rateLimit,
   rateLimitResponse,
   requireOrgAdmin,
-  requireOrgMember,
+  requireOrgReadAccess,
   writeAuditEvent,
 } from "@/lib/security";
 
@@ -75,7 +75,7 @@ export async function GET(_request: Request, props: { params: Promise<{ id: stri
       return json({ error: "Competition not found." }, { status: 404 });
     }
 
-    const memberError = requireOrgMember(auth, competition.organization_id);
+    const memberError = await requireOrgReadAccess(auth, competition.organization_id, sb);
     if (memberError) {
       logSecurityEvent("competition_get_forbidden", {
         userId: auth.userId,

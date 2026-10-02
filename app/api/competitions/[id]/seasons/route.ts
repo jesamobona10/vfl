@@ -11,7 +11,7 @@ import {
   rateLimit,
   rateLimitResponse,
   requireOrgAdmin,
-  requireOrgMember,
+  requireOrgReadAccess,
 } from "@/lib/security";
 
 export const dynamic = "force-dynamic";
@@ -33,7 +33,7 @@ export async function GET(_request: Request, props: { params: Promise<{ id: stri
       return json({ error: "Competition not found." }, { status: 404 });
     }
 
-    const memberError = requireOrgMember(auth, competition.organization_id);
+    const memberError = await requireOrgReadAccess(auth, competition.organization_id, sb);
     if (memberError) return memberError;
 
     const { data: seasons, error } = await sb

@@ -13,7 +13,7 @@ import {
   rateLimit,
   rateLimitResponse,
   requireOrgAdmin,
-  requireOrgMember,
+  requireOrgReadAccess,
 } from "@/lib/security";
 
 export const dynamic = "force-dynamic";
@@ -29,7 +29,8 @@ export async function GET(request: Request) {
       return json({ error: "org_id query parameter is required." }, { status: 400 });
     }
 
-    const memberError = requireOrgMember(auth, orgId);
+    const sb = createServiceRoleClient();
+    const memberError = await requireOrgReadAccess(auth, orgId, sb);
     if (memberError) {
       logSecurityEvent("competitions_list_forbidden", {
         userId: auth?.userId,
@@ -40,7 +41,6 @@ export async function GET(request: Request) {
     }
     const authed = auth!;
 
-    const sb = createServiceRoleClient();
     const { data: competitions, error } = await sb
       .from("competitions")
       .select("*, seasons!competitions_current_season_id_fkey(name, short_name)")

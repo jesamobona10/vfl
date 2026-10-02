@@ -67,7 +67,7 @@ export function TeamDashboard({ team, teamPlayerCount, competitions }: TeamDashb
             </div>
             <TopFiveStandings />
           </div>
-          <CompetitionsCard competitions={competitions} />
+          <CompetitionsCard competitions={competitions} canCreate={false} />
         </>
       )}
 

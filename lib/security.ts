@@ -444,6 +444,19 @@ export function requireOrgMember(auth: AuthContext | null, orgId: string) {
   return null;
 }
 
+/** Read access for a team account is limited to the organization that owns its team. */
+export async function requireOrgReadAccess(auth: AuthContext | null, orgId: string, sb: SupabaseClient) {
+  if (auth?.teamAccount?.team_id) {
+    const { data: team } = await sb
+      .from("teams")
+      .select("organization_id")
+      .eq("id", auth.teamAccount.team_id)
+      .maybeSingle();
+    if (team?.organization_id === orgId) return null;
+  }
+  return requireOrgMember(auth, orgId);
+}
+
 /** Guard: require org owner (or super admin) for the given organization. */
 export function requireOrgOwner(auth: AuthContext | null, orgId: string) {
   if (!auth) return json({ error: "Unauthorized" }, { status: 401 });

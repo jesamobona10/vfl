@@ -13,9 +13,11 @@ interface CompetitionCardItem {
 export function CompetitionsCard({
   competitions,
   emptyHref,
+  canCreate = true,
 }: {
   competitions: CompetitionCardItem[];
   emptyHref?: string;
+  canCreate?: boolean;
 }) {
   const params = useParams();
   const router = useRouter();
@@ -37,9 +39,11 @@ export function CompetitionsCard({
         <div className="text-center py-6">
           <Trophy size={32} className="mx-auto text-ink-3/40 mb-2" />
           <p className="text-sm text-ink-2 mb-3">No competitions yet</p>
-          <button onClick={() => router.push(createHref)} className="btn-ghost text-sm">
-            <Plus size={14} /> Create Competition
-          </button>
+          {canCreate ? (
+            <button onClick={() => router.push(createHref)} className="btn-ghost text-sm">
+              <Plus size={14} /> Create Competition
+            </button>
+          ) : <p className="text-xs text-muted">The organization has not added a competition yet.</p>}
         </div>
       ) : (
         <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-3">

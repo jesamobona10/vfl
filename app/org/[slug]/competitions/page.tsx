@@ -10,6 +10,7 @@ import { useState } from "react";
 import { PageSkeleton } from "@/components/shared/skeleton";
 import { useConfirm } from "@/components/shared/confirm-dialog";
 import { useToast } from "@/components/ui/toast";
+import { useAppStore } from "@/lib/store";
 
 const typeConfig: Record<string, { label: string; icon: React.ReactNode }> = {
   league: { label: "League", icon: <Trophy size={16} /> },
@@ -33,6 +34,7 @@ export default function CompetitionsPage() {
   const queryClient = useQueryClient();
   const { data: currentOrg } = useOrg(slug);
   const { data: competitions = [], isLoading } = useCompetitions(currentOrg?.id);
+  const isTeamAccount = useAppStore((state) => state.currentTeamAccount !== null);
   const [deletingId, setDeletingId] = useState<string | null>(null);
   const [error, setError] = useState("");
 
@@ -79,7 +81,7 @@ export default function CompetitionsPage() {
           <p className="page-title">Competitions</p>
           <p className="page-sub">Manage leagues, cups and friendlies</p>
         </div>
-        {competitions.length > 0 && (
+        {!isTeamAccount && competitions.length > 0 && (
           <a href={`/org/${slug}/competitions/new`} className="btn-primary flex items-center gap-2">
             <Plus size={16} />
             Create Competition
@@ -92,15 +94,14 @@ export default function CompetitionsPage() {
           <Trophy size={48} className="mx-auto text-ink-3/40 mb-4" />
           <h2 className="text-lg font-semibold mb-1">No competitions yet</h2>
           <p className="text-sm text-ink-2 max-w-md mx-auto mb-6">
-            Create your first competition to get started — a league, cup, or friendly match.
+            {isTeamAccount ? "The organization has not added a competition yet." : "Create your first competition to get started — a league, cup, or friendly match."}
           </p>
-          <a
+          {!isTeamAccount && <a
             href={`/org/${slug}/competitions/new`}
             className="btn-primary inline-flex items-center gap-2"
           >
-            <Plus size={16} />
-            Create Competition
-          </a>
+            <Plus size={16} /> Create Competition
+          </a>}
         </div>
       ) : (
         <>

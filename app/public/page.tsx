@@ -164,23 +164,19 @@ export default function PublicIndexPage() {
     return [...teams].map(([id, name]) => ({ id, name })).sort((a, b) => a.name.localeCompare(b.name));
   }, [matches, draftOrganizationId]);
   const preferenceIsValid = Boolean(preferences && organizations.some((organization) => organization.id === preferences.organizationId));
-  const followedMatches = useMemo(() => {
+  const organizationMatches = useMemo(() => {
     if (!preferenceIsValid || !preferences) return [];
-    return matches.filter((match) => {
-      if (match.organization_id !== preferences.organizationId) return false;
-      if (!preferences.teamIds.length) return true;
-      return preferences.teamIds.includes(match.home_team_id || -1) || preferences.teamIds.includes(match.away_team_id || -1);
-    });
+    return matches.filter((match) => match.organization_id === preferences.organizationId);
   }, [matches, preferences, preferenceIsValid]);
   const counts = useMemo(() => {
-    const result: Record<MatchFilter, number> = { all: followedMatches.length, scheduled: 0, live: 0, completed: 0 };
-    for (const match of followedMatches) result[matchCategory(match.status)] += 1;
+    const result: Record<MatchFilter, number> = { all: organizationMatches.length, scheduled: 0, live: 0, completed: 0 };
+    for (const match of organizationMatches) result[matchCategory(match.status)] += 1;
     return result;
-  }, [followedMatches]);
+  }, [organizationMatches]);
 
   const competitionOptions = useMemo(() => {
     const options = new Map<string, PublicCompetitionOption>();
-    for (const match of followedMatches) {
+    for (const match of organizationMatches) {
       if (!match.competition_id) continue;
       const seasonId = match.season_id || null;
       const key = `${match.competition_id}:${seasonId || "legacy"}`;
@@ -196,7 +192,7 @@ export default function PublicIndexPage() {
       }
     }
     return [...options.values()];
-  }, [followedMatches]);
+  }, [organizationMatches]);
 
   const activeCompetition = competitionOptions.find((option) => option.key === selectedCompetitionKey)
     || competitionOptions[0]
@@ -204,8 +200,6 @@ export default function PublicIndexPage() {
   const activeCompetitionKey = activeCompetition?.key || "";
   const activeCompetitionId = activeCompetition?.competitionId || "";
   const activeSeasonId = activeCompetition?.seasonId || null;
-  const selectedTeamKey = (preferences?.teamIds || []).join(",");
-
   useEffect(() => {
     if (!activeCompetitionId || section === "matches") return;
     const sb = createPublicClient();
@@ -243,9 +237,8 @@ export default function PublicIndexPage() {
       if (standingsError || statsLoadError) {
         setStatsError("Unable to load public standings and player statistics.");
       } else {
-        const selectedTeams = selectedTeamKey ? selectedTeamKey.split(",").map(Number) : [];
-        setStandings(((standingsRows as PublicStandingRow[]) || []).filter((row) => !selectedTeams.length || selectedTeams.includes(row.team_id)));
-        setPlayerStatistics(((statRows as PublicPlayerStatisticsRow[]) || []).filter((row) => !selectedTeams.length || selectedTeams.includes(row.team_id)));
+        setStandings((standingsRows as PublicStandingRow[]) || []);
+        setPlayerStatistics((statRows as PublicPlayerStatisticsRow[]) || []);
         setStatsError(null);
       }
       setLoadedStatsKey(activeCompetitionKey);
@@ -265,13 +258,13 @@ export default function PublicIndexPage() {
       clearInterval(poll);
       void sb.removeChannel(channel);
     };
-  }, [activeCompetitionId, activeCompetitionKey, activeSeasonId, selectedTeamKey, section]);
+  }, [activeCompetitionId, activeCompetitionKey, activeSeasonId, section]);
 
   const visibleMatches = useMemo(() => {
     const selected =
       filter === "all"
-        ? followedMatches
-        : followedMatches.filter((match) => matchCategory(match.status) === filter);
+        ? organizationMatches
+        : organizationMatches.filter((match) => matchCategory(match.status) === filter);
 
     return [...selected].sort((a, b) => {
       const rank = (match: PublicMatchRow) =>
@@ -287,7 +280,7 @@ export default function PublicIndexPage() {
       }
       return `${a.date || ""} ${a.time || ""}`.localeCompare(`${b.date || ""} ${b.time || ""}`);
     });
-  }, [filter, followedMatches]);
+  }, [filter, organizationMatches]);
 
   const savePreferences = () => {
     if (!draftOrganizationId) return;

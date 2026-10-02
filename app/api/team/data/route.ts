@@ -84,12 +84,14 @@ export async function GET() {
       matchRatings: {},
     }));
 
-    const { data: dbMatches } = await sb
-      .from("fixtures")
-      .select("*, match_events(*)")
-      .in("home_team_id", dbTeamIds)
-      .order("round")
-      .order("id");
+    let fixtureQuery = sb.from("fixtures").select("*, match_events(*)").order("round").order("id");
+    if (dbTeamIds.length > 0) {
+      const teamFixtureConditions = dbTeamIds
+        .map((teamId) => `home_team_id.eq.${teamId},away_team_id.eq.${teamId}`)
+        .join(",");
+      fixtureQuery = fixtureQuery.or(teamFixtureConditions);
+    }
+    const { data: dbMatches } = dbTeamIds.length > 0 ? await fixtureQuery : { data: [] };
 
     const grouped = new Map<number, Match[]>();
     const roundSet = new Set<number>();

@@ -5,6 +5,7 @@ import { useQueryClient } from "@tanstack/react-query";
 import { useOrg } from "@/lib/hooks/use-org";
 import { useParams, useRouter } from "next/navigation";
 import { ArrowLeft, AlertCircle } from "lucide-react";
+import { useAppStore } from "@/lib/store";
 
 export default function NewCompetitionPage() {
   const params = useParams();
@@ -12,6 +13,7 @@ export default function NewCompetitionPage() {
   const queryClient = useQueryClient();
   const slug = params.slug as string;
   const { data: currentOrg } = useOrg(slug);
+  const isTeamAccount = useAppStore((state) => state.currentTeamAccount !== null);
 
   const [name, setName] = useState("");
   const [type, setType] = useState<"league" | "cup" | "friendly">("league");
@@ -21,6 +23,16 @@ export default function NewCompetitionPage() {
   const [endDate, setEndDate] = useState("");
   const [error, setError] = useState("");
   const [submitting, setSubmitting] = useState(false);
+
+  if (isTeamAccount) {
+    return (
+      <div className="card mx-auto max-w-lg p-6 text-center">
+        <h1 className="text-lg font-semibold">Competition setup is managed by the organization</h1>
+        <p className="mt-2 text-sm text-muted">You can view the competitions created for your organization from the dashboard.</p>
+        <button type="button" className="btn-secondary mt-4" onClick={() => router.push(`/org/${slug}/dashboard`)}>Back to dashboard</button>
+      </div>
+    );
+  }
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
