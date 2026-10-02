@@ -6,7 +6,7 @@ SELECT
   f.round,
   f.competition_id,
   f.season_id,
-  f.organization_id,
+  c.organization_id,
   o.public_player_names_enabled,
   f.home_team_id,
   ht.name AS home_team_name,
@@ -31,10 +31,11 @@ SELECT
   p.id AS player_id
 FROM match_events me
 JOIN fixtures f ON f.id = me.match_id
+JOIN competitions c ON c.id = f.competition_id
 LEFT JOIN teams ht ON ht.id = f.home_team_id
 LEFT JOIN teams at ON at.id = f.away_team_id
 LEFT JOIN players p ON p.id = me.player_id
-LEFT JOIN organizations o ON o.id = f.organization_id
+LEFT JOIN organizations o ON o.id = c.organization_id
 WHERE (
   f.status IN ('live', 'in-progress')
   OR (f.status = 'scheduled' AND f.date = CURRENT_DATE)
