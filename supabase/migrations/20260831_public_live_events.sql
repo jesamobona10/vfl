@@ -1,5 +1,8 @@
 -- Public live events view (additive). Joins match_events with fixtures/teams/org.
 -- Player name only when org.public_player_names_enabled is true.
+ALTER TABLE organizations
+  ADD COLUMN IF NOT EXISTS public_player_names_enabled BOOLEAN NOT NULL DEFAULT FALSE;
+
 CREATE OR REPLACE VIEW public_live_events AS
 SELECT
   f.id AS match_id,
