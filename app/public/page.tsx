@@ -1,19 +1,48 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { createPublicClient } from "@/lib/supabase/public";
-import type { PublicScheduledFixtureRow } from "@/lib/types";
+import type { PublicMatchRow } from "@/lib/types";
 
-type Row = PublicScheduledFixtureRow;
+type MatchFilter = "all" | "scheduled" | "live" | "completed";
 
-function fmtDateTime(d: string | null, t: string | null) {
-  const parts = [d, t].filter(Boolean);
-  return parts.join(" · ");
+const FILTERS: Array<{ key: MatchFilter; label: string }> = [
+  { key: "all", label: "All matches" },
+  { key: "scheduled", label: "Scheduled" },
+  { key: "live", label: "Live" },
+  { key: "completed", label: "Full-time" },
+];
+
+function matchCategory(status: string): Exclude<MatchFilter, "all"> {
+  if (status === "live" || status === "in-progress") return "live";
+  if (status === "completed") return "completed";
+  return "scheduled";
+}
+
+function statusLabel(status: string) {
+  const category = matchCategory(status);
+  if (category === "live") return "LIVE";
+  if (category === "completed") return "FULL-TIME";
+  return "SCHEDULED";
+}
+
+function statusBadgeClass(status: string) {
+  const category = matchCategory(status);
+  if (category === "live") {
+    return "bg-danger/15 text-danger border-danger/30 animate-pulse";
+  }
+  if (category === "completed") return "bg-surface-2 text-muted border-line";
+  return "bg-brand/10 text-brand border-brand/20";
+}
+
+function fmtDateTime(date: string | null, time: string | null) {
+  return [date, time].filter(Boolean).join(" · ");
 }
 
 export default function PublicIndexPage() {
-  const [fixtures, setFixtures] = useState<Row[]>([]);
+  const [matches, setMatches] = useState<PublicMatchRow[]>([]);
+  const [filter, setFilter] = useState<MatchFilter>("all");
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -22,12 +51,10 @@ export default function PublicIndexPage() {
     let mounted = true;
 
     async function load() {
-      setLoading(true);
-      setError(null);
       const { data, error } = await sb
-        .from("public_scheduled_fixtures")
+        .from("public_matches")
         .select("*")
-        .order("date", { ascending: true, nullsFirst: false })
+        .order("date", { ascending: false, nullsFirst: false })
         .order("time", { ascending: true, nullsFirst: false })
         .order("round", { ascending: true })
         .order("match_id", { ascending: true });
@@ -35,9 +62,9 @@ export default function PublicIndexPage() {
       if (!mounted) return;
       if (error) {
         setError(error.message);
-        setFixtures([]);
       } else {
-        setFixtures((data as Row[]) || []);
+        setMatches((data as PublicMatchRow[]) || []);
+        setError(null);
       }
       setLoading(false);
     }
@@ -45,23 +72,15 @@ export default function PublicIndexPage() {
     load();
 
     const channel = sb
-      .channel("public-scheduled-fixtures")
+      .channel("public-matches")
       .on(
         "postgres_changes",
-        {
-          event: "*",
-          schema: "public",
-          table: "fixtures",
-        },
+        { event: "*", schema: "public", table: "fixtures" },
         () => {
           if (mounted) load();
         }
       )
-      .subscribe((status) => {
-        if (mounted && status !== "SUBSCRIBED") {
-          // ignore; polling fallback covers
-        }
-      });
+      .subscribe();
 
     const poll = setInterval(() => {
       if (mounted) load();
@@ -76,51 +95,122 @@ export default function PublicIndexPage() {
     };
   }, []);
 
+  const counts = useMemo(() => {
+    const result: Record<MatchFilter, number> = {
+      all: matches.length,
+      scheduled: 0,
+      live: 0,
+      completed: 0,
+    };
+    for (const match of matches) result[matchCategory(match.status)] += 1;
+    return result;
+  }, [matches]);
+
+  const visibleMatches = useMemo(() => {
+    const selected =
+      filter === "all"
+        ? matches
+        : matches.filter((match) => matchCategory(match.status) === filter);
+
+    return [...selected].sort((a, b) => {
+      const rank = (match: PublicMatchRow) =>
+        matchCategory(match.status) === "live"
+          ? 0
+          : matchCategory(match.status) === "scheduled"
+            ? 1
+            : 2;
+      const statusOrder = rank(a) - rank(b);
+      if (statusOrder !== 0) return statusOrder;
+      if (matchCategory(a.status) === "completed") {
+        return (b.date || "").localeCompare(a.date || "");
+      }
+      return `${a.date || ""} ${a.time || ""}`.localeCompare(`${b.date || ""} ${b.time || ""}`);
+    });
+  }, [filter, matches]);
+
   return (
     <div className="space-y-6 p-4 sm:p-6 max-w-4xl mx-auto">
       <div>
         <h1 className="text-xl sm:text-2xl font-semibold">Matches</h1>
-        <p className="text-sm text-ink-3">
-          Scheduled fixtures with date and time
-        </p>
+        <p className="text-sm text-ink-3">Scheduled fixtures, live scores, and full-time results</p>
       </div>
 
-      {loading && <div className="text-sm text-muted">Loading...</div>}
+      <div className="flex gap-2 overflow-x-auto pb-1" role="group" aria-label="Filter matches">
+        {FILTERS.map(({ key, label }) => (
+          <button
+            key={key}
+            type="button"
+            aria-pressed={filter === key}
+            onClick={() => setFilter(key)}
+            className={`shrink-0 rounded-full border px-3 py-1.5 text-xs font-medium transition-colors ${
+              filter === key
+                ? "border-brand bg-brand text-white"
+                : "border-line bg-surface text-ink-3 hover:bg-surface-2"
+            }`}
+          >
+            {label} <span className="ml-1 opacity-75">{counts[key]}</span>
+          </button>
+        ))}
+      </div>
+
+      {loading && <div className="text-sm text-muted">Loading matches...</div>}
       {error && <div className="text-sm text-danger">{error}</div>}
 
-      {fixtures.length > 0 && (
+      {!loading && !error && visibleMatches.length > 0 && (
         <div className="space-y-3">
-          {fixtures.map((m) => (
-            <Link
-              key={m.match_id}
-              href={`/public/live/${m.match_id}`}
-              className="card p-4 block hover:bg-surface-2/40 transition-colors"
-            >
+          {visibleMatches.map((match) => {
+            const category = matchCategory(match.status);
+            const card = (
               <div className="flex items-center justify-between gap-4">
-                <div className="min-w-0 flex-1">
-                  <div className="text-sm sm:text-base font-medium truncate">
-                    {m.home_team_name} vs {m.away_team_name}
-                  </div>
-                  <div className="text-xs text-ink-3 mt-0.5">
-                    Round {m.round} · {m.status}
-                    {fmtDateTime(m.date, m.time)
-                      ? ` · ${fmtDateTime(m.date, m.time)}`
-                      : ""}
-                    {m.venue ? ` · ${m.venue}` : ""}
+                <div className="flex min-w-0 flex-1 items-center gap-3">
+                  <span
+                    className={`shrink-0 rounded-full border px-2 py-0.5 text-[10px] font-bold ${statusBadgeClass(match.status)}`}
+                  >
+                    {statusLabel(match.status)}
+                  </span>
+                  <div className="min-w-0 flex-1">
+                    <div className="truncate text-sm font-medium sm:text-base">
+                      {match.home_team_name} vs {match.away_team_name}
+                    </div>
+                    <div className="mt-0.5 text-xs text-ink-3">
+                      Round {match.round}
+                      {fmtDateTime(match.date, match.time)
+                        ? ` · ${fmtDateTime(match.date, match.time)}`
+                        : ""}
+                      {match.venue ? ` · ${match.venue}` : ""}
+                    </div>
                   </div>
                 </div>
-                <div className="text-sm font-semibold text-ink-3 shrink-0">
-                  &rarr;
-                </div>
+                {category !== "scheduled" && (
+                  <span className="shrink-0 text-lg font-bold tabular-nums sm:text-xl">
+                    {match.home_score ?? 0} — {match.away_score ?? 0}
+                  </span>
+                )}
               </div>
-            </Link>
-          ))}
+            );
+
+            return category === "live" ? (
+              <Link
+                key={match.match_id}
+                href={`/public/live/${match.match_id}`}
+                className="card block p-4 transition-colors hover:bg-surface-2/40"
+              >
+                {card}
+              </Link>
+            ) : (
+              <div key={match.match_id} className="card p-4">
+                {card}
+              </div>
+            );
+          })}
         </div>
       )}
 
-      {!loading && fixtures.length === 0 && (
+      {!loading && !error && visibleMatches.length === 0 && (
         <div className="card p-6 text-center text-sm text-muted">
-          No scheduled matches available right now.
+          {filter === "all"
+            ? "No matches available right now."
+            : `No ${filter === "completed" ? "full-time" : filter} matches available right now.`}
         </div>
       )}
     </div>

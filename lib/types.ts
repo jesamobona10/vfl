@@ -821,3 +821,16 @@ export interface PublicScheduledFixtureRow {
   time: string | null;
   venue: string | null;
 }
+
+export interface PublicMatchRow {
+  match_id: number;
+  round: number;
+  home_team_name: string;
+  away_team_name: string;
+  home_score: number | null;
+  away_score: number | null;
+  status: "scheduled" | "live" | "in-progress" | "completed";
+  date: string | null;
+  time: string | null;
+  venue: string | null;
+}
