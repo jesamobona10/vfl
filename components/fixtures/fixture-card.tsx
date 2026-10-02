@@ -6,7 +6,7 @@ import { useAppStore } from "@/lib/store";
 import { useQueryClient } from "@tanstack/react-query";
 import { titleCase } from "@/lib/utils/helpers";
 import { MatchReportModal } from "./match-report-modal";
-import { LiveBadge } from "@/components/live/live-badge";
+import { LiveBadgeWithLink } from "@/components/live/live-badge";
 import { Sparkles } from "lucide-react";
 import Image from "next/image";
 
@@ -210,7 +210,7 @@ export function FixtureCard({
           <div className="flex items-center gap-2 text-xs text-muted">
             <span>{label}</span>
             {match.status === "live" || match.status === "in-progress" ? (
-              <LiveBadge match={match} />
+              <LiveBadgeWithLink match={match} />
             ) : (
               <span className={`rounded-full px-2 py-1 text-xs font-semibold ${statusColor}`}>
                 {titleCase(match.status)}

@@ -429,6 +429,8 @@ export interface Organization {
   logo_url?: string;
   /** JSON settings blob. */
   settings?: Record<string, unknown>;
+  /** Whether public match pages may show player names. */
+  public_player_names_enabled?: boolean;
   /** ISO 8601 creation timestamp. */
   created_at: string;
 }
@@ -771,4 +773,31 @@ export interface AuditLogRow {
   ip_address: string | null;
   user_agent: string | null;
   created_at: string;
+}
+
+export interface PublicLiveEventRow {
+  match_id: number;
+  round: number;
+  competition_id: string;
+  season_id: string;
+  organization_id: string;
+  public_player_names_enabled: boolean;
+  home_team_id: number;
+  home_team_name: string;
+  home_team_logo?: string | null;
+  away_team_id: number;
+  away_team_name: string;
+  away_team_logo?: string | null;
+  home_score: number | null;
+  away_score: number | null;
+  status: string;
+  date: string | null;
+  time: string | null;
+  venue: string | null;
+  event_id: number;
+  event_type: string;
+  minute: number | null;
+  team_id: number;
+  player_name: string | null;
+  player_id: number | null;
 }
