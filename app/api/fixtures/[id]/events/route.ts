@@ -51,17 +51,18 @@ export async function POST(request: Request, props: { params: Promise<{ id: stri
     const competitionId = fixture.competition_id || null;
     const seasonId = fixture.season_id || null;
 
-    const { data: homeTeam } = await supabase
-      .from("teams")
-      .select("organization_id, name")
-      .eq("id", homeTeamId)
-      .single();
-
-    const { data: awayTeam } = await supabase
-      .from("teams")
-      .select("organization_id, name")
-      .eq("id", awayTeamId)
-      .single();
+    const [{ data: homeTeam }, { data: awayTeam }] = await Promise.all([
+      supabase
+        .from("teams")
+        .select("organization_id, name")
+        .eq("id", homeTeamId)
+        .single(),
+      supabase
+        .from("teams")
+        .select("organization_id, name")
+        .eq("id", awayTeamId)
+        .single(),
+    ]);
 
     if (!homeTeam || !awayTeam) {
       return json({ error: "Team not found." }, { status: 404 });

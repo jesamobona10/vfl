@@ -3,6 +3,8 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useParams } from "next/navigation";
 import Image from "next/image";
+import Link from "next/link";
+import { ArrowLeft, MapPin } from "lucide-react";
 import { useLiveClock } from "@/components/live/live-clock";
 import type { LiveClockSettings } from "@/lib/logic/live";
 import { createPublicClient } from "@/lib/supabase/public";
@@ -147,64 +149,98 @@ export default function PublicLiveMatchPage() {
   const liveEvents = useMemo(() => [...events].reverse(), [events]);
 
   if (loading) {
-    return <div className="p-6 text-center text-sm text-muted">Loading match updates...</div>;
+    return (
+      <div className="mx-auto max-w-3xl space-y-5 p-4 sm:p-6">
+        <Link href="/public" className="inline-flex items-center gap-2 rounded-full border border-line bg-surface px-3.5 py-2 text-sm font-medium text-ink-2">
+          <ArrowLeft size={16} /> Matches
+        </Link>
+        <div className="p-6 text-center text-sm text-muted">Loading match updates...</div>
+      </div>
+    );
   }
 
   if (error || !match) {
     return (
-      <div className="p-6 text-center text-sm text-danger">
-        {error || "Match not found or no longer available."}
+      <div className="mx-auto max-w-3xl space-y-5 p-4 sm:p-6">
+        <Link href="/public" className="inline-flex items-center gap-2 rounded-full border border-line bg-surface px-3.5 py-2 text-sm font-medium text-ink-2">
+          <ArrowLeft size={16} /> Matches
+        </Link>
+        <div className="card p-6 text-center text-sm text-danger">
+          {error || "Match not found or no longer available."}
+        </div>
       </div>
     );
   }
 
   const isLive = match.status === "live" || match.status === "in-progress";
   return (
-    <div className="mx-auto max-w-2xl space-y-5 p-4 sm:p-6">
-      <div className="card space-y-4 p-5 sm:p-6">
-        <div className="flex items-center justify-between gap-3 text-xs text-ink-3">
-          <span>Round {match.round}{match.date ? ` · ${match.date}` : ""}{match.time ? ` · ${match.time}` : ""}</span>
-          <StatusBadge match={match} minute={isLive ? minuteLabel : null} />
+    <div className="mx-auto max-w-3xl space-y-5 p-4 sm:p-6">
+      <div className="flex items-center justify-between gap-3">
+        <Link
+          href="/public"
+          className="inline-flex items-center gap-2 rounded-full border border-line bg-surface px-3.5 py-2 text-sm font-medium text-ink-2 transition-colors hover:border-brand/30 hover:bg-surface-2"
+        >
+          <ArrowLeft size={16} /> Matches
+        </Link>
+        <div className="text-xs text-ink-3">
+          Round {match.round}{match.date ? ` · ${match.date}` : ""}{match.time ? ` · ${match.time}` : ""}
         </div>
-        <div className="flex items-center justify-center gap-3 sm:gap-6">
-          <div className="flex min-w-0 flex-1 flex-col items-center gap-2 text-center">
-            {match.home_team_logo ? (
-              <Image src={match.home_team_logo} alt="" width={48} height={48} className="h-12 w-12 rounded-full object-cover" />
-            ) : <div className="h-12 w-12 rounded-full bg-surface-2" />}
-            <span className="w-full truncate text-sm font-semibold sm:text-base">{match.home_team_name}</span>
-          </div>
-          <div className="shrink-0 text-3xl font-bold tabular-nums sm:text-4xl">
-            {match.home_score ?? 0} — {match.away_score ?? 0}
-          </div>
-          <div className="flex min-w-0 flex-1 flex-col items-center gap-2 text-center">
-            {match.away_team_logo ? (
-              <Image src={match.away_team_logo} alt="" width={48} height={48} className="h-12 w-12 rounded-full object-cover" />
-            ) : <div className="h-12 w-12 rounded-full bg-surface-2" />}
-            <span className="w-full truncate text-sm font-semibold sm:text-base">{match.away_team_name}</span>
-          </div>
-        </div>
-        {match.venue && <p className="text-center text-xs text-ink-3">{match.venue}</p>}
       </div>
 
+      <section className="card overflow-hidden">
+        <div className="flex items-center justify-between gap-3 border-b border-line bg-surface-2/40 px-4 py-3 sm:px-6">
+          <div className="inline-flex items-center gap-1.5 text-xs text-ink-3">
+            {match.venue ? <><MapPin size={14} />{match.venue}</> : "Match centre"}
+          </div>
+          <StatusBadge match={match} minute={isLive ? minuteLabel : null} />
+        </div>
+        <div className="grid grid-cols-[1fr_auto_1fr] items-center gap-2 bg-gradient-to-b from-surface to-surface-2/20 px-3 py-7 sm:gap-6 sm:px-7 sm:py-9">
+          <div className="flex min-w-0 flex-col items-center gap-3 text-center">
+            {match.home_team_logo ? (
+              <Image src={match.home_team_logo} alt="" width={64} height={64} className="h-14 w-14 rounded-full border border-line bg-surface object-cover shadow-sm sm:h-16 sm:w-16" />
+            ) : <div className="flex h-14 w-14 items-center justify-center rounded-full border border-line bg-surface-2 text-xl font-bold text-ink-3 sm:h-16 sm:w-16">{match.home_team_name.charAt(0)}</div>}
+            <span className="w-full truncate text-xs font-semibold sm:text-base">{match.home_team_name}</span>
+          </div>
+          <div className="shrink-0 text-center">
+            <div className="rounded-2xl border border-line bg-surface px-4 py-2 text-3xl font-extrabold tabular-nums shadow-sm sm:px-6 sm:py-3 sm:text-4xl">
+              {match.home_score ?? 0}<span className="mx-1.5 text-ink-3">–</span>{match.away_score ?? 0}
+            </div>
+            {isLive && <p className="mt-2 text-[10px] font-bold uppercase tracking-[0.2em] text-danger">Live score</p>}
+          </div>
+          <div className="flex min-w-0 flex-col items-center gap-3 text-center">
+            {match.away_team_logo ? (
+              <Image src={match.away_team_logo} alt="" width={64} height={64} className="h-14 w-14 rounded-full border border-line bg-surface object-cover shadow-sm sm:h-16 sm:w-16" />
+            ) : <div className="flex h-14 w-14 items-center justify-center rounded-full border border-line bg-surface-2 text-xl font-bold text-ink-3 sm:h-16 sm:w-16">{match.away_team_name.charAt(0)}</div>}
+            <span className="w-full truncate text-xs font-semibold sm:text-base">{match.away_team_name}</span>
+          </div>
+        </div>
+      </section>
+
       <section aria-labelledby="match-timeline-heading" className="space-y-3">
-        <h2 id="match-timeline-heading" className="text-sm font-semibold uppercase tracking-wide text-ink-3">
-          Match updates
-        </h2>
+        <div className="flex items-end justify-between gap-3 px-1">
+          <div>
+            <h2 id="match-timeline-heading" className="text-base font-bold">Match timeline</h2>
+            <p className="mt-0.5 text-xs text-ink-3">Goals, cards, and other match events</p>
+          </div>
+          {liveEvents.length > 0 && <span className="rounded-full bg-surface-2 px-2.5 py-1 text-xs font-semibold text-ink-3">{liveEvents.length} updates</span>}
+        </div>
         {liveEvents.length > 0 ? liveEvents.map((event) => (
-          <div key={event.event_id} className="card flex items-center gap-3 p-3">
-            <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-surface-2 text-xs font-semibold text-ink-3">
+          <div key={event.event_id} className="card flex items-center gap-3 border-l-2 border-l-brand/40 p-3.5 sm:gap-4 sm:p-4">
+            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-surface-2 text-sm font-bold text-ink-3">
               {event.player_name?.slice(0, 1) || "•"}
             </div>
             <div className="min-w-0 flex-1">
-              <p className="text-sm font-medium">
+              <p className="text-sm font-semibold leading-snug">
                 {eventLabel(event, match.home_team_name, match.away_team_name)}
               </p>
-              {event.player_name && <p className="text-xs text-ink-3">{event.player_name}</p>}
+              <p className="mt-1 text-xs text-ink-3">
+                {event.team_id === event.home_team_id ? match.home_team_name : match.away_team_name}
+              </p>
             </div>
-            <span className={`shrink-0 rounded-full px-2 py-1 text-[10px] font-bold uppercase ${eventTone(event.event_type)}`}>
+            <span className={`shrink-0 rounded-full px-2.5 py-1 text-[10px] font-bold uppercase ${eventTone(event.event_type)}`}>
               {event.event_type.replace(/[-_]/g, " ")}
             </span>
-            {event.minute != null && <span className="shrink-0 text-xs tabular-nums text-ink-3">{event.minute}′</span>}
+            {event.minute != null && <span className="min-w-8 shrink-0 text-right text-sm font-semibold tabular-nums text-ink-2">{event.minute}′</span>}
           </div>
         )) : (
           <div className="card p-5 text-center text-sm text-muted">

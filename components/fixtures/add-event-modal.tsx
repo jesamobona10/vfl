@@ -6,6 +6,7 @@ import type { Match, MatchEvent, Player } from "@/lib/types";
 import { CheckCircle } from "lucide-react";
 import { useQueryClient } from "@tanstack/react-query";
 import { Modal } from "@/components/ui/modal";
+import { useToast } from "@/components/ui/toast";
 
 const EVENT_CATEGORIES = [
   {
@@ -129,13 +130,16 @@ export function AddEventModal({
   onClose,
   initialMinute,
 }: AddEventModalProps) {
-  const [step, setStep] = useState<"type" | "player">("type");
-  const [selectedType, setSelectedType] = useState<string | null>(null);
+  const [selectedType, setSelectedType] = useState<string>("goal");
+  const [playerSearch, setPlayerSearch] = useState("");
+  const [showAllTypes, setShowAllTypes] = useState(false);
+  const [saving, setSaving] = useState(false);
 
   const players = useAppStore((s) => s.players);
   const updateMatch = useAppStore((s) => s.updateMatch);
   const updatePlayer = useAppStore((s) => s.updatePlayer);
   const queryClient = useQueryClient();
+  const toast = useToast();
 
   const invalidateStandings = () => {
     if (match.season_id) {
@@ -144,18 +148,20 @@ export function AddEventModal({
     }
   };
 
-  const homePlayers = players.filter((p) => p.teamId === match.homeId);
-  const awayPlayers = players.filter((p) => p.teamId === match.awayId);
+  const normalizedSearch = playerSearch.trim().toLocaleLowerCase();
+  const filterPlayers = (teamId: number) => players
+    .filter((player) => player.teamId === teamId)
+    .filter((player) => !normalizedSearch ||
+      player.name.toLocaleLowerCase().includes(normalizedSearch) ||
+      String(player.number || "").includes(normalizedSearch));
+  const homePlayers = filterPlayers(match.homeId);
+  const awayPlayers = filterPlayers(match.awayId);
 
-  const handleSelectType = (type: string) => {
-    setSelectedType(type);
-    setStep("player");
-  };
-
-  const handleSelectPlayer = async (playerId: number) => {
-    if (!selectedType) return;
+  const handleSelectPlayer = (playerId: number) => {
+    if (saving) return;
 
     const player = players.find((p) => p.id === playerId);
+    if (!player) return;
     const teamId = player?.teamId ?? match.homeId;
     const minute = initialMinute;
     const newEvent: MatchEvent = { playerId, type: selectedType, teamId, minute };
@@ -177,32 +183,37 @@ export function AddEventModal({
     }
     useAppStore.getState().recalculateRatings();
 
-    try {
-      await fetch(`/api/fixtures/${match.id}/events`, {
+    setSaving(true);
+    onClose();
+
+    const eventSave = fetch(`/api/fixtures/${match.id}/events`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ playerId, teamId, type: selectedType, minute }),
       });
-    } catch {
-      // persist silently
-    }
 
-    if (selectedType === "goal" || selectedType === "own-goal") {
-      try {
-        const homeScore = score.homeScore ?? 0;
-        const awayScore = score.awayScore ?? 0;
-        await fetch(`/api/fixtures/${match.id}`, {
+    const scoreSave = selectedType === "goal" || selectedType === "own-goal"
+      ? fetch(`/api/fixtures/${match.id}`, {
           method: "PUT",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ homeScore, awayScore }),
-        });
-        invalidateStandings();
-      } catch {
-        // persist silently
-      }
-    }
+          body: JSON.stringify({
+            homeScore: score.homeScore ?? 0,
+            awayScore: score.awayScore ?? 0,
+          }),
+        })
+      : Promise.resolve(null);
 
-    onClose();
+    void Promise.all([eventSave, scoreSave])
+      .then(([eventResponse, scoreResponse]) => {
+        if (!eventResponse.ok || (scoreResponse && !scoreResponse.ok)) {
+          throw new Error("Match event save failed");
+        }
+        invalidateStandings();
+        toast.success(`${selectedLabel} added.`);
+      })
+      .catch(() => {
+        toast.error("The event was added on this screen but could not be saved. Please refresh and try again.");
+      });
   };
 
   const handleMarkComplete = async () => {
@@ -226,29 +237,17 @@ export function AddEventModal({
 
   const selectedLabel =
     EVENT_CATEGORIES.flatMap((c) => c.types).find((t) => t.value === selectedType)?.label ||
-    selectedType ||
-    "";
+    selectedType;
+  const quickTypes = EVENT_CATEGORIES.flatMap((category) => category.types)
+    .filter((type) => ["goal", "assist", "own-goal", "yellow", "red"].includes(type.value));
 
   return (
     <Modal
       open
       onClose={onClose}
-      title={step === "type" ? "Add Event" : `Add ${selectedLabel}`}
-      subtitle={`${homeTeamName} vs ${awayTeamName}`}
+      title="Quick match event"
+      subtitle={`${homeTeamName} vs ${awayTeamName} · ${initialMinute ? `${initialMinute}′` : "Choose a player"}`}
       className="max-w-md"
-      headerActions={
-        step === "player" ? (
-          <button
-            onClick={() => {
-              setStep("type");
-              setSelectedType(null);
-            }}
-            className="text-xs text-muted hover:text-text transition-colors"
-          >
-            &larr; Back
-          </button>
-        ) : undefined
-      }
       footer={
         match.status !== "completed" ? (
           <div className="flex justify-center">
@@ -263,80 +262,110 @@ export function AddEventModal({
         ) : undefined
       }
     >
-        {step === "type" ? (
-          <div className="space-y-4 max-h-80 overflow-y-auto">
-            {EVENT_CATEGORIES.map((category) => (
-              <div key={category.label}>
-                <p className="text-xs uppercase tracking-wider text-muted font-semibold mb-2">
-                  {category.label}
-                </p>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                  {category.types.map((t) => {
-                    const color = EVENT_COLOR[t.value] || "bg-muted/20 text-muted";
-                    return (
-                      <button
-                        key={t.value}
-                        onClick={() => handleSelectType(t.value)}
-                        className={`flex items-center gap-2 px-3 py-2.5 rounded-xl border border-line hover:border-muted/40 transition-colors text-left ${color}`}
-                      >
-                        <span className="text-xs font-bold uppercase">{t.abbr}</span>
-                        <span className="text-xs font-medium">{t.label}</span>
-                      </button>
-                    );
-                  })}
-                </div>
-              </div>
+      <div className="space-y-4">
+        <div>
+          <div className="mb-2 flex items-center justify-between gap-2">
+            <p className="text-xs font-semibold uppercase tracking-wider text-muted">Event type</p>
+            <span className="text-xs text-muted">Selected: {selectedLabel}</span>
+          </div>
+          <div className="flex flex-wrap gap-2">
+            {quickTypes.map((type) => (
+              <button
+                key={type.value}
+                type="button"
+                aria-pressed={selectedType === type.value}
+                onClick={() => setSelectedType(type.value)}
+                className={`rounded-full border px-3 py-1.5 text-xs font-semibold transition-colors ${
+                  selectedType === type.value
+                    ? `${EVENT_COLOR[type.value]} border-current`
+                    : "border-line bg-surface text-ink-3 hover:bg-surface-2"
+                }`}
+              >
+                {type.label}
+              </button>
             ))}
+            <button
+              type="button"
+              onClick={() => setShowAllTypes((shown) => !shown)}
+              aria-expanded={showAllTypes}
+              className="rounded-full border border-line px-3 py-1.5 text-xs font-semibold text-ink-3 hover:bg-surface-2"
+            >
+              {showAllTypes ? "Fewer" : "More events"}
+            </button>
           </div>
-        ) : (
-          <div className="space-y-3 max-h-80 overflow-y-auto">
-            {homePlayers.length > 0 && (
-              <div>
-                <p className="text-xs uppercase tracking-wider text-muted font-semibold mb-1">
-                  {homeTeamName}
+          {showAllTypes && (
+            <div className="mt-3 max-h-36 space-y-3 overflow-y-auto rounded-xl border border-line p-3">
+              {EVENT_CATEGORIES.map((category) => (
+                <div key={category.label}>
+                  <p className="mb-1.5 text-[10px] font-semibold uppercase tracking-wider text-muted">
+                    {category.label}
+                  </p>
+                  <div className="flex flex-wrap gap-1.5">
+                    {category.types.map((type) => (
+                      <button
+                        key={type.value}
+                        type="button"
+                        aria-pressed={selectedType === type.value}
+                        onClick={() => setSelectedType(type.value)}
+                        className={`rounded-lg border px-2.5 py-1.5 text-xs ${
+                          selectedType === type.value
+                            ? `${EVENT_COLOR[type.value]} border-current font-semibold`
+                            : "border-line text-ink-3 hover:bg-surface-2"
+                        }`}
+                      >
+                        {type.label}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+
+        <label className="block">
+          <span className="mb-1.5 block text-xs font-semibold uppercase tracking-wider text-muted">Player</span>
+          <input
+            type="search"
+            value={playerSearch}
+            onChange={(event) => setPlayerSearch(event.target.value)}
+            placeholder="Search name or shirt number"
+            className="input w-full text-sm"
+            autoFocus
+          />
+        </label>
+
+        <div className="max-h-72 space-y-3 overflow-y-auto">
+          {([ [homeTeamName, homePlayers], [awayTeamName, awayPlayers] ] as const).map(([teamName, teamPlayers]) => (
+            <section key={teamName}>
+              <p className="mb-1.5 text-xs font-semibold text-ink-3">{teamName}</p>
+              {teamPlayers.length > 0 ? (
+                <div className="grid grid-cols-1 gap-1.5 sm:grid-cols-2">
+                  {teamPlayers.map((player) => (
+                    <button
+                      key={player.id}
+                      type="button"
+                      disabled={saving}
+                      onClick={() => handleSelectPlayer(player.id)}
+                      className="flex min-w-0 items-center gap-2 rounded-xl border border-line px-2.5 py-2 text-left transition-colors hover:border-brand/40 hover:bg-brand/5 disabled:opacity-50"
+                    >
+                      <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-surface-2 text-xs font-bold text-muted">
+                        {player.number || "–"}
+                      </span>
+                      <span className="min-w-0 flex-1 truncate text-sm font-medium">{player.name}</span>
+                      <span className="shrink-0 text-[10px] text-muted">{player.position}</span>
+                    </button>
+                  ))}
+                </div>
+              ) : (
+                <p className="py-2 text-xs text-muted">
+                  {normalizedSearch ? "No matching players." : "No players found for this team."}
                 </p>
-                {homePlayers.map((p) => (
-                  <button
-                    key={p.id}
-                    onClick={() => handleSelectPlayer(p.id)}
-                    className="w-full flex items-center gap-3 px-3 py-2 rounded-xl border border-line hover:border-muted/40 hover:bg-surface-2/50 transition-colors text-left"
-                  >
-                    <span className="w-7 h-7 rounded-full bg-surface-2 flex items-center justify-center text-xs font-bold text-muted">
-                      {p.number || "?"}
-                    </span>
-                    <span className="text-sm font-medium">{p.name}</span>
-                    <span className="text-xs text-muted ml-auto">{p.position}</span>
-                  </button>
-                ))}
-              </div>
-            )}
-            {awayPlayers.length > 0 && (
-              <div>
-                <p className="text-xs uppercase tracking-wider text-muted font-semibold mb-1">
-                  {awayTeamName}
-                </p>
-                {awayPlayers.map((p) => (
-                  <button
-                    key={p.id}
-                    onClick={() => handleSelectPlayer(p.id)}
-                    className="w-full flex items-center gap-3 px-3 py-2 rounded-xl border border-line hover:border-muted/40 hover:bg-surface-2/50 transition-colors text-left"
-                  >
-                    <span className="w-7 h-7 rounded-full bg-surface-2 flex items-center justify-center text-xs font-bold text-muted">
-                      {p.number || "?"}
-                    </span>
-                    <span className="text-sm font-medium">{p.name}</span>
-                    <span className="text-xs text-muted ml-auto">{p.position}</span>
-                  </button>
-                ))}
-              </div>
-            )}
-            {homePlayers.length === 0 && awayPlayers.length === 0 && (
-              <p className="text-sm text-muted text-center py-8">
-                No players found for this match.
-              </p>
-            )}
-          </div>
-        )}
+              )}
+            </section>
+          ))}
+        </div>
+      </div>
     </Modal>
   );
 }
