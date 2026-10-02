@@ -115,11 +115,11 @@ export default function CompPlayersPage() {
     );
   };
 
-  const handleRegister = () => {
+  const handleRegister = (playerIds: number[]) => {
     setError("");
-    if (selectedPlayerIds.length === 0 || !registerOpenTeamId) return;
+    if (playerIds.length === 0 || !registerOpenTeamId) return;
     registerMutation.mutate(
-      { playerIds: selectedPlayerIds },
+      { playerIds },
       {
         onSuccess: () => {
           setRegisterOpenTeamId(null);
@@ -215,9 +215,29 @@ export default function CompPlayersPage() {
 
               {isRegisterOpen && (
                 <div className="border-t border-line p-4 space-y-3">
-                  <h3 className="text-sm font-medium">
-                    Register players from {st.display_name || st.team?.name}
-                  </h3>
+                  <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                    <div>
+                      <h3 className="text-sm font-medium">
+                        Register players from {st.display_name || st.team?.name}
+                      </h3>
+                      <p className="mt-0.5 text-xs text-muted">
+                        {availableForTeam.length} eligible player{availableForTeam.length === 1 ? "" : "s"} available
+                      </p>
+                    </div>
+                    {availableForTeam.length > 0 && (
+                      <button
+                        type="button"
+                        onClick={() => handleRegister(availableForTeam.map((player) => player.id))}
+                        disabled={registerMutation.isPending}
+                        className="btn-primary w-full text-xs sm:w-auto"
+                      >
+                        <Users size={15} />
+                        {registerMutation.isPending
+                          ? "Registering…"
+                          : `Register all ${availableForTeam.length}`}
+                      </button>
+                    )}
+                  </div>
                   {availableForTeam.length === 0 ? (
                     <p className="text-sm text-muted">
                       No unregistered players in this team&apos;s roster.
@@ -247,7 +267,7 @@ export default function CompPlayersPage() {
                   )}
                   {selectedPlayerIds.length > 0 && (
                     <button
-                      onClick={handleRegister}
+                      onClick={() => handleRegister(selectedPlayerIds)}
                       disabled={registerMutation.isPending}
                       className="btn-primary flex items-center gap-2 text-sm"
                     >
