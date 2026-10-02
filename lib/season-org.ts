@@ -42,6 +42,31 @@ export async function resolveSeasonOrganization(sb: SupabaseClient, seasonId: st
 }
 
 /**
+ * The org's current org-season, used to link newly created competition seasons.
+ *
+ * A season without `organization_season_id` is invisible to season-scoped reads
+ * (`resolveOrgSeasonIds` and the org fixtures endpoint), so the dashboard
+ * reports the season as empty even though it holds teams and fixtures.
+ *
+ * @param sb - Supabase client instance
+ * @param organizationId - UUID of the owning organization
+ * @returns The org-season id, or null when the org has no current org-season.
+ */
+export async function resolveCurrentOrgSeasonId(
+  sb: SupabaseClient,
+  organizationId: string
+): Promise<string | null> {
+  const { data } = await sb
+    .from("organization_seasons")
+    .select("id")
+    .eq("organization_id", organizationId)
+    .eq("is_current", true)
+    .maybeSingle();
+
+  return data?.id ?? null;
+}
+
+/**
  * Resolve an org season (`organization_seasons.id`) to the competition
  * `seasons` that belong to it. Optionally verify the org season is owned by a
  * specific organization (used to scope read-only queries by access).

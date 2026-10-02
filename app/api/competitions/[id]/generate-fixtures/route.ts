@@ -15,6 +15,7 @@ import {
 } from "@/lib/security";
 import { AUDIT_ACTIONS } from "@/lib/audit/actions";
 import { generateRoundRobinFixtures } from "@/lib/logic/round-robin";
+import { resolveCurrentOrgSeasonId } from "@/lib/season-org";
 import type { Team, FixtureRound, Match } from "@/lib/types";
 
 export const dynamic = "force-dynamic";
@@ -96,6 +97,7 @@ export async function POST(request: Request, props: { params: Promise<{ id: stri
         seasonId = existingSeason.id;
       } else {
         const year = new Date().getFullYear();
+        const orgSeasonId = await resolveCurrentOrgSeasonId(sb, competition.organization_id);
         const { data: newSeason } = await sb
           .from("seasons")
           .insert({
@@ -103,6 +105,7 @@ export async function POST(request: Request, props: { params: Promise<{ id: stri
             name: `${year}/${year + 1} Season`,
             status: "active",
             is_current: true,
+            organization_season_id: orgSeasonId,
           })
           .select("id")
           .single();
