@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Bell, BellOff } from "lucide-react";
+import { Bell, BellOff, LoaderCircle } from "lucide-react";
 import type { PublicPreferences } from "@/lib/public-preferences";
 
 function decodeApplicationServerKey(base64Url: string) {
@@ -14,6 +14,7 @@ function decodeApplicationServerKey(base64Url: string) {
 export function PushSubscriptionControl({ preferences }: { preferences: PublicPreferences }) {
   const [publicKey, setPublicKey] = useState<string | null>(null);
   const [subscription, setSubscription] = useState<PushSubscription | null>(null);
+  const [loading, setLoading] = useState(true);
   const [busy, setBusy] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
 
@@ -35,8 +36,11 @@ export function PushSubscriptionControl({ preferences }: { preferences: PublicPr
         if (!mounted) return;
         setPublicKey(key);
         setSubscription(current);
+        setLoading(false);
       })
-      .catch(() => {});
+      .catch(() => {
+        if (mounted) setLoading(false);
+      });
 
     return () => {
       mounted = false;
@@ -53,11 +57,10 @@ export function PushSubscriptionControl({ preferences }: { preferences: PublicPr
   }, [subscription, preferences]);
 
   const toggleSubscription = async () => {
-    if (!publicKey || busy) return;
+    if (busy || (!subscription && !publicKey)) return;
     setBusy(true);
     setMessage(null);
     try {
-      const registration = await navigator.serviceWorker.ready;
       if (subscription) {
         const endpoint = subscription.endpoint;
         await subscription.unsubscribe();
@@ -68,11 +71,15 @@ export function PushSubscriptionControl({ preferences }: { preferences: PublicPr
         });
         setSubscription(null);
       } else {
+        if (!publicKey) throw new Error("Push notifications are not configured.");
+        // Keep the permission request directly inside the tap gesture; iOS
+        // Safari can reject it if it happens after awaiting serviceWorker.ready.
         const permission = await Notification.requestPermission();
         if (permission !== "granted") {
           setMessage("Allow notifications in your browser settings to receive match alerts.");
           return;
         }
+        const registration = await navigator.serviceWorker.ready;
         const created = await registration.pushManager.subscribe({
           userVisibleOnly: true,
           applicationServerKey: decodeApplicationServerKey(publicKey),
@@ -96,7 +103,12 @@ export function PushSubscriptionControl({ preferences }: { preferences: PublicPr
     }
   };
 
-  if (!publicKey) return null;
+  const pushSupported = typeof window !== "undefined" && "serviceWorker" in navigator && "PushManager" in window && "Notification" in window;
+  if (!pushSupported) return null;
+  if (loading) {
+    return <div className="flex min-h-10 items-center gap-2 text-xs text-ink-3" role="status"><LoaderCircle size={14} className="animate-spin" /> Checking alert settings…</div>;
+  }
+  if (!publicKey && !subscription) return null;
 
   const permissionDenied = Notification.permission === "denied";
   return (
@@ -104,11 +116,13 @@ export function PushSubscriptionControl({ preferences }: { preferences: PublicPr
       <button
         type="button"
         onClick={toggleSubscription}
-        disabled={busy || permissionDenied}
-        className="btn-secondary inline-flex items-center gap-2 px-3 py-2 text-xs"
+        disabled={busy || (!subscription && permissionDenied)}
+        aria-pressed={Boolean(subscription)}
+        className="btn-secondary inline-flex min-h-10 max-w-full items-center gap-2 whitespace-nowrap px-3 py-2 text-xs"
       >
         {subscription ? <BellOff size={15} /> : <Bell size={15} />}
-        {busy ? "Saving..." : subscription ? "Turn off match alerts" : "Enable alerts for my teams"}
+        <span className="sm:hidden">{busy ? "Saving…" : subscription ? "Turn alerts off" : "Enable team alerts"}</span>
+        <span className="hidden sm:inline">{busy ? "Saving…" : subscription ? "Turn off match alerts" : "Enable alerts for my teams"}</span>
       </button>
       {message && <p className="w-full text-xs text-ink-3" role="status">{message}</p>}
       {permissionDenied && (

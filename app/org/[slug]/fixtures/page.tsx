@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useRef, Suspense } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import dynamic from "next/dynamic";
 import { useAppStore } from "@/lib/store";
 import { useOrg } from "@/lib/hooks/use-org";
@@ -38,8 +38,6 @@ export default function OrgFixturesPage() {
   const fixtures = useAppStore((s) => s.fixtures);
   const setFixtures = useAppStore((s) => s.setFixtures);
   const isAdmin = useAppStore((s) => s.isAdmin);
-  const userProfile = useAppStore((s) => s.userProfile);
-  const isOrgAdmin = isAdmin || userProfile?.role === "org_admin";
 
   const {
     selectedOrgSeasonId,
@@ -58,43 +56,56 @@ export default function OrgFixturesPage() {
   const [error, setError] = useState("");
   const autoSaveTimer = useRef<ReturnType<typeof setTimeout>>(undefined);
   const prevFixturesRef = useRef("");
+  const fixtureLoadRequestRef = useRef(0);
+  const currentOrgId = currentOrg?.id;
 
-  const loadDbFixtures = (seasonId?: string) => {
-    if (!currentOrg?.id) return;
+  const loadDbFixtures = useCallback(async (seasonId?: string) => {
+    if (!currentOrgId) return;
+    const requestId = ++fixtureLoadRequestRef.current;
     setLoadingDb(true);
-    fetch(`/api/competitions?org_id=${currentOrg.id}`)
-      .then((r) => r.json())
-      .then((data) => {
-        const list: CompOption[] = (data.competitions || []).filter(
-          (c: any) => c.type === "league"
-        );
-        setComps(list);
-        let params = "";
-        if (seasonId) {
-          params = `?org_season_id=${seasonId}`;
-        } else if (list.length === 1) {
-          params = `?competition_id=${list[0].id}`;
-        }
-        return fetch(`/api/organizations/${slug}/fixtures${params}`);
-      })
-      .then((r) => r.json())
-      .then((d) => {
-        if (d.fixtures?.length) {
-          setFixtures(d.fixtures);
-          prevFixturesRef.current = JSON.stringify(d.fixtures);
-        }
-      })
-      .catch(() => {})
-      .finally(() => setLoadingDb(false));
-  };
+    try {
+      const [competitionsResponse, seasonFixturesResponse] = await Promise.all([
+        fetch(`/api/competitions?org_id=${currentOrgId}`),
+        seasonId
+          ? fetch(`/api/organizations/${slug}/fixtures?org_season_id=${seasonId}`)
+          : Promise.resolve(null),
+      ]);
+      if (!competitionsResponse.ok) throw new Error("Unable to load competitions.");
+      const data = await competitionsResponse.json();
+      const list: CompOption[] = (data.competitions || []).filter((c: CompOption) => c.type === "league");
+      if (requestId !== fixtureLoadRequestRef.current) return;
+      setComps(list);
+
+      const query = seasonId
+        ? `?org_season_id=${seasonId}`
+        : list.length === 1
+          ? `?competition_id=${list[0].id}`
+          : "";
+      const fixturesResponse = seasonFixturesResponse || await fetch(`/api/organizations/${slug}/fixtures${query}`);
+      if (!fixturesResponse.ok) throw new Error("Unable to load fixtures.");
+      const fixtureData = await fixturesResponse.json();
+      if (requestId !== fixtureLoadRequestRef.current) return;
+      const nextFixtures = Array.isArray(fixtureData.fixtures) ? fixtureData.fixtures : [];
+      // Empty is valid for a new season and must replace the old season rows.
+      setFixtures(nextFixtures);
+      prevFixturesRef.current = JSON.stringify(nextFixtures);
+    } catch {
+      // Keep the active season visible; a later refetch can recover transient failures.
+    } finally {
+      if (requestId === fixtureLoadRequestRef.current) setLoadingDb(false);
+    }
+  }, [currentOrgId, setFixtures, slug]);
 
   useEffect(() => {
-    loadDbFixtures(selectedOrgSeasonId ?? undefined);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [currentOrg?.id, selectedOrgSeasonId]);
+    const timer = setTimeout(() => void loadDbFixtures(selectedOrgSeasonId ?? undefined), 0);
+    return () => {
+      clearTimeout(timer);
+      fixtureLoadRequestRef.current += 1;
+    };
+  }, [currentOrgId, loadDbFixtures, selectedOrgSeasonId]);
 
   useEffect(() => {
-    if (!fixtures.length || !currentOrg?.id) return;
+    if (!fixtures.length || !currentOrgId) return;
     const serialized = JSON.stringify(fixtures);
     if (serialized === prevFixturesRef.current) return;
     prevFixturesRef.current = serialized;
@@ -114,7 +125,7 @@ export default function OrgFixturesPage() {
     return () => {
       if (autoSaveTimer.current) clearTimeout(autoSaveTimer.current);
     };
-  }, [fixtures]);
+  }, [fixtures, currentOrgId]);
 
   const handleGenerate = async () => {
     if (teams.length < 2) return;

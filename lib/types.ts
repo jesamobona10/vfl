@@ -848,6 +848,15 @@ export interface PublicMatchRow {
   stoppage_minutes?: number;
 }
 
+export interface PublicSeasonRow {
+  season_id: string;
+  competition_id: string;
+  organization_id: string;
+  organization_season_id: string | null;
+  season_name: string;
+  is_current: boolean;
+}
+
 export interface PublicStandingRow {
   competition_id: string;
   season_id: string | null;

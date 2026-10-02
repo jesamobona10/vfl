@@ -5,7 +5,7 @@ import Link from "next/link";
 import Image from "next/image";
 import { ArrowRight, BarChart3, CalendarClock, MapPin, Radio, Settings2, Trophy } from "lucide-react";
 import { createPublicClient } from "@/lib/supabase/public";
-import type { PublicMatchRow, PublicPlayerStatisticsRow, PublicStandingRow } from "@/lib/types";
+import type { PublicMatchRow, PublicPlayerStatisticsRow, PublicSeasonRow, PublicStandingRow } from "@/lib/types";
 import { PushSubscriptionControl } from "@/components/public/push-subscription";
 import { Modal } from "@/components/ui/modal";
 import { readPublicPreferences, savePublicPreferences, type PublicPreferences } from "@/lib/public-preferences";
@@ -15,10 +15,15 @@ type PublicSection = "matches" | "standings" | "players";
 const noSubscribe = () => () => {};
 
 interface PublicCompetitionOption {
-  key: string;
   competitionId: string;
-  seasonId: string | null;
   label: string;
+}
+
+interface PublicSeasonOption {
+  key: string;
+  label: string;
+  seasonIds: string[];
+  isCurrent: boolean;
 }
 
 const FILTERS: Array<{ key: MatchFilter; label: string }> = [
@@ -75,9 +80,15 @@ function TeamLogo({ name, logo }: { name: string; logo: string | null }) {
 
 export default function PublicIndexPage() {
   const [matches, setMatches] = useState<PublicMatchRow[]>([]);
+  const [publicSeasons, setPublicSeasons] = useState<PublicSeasonRow[]>([]);
   const [filter, setFilter] = useState<MatchFilter>("all");
   const [section, setSection] = useState<PublicSection>("matches");
   const [selectedCompetitionKey, setSelectedCompetitionKey] = useState("");
+  const [selectedPublicSeasonKey, setSelectedPublicSeasonKey] = useState(() => {
+    if (typeof window === "undefined") return "";
+    const savedPreferences = readPublicPreferences();
+    return savedPreferences ? localStorage.getItem(`vfl-public-season-${savedPreferences.organizationId}`) || "" : "";
+  });
   const [standings, setStandings] = useState<PublicStandingRow[]>([]);
   const [playerStatistics, setPlayerStatistics] = useState<PublicPlayerStatisticsRow[]>([]);
   const [loadedStatsKey, setLoadedStatsKey] = useState("");
@@ -96,13 +107,16 @@ export default function PublicIndexPage() {
     let mounted = true;
 
     async function load() {
-      const { data, error } = await sb
-        .from("public_matches")
-        .select("*")
-        .order("date", { ascending: false, nullsFirst: false })
-        .order("time", { ascending: true, nullsFirst: false })
-        .order("round", { ascending: true })
-        .order("match_id", { ascending: true });
+      const [{ data, error }, { data: seasonRows, error: seasonError }] = await Promise.all([
+        sb
+          .from("public_matches")
+          .select("*")
+          .order("date", { ascending: false, nullsFirst: false })
+          .order("time", { ascending: true, nullsFirst: false })
+          .order("round", { ascending: true })
+          .order("match_id", { ascending: true }),
+        sb.from("public_seasons").select("*").order("season_name", { ascending: false }),
+      ]);
 
       if (!mounted) return;
       if (error) {
@@ -111,6 +125,7 @@ export default function PublicIndexPage() {
         setMatches((data as PublicMatchRow[]) || []);
         setError(null);
       }
+      if (!seasonError) setPublicSeasons((seasonRows as PublicSeasonRow[]) || []);
       setLoading(false);
     }
 
@@ -132,6 +147,12 @@ export default function PublicIndexPage() {
           if (mounted) load();
         }
       )
+      .on("postgres_changes", { event: "*", schema: "public", table: "seasons" }, () => {
+        if (mounted) load();
+      })
+      .on("postgres_changes", { event: "*", schema: "public", table: "organization_seasons" }, () => {
+        if (mounted) load();
+      })
       .subscribe();
 
     const poll = setInterval(() => {
@@ -154,6 +175,33 @@ export default function PublicIndexPage() {
     }
     return [...options].map(([id, name]) => ({ id, name })).sort((a, b) => a.name.localeCompare(b.name));
   }, [matches]);
+  const publicSeasonOptions = useMemo(() => {
+    const options = new Map<string, PublicSeasonOption>();
+    for (const season of publicSeasons) {
+      if (season.organization_id !== preferences?.organizationId) continue;
+      const key = season.organization_season_id || `legacy:${season.season_id}`;
+      const current = options.get(key);
+      if (current) {
+        current.seasonIds.push(season.season_id);
+        current.isCurrent ||= season.is_current;
+      } else {
+        options.set(key, {
+          key,
+          label: season.season_name,
+          seasonIds: [season.season_id],
+          isCurrent: season.is_current,
+        });
+      }
+    }
+    return [...options.values()].sort((a, b) => Number(b.isCurrent) - Number(a.isCurrent) || b.label.localeCompare(a.label));
+  }, [publicSeasons, preferences?.organizationId]);
+  const activePublicSeason = selectedPublicSeasonKey === "all"
+    ? null
+    : publicSeasonOptions.find((option) => option.key === selectedPublicSeasonKey)
+      || publicSeasonOptions.find((option) => option.isCurrent)
+      || publicSeasonOptions[0]
+      || null;
+  const activePublicSeasonKey = selectedPublicSeasonKey === "all" ? "all" : activePublicSeason?.key || "all";
   const availableTeams = useMemo(() => {
     const teams = new Map<number, string>();
     for (const match of matches) {
@@ -168,38 +216,37 @@ export default function PublicIndexPage() {
     if (!preferenceIsValid || !preferences) return [];
     return matches.filter((match) => match.organization_id === preferences.organizationId);
   }, [matches, preferences, preferenceIsValid]);
+  const seasonMatches = useMemo(() => {
+    if (activePublicSeasonKey === "all") return organizationMatches;
+    const seasonIds = new Set(activePublicSeason?.seasonIds || []);
+    return organizationMatches.filter((match) => match.season_id != null && seasonIds.has(match.season_id));
+  }, [organizationMatches, activePublicSeason, activePublicSeasonKey]);
   const counts = useMemo(() => {
-    const result: Record<MatchFilter, number> = { all: organizationMatches.length, scheduled: 0, live: 0, completed: 0 };
-    for (const match of organizationMatches) result[matchCategory(match.status)] += 1;
+    const result: Record<MatchFilter, number> = { all: seasonMatches.length, scheduled: 0, live: 0, completed: 0 };
+    for (const match of seasonMatches) result[matchCategory(match.status)] += 1;
     return result;
-  }, [organizationMatches]);
+  }, [seasonMatches]);
 
   const competitionOptions = useMemo(() => {
     const options = new Map<string, PublicCompetitionOption>();
     for (const match of organizationMatches) {
-      if (!match.competition_id) continue;
-      const seasonId = match.season_id || null;
-      const key = `${match.competition_id}:${seasonId || "legacy"}`;
-      if (!options.has(key)) {
-        options.set(key, {
-          key,
-          competitionId: match.competition_id,
-          seasonId,
-          label: [match.competition_name || "Competition", match.season_name || (seasonId ? "Season" : "All seasons")]
-            .filter(Boolean)
-            .join(" · "),
-        });
-      }
+      if (!match.competition_id || options.has(match.competition_id)) continue;
+      options.set(match.competition_id, {
+        competitionId: match.competition_id,
+        label: match.competition_name || "Competition",
+      });
     }
     return [...options.values()];
   }, [organizationMatches]);
 
-  const activeCompetition = competitionOptions.find((option) => option.key === selectedCompetitionKey)
+  const activeCompetition = competitionOptions.find((option) => option.competitionId === selectedCompetitionKey)
     || competitionOptions[0]
     || null;
-  const activeCompetitionKey = activeCompetition?.key || "";
   const activeCompetitionId = activeCompetition?.competitionId || "";
-  const activeSeasonId = activeCompetition?.seasonId || null;
+  const activeCompetitionSeasonId = activePublicSeason?.seasonIds
+    .map((seasonId) => publicSeasons.find((season) => season.season_id === seasonId && season.competition_id === activeCompetitionId)?.season_id)
+    .find((seasonId): seasonId is string => Boolean(seasonId)) || null;
+  const activeStatsKey = `${activeCompetitionId}:${activePublicSeasonKey}`;
   useEffect(() => {
     if (!activeCompetitionId || section === "matches") return;
     const sb = createPublicClient();
@@ -222,12 +269,16 @@ export default function PublicIndexPage() {
         .order("assists", { ascending: false })
         .order("player_name", { ascending: true });
 
-      if (activeSeasonId) {
-        standingsQuery = standingsQuery.eq("season_id", activeSeasonId);
-        playerStatsQuery = playerStatsQuery.eq("season_id", activeSeasonId);
-      } else {
-        standingsQuery = standingsQuery.is("season_id", null);
-        playerStatsQuery = playerStatsQuery.is("season_id", null);
+      if (activePublicSeasonKey !== "all") {
+        if (!activeCompetitionSeasonId) {
+          setStandings([]);
+          setPlayerStatistics([]);
+          setStatsError(null);
+          setLoadedStatsKey(activeStatsKey);
+          return;
+        }
+        standingsQuery = standingsQuery.eq("season_id", activeCompetitionSeasonId);
+        playerStatsQuery = playerStatsQuery.eq("season_id", activeCompetitionSeasonId);
       }
 
       const [{ data: standingsRows, error: standingsError }, { data: statRows, error: statsLoadError }] =
@@ -241,13 +292,13 @@ export default function PublicIndexPage() {
         setPlayerStatistics((statRows as PublicPlayerStatisticsRow[]) || []);
         setStatsError(null);
       }
-      setLoadedStatsKey(activeCompetitionKey);
+      setLoadedStatsKey(activeStatsKey);
     }
 
     void loadStats();
     const refresh = () => void loadStats();
     const channel = sb
-      .channel(`public-statistics-${activeCompetitionKey}`)
+      .channel(`public-statistics-${activeStatsKey}`)
       .on("postgres_changes", { event: "*", schema: "public", table: "fixtures" }, refresh)
       .on("postgres_changes", { event: "*", schema: "public", table: "match_events" }, refresh)
       .subscribe();
@@ -258,13 +309,13 @@ export default function PublicIndexPage() {
       clearInterval(poll);
       void sb.removeChannel(channel);
     };
-  }, [activeCompetitionId, activeCompetitionKey, activeSeasonId, section]);
+  }, [activeCompetitionId, activeCompetitionSeasonId, activePublicSeasonKey, activeStatsKey, section]);
 
   const visibleMatches = useMemo(() => {
     const selected =
       filter === "all"
-        ? organizationMatches
-        : organizationMatches.filter((match) => matchCategory(match.status) === filter);
+        ? seasonMatches
+        : seasonMatches.filter((match) => matchCategory(match.status) === filter);
 
     return [...selected].sort((a, b) => {
       const rank = (match: PublicMatchRow) =>
@@ -280,7 +331,7 @@ export default function PublicIndexPage() {
       }
       return `${a.date || ""} ${a.time || ""}`.localeCompare(`${b.date || ""} ${b.time || ""}`);
     });
-  }, [filter, organizationMatches]);
+  }, [filter, seasonMatches]);
 
   const savePreferences = () => {
     if (!draftOrganizationId) return;
@@ -335,6 +386,27 @@ export default function PublicIndexPage() {
           </div>
         </div>
       </header>
+
+      <label className="block max-w-sm">
+        <span className="mb-1.5 block text-xs font-semibold uppercase tracking-wider text-ink-3">Season</span>
+        <select
+          value={activePublicSeasonKey}
+          onChange={(event) => {
+            setSelectedPublicSeasonKey(event.target.value);
+            if (preferences) {
+              if (event.target.value === "all") localStorage.removeItem(`vfl-public-season-${preferences.organizationId}`);
+              else localStorage.setItem(`vfl-public-season-${preferences.organizationId}`, event.target.value);
+            }
+          }}
+          className="input w-full"
+          aria-label="Select season"
+        >
+          <option value="all">All seasons</option>
+          {publicSeasonOptions.map((option) => (
+            <option key={option.key} value={option.key}>{option.label}{option.isCurrent ? " · Current" : ""}</option>
+          ))}
+        </select>
+      </label>
 
       <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-line bg-surface-2/40 px-3 py-2.5">
         <p className="text-xs text-ink-2">{preferences?.displayName ? `Hi ${preferences.displayName} · ` : "Following "}{organizations.find((organization) => organization.id === preferences?.organizationId)?.name}{preferences?.teamIds.length ? ` · ${preferences.teamIds.map((id) => availableTeams.find((team) => team.id === id)?.name).filter(Boolean).join(", ")}` : " · all teams"}</p>
@@ -393,13 +465,13 @@ export default function PublicIndexPage() {
             <label className="block max-w-sm">
               <span className="mb-1.5 block text-xs font-semibold uppercase tracking-wider text-ink-3">Competition</span>
               <select
-                value={activeCompetitionKey}
+                value={activeCompetitionId}
                 onChange={(event) => setSelectedCompetitionKey(event.target.value)}
                 className="input w-full"
                 aria-label="Select competition and season"
               >
                 {competitionOptions.map((option) => (
-                  <option key={option.key} value={option.key}>{option.label}</option>
+                  <option key={option.competitionId} value={option.competitionId}>{option.label}</option>
                 ))}
               </select>
             </label>
@@ -407,7 +479,7 @@ export default function PublicIndexPage() {
 
           {competitionOptions.length === 0 ? (
             <div className="card p-6 text-center text-sm text-muted">Standings and player statistics will appear when public competition matches are available.</div>
-          ) : loadedStatsKey !== activeCompetitionKey ? (
+          ) : loadedStatsKey !== activeStatsKey ? (
             <div className="card p-6 text-center text-sm text-muted">Loading competition statistics…</div>
           ) : statsError ? (
             <div className="card p-6 text-center text-sm text-danger">{statsError}</div>

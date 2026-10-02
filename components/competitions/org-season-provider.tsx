@@ -1,6 +1,6 @@
 "use client";
 
-import { createContext, useContext, useEffect, useMemo, useCallback } from "react";
+import { createContext, useContext, useEffect, useMemo, useCallback, useRef } from "react";
 import { useParams, usePathname, useRouter, useSearchParams } from "next/navigation";
 import { useAppStore } from "@/lib/store";
 import { useOrg } from "@/lib/hooks/use-org";
@@ -78,6 +78,7 @@ export function OrgSeasonProvider({ children }: { children: React.ReactNode }) {
   const userProfile = useAppStore((s) => s.userProfile);
   const currentTeamAccount = useAppStore((s) => s.currentTeamAccount);
   const setCurrentOrgSeasonId = useAppStore((s) => s.setCurrentOrgSeasonId);
+  const setCurrentSeasonId = useAppStore((s) => s.setCurrentSeasonId);
   const setTeams = useAppStore((s) => s.setTeams);
   const setPlayers = useAppStore((s) => s.setPlayers);
   const setFixtures = useAppStore((s) => s.setFixtures);
@@ -99,6 +100,22 @@ export function OrgSeasonProvider({ children }: { children: React.ReactNode }) {
     seasons.find((s) => s.id === urlSeasonId)?.id ?? defaultSeason?.id ?? null;
   const selectedSeasonName =
     seasons.find((s) => s.id === selectedOrgSeasonId)?.name ?? null;
+
+  const previousSelectionRef = useRef({ orgSeasonId: selectedOrgSeasonId, isCompetitionPage });
+  useEffect(() => {
+    const previous = previousSelectionRef.current;
+    previousSelectionRef.current = { orgSeasonId: selectedOrgSeasonId, isCompetitionPage };
+    const seasonChanged = previous.orgSeasonId !== selectedOrgSeasonId;
+    const enteredOrgSeasonView = previous.isCompetitionPage && !isCompetitionPage;
+    if (isCompetitionPage || (!seasonChanged && !enteredOrgSeasonView)) return;
+    // Org seasons and competition seasons are different IDs. Clear the old
+    // competition-season standings key so widgets immediately use the newly
+    // selected org-season data written into the store below.
+    setCurrentSeasonId(null);
+    setTeams([]);
+    setPlayers([]);
+    setFixtures([]);
+  }, [selectedOrgSeasonId, isCompetitionPage, setCurrentSeasonId, setTeams, setPlayers, setFixtures]);
 
   // Backfill the default season into the URL so it persists across navigation.
   useEffect(() => {
@@ -159,11 +176,12 @@ export function OrgSeasonProvider({ children }: { children: React.ReactNode }) {
       const q = new URLSearchParams(searchParams.toString());
       q.set("season", seasonId);
       router.replace(`${pathname}?${q.toString()}`, { scroll: false });
+      setCurrentSeasonId(null);
       setTeams([]);
       setPlayers([]);
       setFixtures([]);
     },
-    [selectedOrgSeasonId, searchParams, pathname, router, setTeams, setPlayers, setFixtures]
+    [selectedOrgSeasonId, searchParams, pathname, router, setCurrentSeasonId, setTeams, setPlayers, setFixtures]
   );
 
   const value = useMemo(

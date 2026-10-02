@@ -456,6 +456,8 @@ export function useOrgSeasonTeams(
         `/api/teams?org_id=${orgId}&org_season_id=${orgSeasonId}`
       ).then((d) => d.teams),
     enabled: !!orgId && !!orgSeasonId,
+    staleTime: 5_000,
+    gcTime: 5 * 60_000,
   });
 }
 
@@ -470,6 +472,8 @@ export function useOrgSeasonPlayers(
         `/api/players?org_id=${orgId}&org_season_id=${orgSeasonId}`
       ).then((d) => d.players),
     enabled: !!orgId && !!orgSeasonId,
+    staleTime: 5_000,
+    gcTime: 5 * 60_000,
   });
 }
 
@@ -481,5 +485,7 @@ export function useOrgSeasonFixtures(slug: string | undefined, orgSeasonId: stri
         `/api/organizations/${slug}/fixtures?org_season_id=${orgSeasonId}`
       ).then((d) => d.fixtures),
     enabled: !!slug && !!orgSeasonId,
+    staleTime: 5_000,
+    gcTime: 5 * 60_000,
   });
 }
