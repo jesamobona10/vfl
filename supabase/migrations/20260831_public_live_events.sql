@@ -7,7 +7,7 @@ SELECT
   f.competition_id,
   f.season_id,
   c.organization_id,
-  o.public_player_names_enabled,
+  COALESCE(o.public_player_names_enabled, FALSE) AS public_player_names_enabled,
   f.home_team_id,
   ht.name AS home_team_name,
   ht.logo_url AS home_team_logo,
@@ -25,7 +25,7 @@ SELECT
   me.minute,
   me.team_id,
   CASE
-    WHEN o.public_player_names_enabled THEN p.name
+    WHEN COALESCE(o.public_player_names_enabled, FALSE) THEN p.name
     ELSE NULL
   END AS player_name,
   p.id AS player_id
