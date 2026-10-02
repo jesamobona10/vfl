@@ -3,7 +3,7 @@
 import { useCompetition, useSeasons } from "@/lib/hooks/use-competitions";
 import { useParams, usePathname } from "next/navigation";
 import Link from "next/link";
-import { Calendar, Trophy, Settings, Activity, ListOrdered } from "lucide-react";
+import { Calendar, Trophy, Settings, Activity, ListOrdered, Users, Shield } from "lucide-react";
 import { PageSkeleton } from "@/components/shared/skeleton";
 import { SeasonSelector } from "@/components/competitions/season-selector";
 import { useState, useEffect } from "react";
@@ -29,6 +29,8 @@ const tabs = [
   { href: "standings", label: "Standings", icon: Trophy },
   { href: "fixtures", label: "Fixtures", icon: Calendar },
   { href: "live", label: "Live", icon: Activity },
+  { href: "teams", label: "Teams", icon: Shield },
+  { href: "players", label: "Players", icon: Users },
   { href: "results", label: "Final Match Results", icon: ListOrdered },
   { href: "settings", label: "Settings", icon: Settings },
 ];

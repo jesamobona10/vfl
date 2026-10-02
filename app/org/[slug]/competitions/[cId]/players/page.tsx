@@ -10,7 +10,7 @@ import {
   useRegisterSeasonPlayers,
   useDeleteSeasonPlayer,
 } from "@/lib/hooks/use-competitions";
-import { Users, X, Plus, AlertCircle } from "lucide-react";
+import { Users, X, Plus, AlertCircle, UserRound, ChevronDown } from "lucide-react";
 import { PageSkeleton } from "@/components/shared/skeleton";
 import { useConfirm } from "@/components/shared/confirm-dialog";
 
@@ -75,7 +75,7 @@ export default function CompPlayersPage() {
 
   if (!seasonId) {
     return (
-      <div className="card p-8 text-center text-muted">Select a season to view its players.</div>
+      <div className="card rounded-2xl p-8 text-center text-muted">Select a season to view its players.</div>
     );
   }
 
@@ -135,50 +135,57 @@ export default function CompPlayersPage() {
   };
 
   return (
-    <div className="space-y-5">
+    <div className="space-y-6">
       {confirmDialog}
-      <div>
-        <h2 className="text-lg font-semibold">Players</h2>
-        <p className="text-sm text-muted">Season-scoped player registrations</p>
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
+        <div>
+          <p className="mb-1 text-xs font-semibold uppercase tracking-[0.12em] text-brand-600">Season roster</p>
+          <h2 className="text-xl font-semibold tracking-tight sm:text-2xl">Players</h2>
+          <p className="mt-1 text-sm text-muted">Manage the players registered to each team this season.</p>
+        </div>
+        <div className="inline-flex w-fit items-center gap-2 rounded-full bg-brand-50 px-3 py-1.5 text-xs font-medium text-brand-700">
+          <Users size={14} /> {seasonTeams.length} teams
+        </div>
       </div>
 
       {error && (
-        <div className="flex items-center gap-2 text-sm text-danger bg-danger/10 rounded-lg px-4 py-3">
+        <div className="flex items-center gap-2 rounded-xl border border-danger/20 bg-danger/10 px-4 py-3 text-sm text-danger">
           <AlertCircle size={16} /> {error}
         </div>
       )}
 
-      <div className="space-y-4">
+      <div className="grid gap-3 sm:gap-4">
         {seasonTeams.map((st: any) => {
           const isOpen = openTeamId === st.id;
           const isRegisterOpen = registerOpenTeamId === st.id;
           return (
-            <div key={st.id} className="card overflow-hidden">
-              <div className="flex items-center justify-between p-4 gap-3">
+            <div key={st.id} className={`card overflow-hidden rounded-2xl transition-colors ${isOpen || isRegisterOpen ? "border-brand-600/30" : "hover:border-brand-600/20"}`}>
+              <div className="flex flex-col gap-3 p-4 sm:flex-row sm:items-center sm:justify-between sm:px-5">
                 <button
                   onClick={() => {
                     setOpenTeamId(isOpen ? null : st.id);
                     setRegisterOpenTeamId(null);
                     setSelectedPlayerIds([]);
                   }}
-                  className="flex items-center gap-3 min-w-0 flex-1 text-left hover:opacity-80 transition-opacity"
+                  className="flex min-w-0 flex-1 items-center gap-3 text-left transition-opacity hover:opacity-80"
                 >
                   {st.team?.logo_url || st.logo_url ? (
                     <img
                       src={st.team?.logo_url || st.logo_url}
                       alt=""
-                      className="w-8 h-8 rounded-full object-cover"
+                      className="h-11 w-11 rounded-xl border border-line bg-surface object-cover"
                     />
                   ) : (
-                    <div className="w-8 h-8 rounded-full bg-surface-2 flex items-center justify-center text-sm text-muted">
+                    <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-brand-50 text-sm font-semibold text-brand-700">
                       {(st.display_name || st.team?.name || "?").charAt(0)}
                     </div>
                   )}
-                  <span className="font-medium truncate">{st.display_name || st.team?.name}</span>
+                  <span className="truncate font-semibold">{st.display_name || st.team?.name}</span>
+                  <ChevronDown size={16} className={`ml-auto shrink-0 text-ink-3 transition-transform sm:ml-0 ${isOpen ? "rotate-180" : ""}`} />
                 </button>
-                <div className="flex items-center gap-3 shrink-0">
-                  <span className="text-xs text-muted">
-                    {isOpen ? openTeamPlayers.length : "—"} players
+                <div className="flex shrink-0 items-center justify-between gap-3 sm:justify-end">
+                  <span className="inline-flex items-center gap-1.5 rounded-full bg-surface-2 px-2.5 py-1 text-xs text-muted">
+                    <UserRound size={13} /> {isOpen ? openTeamPlayers.length : "—"} players
                   </span>
                   <button
                     onClick={() => {
