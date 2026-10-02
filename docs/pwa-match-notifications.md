@@ -15,5 +15,5 @@
 - The service worker handles Web Push while the site is closed or in the background.
 - Match start, full-time, scoreline, goals, assists, cards, and other recorded match events send push alerts.
 - Half-time is detected from the live clock by an open public match page, then deduplicated on the fixture before sending. Without a scheduled server-side job, half-time push delivery needs a visitor to have a live match page open during the half-time window.
-- Public player names and photos follow the existing organization setting. An organization must enable **Public player names** before either appears on the public event timeline or in goal/assist/card alerts.
+- Public player names follow the organization setting. An organization must enable **Public player names** before names appear on the public event timeline or in goal/assist/card alerts.
 - The live page subscribes to Supabase Realtime and refreshes a 20-second fallback poll; routine event updates no longer wait for the old three-second poll interval.
