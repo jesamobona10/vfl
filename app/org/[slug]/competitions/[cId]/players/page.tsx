@@ -6,6 +6,7 @@ import Link from "next/link";
 import { useOrg } from "@/lib/hooks/use-org";
 import {
   useSeasonTeams,
+  useSeasonPlayers,
   useSeasonTeamPlayers,
   useRegisterSeasonPlayers,
   useDeleteSeasonPlayer,
@@ -23,6 +24,9 @@ export default function CompPlayersPage() {
 
   const { data: currentOrg } = useOrg(slug);
   const { data: seasonTeams = [], isLoading } = useSeasonTeams(seasonId || undefined);
+  const { data: seasonPlayers = [], isLoading: isLoadingPlayerCounts } = useSeasonPlayers(
+    seasonId || undefined
+  );
 
   const [openTeamId, setOpenTeamId] = useState<string | null>(null);
   const [error, setError] = useState("");
@@ -64,6 +68,13 @@ export default function CompPlayersPage() {
       }),
     [orgPlayers, openTeamRealId, registeredPlayerIds]
   );
+  const playerCountsByTeam = useMemo(() => {
+    const counts = new Map<string, number>();
+    for (const registration of seasonPlayers) {
+      counts.set(registration.season_team_id, (counts.get(registration.season_team_id) || 0) + 1);
+    }
+    return counts;
+  }, [seasonPlayers]);
 
   if (isLoading) {
     return (
@@ -185,7 +196,7 @@ export default function CompPlayersPage() {
                 </button>
                 <div className="flex shrink-0 items-center justify-between gap-3 sm:justify-end">
                   <span className="inline-flex items-center gap-1.5 rounded-full bg-surface-2 px-2.5 py-1 text-xs text-muted">
-                    <UserRound size={13} /> {isOpen ? openTeamPlayers.length : "—"} players
+                    <UserRound size={13} /> {isLoadingPlayerCounts ? "…" : (playerCountsByTeam.get(st.id) || 0)} players
                   </span>
                   <button
                     onClick={() => {
