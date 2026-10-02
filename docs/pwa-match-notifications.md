@@ -2,7 +2,7 @@
 
 ## Deployment setup
 
-1. Apply `supabase/migrations/20261002_pwa_match_notifications.sql` and `supabase/migrations/20261002130000_public_event_player_names.sql` to the Supabase project before deploying the app update. They create the private push-subscription store, add the half-time deduplication field, extend the public match views, and expose linked player names in public events.
+1. Apply `supabase/migrations/20261002_pwa_match_notifications.sql`, `supabase/migrations/20261002130000_public_event_player_names.sql`, and `supabase/migrations/20261002140000_public_match_standings_stats.sql` to the Supabase project before deploying the app update. They create the private push-subscription store, extend the public match views, expose linked player names, and add public standings/player-statistics views.
 2. Generate one VAPID key pair with `npx web-push generate-vapid-keys --json`. Keep the private key secret and reuse the same pair across deployments.
 3. Configure these Vercel environment variables for each deployment environment:
    - `NEXT_PUBLIC_VAPID_PUBLIC_KEY`: generated public key.

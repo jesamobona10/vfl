@@ -837,6 +837,41 @@ export interface PublicMatchRow {
   away_team_logo?: string | null;
   live_started_at?: string | null;
   competition_id?: string | null;
+  season_id?: string | null;
+  competition_name?: string | null;
+  season_name?: string | null;
+  home_team_id?: number | null;
+  away_team_id?: number | null;
   halftime_minutes?: number;
   stoppage_minutes?: number;
+}
+
+export interface PublicStandingRow {
+  competition_id: string;
+  season_id: string | null;
+  team_id: number;
+  team_name: string;
+  team_logo: string | null;
+  played: number;
+  won: number;
+  drawn: number;
+  lost: number;
+  gf: number;
+  ga: number;
+  gd: number;
+  points: number;
+}
+
+export interface PublicPlayerStatisticsRow {
+  competition_id: string;
+  season_id: string | null;
+  player_id: number;
+  player_name: string;
+  team_id: number;
+  team_name: string;
+  goals: number;
+  assists: number;
+  yellow_cards: number;
+  red_cards: number;
+  appearances: number;
 }
