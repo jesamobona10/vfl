@@ -7,7 +7,7 @@ const CSP_DIRECTIVES = [
   "script-src 'self' 'unsafe-eval' 'unsafe-inline'",
   "style-src 'self' 'unsafe-inline'",
   `img-src 'self' blob: data: https://${supabaseHostname}`,
-  `connect-src 'self' https://${supabaseHostname}`,
+  `connect-src 'self' https://${supabaseHostname} wss://${supabaseHostname} https://vercel.live wss://ws-us3.pusher.com wss://*.pusher.com`,
   "font-src 'self'",
   "object-src 'none'",
   "base-uri 'self'",

@@ -102,7 +102,7 @@ function secure(response: NextResponse) {
   const isDev = process.env.NODE_ENV !== "production";
   response.headers.set(
     "Content-Security-Policy",
-    `default-src 'self'; script-src 'self' 'unsafe-inline' https://vercel.live${isDev ? " 'unsafe-eval'" : ""}; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https:; font-src 'self' https://vercel.live; connect-src 'self' ${supabaseUrl} https://vercel.live wss://ws-us3.pusher.com wss://*.pusher.com; frame-src https://vercel.live; frame-ancestors 'none';`
+    `default-src 'self'; script-src 'self' 'unsafe-inline' https://vercel.live${isDev ? " 'unsafe-eval'" : ""}; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https:; font-src 'self' https://vercel.live; connect-src 'self' ${supabaseUrl} ${supabaseUrl.replace(/^https:/, "wss:")} https://vercel.live wss://ws-us3.pusher.com wss://*.pusher.com; frame-src https://vercel.live; frame-ancestors 'none';`
   );
   if (process.env.NODE_ENV === "production") {
     response.headers.set(

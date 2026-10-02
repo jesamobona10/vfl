@@ -84,7 +84,8 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   const [fetchingOrgData, setFetchingOrgData] = useState(false);
   const [isSearchOpen, setSearchOpen] = useState(false);
   const [isDrawerOpen, setDrawerOpen] = useState(false);
-  const isPublicPath = publicPaths.has(pathname);
+  const isPublicPath =
+    publicPaths.has(pathname) || pathname === "/public" || pathname.startsWith("/public/");
   const isPlayer = userProfile?.role === "player";
   const isOrgAdmin = userProfile?.role === "org_admin";
   const isAuthenticated = currentTeamAccount !== null || isAdmin || isPlayer || isOrgAdmin;
