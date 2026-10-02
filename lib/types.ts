@@ -801,3 +801,23 @@ export interface PublicLiveEventRow {
   player_name: string | null;
   player_id: number | null;
 }
+
+export interface PublicScheduledFixtureRow {
+  match_id: number;
+  round: number;
+  competition_id: string;
+  season_id: string;
+  organization_id: string;
+  home_team_id: number;
+  home_team_name: string;
+  home_team_logo?: string | null;
+  away_team_id: number;
+  away_team_name: string;
+  away_team_logo?: string | null;
+  home_score: number | null;
+  away_score: number | null;
+  status: string;
+  date: string | null;
+  time: string | null;
+  venue: string | null;
+}
