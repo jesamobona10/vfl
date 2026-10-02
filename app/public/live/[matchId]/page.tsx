@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
-import { useParams } from "next/navigation";
+import { useParams, useRouter } from "next/navigation";
 import Image from "next/image";
 import Link from "next/link";
 import { ArrowLeft, MapPin } from "lucide-react";
@@ -9,6 +9,7 @@ import { useLiveClock } from "@/components/live/live-clock";
 import type { LiveClockSettings } from "@/lib/logic/live";
 import { createPublicClient } from "@/lib/supabase/public";
 import type { PublicLiveEventRow, PublicMatchRow } from "@/lib/types";
+import { readPublicPreferences } from "@/lib/public-preferences";
 
 type Event = PublicLiveEventRow;
 
@@ -57,6 +58,7 @@ function StatusBadge({ match, minute }: { match: PublicMatchRow; minute: string 
 
 export default function PublicLiveMatchPage() {
   const params = useParams();
+  const router = useRouter();
   const matchId = Number(params.matchId);
   const [match, setMatch] = useState<PublicMatchRow | null>(null);
   const [events, setEvents] = useState<Event[]>([]);
@@ -102,9 +104,24 @@ export default function PublicLiveMatchPage() {
       if (matchError || eventsError) {
         setError("Unable to load match updates. Please try again.");
       } else {
-        setMatch((matchRow as PublicMatchRow | null) || null);
-        setEvents((eventRows as Event[]) || []);
-        setError(null);
+        const loadedMatch = (matchRow as PublicMatchRow | null) || null;
+        const preferences = readPublicPreferences();
+        if (!preferences) {
+          router.replace("/public");
+          return;
+        }
+        const followsMatch = Boolean(loadedMatch && loadedMatch.organization_id === preferences.organizationId && (
+          !preferences.teamIds.length || preferences.teamIds.includes(loadedMatch.home_team_id || -1) || preferences.teamIds.includes(loadedMatch.away_team_id || -1)
+        ));
+        if (!followsMatch) {
+          setError("This match is outside your followed organization or teams. Update your preferences to see it.");
+          setMatch(null);
+          setEvents([]);
+        } else {
+          setMatch(loadedMatch);
+          setEvents((eventRows as Event[]) || []);
+          setError(null);
+        }
       }
       setLoading(false);
     }
@@ -136,7 +153,7 @@ export default function PublicLiveMatchPage() {
       if (refreshTimer) clearTimeout(refreshTimer);
       void sb.removeChannel(channel);
     };
-  }, [matchId]);
+  }, [matchId, router]);
 
   useEffect(() => {
     if (phase?.label !== "HT" || halftimeRequestFor.current === matchId) return;

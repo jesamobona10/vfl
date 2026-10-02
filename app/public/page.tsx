@@ -1,15 +1,18 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState, useSyncExternalStore } from "react";
 import Link from "next/link";
 import Image from "next/image";
-import { ArrowRight, BarChart3, CalendarClock, MapPin, Radio, Trophy } from "lucide-react";
+import { ArrowRight, BarChart3, CalendarClock, MapPin, Radio, Settings2, Trophy } from "lucide-react";
 import { createPublicClient } from "@/lib/supabase/public";
 import type { PublicMatchRow, PublicPlayerStatisticsRow, PublicStandingRow } from "@/lib/types";
 import { PushSubscriptionControl } from "@/components/public/push-subscription";
+import { Modal } from "@/components/ui/modal";
+import { readPublicPreferences, savePublicPreferences, type PublicPreferences } from "@/lib/public-preferences";
 
 type MatchFilter = "all" | "scheduled" | "live" | "completed";
 type PublicSection = "matches" | "standings" | "players";
+const noSubscribe = () => () => {};
 
 interface PublicCompetitionOption {
   key: string;
@@ -81,6 +84,12 @@ export default function PublicIndexPage() {
   const [statsError, setStatsError] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [preferences, setPreferences] = useState<PublicPreferences | null>(() => typeof window === "undefined" ? null : readPublicPreferences());
+  const preferencesReady = useSyncExternalStore(noSubscribe, () => true, () => false);
+  const [preferencesOpen, setPreferencesOpen] = useState(false);
+  const [draftName, setDraftName] = useState(() => typeof window === "undefined" ? "" : readPublicPreferences()?.displayName || "");
+  const [draftOrganizationId, setDraftOrganizationId] = useState(() => typeof window === "undefined" ? "" : readPublicPreferences()?.organizationId || "");
+  const [draftTeamIds, setDraftTeamIds] = useState<number[]>(() => typeof window === "undefined" ? [] : readPublicPreferences()?.teamIds || []);
 
   useEffect(() => {
     const sb = createPublicClient();
@@ -138,20 +147,40 @@ export default function PublicIndexPage() {
     };
   }, []);
 
-  const counts = useMemo(() => {
-    const result: Record<MatchFilter, number> = {
-      all: matches.length,
-      scheduled: 0,
-      live: 0,
-      completed: 0,
-    };
-    for (const match of matches) result[matchCategory(match.status)] += 1;
-    return result;
+  const organizations = useMemo(() => {
+    const options = new Map<string, string>();
+    for (const match of matches) {
+      if (match.organization_id && match.organization_name) options.set(match.organization_id, match.organization_name);
+    }
+    return [...options].map(([id, name]) => ({ id, name })).sort((a, b) => a.name.localeCompare(b.name));
   }, [matches]);
+  const availableTeams = useMemo(() => {
+    const teams = new Map<number, string>();
+    for (const match of matches) {
+      if (match.organization_id !== draftOrganizationId) continue;
+      if (match.home_team_id) teams.set(match.home_team_id, match.home_team_name);
+      if (match.away_team_id) teams.set(match.away_team_id, match.away_team_name);
+    }
+    return [...teams].map(([id, name]) => ({ id, name })).sort((a, b) => a.name.localeCompare(b.name));
+  }, [matches, draftOrganizationId]);
+  const preferenceIsValid = Boolean(preferences && organizations.some((organization) => organization.id === preferences.organizationId));
+  const followedMatches = useMemo(() => {
+    if (!preferenceIsValid || !preferences) return [];
+    return matches.filter((match) => {
+      if (match.organization_id !== preferences.organizationId) return false;
+      if (!preferences.teamIds.length) return true;
+      return preferences.teamIds.includes(match.home_team_id || -1) || preferences.teamIds.includes(match.away_team_id || -1);
+    });
+  }, [matches, preferences, preferenceIsValid]);
+  const counts = useMemo(() => {
+    const result: Record<MatchFilter, number> = { all: followedMatches.length, scheduled: 0, live: 0, completed: 0 };
+    for (const match of followedMatches) result[matchCategory(match.status)] += 1;
+    return result;
+  }, [followedMatches]);
 
   const competitionOptions = useMemo(() => {
     const options = new Map<string, PublicCompetitionOption>();
-    for (const match of matches) {
+    for (const match of followedMatches) {
       if (!match.competition_id) continue;
       const seasonId = match.season_id || null;
       const key = `${match.competition_id}:${seasonId || "legacy"}`;
@@ -167,7 +196,7 @@ export default function PublicIndexPage() {
       }
     }
     return [...options.values()];
-  }, [matches]);
+  }, [followedMatches]);
 
   const activeCompetition = competitionOptions.find((option) => option.key === selectedCompetitionKey)
     || competitionOptions[0]
@@ -175,6 +204,7 @@ export default function PublicIndexPage() {
   const activeCompetitionKey = activeCompetition?.key || "";
   const activeCompetitionId = activeCompetition?.competitionId || "";
   const activeSeasonId = activeCompetition?.seasonId || null;
+  const selectedTeamKey = (preferences?.teamIds || []).join(",");
 
   useEffect(() => {
     if (!activeCompetitionId || section === "matches") return;
@@ -213,8 +243,9 @@ export default function PublicIndexPage() {
       if (standingsError || statsLoadError) {
         setStatsError("Unable to load public standings and player statistics.");
       } else {
-        setStandings((standingsRows as PublicStandingRow[]) || []);
-        setPlayerStatistics((statRows as PublicPlayerStatisticsRow[]) || []);
+        const selectedTeams = selectedTeamKey ? selectedTeamKey.split(",").map(Number) : [];
+        setStandings(((standingsRows as PublicStandingRow[]) || []).filter((row) => !selectedTeams.length || selectedTeams.includes(row.team_id)));
+        setPlayerStatistics(((statRows as PublicPlayerStatisticsRow[]) || []).filter((row) => !selectedTeams.length || selectedTeams.includes(row.team_id)));
         setStatsError(null);
       }
       setLoadedStatsKey(activeCompetitionKey);
@@ -234,13 +265,13 @@ export default function PublicIndexPage() {
       clearInterval(poll);
       void sb.removeChannel(channel);
     };
-  }, [activeCompetitionId, activeCompetitionKey, activeSeasonId, section]);
+  }, [activeCompetitionId, activeCompetitionKey, activeSeasonId, selectedTeamKey, section]);
 
   const visibleMatches = useMemo(() => {
     const selected =
       filter === "all"
-        ? matches
-        : matches.filter((match) => matchCategory(match.status) === filter);
+        ? followedMatches
+        : followedMatches.filter((match) => matchCategory(match.status) === filter);
 
     return [...selected].sort((a, b) => {
       const rank = (match: PublicMatchRow) =>
@@ -256,7 +287,43 @@ export default function PublicIndexPage() {
       }
       return `${a.date || ""} ${a.time || ""}`.localeCompare(`${b.date || ""} ${b.time || ""}`);
     });
-  }, [filter, matches]);
+  }, [filter, followedMatches]);
+
+  const savePreferences = () => {
+    if (!draftOrganizationId) return;
+    const next: PublicPreferences = {
+      displayName: draftName.trim().slice(0, 80),
+      organizationId: draftOrganizationId,
+      teamIds: [...new Set(draftTeamIds)].filter((id) => availableTeams.some((team) => team.id === id)),
+    };
+    savePublicPreferences(next);
+    setPreferences(next);
+    setPreferencesOpen(false);
+    setFilter("all");
+    setSelectedCompetitionKey("");
+  };
+
+  if (!preferencesReady || loading && !preferences) {
+    return <div className="mx-auto max-w-4xl p-6 text-center text-sm text-muted">Loading your match centre…</div>;
+  }
+
+  if (!preferenceIsValid) {
+    return (
+      <div className="mx-auto max-w-xl space-y-5 p-4 py-10 sm:p-6 sm:py-16">
+        <div className="card space-y-5 p-5 sm:p-7">
+          <div><span className="text-xs font-bold uppercase tracking-widest text-brand">Personalize match updates</span><h1 className="mt-2 text-2xl font-bold">Choose what you follow</h1><p className="mt-2 text-sm text-ink-3">Select an organization and optionally one or more teams. This public page stays available without an account.</p></div>
+          {error ? <p className="text-sm text-danger">{error}</p> : (
+            <>
+              <label className="block"><span className="mb-1.5 block text-xs font-semibold text-ink-2">Your name <span className="font-normal text-ink-3">(optional)</span></span><input className="input w-full" maxLength={80} value={draftName} onChange={(event) => setDraftName(event.target.value)} placeholder="How should we address you?" /></label>
+              <label className="block"><span className="mb-1.5 block text-xs font-semibold text-ink-2">Organization</span><select className="input w-full" value={draftOrganizationId} onChange={(event) => { setDraftOrganizationId(event.target.value); setDraftTeamIds([]); }}><option value="">Choose an organization</option>{organizations.map((organization) => <option key={organization.id} value={organization.id}>{organization.name}</option>)}</select></label>
+              {draftOrganizationId && <fieldset className="space-y-2"><legend className="mb-2 text-xs font-semibold text-ink-2">Teams <span className="font-normal text-ink-3">(leave all unchecked to follow every team)</span></legend><div className="max-h-52 space-y-1 overflow-y-auto rounded-xl border border-line p-2">{availableTeams.map((team) => <label key={team.id} className="flex cursor-pointer items-center gap-2 rounded-lg px-2 py-2 text-sm hover:bg-surface-2"><input type="checkbox" checked={draftTeamIds.includes(team.id)} onChange={(event) => setDraftTeamIds((current) => event.target.checked ? [...current, team.id] : current.filter((id) => id !== team.id))} />{team.name}</label>)}</div></fieldset>}
+              <button type="button" className="btn-primary w-full" disabled={!draftOrganizationId} onClick={savePreferences}>Save preferences and continue</button>
+            </>
+          )}
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="mx-auto max-w-4xl space-y-6 p-4 sm:p-6">
@@ -276,7 +343,18 @@ export default function PublicIndexPage() {
         </div>
       </header>
 
-      <PushSubscriptionControl />
+      <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-line bg-surface-2/40 px-3 py-2.5">
+        <p className="text-xs text-ink-2">{preferences?.displayName ? `Hi ${preferences.displayName} · ` : "Following "}{organizations.find((organization) => organization.id === preferences?.organizationId)?.name}{preferences?.teamIds.length ? ` · ${preferences.teamIds.map((id) => availableTeams.find((team) => team.id === id)?.name).filter(Boolean).join(", ")}` : " · all teams"}</p>
+        <button type="button" className="btn-secondary inline-flex items-center gap-1.5 px-3 py-2 text-xs" onClick={() => { setDraftName(preferences?.displayName || ""); setDraftOrganizationId(preferences?.organizationId || ""); setDraftTeamIds(preferences?.teamIds || []); setPreferencesOpen(true); }}><Settings2 size={14} /> Change preferences</button>
+      </div>
+      <PushSubscriptionControl preferences={preferences!} />
+      <Modal open={preferencesOpen} onClose={() => setPreferencesOpen(false)} title="Your match updates" subtitle="Choose the organization and teams shown in your public match centre." footer={<div className="flex justify-end gap-2"><button type="button" className="btn-secondary px-4 py-2 text-sm" onClick={() => setPreferencesOpen(false)}>Cancel</button><button type="button" className="btn-primary px-4 py-2 text-sm" disabled={!draftOrganizationId} onClick={savePreferences}>Save preferences</button></div>}>
+        <div className="space-y-4">
+          <label className="block"><span className="mb-1.5 block text-xs font-semibold text-ink-2">Your name <span className="font-normal text-ink-3">(optional)</span></span><input className="input w-full" maxLength={80} value={draftName} onChange={(event) => setDraftName(event.target.value)} /></label>
+          <label className="block"><span className="mb-1.5 block text-xs font-semibold text-ink-2">Organization</span><select className="input w-full" value={draftOrganizationId} onChange={(event) => { setDraftOrganizationId(event.target.value); setDraftTeamIds([]); }}><option value="">Choose an organization</option>{organizations.map((organization) => <option key={organization.id} value={organization.id}>{organization.name}</option>)}</select></label>
+          {draftOrganizationId && <fieldset className="space-y-2"><legend className="mb-2 text-xs font-semibold text-ink-2">Teams <span className="font-normal text-ink-3">(leave all unchecked to follow every team)</span></legend><div className="max-h-52 space-y-1 overflow-y-auto rounded-xl border border-line p-2">{availableTeams.map((team) => <label key={team.id} className="flex cursor-pointer items-center gap-2 rounded-lg px-2 py-2 text-sm hover:bg-surface-2"><input type="checkbox" checked={draftTeamIds.includes(team.id)} onChange={(event) => setDraftTeamIds((current) => event.target.checked ? [...current, team.id] : current.filter((id) => id !== team.id))} />{team.name}</label>)}</div></fieldset>}
+        </div>
+      </Modal>
 
       <nav className="flex gap-2 rounded-2xl border border-line bg-surface-2/50 p-1.5" aria-label="Public match centre sections">
         {([

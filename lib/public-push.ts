@@ -6,6 +6,8 @@ export interface PublicPushPayload {
   title: string;
   body: string;
   matchId: number;
+  /** When set, deliver event alerts only to followers of this team. */
+  teamId?: number;
 }
 
 function vapidConfig() {
@@ -22,32 +24,50 @@ async function deliverPublicPush(payload: PublicPushPayload) {
 
   webpush.setVapidDetails(config.subject, config.publicKey, config.privateKey);
   const supabase = createServiceRoleClient();
+  const { data: match, error: matchError } = await supabase
+    .from("public_matches")
+    .select("organization_id, home_team_id, away_team_id")
+    .eq("match_id", payload.matchId)
+    .maybeSingle();
+  if (matchError) throw matchError;
+  if (!match?.organization_id) return;
+
   const { data: subscriptions, error } = await supabase
     .from("public_push_subscriptions")
-    .select("endpoint, p256dh, auth")
+    .select("endpoint, p256dh, auth, display_name, team_ids")
+    .eq("organization_id", match.organization_id)
     .limit(5000);
 
   if (error) throw error;
   if (!subscriptions?.length) return;
 
-  const body = JSON.stringify({
-    title: payload.title,
-    body: payload.body,
-    url: `/public/live/${payload.matchId}`,
-    tag: `match-${payload.matchId}`,
+  const relevantTeamIds = payload.teamId
+    ? [payload.teamId]
+    : [match.home_team_id, match.away_team_id].filter((id): id is number => typeof id === "number");
+  const matchedSubscriptions = subscriptions.filter((subscription) => {
+    const selectedTeams = (subscription.team_ids || []) as number[];
+    return selectedTeams.length === 0 || relevantTeamIds.some((teamId) => selectedTeams.includes(teamId));
   });
+  if (!matchedSubscriptions.length) return;
 
   const results = await Promise.allSettled(
-    subscriptions.map((subscription) =>
-      webpush.sendNotification(
+    matchedSubscriptions.map((subscription) => {
+      const name = typeof subscription.display_name === "string" ? subscription.display_name.trim() : "";
+      const body = JSON.stringify({
+        title: payload.title,
+        body: name ? `${name}, ${payload.body}` : payload.body,
+        url: `/public/live/${payload.matchId}`,
+        tag: `match-${payload.matchId}`,
+      });
+      return webpush.sendNotification(
         {
           endpoint: subscription.endpoint,
           keys: { p256dh: subscription.p256dh, auth: subscription.auth },
         },
         body,
         { TTL: 60 * 60, urgency: "high" }
-      )
-    )
+      );
+    })
   );
 
   const expiredEndpoints = results.flatMap((result, index) => {
@@ -56,7 +76,7 @@ async function deliverPublicPush(payload: PublicPushPayload) {
       result.reason instanceof WebPushError &&
       (result.reason.statusCode === 404 || result.reason.statusCode === 410)
     ) {
-      return [subscriptions[index].endpoint];
+      return [matchedSubscriptions[index].endpoint];
     }
     return [];
   });
@@ -69,7 +89,7 @@ async function deliverPublicPush(payload: PublicPushPayload) {
   if (failed > expiredEndpoints.length) {
     console.error("Some public match push notifications could not be delivered", {
       failed: failed - expiredEndpoints.length,
-      total: subscriptions.length,
+      total: matchedSubscriptions.length,
       matchId: payload.matchId,
     });
   }

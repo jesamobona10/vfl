@@ -165,6 +165,7 @@ export async function POST(request: Request, props: { params: Promise<{ id: stri
       title: eventType === "goal" || eventType === "own-goal" ? "Goal scored" : "Match update",
       body: `${eventDescription[eventType]}${minute ? ` ${minute}′` : ""}`,
       matchId: fixtureId,
+      teamId,
     });
 
     return json({ event: data });

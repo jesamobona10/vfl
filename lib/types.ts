@@ -842,6 +842,8 @@ export interface PublicMatchRow {
   season_name?: string | null;
   home_team_id?: number | null;
   away_team_id?: number | null;
+  organization_id?: string | null;
+  organization_name?: string | null;
   halftime_minutes?: number;
   stoppage_minutes?: number;
 }

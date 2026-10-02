@@ -34,17 +34,41 @@ export async function POST(request: Request) {
     const endpoint = body?.endpoint;
     const p256dh = body?.keys?.p256dh;
     const auth = body?.keys?.auth;
+    const preferences = body?.preferences;
+    const organizationId = preferences?.organizationId;
+    const displayName = typeof preferences?.displayName === "string" ? preferences.displayName.trim() : "";
+    const teamIds: number[] = Array.isArray(preferences?.teamIds) ? preferences.teamIds : [];
     if (
       !isSupportedPushEndpoint(endpoint) ||
       typeof p256dh !== "string" || p256dh.length > 256 ||
-      typeof auth !== "string" || auth.length > 256
+      typeof auth !== "string" || auth.length > 256 ||
+      typeof organizationId !== "string" || !/^[0-9a-f-]{36}$/i.test(organizationId) ||
+      displayName.length > 80 || teamIds.length > 50 ||
+      teamIds.some((id) => !Number.isSafeInteger(id) || id <= 0)
     ) {
-      return json({ error: "Invalid push subscription." }, { status: 400 });
+      return json({ error: "Invalid push subscription or match preferences." }, { status: 400 });
     }
 
     const supabase = createServiceRoleClient();
+    const { data: publicMatches, error: matchesError } = await supabase
+      .from("public_matches")
+      .select("home_team_id, away_team_id")
+      .eq("organization_id", organizationId);
+    if (matchesError) throw matchesError;
+    if (!publicMatches?.length) return json({ error: "Choose an organization with public matches." }, { status: 400 });
+    const validTeamIds = new Set(publicMatches.flatMap((match) => [match.home_team_id, match.away_team_id]).filter((id): id is number => typeof id === "number"));
+    if (teamIds.some((id) => !validTeamIds.has(id))) return json({ error: "One or more selected teams are unavailable." }, { status: 400 });
+
     const { error } = await supabase.from("public_push_subscriptions").upsert(
-      { endpoint, p256dh, auth, updated_at: new Date().toISOString() },
+      {
+        endpoint,
+        p256dh,
+        auth,
+        display_name: displayName || null,
+        organization_id: organizationId,
+        team_ids: [...new Set(teamIds)],
+        updated_at: new Date().toISOString(),
+      },
       { onConflict: "endpoint" }
     );
     if (error) throw error;

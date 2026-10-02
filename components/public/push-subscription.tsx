@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { Bell, BellOff } from "lucide-react";
+import type { PublicPreferences } from "@/lib/public-preferences";
 
 function decodeApplicationServerKey(base64Url: string) {
   const padding = "=".repeat((4 - (base64Url.length % 4)) % 4);
@@ -10,7 +11,7 @@ function decodeApplicationServerKey(base64Url: string) {
   return Uint8Array.from(raw, (character) => character.charCodeAt(0));
 }
 
-export function PushSubscriptionControl() {
+export function PushSubscriptionControl({ preferences }: { preferences: PublicPreferences }) {
   const [publicKey, setPublicKey] = useState<string | null>(null);
   const [subscription, setSubscription] = useState<PushSubscription | null>(null);
   const [busy, setBusy] = useState(false);
@@ -42,6 +43,15 @@ export function PushSubscriptionControl() {
     };
   }, []);
 
+  useEffect(() => {
+    if (!subscription || !preferences) return;
+    fetch("/api/public/push-subscriptions", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ ...subscription.toJSON(), preferences }),
+    }).catch(() => {});
+  }, [subscription, preferences]);
+
   const toggleSubscription = async () => {
     if (!publicKey || busy) return;
     setBusy(true);
@@ -70,7 +80,7 @@ export function PushSubscriptionControl() {
         const response = await fetch("/api/public/push-subscriptions", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(created.toJSON()),
+          body: JSON.stringify({ ...created.toJSON(), preferences }),
         });
         if (!response.ok) {
           await created.unsubscribe();
@@ -98,7 +108,7 @@ export function PushSubscriptionControl() {
         className="btn-secondary inline-flex items-center gap-2 px-3 py-2 text-xs"
       >
         {subscription ? <BellOff size={15} /> : <Bell size={15} />}
-        {busy ? "Saving..." : subscription ? "Turn off match alerts" : "Notify me about match updates"}
+        {busy ? "Saving..." : subscription ? "Turn off match alerts" : "Enable alerts for my teams"}
       </button>
       {message && <p className="w-full text-xs text-ink-3" role="status">{message}</p>}
       {permissionDenied && (
