@@ -49,7 +49,21 @@ export default function CompPlayersPage() {
     () => new Set(openTeamPlayers.map((p: any) => p.player_id)),
     [openTeamPlayers]
   );
-  const availableForTeam = orgPlayers.filter((p) => !registeredPlayerIds.has(p.id));
+  const openTeam = useMemo(
+    () => seasonTeams.find((st: any) => st.id === openTeamId),
+    [seasonTeams, openTeamId]
+  );
+  const openTeamRealId = openTeam?.team_id ?? openTeam?.team?.id;
+  const availableForTeam = useMemo(
+    () =>
+      orgPlayers.filter((p: any) => {
+        const pid = p.teamId ?? p.team_id ?? p.team?.id;
+        if (openTeamRealId && pid !== openTeamRealId) return false;
+        if (registeredPlayerIds.has(p.id)) return false;
+        return true;
+      }),
+    [orgPlayers, openTeamRealId, registeredPlayerIds]
+  );
 
   if (isLoading) {
     return (
@@ -187,7 +201,9 @@ export default function CompPlayersPage() {
                     Register players from {st.display_name || st.team?.name}
                   </h3>
                   {availableForTeam.length === 0 ? (
-                    <p className="text-sm text-muted">No unregistered players available.</p>
+                    <p className="text-sm text-muted">
+                      No unregistered players in this team&apos;s roster.
+                    </p>
                   ) : (
                     <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
                       {availableForTeam.map((p) => (
