@@ -44,9 +44,9 @@ export default function OrgSettingsPage() {
       <div className="card p-4 space-y-3">
         <div className="flex items-center justify-between gap-3">
           <div className="min-w-0">
-            <p className="text-sm font-medium">Public player names</p>
+            <p className="text-sm font-medium">Public player names and photos</p>
             <p className="text-xs text-ink-3">
-              Show player names on public live match updates. Off by default.
+              Show player names and photos in public match updates and alerts. Off by default.
             </p>
           </div>
           <button

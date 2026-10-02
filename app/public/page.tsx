@@ -2,8 +2,10 @@
 
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
+import Image from "next/image";
 import { createPublicClient } from "@/lib/supabase/public";
 import type { PublicMatchRow } from "@/lib/types";
+import { PushSubscriptionControl } from "@/components/public/push-subscription";
 
 type MatchFilter = "all" | "scheduled" | "live" | "completed";
 
@@ -80,6 +82,13 @@ export default function PublicIndexPage() {
           if (mounted) load();
         }
       )
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "match_events" },
+        () => {
+          if (mounted) load();
+        }
+      )
       .subscribe();
 
     const poll = setInterval(() => {
@@ -135,6 +144,8 @@ export default function PublicIndexPage() {
         <p className="text-sm text-ink-3">Scheduled fixtures, live scores, and full-time results</p>
       </div>
 
+      <PushSubscriptionControl />
+
       <div className="flex gap-2 overflow-x-auto pb-1" role="group" aria-label="Filter matches">
         {FILTERS.map(({ key, label }) => (
           <button
@@ -169,8 +180,14 @@ export default function PublicIndexPage() {
                     {statusLabel(match.status)}
                   </span>
                   <div className="min-w-0 flex-1">
-                    <div className="truncate text-sm font-medium sm:text-base">
-                      {match.home_team_name} vs {match.away_team_name}
+                    <div className="flex items-center gap-2 truncate text-sm font-medium sm:text-base">
+                      {match.home_team_logo && (
+                        <Image src={match.home_team_logo} alt="" width={20} height={20} className="h-5 w-5 shrink-0 rounded-full object-cover" />
+                      )}
+                      <span className="truncate">{match.home_team_name} vs {match.away_team_name}</span>
+                      {match.away_team_logo && (
+                        <Image src={match.away_team_logo} alt="" width={20} height={20} className="h-5 w-5 shrink-0 rounded-full object-cover" />
+                      )}
                     </div>
                     <div className="mt-0.5 text-xs text-ink-3">
                       Round {match.round}

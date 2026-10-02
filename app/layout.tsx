@@ -6,6 +6,7 @@ import AuthBootstrap from "@/components/layout/auth-bootstrap";
 import DataBootstrap from "@/components/layout/data-bootstrap";
 import { QueryProvider } from "@/components/providers/query-provider";
 import { ToastProvider } from "@/components/ui/toast";
+import { InstallPrompt } from "@/components/shared/install-prompt";
 
 const inter = Inter({
   subsets: ["latin"],
@@ -26,7 +27,14 @@ export const metadata: Metadata = {
     "School Football League Management System — competitions, teams, players, fixtures, and live standings.",
   applicationName: "LeagueForge",
   manifest: "/manifest.json",
-  icons: { icon: "/icon.svg", apple: "/icon.svg" },
+  icons: {
+    icon: [
+      { url: "/icon.svg", type: "image/svg+xml", sizes: "any" },
+      { url: "/icon-192.png", type: "image/png", sizes: "192x192" },
+      { url: "/icon-512.png", type: "image/png", sizes: "512x512" },
+    ],
+    apple: "/icon-192.png",
+  },
   openGraph: {
     type: "website",
     siteName: "LeagueForge",
@@ -55,6 +63,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
             <AuthBootstrap />
             <DataBootstrap />
             <AppShell>{children}</AppShell>
+            <InstallPrompt />
           </ToastProvider>
         </QueryProvider>
       </body>

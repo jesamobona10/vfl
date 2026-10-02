@@ -14,6 +14,7 @@ import {
   requireAuth,
   requireOrgAdmin,
 } from "@/lib/security";
+import { enqueuePublicPush } from "@/lib/public-push";
 
 export const dynamic = "force-dynamic";
 
@@ -52,13 +53,13 @@ export async function POST(request: Request, props: { params: Promise<{ id: stri
 
     const { data: homeTeam } = await supabase
       .from("teams")
-      .select("organization_id")
+      .select("organization_id, name")
       .eq("id", homeTeamId)
       .single();
 
     const { data: awayTeam } = await supabase
       .from("teams")
-      .select("organization_id")
+      .select("organization_id, name")
       .eq("id", awayTeamId)
       .single();
 
@@ -107,7 +108,7 @@ export async function POST(request: Request, props: { params: Promise<{ id: stri
 
     const { data: player } = await supabase
       .from("players")
-      .select("id")
+      .select("id, name")
       .eq("id", playerId)
       .eq("team_id", teamId)
       .maybeSingle();
@@ -136,6 +137,43 @@ export async function POST(request: Request, props: { params: Promise<{ id: stri
       logApiError("event_create_failed", error, { userId: authed.userId, fixtureId });
       return json({ error: "Unable to save event." }, { status: 400 });
     }
+
+    const { data: organization } = homeOrgId
+      ? await sb
+          .from("organizations")
+          .select("public_player_names_enabled")
+          .eq("id", homeOrgId)
+          .maybeSingle()
+      : { data: null };
+    const visiblePlayerName =
+      organization?.public_player_names_enabled && player.name ? player.name : null;
+    const scoringTeamName = teamId === homeTeamId ? homeTeam.name : awayTeam.name;
+    const subject = visiblePlayerName || "A player";
+    const eventDescription: Record<string, string> = {
+      goal: `${subject} scored for ${scoringTeamName}.`,
+      assist: `${subject} assisted ${scoringTeamName}.`,
+      "own-goal": `${subject} scored an own goal for ${scoringTeamName}.`,
+      yellow: `${subject} received a yellow card for ${scoringTeamName}.`,
+      red: `${subject} received a red card for ${scoringTeamName}.`,
+      save: `${subject} made a save for ${scoringTeamName}.`,
+      "penalty-save": `${subject} saved a penalty for ${scoringTeamName}.`,
+      "clean-sheet": `${scoringTeamName} kept a clean sheet.`,
+      motm: `${subject} was named player of the match for ${scoringTeamName}.`,
+      error: `${subject} made an error for ${scoringTeamName}.`,
+      "penalty-conceded": `${subject} conceded a penalty for ${scoringTeamName}.`,
+      "goal-conceded": `${scoringTeamName} conceded a goal.`,
+      tackle: `${subject} made a tackle for ${scoringTeamName}.`,
+      interception: `${subject} made an interception for ${scoringTeamName}.`,
+      block: `${subject} made a block for ${scoringTeamName}.`,
+      aerial: `${subject} won an aerial duel for ${scoringTeamName}.`,
+      "match-win": `${scoringTeamName} won the match.`,
+      "bonus-5-saves": `${subject} reached five saves for ${scoringTeamName}.`,
+    };
+    enqueuePublicPush({
+      title: eventType === "goal" || eventType === "own-goal" ? "Goal scored" : "Match update",
+      body: `${eventDescription[eventType]}${minute ? ` ${minute}′` : ""}`,
+      matchId: fixtureId,
+    });
 
     return json({ event: data });
   } catch (error) {

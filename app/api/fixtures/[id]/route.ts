@@ -21,6 +21,7 @@ import {
   writeAuditRecord,
 } from "@/lib/security";
 import { AUDIT_ACTIONS } from "@/lib/audit/actions";
+import { enqueuePublicPush } from "@/lib/public-push";
 
 export const dynamic = "force-dynamic";
 
@@ -64,14 +65,14 @@ export async function PUT(request: Request, props: { params: Promise<{ id: strin
     // Fetch home team's organization_id
     const { data: homeTeam, error: homeTeamError } = await supabase
       .from("teams")
-      .select("organization_id")
+      .select("organization_id, name")
       .eq("id", homeTeamId)
       .single();
 
     // Fetch away team's organization_id
     const { data: awayTeam, error: awayTeamError } = await supabase
       .from("teams")
-      .select("organization_id")
+      .select("organization_id, name")
       .eq("id", awayTeamId)
       .single();
 
@@ -181,6 +182,29 @@ export async function PUT(request: Request, props: { params: Promise<{ id: strin
     }
 
     const orgId = homeTeamOrgId || awayTeamOrgId;
+    const scorelineActuallyChanged =
+      fixture.home_score !== data.home_score || fixture.away_score !== data.away_score;
+    const matchLabel = `${homeTeam.name} vs ${awayTeam.name}`;
+    if (fixture.status !== "live" && fixture.status !== "in-progress" && data.status === "live") {
+      enqueuePublicPush({
+        title: "Match started",
+        body: `${matchLabel} is underway.`,
+        matchId: fixtureId,
+      });
+    }
+    if (fixture.status !== "completed" && data.status === "completed") {
+      enqueuePublicPush({
+        title: "Full-time",
+        body: `${homeTeam.name} ${data.home_score ?? 0}–${data.away_score ?? 0} ${awayTeam.name}`,
+        matchId: fixtureId,
+      });
+    } else if (scorelineActuallyChanged) {
+      enqueuePublicPush({
+        title: "Scoreline update",
+        body: `${homeTeam.name} ${data.home_score ?? 0}–${data.away_score ?? 0} ${awayTeam.name}`,
+        matchId: fixtureId,
+      });
+    }
     const scoreChanged =
       update.home_score !== undefined ||
       update.away_score !== undefined ||

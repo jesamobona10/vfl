@@ -800,6 +800,7 @@ export interface PublicLiveEventRow {
   team_id: number;
   player_name: string | null;
   player_id: number | null;
+  player_photo_url?: string | null;
 }
 
 export interface PublicScheduledFixtureRow {
@@ -833,4 +834,10 @@ export interface PublicMatchRow {
   date: string | null;
   time: string | null;
   venue: string | null;
+  home_team_logo?: string | null;
+  away_team_logo?: string | null;
+  live_started_at?: string | null;
+  competition_id?: string | null;
+  halftime_minutes?: number;
+  stoppage_minutes?: number;
 }

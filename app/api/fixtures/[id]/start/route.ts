@@ -14,6 +14,7 @@ import {
   writeAuditRecord,
 } from "@/lib/security";
 import { AUDIT_ACTIONS } from "@/lib/audit/actions";
+import { enqueuePublicPush } from "@/lib/public-push";
 
 export const dynamic = "force-dynamic";
 
@@ -50,8 +51,14 @@ export async function POST(request: Request, props: { params: Promise<{ id: stri
 
     const { data: homeTeam } = await supabase
       .from("teams")
-      .select("organization_id")
+      .select("organization_id, name")
       .eq("id", fixture.home_team_id)
+      .single();
+
+    const { data: awayTeam } = await supabase
+      .from("teams")
+      .select("name")
+      .eq("id", fixture.away_team_id)
       .single();
 
     if (!homeTeam) {
@@ -72,6 +79,7 @@ export async function POST(request: Request, props: { params: Promise<{ id: stri
       .update({
         status: "live",
         live_started_at: new Date().toISOString(),
+        halftime_notified_at: null,
       })
       .eq("id", fixtureId)
       .select()
@@ -80,6 +88,14 @@ export async function POST(request: Request, props: { params: Promise<{ id: stri
     if (error) {
       logApiError("fixture_start_failed", error, { userId: auth.userId, fixtureId });
       return json({ error: "Unable to start the match." }, { status: 400 });
+    }
+
+    if (fixture.status !== "live" && fixture.status !== "in-progress") {
+      enqueuePublicPush({
+        title: "Match started",
+        body: `${homeTeam.name} vs ${awayTeam?.name || "their opponent"} is underway.`,
+        matchId: fixtureId,
+      });
     }
 
     void writeAuditRecord({
