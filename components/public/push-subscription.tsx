@@ -4,6 +4,16 @@ import { useEffect, useState } from "react";
 import { Bell, BellOff, LoaderCircle } from "lucide-react";
 import type { PublicPreferences } from "@/lib/public-preferences";
 
+function isIosDevice() {
+  return /iPad|iPhone|iPod/.test(navigator.userAgent) ||
+    (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1);
+}
+
+function isStandaloneApp() {
+  return window.matchMedia("(display-mode: standalone)").matches ||
+    (navigator as Navigator & { standalone?: boolean }).standalone === true;
+}
+
 function decodeApplicationServerKey(base64Url: string) {
   const padding = "=".repeat((4 - (base64Url.length % 4)) % 4);
   const base64 = (base64Url + padding).replace(/-/g, "+").replace(/_/g, "/");
@@ -17,6 +27,8 @@ export function PushSubscriptionControl({ preferences }: { preferences: PublicPr
   const [loading, setLoading] = useState(true);
   const [busy, setBusy] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
+
+  const iosNeedsInstall = typeof window !== "undefined" && isIosDevice() && !isStandaloneApp();
 
   useEffect(() => {
     if (!("serviceWorker" in navigator) || !("PushManager" in window) || !("Notification" in window)) {
@@ -39,7 +51,10 @@ export function PushSubscriptionControl({ preferences }: { preferences: PublicPr
         setLoading(false);
       })
       .catch(() => {
-        if (mounted) setLoading(false);
+        if (mounted) {
+          setLoading(false);
+          setMessage("Could not check alert settings. Check your connection and reload this page.");
+        }
       });
 
     return () => {
@@ -79,6 +94,7 @@ export function PushSubscriptionControl({ preferences }: { preferences: PublicPr
           setMessage("Allow notifications in your browser settings to receive match alerts.");
           return;
         }
+        await navigator.serviceWorker.register("/sw.js", { scope: "/" });
         const registration = await navigator.serviceWorker.ready;
         const created = await registration.pushManager.subscribe({
           userVisibleOnly: true,
@@ -104,11 +120,23 @@ export function PushSubscriptionControl({ preferences }: { preferences: PublicPr
   };
 
   const pushSupported = typeof window !== "undefined" && "serviceWorker" in navigator && "PushManager" in window && "Notification" in window;
-  if (!pushSupported) return null;
+  if (iosNeedsInstall) {
+    return (
+      <div className="rounded-xl border border-line bg-surface p-3 text-xs text-ink-2" role="status">
+        <p className="font-semibold text-ink">Install LeagueForge to get iPhone match alerts</p>
+        <p className="mt-1">In Safari, tap Share, choose <strong>Add to Home Screen</strong>, open LeagueForge from its Home Screen icon, then enable alerts here. iPhone web push requires iOS 16.4 or later.</p>
+      </div>
+    );
+  }
+  if (!pushSupported) {
+    return <p className="text-xs text-ink-3" role="status">This browser does not support match alerts. On iPhone, open the installed Home Screen app.</p>;
+  }
   if (loading) {
     return <div className="flex min-h-10 items-center gap-2 text-xs text-ink-3" role="status"><LoaderCircle size={14} className="animate-spin" /> Checking alert settings…</div>;
   }
-  if (!publicKey && !subscription) return null;
+  if (!publicKey && !subscription) {
+    return <p className="text-xs text-ink-3" role="status">Match alerts are temporarily unavailable. Please try again later.</p>;
+  }
 
   const permissionDenied = Notification.permission === "denied";
   return (
