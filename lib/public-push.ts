@@ -8,6 +8,8 @@ export interface PublicPushPayload {
   matchId: number;
   /** When set, deliver event alerts only to followers of this team. */
   teamId?: number;
+  /** Only deliver to endpoints that enabled this scheduled kickoff reminder. */
+  reminderMinutes?: 15 | 30 | 60;
 }
 
 function vapidConfig() {
@@ -18,37 +20,44 @@ function vapidConfig() {
   return { publicKey, privateKey, subject };
 }
 
+export function isPublicPushConfigured() {
+  return vapidConfig() !== null;
+}
+
 async function deliverPublicPush(payload: PublicPushPayload) {
   const config = vapidConfig();
-  if (!config) return;
+  if (!config) return { eligible: 0, delivered: 0, failed: 0 };
 
   webpush.setVapidDetails(config.subject, config.publicKey, config.privateKey);
   const supabase = createServiceRoleClient();
   const { data: match, error: matchError } = await supabase
     .from("public_matches")
-    .select("organization_id, home_team_id, away_team_id")
+    .select("organization_id, home_team_id, away_team_id, status")
     .eq("match_id", payload.matchId)
     .maybeSingle();
   if (matchError) throw matchError;
-  if (!match?.organization_id) return;
+  if (!match?.organization_id) return { eligible: 0, delivered: 0, failed: 0 };
+  if (payload.reminderMinutes && match.status !== "scheduled") return { eligible: 0, delivered: 0, failed: 0 };
 
   const { data: subscriptions, error } = await supabase
     .from("public_push_subscriptions")
-    .select("endpoint, p256dh, auth, display_name, team_ids")
+    .select("endpoint, p256dh, auth, display_name, team_ids, reminder_minutes")
     .eq("organization_id", match.organization_id)
     .limit(5000);
 
   if (error) throw error;
-  if (!subscriptions?.length) return;
+  if (!subscriptions?.length) return { eligible: 0, delivered: 0, failed: 0 };
 
   const relevantTeamIds = payload.teamId
     ? [payload.teamId]
     : [match.home_team_id, match.away_team_id].filter((id): id is number => typeof id === "number");
   const matchedSubscriptions = subscriptions.filter((subscription) => {
     const selectedTeams = (subscription.team_ids || []) as number[];
-    return selectedTeams.length === 0 || relevantTeamIds.some((teamId) => selectedTeams.includes(teamId));
+    const selectedReminders = (subscription.reminder_minutes || [60, 30, 15]) as number[];
+    const followsTeam = selectedTeams.length === 0 || relevantTeamIds.some((teamId) => selectedTeams.includes(teamId));
+    return followsTeam && (!payload.reminderMinutes || selectedReminders.includes(payload.reminderMinutes));
   });
-  if (!matchedSubscriptions.length) return;
+  if (!matchedSubscriptions.length) return { eligible: 0, delivered: 0, failed: 0 };
 
   const results = await Promise.allSettled(
     matchedSubscriptions.map((subscription) => {
@@ -93,6 +102,15 @@ async function deliverPublicPush(payload: PublicPushPayload) {
       matchId: payload.matchId,
     });
   }
+  return {
+    eligible: matchedSubscriptions.length,
+    delivered: results.filter((result) => result.status === "fulfilled").length,
+    failed,
+  };
+}
+
+export function sendPublicPushNow(payload: PublicPushPayload) {
+  return deliverPublicPush(payload);
 }
 
 /** Deliver after the API response so push providers don't slow match edits. */

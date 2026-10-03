@@ -1,6 +1,8 @@
 import { createServiceRoleClient } from "@/lib/supabase/service-role";
+import { createClient } from "@/lib/supabase/server";
 import { isSupportedPushEndpoint } from "@/lib/public-push";
 import {
+  getAuthContext,
   getClientIp,
   json,
   logApiError,
@@ -38,13 +40,15 @@ export async function POST(request: Request) {
     const organizationId = preferences?.organizationId;
     const displayName = typeof preferences?.displayName === "string" ? preferences.displayName.trim() : "";
     const teamIds: number[] = Array.isArray(preferences?.teamIds) ? preferences.teamIds : [];
+    const reminderMinutes: number[] = Array.isArray(preferences?.reminderMinutes) ? preferences.reminderMinutes : [60, 30, 15];
     if (
       !isSupportedPushEndpoint(endpoint) ||
       typeof p256dh !== "string" || p256dh.length > 256 ||
       typeof auth !== "string" || auth.length > 256 ||
       typeof organizationId !== "string" || !/^[0-9a-f-]{36}$/i.test(organizationId) ||
       displayName.length > 80 || teamIds.length > 50 ||
-      teamIds.some((id) => !Number.isSafeInteger(id) || id <= 0)
+      teamIds.some((id) => !Number.isSafeInteger(id) || id <= 0) ||
+      reminderMinutes.length > 3 || reminderMinutes.some((minutes) => ![15, 30, 60].includes(minutes))
     ) {
       return json({ error: "Invalid push subscription or match preferences." }, { status: 400 });
     }
@@ -64,9 +68,11 @@ export async function POST(request: Request) {
         endpoint,
         p256dh,
         auth,
+        user_id: (await getAuthContext(await createClient()))?.userId || null,
         display_name: displayName || null,
         organization_id: organizationId,
         team_ids: [...new Set(teamIds)],
+        reminder_minutes: [...new Set(reminderMinutes)],
         updated_at: new Date().toISOString(),
       },
       { onConflict: "endpoint" }
