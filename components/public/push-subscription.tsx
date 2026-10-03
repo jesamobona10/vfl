@@ -126,6 +126,9 @@ export function PushSubscriptionControl({ preferences }: { preferences: PublicPr
           throw new Error(body.error || "Unable to enable match alerts.");
         }
         setSubscription(created);
+        // Android still needs a one-time channel change before alerts banner,
+        // so surface the reminder while the choice is fresh.
+        if (isAndroidDevice()) setShowAndroidHint(true);
       }
     } catch (error) {
       setMessage(error instanceof Error ? error.message : "Unable to update match alerts.");
@@ -177,9 +180,10 @@ export function PushSubscriptionControl({ preferences }: { preferences: PublicPr
         <div className="w-full rounded-xl border border-line bg-surface p-3 text-xs text-ink-2">
           <p className="font-semibold text-ink">Make alerts pop up on Android</p>
           <p className="mt-1">
-            Android keeps alerts in the notification panel until the site channel is set to high
-            importance. Open <strong>Settings &rarr; Apps &rarr; Chrome &rarr; Notifications &rarr; LeagueForge</strong>,
-            then set <strong>Importance</strong> to <strong>High</strong>.
+            Android keeps alerts in the notification panel until the site channel is set to the
+            highest importance. Open <strong>Settings &rarr; Apps &rarr; Chrome &rarr; Notifications &rarr; LeagueForge</strong>,
+            then set <strong>Importance</strong> to the top level &mdash; <strong>Urgent</strong>, or
+            <strong> High</strong> on some phones. Anything lower plays a sound but stays in the panel.
           </p>
           <button
             type="button"

@@ -294,7 +294,7 @@ export function AddEventModal({
             </button>
           </div>
           {showAllTypes && (
-            <div className="mt-3 max-h-36 space-y-3 overflow-y-auto rounded-xl border border-line p-3">
+            <div className="mt-3 max-h-none space-y-3 overflow-visible rounded-xl border border-line p-3 sm:max-h-36 sm:overflow-y-auto">
               {EVENT_CATEGORIES.map((category) => (
                 <div key={category.label}>
                   <p className="mb-1.5 text-[10px] font-semibold uppercase tracking-wider text-muted">
@@ -330,12 +330,13 @@ export function AddEventModal({
             value={playerSearch}
             onChange={(event) => setPlayerSearch(event.target.value)}
             placeholder="Search name or shirt number"
-            className="input w-full text-sm"
-            autoFocus
+            className="input w-full"
           />
         </label>
 
-        <div className="max-h-72 space-y-3 overflow-y-auto">
+        {/* One scroll region on mobile: the dialog itself. A nested scroller here
+            fights the on-screen keyboard for scroll gestures. */}
+        <div className="max-h-none space-y-3 sm:max-h-72 sm:overflow-y-auto">
           {([ [homeTeamName, homePlayers], [awayTeamName, awayPlayers] ] as const).map(([teamName, teamPlayers]) => (
             <section key={teamName}>
               <p className="mb-1.5 text-xs font-semibold text-ink-3">{teamName}</p>

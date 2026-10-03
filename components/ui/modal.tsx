@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useRef, useState, useSyncExternalStore, type ReactNode } from "react";
+import { useCallback, useEffect, useRef, useSyncExternalStore, type ReactNode } from "react";
 import { createPortal } from "react-dom";
 import { X } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -74,16 +74,26 @@ export function Modal({ open, onClose, title, subtitle, children, headerActions,
     previouslyFocused.current = document.activeElement as HTMLElement | null;
     document.addEventListener("keydown", handleKeyDown, true);
     const prevOverflow = document.body.style.overflow;
+    // iOS drops the scroll position when the page is locked this way, so stash
+    // it and put it back on close.
+    const scrollY = window.scrollY;
     document.body.style.overflow = "hidden";
-    // Move focus into the dialog after paint.
+    // Move focus into the dialog after paint, unless something inside already
+    // holds focus (e.g. an input that used autoFocus). Stealing it back makes the
+    // mobile keyboard open and immediately close again.
     requestAnimationFrame(() => {
-      const target = panelRef.current?.querySelector<HTMLElement>(FOCUSABLE);
-      (target ?? panelRef.current)?.focus();
+      const panel = panelRef.current;
+      if (!panel) return;
+      if (panel.contains(document.activeElement) && document.activeElement !== panel) return;
+      const target = panel.querySelector<HTMLElement>(FOCUSABLE);
+      (target ?? panel).focus();
     });
     return () => {
       document.removeEventListener("keydown", handleKeyDown, true);
       document.body.style.overflow = prevOverflow;
       previouslyFocused.current?.focus?.();
+      // Restore last: focusing can scroll the page on its own.
+      window.scrollTo({ top: scrollY, behavior: "instant" });
     };
   }, [open, handleKeyDown]);
 
@@ -91,8 +101,10 @@ export function Modal({ open, onClose, title, subtitle, children, headerActions,
 
   return createPortal(
     <div
-      className="fixed inset-0 z-[80] flex items-center justify-center bg-black/30 p-4"
-      onMouseDown={(e) => {
+      className="fixed inset-0 z-[80] flex items-end justify-center bg-black/30 sm:items-center sm:p-4"
+      // Pointer events rather than mouse events: a touch does not synthesise
+      // mousedown, and the sheet leaves a large backdrop to tap on mobile.
+      onPointerDown={(e) => {
         if (e.target === e.currentTarget) onClose();
       }}
     >
@@ -102,7 +114,17 @@ export function Modal({ open, onClose, title, subtitle, children, headerActions,
         aria-modal="true"
         aria-label={title}
         tabIndex={-1}
-        className={cn("floating-panel rounded-xl w-full max-w-lg max-h-[90vh] overflow-y-auto outline-none", className)}
+        className={cn(
+          // Bottom sheet on phones so the dialog sits where the keyboard and the
+          // user's thumb are; centred dialog from sm up. Height tracks the
+          // visible viewport so the keyboard never covers the content.
+          "floating-panel w-full overflow-y-auto overscroll-contain outline-none",
+          "rounded-b-none rounded-t-2xl sm:rounded-xl",
+          "max-h-[calc(100dvh-var(--kb-inset,0px))] sm:max-h-[calc(90dvh-var(--kb-inset,0px))]",
+          "pb-[env(safe-area-inset-bottom)] sm:pb-0",
+          "max-w-lg",
+          className
+        )}
       >
         <div className="sticky top-0 z-10 flex items-center justify-between gap-3 border-b border-line bg-surface px-5 py-3.5">
           <div className="min-w-0">

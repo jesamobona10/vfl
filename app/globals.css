@@ -251,6 +251,25 @@ body {
   }
 }
 
+/* Mobile input sizing and keyboard handling. Kept unlayered so these win over
+   the text-sm utilities individual fields pass to `.input`. */
+@media (max-width: 639px) {
+  /* iOS Safari zooms the page when a focused field renders below 16px, which
+     shifts the layout out from under the on-screen keyboard. */
+  input.input,
+  select.input,
+  textarea.input {
+    font-size: 16px;
+    line-height: 1.5;
+  }
+}
+
+/* Keep a dialog's own scroll from chaining to the page behind it, so a flick
+   at the end of a dialog does not move the background. */
+.floating-panel {
+  overscroll-behavior: contain;
+}
+
 /* Subtle page-enter fade used by app/template.tsx */
 @keyframes page-in {
   from {

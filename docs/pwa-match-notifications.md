@@ -35,10 +35,23 @@ This matters on Android. A push whose tag matches an existing notification repla
 
 ## Android banner alerts
 
-Android 8 and later only show a heads-up banner for a notification channel set to **High** importance. Chrome creates a per-site channel for web push that defaults to a lower importance, which delivers sound and a panel entry but no pop-up. No web API can raise it, so each user must set it once:
+Android 8 and later only raise a heads-up banner for a notification channel at the highest importance. Chrome creates a per-site channel for web push that defaults lower, which delivers sound and a panel entry but no pop-up. Each user sets this once:
 
-**Settings → Apps → Chrome → Notifications → LeagueForge → Importance → High**
+**Settings → Apps → Chrome → Notifications → LeagueForge → Importance → the top level**
 
-The alert control on `/public` shows this reminder on Android devices and can be dismissed for 30 days. Battery optimisation on some Samsung and Xiaomi devices can also suppress banners; excluding Chrome from battery restrictions helps.
+Label that top level "Urgent" or "High" depending on the phone — Google's importance table names it *Urgent*, and *High* is a separate, lower level that only makes a sound:
+
+| Setting label | Constant | Behaviour |
+| --- | --- | --- |
+| Urgent | `IMPORTANCE_HIGH` | Sound **and** heads-up banner |
+| High | `IMPORTANCE_DEFAULT` | Sound only, stays in the panel |
+| Medium | `IMPORTANCE_LOW` | Silent |
+| Low | `IMPORTANCE_MIN` | Silent, hidden from the status bar |
+
+**This cannot be automated.** Google's notification channel docs state: "Once you create a notification channel, you can't change the notification channel's visual and auditory behaviors programmatically. Only the user can change the channel behaviors from the system settings." That constraint applies to native apps, and a PWA is worse off — there is no web API for notification channels at all. `Notification.requestPermission()` resolves only `granted`, `denied`, or `default`; it grants browser-level permission and nothing more. Shipping a default-urgent channel would require a native Android wrapper (Bubblewrap TWA) with native code calling `createNotificationChannel(..., IMPORTANCE_HIGH)`.
+
+The `urgency: "high"` header set in `lib/public-push.ts` affects delivery speed only. It cannot promote a notification to a banner.
+
+The alert control on `/public` shows this reminder on Android devices, immediately after alerts are enabled, and it can be dismissed for 30 days. Battery optimisation on some Samsung and Xiaomi devices can also suppress banners; excluding Chrome from battery restrictions helps.
 
 Service worker notifications are sent with `silent: false`, a vibration pattern, and a **View match** action button. Tapping the notification or the action opens `/public/live/{matchId}`.

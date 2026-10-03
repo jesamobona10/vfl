@@ -138,7 +138,10 @@ export function ToastProvider({ children }: { children: React.ReactNode }) {
         createPortal(
           <div
             aria-live="assertive"
+            // Sits above the modal (z-80) so confirmations stay visible; the
+            // inset keeps it clear of the on-screen keyboard on mobile.
             className="pointer-events-none fixed inset-x-0 bottom-0 z-[100] flex flex-col items-center gap-2 p-4 sm:items-end"
+            style={{ transform: "translateY(calc(-1 * var(--kb-inset, 0px)))" }}
           >
             {toasts.map((t) => (
               <ToastItem key={t.id} toast={t} onDismiss={dismiss} />

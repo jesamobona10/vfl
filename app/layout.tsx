@@ -1,10 +1,11 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { Inter } from "next/font/google";
 import "./globals.css";
 import { AppShell } from "@/components/layout/app-shell";
 import AuthBootstrap from "@/components/layout/auth-bootstrap";
 import DataBootstrap from "@/components/layout/data-bootstrap";
 import { QueryProvider } from "@/components/providers/query-provider";
+import { KeyboardInset } from "@/components/providers/keyboard-inset";
 import { ToastProvider } from "@/components/ui/toast";
 import { InstallPrompt } from "@/components/shared/install-prompt";
 
@@ -14,6 +15,16 @@ const inter = Inter({
   variable: "--font-inter",
   display: "swap",
 });
+
+export const viewport: Viewport = {
+  width: "device-width",
+  initialScale: 1,
+  viewportFit: "cover",
+  // Resize the layout viewport for the on-screen keyboard so dialogs can size
+  // themselves against the space that is actually visible. iOS Safari ignores
+  // this; the --kb-inset custom property covers it there.
+  interactiveWidget: "resizes-content",
+};
 
 export const metadata: Metadata = {
   metadataBase: new URL(
@@ -57,9 +68,11 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
     <html lang="en" className={inter.variable} suppressHydrationWarning>
       <head>
         <script dangerouslySetInnerHTML={{ __html: NO_FLASH_THEME_SCRIPT }} />
-      </head>      <body className="font-sans antialiased">
+      </head>
+      <body className="font-sans antialiased">
         <QueryProvider>
           <ToastProvider>
+            <KeyboardInset />
             <AuthBootstrap />
             <DataBootstrap />
             <AppShell>{children}</AppShell>
