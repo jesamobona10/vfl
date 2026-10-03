@@ -162,6 +162,7 @@ export async function proxy(request: NextRequest) {
     pathname === "/api/auth/player-login" ||
     pathname === "/api/auth/player-register" ||
     pathname === "/api/org/register" ||
+    pathname === "/api/cron/pre-match-reminders" ||
     pathname.startsWith("/api/public/");
 
   if (isApiRoute) {
