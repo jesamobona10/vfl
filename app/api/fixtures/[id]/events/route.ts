@@ -166,6 +166,7 @@ export async function POST(request: Request, props: { params: Promise<{ id: stri
       body: `${eventDescription[eventType]}${minute ? ` ${minute}′` : ""}`,
       matchId: fixtureId,
       teamId,
+      tag: `match-${fixtureId}-event-${data.id}`,
     });
 
     return json({ event: data });

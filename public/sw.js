@@ -1,4 +1,4 @@
-const CACHE_NAME = "leagueforge-shell-v1";
+const CACHE_NAME = "leagueforge-shell-v2";
 const APP_SHELL = ["/manifest.json", "/icon.svg", "/icon-192.png", "/icon-512.png", "/offline.html"];
 
 self.addEventListener("install", (event) => {
@@ -74,6 +74,12 @@ self.addEventListener("push", (event) => {
       badge: "/icon-192.png",
       tag: payload.tag || "leagueforge-match-update",
       renotify: true,
+      // Android only raises a heads-up banner for a fresh tag, and it needs an
+      // explicit non-silent alert to vibrate. Keep both set here.
+      silent: false,
+      vibrate: [200, 120, 200, 120, 200],
+      timestamp: payload.timestamp || Date.now(),
+      actions: [{ action: "view", title: "View match" }],
       data: { url: payload.url || "/public" },
     })
   );

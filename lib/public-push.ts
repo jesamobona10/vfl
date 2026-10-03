@@ -10,6 +10,12 @@ export interface PublicPushPayload {
   teamId?: number;
   /** Only deliver to endpoints that enabled this scheduled kickoff reminder. */
   reminderMinutes?: 15 | 30 | 60;
+  /**
+   * Unique per logical alert. Android silently replaces a notification that
+   * reuses an existing tag, so goals, cards and reminders each need their own
+   * tag to raise a banner instead of only updating the shade entry.
+   */
+  tag?: string;
 }
 
 function vapidConfig() {
@@ -66,7 +72,7 @@ async function deliverPublicPush(payload: PublicPushPayload) {
         title: payload.title,
         body: name ? `${name}, ${payload.body}` : payload.body,
         url: `/public/live/${payload.matchId}`,
-        tag: `match-${payload.matchId}`,
+        tag: payload.tag || `match-${payload.matchId}`,
       });
       return webpush.sendNotification(
         {

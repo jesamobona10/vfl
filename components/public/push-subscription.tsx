@@ -4,9 +4,16 @@ import { useEffect, useState } from "react";
 import { Bell, BellOff, LoaderCircle } from "lucide-react";
 import type { PublicPreferences } from "@/lib/public-preferences";
 
+const ANDROID_HINT_KEY = "lf-android-banner-hint-dismissed-at";
+const ANDROID_HINT_COOLDOWN_MS = 30 * 24 * 60 * 60 * 1000;
+
 function isIosDevice() {
   return /iPad|iPhone|iPod/.test(navigator.userAgent) ||
     (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1);
+}
+
+function isAndroidDevice() {
+  return /Android/i.test(navigator.userAgent);
 }
 
 function isStandaloneApp() {
@@ -27,8 +34,16 @@ export function PushSubscriptionControl({ preferences }: { preferences: PublicPr
   const [loading, setLoading] = useState(true);
   const [busy, setBusy] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
+  const [showAndroidHint, setShowAndroidHint] = useState(false);
 
   const iosNeedsInstall = typeof window !== "undefined" && isIosDevice() && !isStandaloneApp();
+
+  useEffect(() => {
+    if (!isAndroidDevice()) return;
+    const dismissedAt = Number(localStorage.getItem(ANDROID_HINT_KEY) || 0);
+    if (dismissedAt && Date.now() - dismissedAt < ANDROID_HINT_COOLDOWN_MS) return;
+    setShowAndroidHint(true);
+  }, []);
 
   useEffect(() => {
     if (!("serviceWorker" in navigator) || !("PushManager" in window) || !("Notification" in window)) {
@@ -157,6 +172,26 @@ export function PushSubscriptionControl({ preferences }: { preferences: PublicPr
         <p className="w-full text-xs text-ink-3" role="status">
           Notifications are blocked in this browser. Change its site permission to enable match alerts.
         </p>
+      )}
+      {subscription && showAndroidHint && (
+        <div className="w-full rounded-xl border border-line bg-surface p-3 text-xs text-ink-2">
+          <p className="font-semibold text-ink">Make alerts pop up on Android</p>
+          <p className="mt-1">
+            Android keeps alerts in the notification panel until the site channel is set to high
+            importance. Open <strong>Settings &rarr; Apps &rarr; Chrome &rarr; Notifications &rarr; LeagueForge</strong>,
+            then set <strong>Importance</strong> to <strong>High</strong>.
+          </p>
+          <button
+            type="button"
+            className="btn-secondary mt-3 px-3 py-1.5 text-xs"
+            onClick={() => {
+              localStorage.setItem(ANDROID_HINT_KEY, String(Date.now()));
+              setShowAndroidHint(false);
+            }}
+          >
+            Got it
+          </button>
+        </div>
       )}
     </div>
   );

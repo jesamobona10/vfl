@@ -95,6 +95,7 @@ export async function POST(request: Request, props: { params: Promise<{ id: stri
         title: "Match started",
         body: `${homeTeam.name} vs ${awayTeam?.name || "their opponent"} is underway.`,
         matchId: fixtureId,
+        tag: `match-${fixtureId}-start`,
       });
     }
 

@@ -190,6 +190,7 @@ export async function PUT(request: Request, props: { params: Promise<{ id: strin
         title: "Match started",
         body: `${matchLabel} is underway.`,
         matchId: fixtureId,
+        tag: `match-${fixtureId}-start`,
       });
     }
     if (fixture.status !== "completed" && data.status === "completed") {
@@ -197,12 +198,14 @@ export async function PUT(request: Request, props: { params: Promise<{ id: strin
         title: "Full-time",
         body: `${homeTeam.name} ${data.home_score ?? 0}–${data.away_score ?? 0} ${awayTeam.name}`,
         matchId: fixtureId,
+        tag: `match-${fixtureId}-fulltime`,
       });
     } else if (scorelineActuallyChanged) {
       enqueuePublicPush({
         title: "Scoreline update",
         body: `${homeTeam.name} ${data.home_score ?? 0}–${data.away_score ?? 0} ${awayTeam.name}`,
         matchId: fixtureId,
+        tag: `match-${fixtureId}-score-${data.home_score ?? 0}-${data.away_score ?? 0}-${data.status}`,
       });
     }
     const scoreChanged =

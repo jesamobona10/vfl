@@ -74,6 +74,7 @@ export async function GET(request: Request) {
             body: `${fixture.home_team_name} vs ${fixture.away_team_name} kicks off in ${displayLead}.`,
             matchId: fixture.match_id,
             reminderMinutes: leadMinutes,
+            tag: `match-${fixture.match_id}-reminder-${leadMinutes}`,
           });
           if (result.eligible > 0 && result.delivered === 0 && result.failed > 0) {
             await supabase.from("public_match_reminder_deliveries")
@@ -115,6 +116,7 @@ export async function GET(request: Request) {
         title: "Half-time",
         body: `${match.home_team_name} ${match.home_score ?? 0}–${match.away_score ?? 0} ${match.away_team_name} at half-time.`,
         matchId: match.match_id,
+        tag: `match-${match.match_id}-halftime`,
       });
       if (result.eligible > 0 && result.delivered === 0 && result.failed > 0) {
         const { error: resetError } = await supabase

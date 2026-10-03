@@ -69,6 +69,7 @@ export async function POST(request: Request, props: { params: Promise<{ id: stri
       title: "Half-time",
       body: `${homeTeam} ${fixture.home_score ?? 0}–${fixture.away_score ?? 0} ${awayTeam} at half-time.`,
       matchId: fixtureId,
+      tag: `match-${fixtureId}-halftime`,
     });
     return json({ notified: true });
   } catch (error) {
