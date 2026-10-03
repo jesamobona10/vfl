@@ -20,6 +20,7 @@ import {
   KeyRound,
   ScrollText,
   FileDown,
+  Radio,
 } from "lucide-react";
 
 const SearchModal = dynamic(() => import("../search/search-modal").then(m => m.SearchModal), {
@@ -37,6 +38,7 @@ const adminNav: SidebarItem[] = [
   { href: "/admin?tab=users", label: "Users", icon: KeyRound },
   { href: "/admin?tab=audit", label: "Audit", icon: ScrollText },
   { href: "/admin?tab=import", label: "Import", icon: FileDown },
+  { href: "/admin?tab=public", label: "Public Match Centre", icon: Radio },
 ];
 
 // Root marketing page is public; authenticated users are redirected away by

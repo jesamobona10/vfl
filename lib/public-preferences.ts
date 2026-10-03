@@ -4,6 +4,7 @@ export interface PublicPreferences {
   displayName: string;
   organizationId: string;
   teamIds: number[];
+  reminderMinutes?: number[];
 }
 
 export function readPublicPreferences(): PublicPreferences | null {
@@ -16,6 +17,9 @@ export function readPublicPreferences(): PublicPreferences | null {
       displayName: typeof parsed.displayName === "string" ? parsed.displayName : "",
       organizationId: parsed.organizationId,
       teamIds: parsed.teamIds.filter((id): id is number => Number.isSafeInteger(id) && id > 0),
+      reminderMinutes: Array.isArray(parsed.reminderMinutes)
+        ? parsed.reminderMinutes.filter((value): value is number => value === 60 || value === 30 || value === 15)
+        : [60, 30, 15],
     };
   } catch {
     return null;

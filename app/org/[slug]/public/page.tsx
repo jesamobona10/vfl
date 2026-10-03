@@ -1,5 +1,5 @@
 import { PublicDashboard } from "@/components/public/public-dashboard";
 
-export default function PublicPage() {
+export default function OrganizationPublicPage() {
   return <PublicDashboard />;
 }

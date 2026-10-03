@@ -9,7 +9,7 @@ import { AppHeader } from "@/components/layout/app-header";
 import { Sidebar, type SidebarItem } from "@/components/layout/sidebar";
 import { MobileNavDrawer } from "@/components/layout/mobile-nav-drawer";
 import { OrgSeasonProvider } from "@/components/competitions/org-season-provider";
-import { LayoutDashboard, Trophy, Users, Shield, UserCog, Swords, ScrollText } from "lucide-react";
+import { LayoutDashboard, Trophy, Users, Shield, UserCog, Swords, ScrollText, Radio } from "lucide-react";
 
 const SearchModal = dynamic(() => import("@/components/search/search-modal").then(m => m.SearchModal), {
   ssr: false,
@@ -24,13 +24,14 @@ const tabs: SidebarItem[] = [
   { href: "/teams", label: "Teams", icon: Shield },
   { href: "/team-accounts", label: "Team Accounts", icon: UserCog },
   { href: "/audit-logs", label: "Audit Logs", icon: ScrollText },
+  { href: "/public", label: "Public Match Centre", icon: Radio },
 ];
 
 /** Which nav sections each role may see. Org admins see everything. */
 const NAV_BY_ROLE: Record<string, string[]> = {
-  org_admin: ["/dashboard", "/competitions", "/standings", "/players", "/teams", "/team-accounts", "/audit-logs"],
-  team_account: ["/dashboard", "/standings", "/players"],
-  player: ["/dashboard", "/standings"],
+  org_admin: ["/dashboard", "/competitions", "/standings", "/players", "/teams", "/team-accounts", "/audit-logs", "/public"],
+  team_account: ["/dashboard", "/standings", "/players", "/public"],
+  player: ["/dashboard", "/standings", "/public"],
 };
 
 export default function OrgLayout({ children }: { children: React.ReactNode }) {

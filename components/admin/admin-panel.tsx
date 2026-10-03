@@ -14,6 +14,7 @@ import { AdminTeamAccountManager } from "./admin-team-account-manager";
 import { ChevronDown, ChevronRight, Building2, Calendar, Trash2, Search } from "lucide-react";
 import { PageSkeleton } from "@/components/shared/skeleton";
 import { DashboardTabs } from "@/components/shared/dashboard-tabs";
+import { PublicDashboard } from "@/components/public/public-dashboard";
 
 const DataImporter = dynamic(() => import("./data-importer").then((m) => m.DataImporter), {
   ssr: false,
@@ -32,7 +33,8 @@ type AdminTab =
   | "fixtures"
   | "users"
   | "audit"
-  | "import";
+  | "import"
+  | "public";
 
 function FixtureManager() {
   const toast = useToast();
@@ -357,6 +359,7 @@ const VALID_TABS: AdminTab[] = [
   "users",
   "audit",
   "import",
+  "public",
 ];
 
 const TAB_LABELS: Record<AdminTab, string> = {
@@ -369,6 +372,7 @@ const TAB_LABELS: Record<AdminTab, string> = {
   users: "Users",
   audit: "Audit",
   import: "Import",
+  public: "Public",
 };
 
 const ADMIN_TABS = VALID_TABS.map((key) => ({ key, label: TAB_LABELS[key] }));
@@ -398,6 +402,7 @@ export function AdminPanel() {
       {tab === "users" && <UsersManager />}
       {tab === "audit" && <AuditViewer />}
       {tab === "import" && <DataImporter />}
+      {tab === "public" && <PublicDashboard />}
     </div>
   );
 }
