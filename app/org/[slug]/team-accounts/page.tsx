@@ -4,9 +4,22 @@ import { useState, useEffect } from "react";
 import { useParams } from "next/navigation";
 import { useAppStore } from "@/lib/store";
 import { useOrg } from "@/lib/hooks/use-org";
-import { Plus, UserCog, Key, Check, AlertCircle, Eye, EyeOff, Trash2 } from "lucide-react";
+import {
+  Plus,
+  UserCog,
+  Key,
+  Check,
+  AlertCircle,
+  Eye,
+  EyeOff,
+  Trash2,
+  Upload,
+  MailCheck,
+  Clock,
+} from "lucide-react";
 import { SkeletonList } from "@/components/shared/skeleton";
 import { useConfirm } from "@/components/shared/confirm-dialog";
+import { TeamAccountInviteUpload } from "@/components/teams/team-account-invite-upload";
 
 interface TeamAccount {
   id: string;
@@ -14,6 +27,16 @@ interface TeamAccount {
   display_name: string;
   team_id: number;
   role: string;
+  created_at: string;
+  teams: { name: string } | null;
+}
+
+interface Invite {
+  id: string;
+  email: string;
+  role: string;
+  team_id: number;
+  claimed_at: string | null;
   created_at: string;
   teams: { name: string } | null;
 }
@@ -26,6 +49,7 @@ export default function OrgTeamAccountsPage() {
   const teams = useAppStore((s) => s.teams);
 
   const [accounts, setAccounts] = useState<TeamAccount[]>([]);
+  const [invites, setInvites] = useState<Invite[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedTeamId, setSelectedTeamId] = useState("");
   const [password, setPassword] = useState("");
@@ -38,6 +62,8 @@ export default function OrgTeamAccountsPage() {
   } | null>(null);
   const [showForm, setShowForm] = useState(false);
   const [deletingId, setDeletingId] = useState<string | null>(null);
+  const [showUpload, setShowUpload] = useState(false);
+  const [revokingId, setRevokingId] = useState<string | null>(null);
 
   const handleDelete = async (account: TeamAccount) => {
     if (
@@ -79,9 +105,49 @@ export default function OrgTeamAccountsPage() {
     }
   };
 
+  const fetchInvites = async () => {
+    try {
+      const res = await fetch(`/api/org/${slug}/team-account-invites`);
+      const data = await res.json();
+      if (res.ok) setInvites(data.invites || []);
+    } catch {
+      // ignore — the invite list is supplementary to the account list
+    }
+  };
+
+  const handleRevokeInvite = async (invite: Invite) => {
+    if (
+      !(await confirm({
+        title: `Revoke invite for ${invite.email}?`,
+        description: "They will no longer be able to claim access to this team.",
+      }))
+    )
+      return;
+    setMessage(null);
+    setRevokingId(invite.id);
+    try {
+      const res = await fetch(`/api/org/${slug}/team-account-invites/${invite.id}`, {
+        method: "DELETE",
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        setMessage({ type: "error", text: data.error || "Failed to revoke invite." });
+        return;
+      }
+      setMessage({ type: "success", text: `Invite for ${invite.email} revoked.` });
+      fetchInvites();
+    } catch {
+      setMessage({ type: "error", text: "Failed to revoke invite." });
+    } finally {
+      setRevokingId(null);
+    }
+  };
+
   useEffect(() => {
     fetchAccounts();
-  }, [currentOrg?.id]);
+    fetchInvites();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [currentOrg?.id, slug]);
 
   const handleCreate = async () => {
     if (!selectedTeamId || !password || !currentOrg?.id) return;
@@ -122,6 +188,7 @@ export default function OrgTeamAccountsPage() {
   };
 
   const unassignedTeams = teams.filter((t) => !accounts.some((a) => a.team_id === t.id));
+  const pendingInvites = invites.filter((i) => !i.claimed_at);
 
   return (
     <div className="space-y-5">
@@ -131,13 +198,31 @@ export default function OrgTeamAccountsPage() {
           <p className="page-title">Team Accounts</p>
           <p className="page-sub">
             {accounts.length} account{accounts.length !== 1 ? "s" : ""}
+            {pendingInvites.length > 0 &&
+              `, ${pendingInvites.length} pending invite${
+                pendingInvites.length === 1 ? "" : "s"
+              }`}
           </p>
         </div>
-        <button onClick={() => setShowForm(!showForm)} className="btn-primary">
-          <Plus size={16} />
-          {showForm ? "Cancel" : "Create Account"}
-        </button>
+        <div className="flex items-center gap-2">
+          <button onClick={() => setShowUpload(true)} className="btn">
+            <Upload size={16} />
+            Invite from CSV
+          </button>
+          <button onClick={() => setShowForm(!showForm)} className="btn-primary">
+            <Plus size={16} />
+            {showForm ? "Cancel" : "Create Account"}
+          </button>
+        </div>
       </div>
+
+      {showUpload && (
+        <TeamAccountInviteUpload
+          slug={slug}
+          onClose={() => setShowUpload(false)}
+          onComplete={fetchInvites}
+        />
+      )}
 
       {showForm && (
         <div className="card p-4 sm:p-6 mb-6 space-y-4 border-l-4 border-l-brand">
@@ -246,6 +331,61 @@ export default function OrgTeamAccountsPage() {
         </div>
       )}
 
+      {invites.length > 0 && (
+        <div className="space-y-3">
+          <h2 className="text-sm font-semibold text-ink-2">
+            Google Sign-In Invites ({invites.length})
+          </h2>
+          {invites.map((invite) => (
+            <div
+              key={invite.id}
+              className="card p-4 flex flex-wrap items-center justify-between gap-x-3 gap-y-2"
+            >
+              <div className="flex items-center gap-3 min-w-0">
+                <div className="w-10 h-10 rounded-full bg-surface-2 flex items-center justify-center shrink-0">
+                  {invite.claimed_at ? (
+                    <MailCheck size={18} className="text-live-500" />
+                  ) : (
+                    <Clock size={18} className="text-muted" />
+                  )}
+                </div>
+                <div className="min-w-0">
+                  <p className="font-medium truncate font-mono text-sm">{invite.email}</p>
+                  <p className="text-xs text-muted truncate">
+                    {invite.teams?.name || "—"} · {invite.role.replace("_", " ")}
+                  </p>
+                </div>
+              </div>
+              <div className="flex items-center gap-3 min-w-0">
+                <span
+                  className={`text-xs px-2 py-0.5 rounded-full ${
+                    invite.claimed_at ? "text-live-500 bg-live-tint" : "text-muted bg-surface-2"
+                  }`}
+                >
+                  {invite.claimed_at
+                    ? `Claimed ${new Date(invite.claimed_at).toLocaleDateString()}`
+                    : "Awaiting sign-in"}
+                </span>
+                {!invite.claimed_at && (
+                  <button
+                    onClick={() => handleRevokeInvite(invite)}
+                    disabled={revokingId === invite.id}
+                    className="btn-ghost text-xs text-danger"
+                    title="Revoke invite"
+                  >
+                    {revokingId === invite.id ? (
+                      <span className="block w-3 h-3 bg-surface-2 rounded animate-pulse" />
+                    ) : (
+                      <Trash2 size={14} />
+                    )}
+                  </button>
+                )}
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+
       {loading ? (
         <div className="flex items-center justify-center py-20">
           <SkeletonList items={4} />
@@ -254,7 +394,9 @@ export default function OrgTeamAccountsPage() {
         <div className="panel p-8 sm:p-12 text-center text-ink-2">
           <UserCog size={48} className="mx-auto mb-4 text-ink-3/40" />
           <p className="text-lg font-medium">No team accounts yet</p>
-          <p className="text-sm mt-1">Create accounts so teams can log in independently.</p>
+          <p className="text-sm mt-1">
+            Invite coaches to sign in with Google, or create an account with a password.
+          </p>
         </div>
       ) : (
         <div className="space-y-3">

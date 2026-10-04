@@ -465,3 +465,118 @@ export function parsePlayerImportCSV(
     headersFound: { name: nameIdx !== -1, team: teamIdx !== -1 },
   };
 }
+
+/** One parsed coach-invite row. Mirrors the wire shape the server expects. */
+export interface TeamInviteImportRow {
+  email: string;
+  team_name: string;
+  role: string;
+}
+
+export interface TeamInviteImportResult {
+  rows: TeamInviteImportRow[];
+  /** Rows rejected outright (bad email, missing team). */
+  errors: string[];
+  /** Non-fatal skips, e.g. the same address appearing twice in one file. */
+  warnings: string[];
+  headersFound: { email: boolean; team: boolean };
+}
+
+const INVITE_ROLE_ALIASES: Record<string, string> = {
+  coach: "coach",
+  head: "coach",
+  headcoach: "coach",
+  "head coach": "coach",
+  manager: "coach",
+  assistant: "assistant_coach",
+  assistant_coach: "assistant_coach",
+  "assistant coach": "assistant_coach",
+  asst: "assistant_coach",
+  asstcoach: "assistant_coach",
+};
+
+/**
+ * Parse a coach-invite CSV into rows for bulk invite creation. Team names are
+ * left unresolved on purpose — the server owns team resolution so an invite
+ * can never be attached to a team outside the caller's organization.
+ */
+export function parseTeamInviteCSV(text: string): TeamInviteImportResult {
+  const cleaned = text
+    .replace(/^\uFEFF/, "")
+    .replace(/\r\n/g, "\n")
+    .replace(/\r/g, "\n");
+  const lines = cleaned
+    .split("\n")
+    .map((l) => l.trim())
+    .filter((l) => l.length > 0);
+  if (lines.length < 2) throw new Error("CSV file is empty or has no data rows.");
+
+  const rawHeaders = parseCSVLine(lines[0]).map((h) => h.trim());
+  const headers = rawHeaders.map((h) => h.toLowerCase());
+
+  const emailIdx = findHeaderIndex(headers, ["email", "e-mail", "email address", "coach email"]);
+  const teamIdx = findHeaderIndex(headers, ["team", "team name", "which team", "club"]);
+  const roleIdx = findHeaderIndex(headers, ["role", "position", "job title", "title"]);
+
+  if (emailIdx === -1) {
+    throw new Error(
+      `Missing required column "email". Found: ${rawHeaders.join(", ") || "(empty header row)"}`
+    );
+  }
+  if (teamIdx === -1) {
+    throw new Error(`Missing required column "team". Found: ${rawHeaders.join(", ")}`);
+  }
+
+  const rows: TeamInviteImportRow[] = [];
+  const errors: string[] = [];
+  const warnings: string[] = [];
+  const seen = new Set<string>();
+
+  for (let i = 1; i < lines.length; i++) {
+    const rowNum = i + 1; // CSV row numbers (header = 1)
+    const cells = parseCSVLine(lines[i]);
+    const email = (cells[emailIdx] || "").trim().toLowerCase();
+    const teamName = (cells[teamIdx] || "").trim();
+    const roleRaw = (roleIdx !== -1 ? cells[roleIdx] || "" : "").trim().toLowerCase();
+
+    if (!email) {
+      errors.push(`Row ${rowNum}: email is empty`);
+      continue;
+    }
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email) || email.length > 254) {
+      errors.push(`Row ${rowNum} ("${email}"): not a valid email address`);
+      continue;
+    }
+    if (!teamName) {
+      errors.push(`Row ${rowNum} ("${email}"): team is empty`);
+      continue;
+    }
+
+    let role = "coach";
+    if (roleRaw) {
+      const mapped = INVITE_ROLE_ALIASES[roleRaw.replace(/\s+/g, "")] ?? INVITE_ROLE_ALIASES[roleRaw];
+      if (!mapped) {
+        errors.push(`Row ${rowNum} ("${email}"): role must be coach or assistant_coach`);
+        continue;
+      }
+      role = mapped;
+    }
+
+    // Same address twice in one file would create two invites for one person;
+    // the server would drop the second, but flagging it here is clearer.
+    if (seen.has(email)) {
+      warnings.push(`Row ${rowNum} ("${email}"): duplicate email, skipped.`);
+      continue;
+    }
+    seen.add(email);
+
+    rows.push({ email, team_name: teamName, role });
+  }
+
+  return {
+    rows,
+    errors,
+    warnings,
+    headersFound: { email: emailIdx !== -1, team: teamIdx !== -1 },
+  };
+}
