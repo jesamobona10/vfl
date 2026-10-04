@@ -163,7 +163,7 @@ AS $$
 DECLARE
   v_user_id UUID := auth.uid();
   v_email TEXT;
-  v_invite team_account_invites;
+  v_invite public.team_account_invites;
   v_team_name TEXT;
   v_username TEXT;
 BEGIN
@@ -190,14 +190,16 @@ BEGIN
   -- team. SKIP LOCKED lets concurrent requests move on to another row
   -- instead of serialising; claimed_by UNIQUE then rejects a second claim by
   -- the same user outright.
+  --
+  -- Every table is schema-qualified because search_path is empty.
   SELECT i.*
   INTO v_invite
-  FROM team_account_invites i
+  FROM public.team_account_invites i
   WHERE lower(i.email) = v_email
     AND i.claimed_by IS NULL
   ORDER BY i.created_at ASC
-  FOR UPDATE SKIP LOCKED
-  LIMIT 1;
+  LIMIT 1
+  FOR UPDATE SKIP LOCKED;
 
   IF NOT FOUND THEN
     RETURN;
@@ -205,7 +207,7 @@ BEGIN
 
   SELECT t.name
   INTO v_team_name
-  FROM teams t
+  FROM public.teams t
   WHERE t.id = v_invite.team_id;
 
   -- The legacy login flow keyed accounts by "TEAMNAME-123"; an email address
@@ -217,7 +219,7 @@ BEGIN
   -- ON CONFLICT DO NOTHING: if the caller already has a team_accounts row
   -- they have no use for the invite, so leave it pending rather than
   -- consuming it.
-  INSERT INTO team_accounts (
+  INSERT INTO public.team_accounts (
     id, username, display_name, team_id, organization_id, role, created_by
   )
   VALUES (
@@ -230,7 +232,7 @@ BEGIN
     RETURN;
   END IF;
 
-  UPDATE team_account_invites
+  UPDATE public.team_account_invites
   SET claimed_by = v_user_id,
       claimed_at = NOW()
   WHERE id = v_invite.id
