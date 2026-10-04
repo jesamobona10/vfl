@@ -161,6 +161,8 @@ export async function proxy(request: NextRequest) {
     pathname === "/api/auth/team-login" ||
     pathname === "/api/auth/player-login" ||
     pathname === "/api/auth/player-register" ||
+    // Unauthenticated by design: the caller has no recovery session yet.
+    pathname === "/api/auth/forgot-password" ||
     pathname === "/api/org/register" ||
     pathname === "/api/cron/pre-match-reminders" ||
     pathname.startsWith("/api/public/");
