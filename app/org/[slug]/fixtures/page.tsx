@@ -306,7 +306,12 @@ export default function OrgFixturesPage() {
       ) : (
         <>
           <FixtureList loading={loadingDb} />
-          {!loadingDb && (
+          {/*
+            Generate/reset are super-admin mutations. Coaches reach this page
+            too, so gate the whole block on isAdmin rather than letting them see
+            a control that would only 403.
+          */}
+          {!loadingDb && isAdmin && (
             <div className="mt-4 text-center">
               {hasFixtures ? (
                 <div className="space-y-2">

@@ -34,7 +34,11 @@ export async function GET(request: Request, props: { params: Promise<{ slug: str
 
     if (
       !auth!.isAdmin &&
-      (!auth!.orgMembership || auth!.orgMembership.organization_id !== org.id)
+      (!auth!.orgMembership || auth!.orgMembership.organization_id !== org.id) &&
+      // Coaches read their own organization's fixtures. Compared against the
+      // org row on their own team_accounts record rather than the `teams`
+      // table, whose RLS policy does not admit team accounts at all.
+      auth!.teamAccount?.organization_id !== org.id
     ) {
       return json({ error: "Forbidden" }, { status: 403 });
     }

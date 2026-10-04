@@ -120,10 +120,10 @@ describe("auth context helpers", () => {
     const { ownsTeam } = sec();
     expect(ownsTeam(auth({ isAdmin: true }), 999)).toBe(true);
     expect(
-      ownsTeam(auth({ teamAccount: { id: "t", team_id: 7, username: "u" } }), 7)
+      ownsTeam(auth({ teamAccount: { id: "t", team_id: 7, username: "u", organization_id: "org-1" } }), 7)
     ).toBe(true);
     expect(
-      ownsTeam(auth({ teamAccount: { id: "t", team_id: 7, username: "u" } }), 8)
+      ownsTeam(auth({ teamAccount: { id: "t", team_id: 7, username: "u", organization_id: "org-1" } }), 8)
     ).toBe(false);
     expect(ownsTeam(auth(), 1)).toBe(false);
   });
@@ -132,7 +132,7 @@ describe("auth context helpers", () => {
     const { actorRole } = sec();
     expect(actorRole(null)).toBe("anonymous");
     expect(actorRole(auth({ isAdmin: true }))).toBe("super_admin");
-    expect(actorRole(auth({ teamAccount: { id: "t", team_id: 1, username: "u" } }))).toBe(
+    expect(actorRole(auth({ teamAccount: { id: "t", team_id: 1, username: "u", organization_id: "org-1" } }))).toBe(
       "team_account"
     );
     expect(actorRole(auth({ orgMembership: { organization_id: "o", role: "owner" } }))).toBe(

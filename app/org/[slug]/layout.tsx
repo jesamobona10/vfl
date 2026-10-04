@@ -9,7 +9,7 @@ import { AppHeader } from "@/components/layout/app-header";
 import { Sidebar, type SidebarItem } from "@/components/layout/sidebar";
 import { MobileNavDrawer } from "@/components/layout/mobile-nav-drawer";
 import { OrgSeasonProvider } from "@/components/competitions/org-season-provider";
-import { LayoutDashboard, Trophy, Users, Shield, UserCog, Swords, ScrollText, Radio } from "lucide-react";
+import { LayoutDashboard, Trophy, Users, Shield, UserCog, Swords, ScrollText, Radio, Calendar, Settings } from "lucide-react";
 
 const SearchModal = dynamic(() => import("@/components/search/search-modal").then(m => m.SearchModal), {
   ssr: false,
@@ -21,16 +21,36 @@ const tabs: SidebarItem[] = [
   { href: "/competitions", label: "Competitions", icon: Swords },
   { href: "/standings", label: "Standings", icon: Trophy },
   { href: "/players", label: "Players", icon: Users },
+  { href: "/fixtures", label: "Fixtures", icon: Calendar },
   { href: "/teams", label: "Teams", icon: Shield },
   { href: "/team-accounts", label: "Team Accounts", icon: UserCog },
+  { href: "/team-settings", label: "Team Settings", icon: Settings },
   { href: "/audit-logs", label: "Audit Logs", icon: ScrollText },
   { href: "/public", label: "Public Match Centre", icon: Radio },
 ];
 
-/** Which nav sections each role may see. Org admins see everything. */
+/**
+ * Which nav sections each role may see. Org admins see everything.
+ *
+ * The team_account list is deliberately limited to destinations that already
+ * work for a coach: Lineup, Transfers and team-scoped General Statistics are
+ * not wired up yet, and listing a link that renders an empty or 403 page is
+ * worse than omitting it.
+ */
 const NAV_BY_ROLE: Record<string, string[]> = {
-  org_admin: ["/dashboard", "/competitions", "/standings", "/players", "/teams", "/team-accounts", "/audit-logs", "/public"],
-  team_account: ["/dashboard", "/standings", "/players", "/public"],
+  org_admin: [
+    "/dashboard",
+    "/competitions",
+    "/standings",
+    "/players",
+    "/fixtures",
+    "/teams",
+    "/team-accounts",
+    "/team-settings",
+    "/audit-logs",
+    "/public",
+  ],
+  team_account: ["/dashboard", "/standings", "/players", "/fixtures", "/team-settings", "/public"],
   player: ["/dashboard", "/standings", "/public"],
 };
 

@@ -86,6 +86,16 @@ export function OrgSeasonProvider({ children }: { children: React.ReactNode }) {
   const isOrgAdmin =
     isAdmin || (userProfile?.role === "org_admin" && !currentTeamAccount);
 
+  /**
+   * Whether this role may *read* the organization's season-scoped data.
+   *
+   * Kept separate from isOrgAdmin on purpose: that flag gates admin-only UI and
+   * mutations (fixture generation, resets, bulk entry), so widening it for
+   * coaches would hand them admin controls. This one only decides whether to
+   * load the data, which team accounts already have nav links for.
+   */
+  const canReadOrgData = isOrgAdmin || currentTeamAccount !== null;
+
   // Competition subpages (>=4 segments: /org/[slug]/competitions/[cId]/…) manage
   // their own season-scoped data, so the org-level provider must not interfere.
   const isCompetitionPage = useMemo(() => {
@@ -132,7 +142,7 @@ export function OrgSeasonProvider({ children }: { children: React.ReactNode }) {
   }, [selectedOrgSeasonId, setCurrentOrgSeasonId]);
 
   const shouldFetch =
-    isOrgAdmin && !isCompetitionPage && !!currentOrg?.id && !!selectedOrgSeasonId;
+    canReadOrgData && !isCompetitionPage && !!currentOrg?.id && !!selectedOrgSeasonId;
 
   const teamsQuery = useOrgSeasonTeams(
     shouldFetch ? currentOrg!.id : undefined,

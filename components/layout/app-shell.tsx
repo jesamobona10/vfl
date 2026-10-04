@@ -90,6 +90,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
     publicPaths.has(pathname) || pathname === "/public" || pathname.startsWith("/public/");
   const isPlayer = userProfile?.role === "player";
   const isOrgAdmin = userProfile?.role === "org_admin";
+  const isTeamAccount = userProfile?.role === "team_account";
   const isAuthenticated = currentTeamAccount !== null || isAdmin || isPlayer || isOrgAdmin;
 
   const isOrgRoute = pathname.startsWith("/org/");
@@ -121,6 +122,20 @@ export function AppShell({ children }: { children: React.ReactNode }) {
       }
     }
   }, [isOrgAdmin, isOrgRoute, authLoading, userProfile, router]);
+
+  // Entry redirect for coaches. Without this a coach who just signed in with
+  // Google lands on the marketing page (a public path, so AppShell renders it
+  // immediately) and sees no navigation at all — the org shell has no way to
+  // render them without a slug. A coach whose team_accounts.organization_id is
+  // still null has no slug to redirect to and stays put, matching the proxy.
+  useEffect(() => {
+    if (isTeamAccount && !isOrgRoute && !authLoading) {
+      const slug = userProfile?.org?.slug;
+      if (slug) {
+        router.replace(`/org/${slug}/dashboard`);
+      }
+    }
+  }, [isTeamAccount, isOrgRoute, authLoading, userProfile, router]);
 
   // Public routes (marketing page, explicit auth pages) render immediately —
   // no session round-trip, no spinner. Authenticated areas below wait for the

@@ -95,7 +95,20 @@ export type OrgMembership = {
 export type AuthContext = {
   userId: string;
   isAdmin: boolean;
-  teamAccount: { id: string; team_id: number | null; username?: string | null } | null;
+  teamAccount: {
+    id: string;
+    team_id: number | null;
+    username?: string | null;
+    /**
+     * Read from the coach's own row (`team_accounts_read_org` admits
+     * `id = auth.uid()`), NOT via a `teams` embed — the teams RLS policy only
+     * admits organization members and super admins, so a coach reading their
+     * own row through the anon client cannot see the team at all. Null on rows
+     * predating the org backfill; guards treat that as "not a member" and fail
+     * closed.
+     */
+    organization_id: string | null;
+  } | null;
   orgMembership: OrgMembership | null;
 };
 
@@ -367,7 +380,7 @@ export async function getAuthContext(supabase: SupabaseClient): Promise<AuthCont
     supabase.from("admin_users").select("id").eq("id", session.user.id).maybeSingle(),
     supabase
       .from("team_accounts")
-      .select("id, team_id, username")
+      .select("id, team_id, username, organization_id")
       .eq("id", session.user.id)
       .maybeSingle(),
     supabase
@@ -390,7 +403,14 @@ export async function getAuthContext(supabase: SupabaseClient): Promise<AuthCont
   return {
     userId: session.user.id,
     isAdmin: Boolean(adminUser),
-    teamAccount: teamAccount ?? null,
+    teamAccount: teamAccount
+      ? {
+          id: teamAccount.id,
+          team_id: teamAccount.team_id,
+          username: teamAccount.username,
+          organization_id: teamAccount.organization_id ?? null,
+        }
+      : null,
     orgMembership,
   };
 }
