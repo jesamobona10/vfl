@@ -1,4 +1,5 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
+import { claimTeamInvite } from "@/lib/auth/claim-team-invite";
 import { logApiError } from "@/lib/security";
 
 /**
@@ -56,20 +57,54 @@ export async function resolveSession(
 
     const { data: teamAccount } = await supabase
       .from("team_accounts")
-      .select("id, username, display_name, team_id, role")
+      .select(
+        "id, username, display_name, team_id, role, organization_id, organizations(name, slug, type)"
+      )
       .eq("id", session.user.id)
       .single();
 
-    if (teamAccount) {
+    // A Google user whose invite has never been redeemed has no team_accounts
+    // row yet, so try to claim one before giving up. Deliberately after the
+    // lookup above: existing coaches never pay for the extra round trip.
+    let resolvedTeamAccount = teamAccount;
+    if (!resolvedTeamAccount) {
+      const claimed = await claimTeamInvite(supabase, session.user.id);
+      if (claimed) {
+        const { data: claimedAccount } = await supabase
+          .from("team_accounts")
+          .select(
+            "id, username, display_name, team_id, role, organization_id, organizations(name, slug, type)"
+          )
+          .eq("id", session.user.id)
+          .single();
+        resolvedTeamAccount = claimedAccount;
+      }
+    }
+
+    if (resolvedTeamAccount) {
+      const teamOrg = resolvedTeamAccount.organizations as unknown as
+        | { name: string; slug: string; type: string }
+        | null;
       return {
         authenticated: true,
         role: "team_account",
         profile: {
-          id: teamAccount.id,
+          id: resolvedTeamAccount.id,
           role: "team_account",
-          displayName: teamAccount.display_name,
-          teamId: teamAccount.team_id,
-          username: teamAccount.username,
+          displayName: resolvedTeamAccount.display_name,
+          teamId: resolvedTeamAccount.team_id,
+          username: resolvedTeamAccount.username,
+          // Without the org embed the client store has no slug to build
+          // /org/[slug]/dashboard from, which strands the coach on a redirect
+          // loop. The membership branch below already returns this shape.
+          org: teamOrg
+            ? {
+                id: resolvedTeamAccount.organization_id,
+                name: teamOrg.name,
+                slug: teamOrg.slug,
+                type: teamOrg.type,
+              }
+            : undefined,
         },
       };
     }

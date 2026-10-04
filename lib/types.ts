@@ -719,6 +719,8 @@ export interface TeamAccountRow {
   username: string;
   display_name: string;
   team_id: number | null;
+  /** Null on rows created before the org backfill; see 20260818_backfill_team_accounts_org.sql. */
+  organization_id: string | null;
   role: string;
   created_at: string;
   teams?: { name: string } | null;
