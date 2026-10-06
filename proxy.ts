@@ -78,7 +78,7 @@ async function resolveAccountKind(
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || "";
 
 const ALLOWED_ORIGINS = [
-  "https://vfl.league",
+  "https://vfl-iota.vercel.app",
   "http://localhost:3000",
   process.env.NEXT_PUBLIC_APP_URL,
 ].filter(Boolean) as string[];

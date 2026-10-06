@@ -28,7 +28,7 @@ export const viewport: Viewport = {
 
 export const metadata: Metadata = {
   metadataBase: new URL(
-    process.env.NEXT_PUBLIC_SITE_URL ?? "https://leagueforge.vercel.app"
+    process.env.NEXT_PUBLIC_SITE_URL ?? "https://vfl-iota.vercel.app"
   ),
   title: {
     default: "LeagueForge",
