@@ -1,7 +1,7 @@
 "use client";
 
-import { useState } from "react";
-import { useRouter } from "next/navigation";
+import { useEffect, useState } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 import { useAppStore } from "@/lib/store";
 import { createClient } from "@/lib/supabase/client";
 import { Shield, User, LogIn, AlertCircle, UserCog } from "lucide-react";
@@ -47,6 +47,23 @@ export function LoginForm() {
   const loginAdmin = useAppStore((s) => s.loginAdmin);
   const loginPlayer = useAppStore((s) => s.loginPlayer);
   const loginOrgAdmin = useAppStore((s) => s.loginOrgAdmin);
+
+  // A failed OAuth exchange redirects here with ?error=. It is read from the
+  // router during render rather than from window in an effect, so the server
+  // and client agree on the first paint.
+  const searchParams = useSearchParams();
+  const oauthError = searchParams.get("error");
+  const oauthMessage = oauthError
+    ? oauthError === "oauth"
+      ? "Google sign-in couldn't be completed. Please try again."
+      : "Sign-in failed. Please try again."
+    : "";
+
+  // Drop the param so a refresh doesn't repeat a stale message.
+  useEffect(() => {
+    if (!oauthError) return;
+    window.history.replaceState({}, "", window.location.pathname);
+  }, [oauthError]);
 
   const redirectAfterLogin = () => {
     if (typeof window === "undefined") return "/";
@@ -163,13 +180,13 @@ export function LoginForm() {
           ))}
         </div>
 
-        {error && (
+        {(error || oauthMessage) && (
           <div
             className="flex items-center gap-2 text-sm text-danger bg-danger/10 rounded-lg px-3 py-2 mb-4"
             role="alert"
           >
             <AlertCircle size={16} />
-            {error}
+            {error || oauthMessage}
           </div>
         )}
 

@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect } from "react";
+import { Suspense, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useAppStore } from "@/lib/store";
 import { LoginForm } from "@/components/layout/login-form";
@@ -18,7 +18,9 @@ export default function LoginPage() {
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-bg p-4">
-      <LoginForm />
+        <Suspense fallback={null}>
+          <LoginForm />
+        </Suspense>
     </div>
   );
 }
