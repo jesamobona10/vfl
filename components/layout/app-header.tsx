@@ -19,6 +19,8 @@ import { useResolvedTeams } from "@/lib/hooks/use-resolved-teams";
 import { useToast } from "@/components/ui/toast";
 import { useOrgSeason } from "@/components/competitions/org-season-provider";
 import { OrgSeasonSelector } from "@/components/competitions/org-season-selector";
+import { InAppWalkthrough } from "@/components/shared/in-app-walkthrough";
+import { usePathname } from "next/navigation";
 
 interface AppHeaderProps {
   onOpenSearch: () => void;
@@ -44,6 +46,7 @@ export function AppHeader({ onOpenSearch, onOpenMenu }: AppHeaderProps) {
   const [importing, setImporting] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
+  const pathname = usePathname();
 
   const {
     seasons: orgSeasons,
@@ -177,6 +180,18 @@ export function AppHeader({ onOpenSearch, onOpenMenu }: AppHeaderProps) {
 
       <div className="flex items-center gap-1 shrink-0">
         <ThemeToggle />
+        <InAppWalkthrough
+          audience={
+            isAdmin
+              ? "admin"
+              : currentTeamAccount
+                ? "team_account"
+                : isPlayer
+                  ? "player"
+                  : "org_admin"
+          }
+          slug={pathname.match(/^\/org\/([^/]+)/)?.[1]}
+        />
         <Notifications />
         {currentTeamAccount && (
           <button
