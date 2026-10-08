@@ -22,13 +22,14 @@ export function FixtureRoundPanel({
   onDrop,
 }: FixtureRoundPanelProps) {
   const currentSeasonId = useAppStore((s) => s.currentSeasonId);
-  const teams = useResolvedTeams(currentSeasonId);
-  const teamName = useAppStore((s) => s.teamName);
+  const seasonId = round.matches[0]?.season_id ?? currentSeasonId;
+  const teams = useResolvedTeams(seasonId);
   const getTeam = useAppStore((s) => s.getTeam);
+  const resolveTeam = (teamId: number) => teams.find((team) => team.id === teamId) ?? getTeam(teamId);
 
   const byeId = roundByeId(round, teams);
   const byeVisible = teamFilter === "all" || byeId === Number(teamFilter);
-  const byeTeam = byeId ? getTeam(byeId) : null;
+  const byeTeam = byeId ? resolveTeam(byeId) : null;
 
   const matchingMatches = round.matches.filter((match) => {
     const teamMatches =
@@ -57,8 +58,8 @@ export function FixtureRoundPanel({
             key={match.id}
             match={match}
             label={`Match ${match.id}`}
-            homeTeam={getTeam(match.homeId)}
-            awayTeam={getTeam(match.awayId)}
+            homeTeam={resolveTeam(match.homeId)}
+            awayTeam={resolveTeam(match.awayId)}
             editable={editable}
             onDrop={onDrop}
           />
