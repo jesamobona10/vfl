@@ -50,15 +50,10 @@ describe("coach nav audit", () => {
     expect(missing).toEqual([]);
   });
 
-  it("gives team accounts only the destinations Phase 3a wires up", () => {
-    // Anything added here needs a page AND an authorization path before a coach
-    // can use it — see the guardrail in the implementation guide.
+  it("keeps team accounts on the simplified organization navigation", () => {
     expect(nav.team_account).toEqual([
       "/dashboard",
-      "/standings",
       "/players",
-      "/fixtures",
-      "/team-settings",
       "/public",
     ]);
   });

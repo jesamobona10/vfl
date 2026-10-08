@@ -16,9 +16,7 @@ import {
   Users,
   UserCog,
   Trophy,
-  Calendar,
   KeyRound,
-  ScrollText,
   FileDown,
   Radio,
 } from "lucide-react";
@@ -34,9 +32,7 @@ const adminNav: SidebarItem[] = [
   { href: "/admin?tab=teams", label: "Teams", icon: Users },
   { href: "/admin?tab=players", label: "Players", icon: UserCog },
   { href: "/admin?tab=competitions", label: "Competitions", icon: Trophy },
-  { href: "/admin?tab=fixtures", label: "Fixtures", icon: Calendar },
   { href: "/admin?tab=users", label: "Users", icon: KeyRound },
-  { href: "/admin?tab=audit", label: "Audit", icon: ScrollText },
   { href: "/admin?tab=import", label: "Import", icon: FileDown },
   { href: "/admin?tab=public", label: "Public Match Centre", icon: Radio },
 ];

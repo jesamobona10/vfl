@@ -68,7 +68,7 @@ const statsCards = [
       trend: teamTrend as { direction: "up" | "down" | "neutral"; diff: number } | null,
     },
     {
-      label: "Fixtures",
+      label: "Schedule",
       value: stats.fixtures.completed,
       secondary: `${stats.fixtures.total} total (${stats.fixtures.scheduled} upcoming)`,
       icon: Calendar,

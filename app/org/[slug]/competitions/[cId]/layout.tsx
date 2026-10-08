@@ -27,7 +27,7 @@ const statusColors: Record<string, string> = {
 
 const tabs = [
   { href: "standings", label: "Standings", icon: Trophy },
-  { href: "fixtures", label: "Fixtures", icon: Calendar },
+  { href: "fixtures", label: "Schedule", icon: Calendar },
   { href: "live", label: "Live", icon: Activity },
   { href: "teams", label: "Teams", icon: Shield },
   { href: "players", label: "Players", icon: Users },

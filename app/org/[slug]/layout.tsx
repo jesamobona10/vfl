@@ -9,7 +9,7 @@ import { AppHeader } from "@/components/layout/app-header";
 import { Sidebar, type SidebarItem } from "@/components/layout/sidebar";
 import { MobileNavDrawer } from "@/components/layout/mobile-nav-drawer";
 import { OrgSeasonProvider } from "@/components/competitions/org-season-provider";
-import { LayoutDashboard, Trophy, Users, Shield, UserCog, Swords, ScrollText, Radio, Calendar, Settings } from "lucide-react";
+import { LayoutDashboard, Users, Shield, UserCog, Swords, Radio } from "lucide-react";
 
 const SearchModal = dynamic(() => import("@/components/search/search-modal").then(m => m.SearchModal), {
   ssr: false,
@@ -19,13 +19,9 @@ const SearchModal = dynamic(() => import("@/components/search/search-modal").the
 const tabs: SidebarItem[] = [
   { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
   { href: "/competitions", label: "Competitions", icon: Swords },
-  { href: "/standings", label: "Standings", icon: Trophy },
   { href: "/players", label: "Players", icon: Users },
-  { href: "/fixtures", label: "Fixtures", icon: Calendar },
   { href: "/teams", label: "Teams", icon: Shield },
   { href: "/team-accounts", label: "Team Accounts", icon: UserCog },
-  { href: "/team-settings", label: "Team Settings", icon: Settings },
-  { href: "/audit-logs", label: "Audit Logs", icon: ScrollText },
   { href: "/public", label: "Public Match Centre", icon: Radio },
 ];
 
@@ -41,17 +37,13 @@ const NAV_BY_ROLE: Record<string, string[]> = {
   org_admin: [
     "/dashboard",
     "/competitions",
-    "/standings",
     "/players",
-    "/fixtures",
     "/teams",
     "/team-accounts",
-    "/team-settings",
-    "/audit-logs",
     "/public",
   ],
-  team_account: ["/dashboard", "/standings", "/players", "/fixtures", "/team-settings", "/public"],
-  player: ["/dashboard", "/standings", "/public"],
+  team_account: ["/dashboard", "/players", "/public"],
+  player: ["/dashboard", "/public"],
 };
 
 export default function OrgLayout({ children }: { children: React.ReactNode }) {

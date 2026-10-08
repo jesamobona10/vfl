@@ -8,7 +8,6 @@ import { OrgManager } from "./org-manager";
 import { AdminTeamManager } from "./team-manager";
 import { AdminPlayerManager } from "./admin-player-manager";
 import { CompManager } from "./comp-manager";
-import { AuditViewer } from "./audit-viewer";
 import { UsersManager } from "./users-manager";
 import { AdminTeamAccountManager } from "./admin-team-account-manager";
 import { ChevronDown, ChevronRight, Building2, Calendar, Trash2, Search } from "lucide-react";
@@ -30,9 +29,7 @@ type AdminTab =
   | "teams"
   | "players"
   | "competitions"
-  | "fixtures"
   | "users"
-  | "audit"
   | "import"
   | "public";
 
@@ -355,9 +352,7 @@ const VALID_TABS: AdminTab[] = [
   "teams",
   "players",
   "competitions",
-  "fixtures",
   "users",
-  "audit",
   "import",
   "public",
 ];
@@ -368,9 +363,7 @@ const TAB_LABELS: Record<AdminTab, string> = {
   teams: "Teams",
   players: "Players",
   competitions: "Comps",
-  fixtures: "Fixtures",
   users: "Users",
-  audit: "Audit",
   import: "Import",
   public: "Public",
 };
@@ -398,9 +391,7 @@ export function AdminPanel() {
       {tab === "teams" && <AdminTeamManager />}
       {tab === "players" && <AdminPlayerManager />}
       {tab === "competitions" && <CompManager />}
-      {tab === "fixtures" && <FixtureManager />}
       {tab === "users" && <UsersManager />}
-      {tab === "audit" && <AuditViewer />}
       {tab === "import" && <DataImporter />}
       {tab === "public" && <PublicDashboard />}
     </div>
