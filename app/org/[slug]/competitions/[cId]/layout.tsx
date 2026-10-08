@@ -1,7 +1,7 @@
 "use client";
 
 import { useCompetition, useSeasons } from "@/lib/hooks/use-competitions";
-import { useParams, usePathname } from "next/navigation";
+import { useParams, usePathname, useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { Calendar, Trophy, Settings, Activity, ListOrdered, Users, Shield } from "lucide-react";
 import { PageSkeleton } from "@/components/shared/skeleton";
@@ -38,21 +38,32 @@ const tabs = [
 export default function CompetitionLayout({ children }: { children: React.ReactNode }) {
   const params = useParams();
   const pathname = usePathname();
+  const router = useRouter();
+  const searchParams = useSearchParams();
   const slug = params.slug as string;
   const cId = params.cId as string;
   const { data: currentCompetition, isLoading } = useCompetition(cId);
   const { data: seasons = [] } = useSeasons(currentCompetition?.id);
   const [selectedSeasonId, setSelectedSeasonId] = useState<string | null>(null);
-  const setCurrentSeasonId = useAppStore((s) => (s as any).setCurrentSeasonId);
+  const setCurrentSeasonId = useAppStore((s) => s.setCurrentSeasonId);
+  const setFixtures = useAppStore((s) => s.setFixtures);
+  const setTeams = useAppStore((s) => s.setTeams);
+  const setPlayers = useAppStore((s) => s.setPlayers);
 
   const currentSeason = seasons.find((s) => s.is_current);
   const stats = useCompetitionOverviewStats(selectedSeasonId ?? undefined, currentCompetition?.id);
+  const seasonIdParam = searchParams.get("seasonId");
 
   useEffect(() => {
-    if (!selectedSeasonId && currentSeason) {
-      setSelectedSeasonId(currentSeason.id);
+    if (!seasons.length) return;
+    const requestedSeason = seasonIdParam
+      ? seasons.find((season) => season.id === seasonIdParam)
+      : undefined;
+    const nextSeasonId = requestedSeason?.id ?? currentSeason?.id ?? seasons[0]?.id ?? null;
+    if (nextSeasonId && nextSeasonId !== selectedSeasonId) {
+      setSelectedSeasonId(nextSeasonId);
     }
-  }, [currentSeason?.id]);
+  }, [currentSeason?.id, seasonIdParam, seasons, selectedSeasonId]);
 
   useEffect(() => {
     if (selectedSeasonId && seasons.length > 0 && !seasons.some((s) => s.id === selectedSeasonId)) {
@@ -62,7 +73,24 @@ export default function CompetitionLayout({ children }: { children: React.ReactN
 
   useEffect(() => {
     setCurrentSeasonId(selectedSeasonId);
-  }, [selectedSeasonId]);
+    setFixtures([]);
+    setTeams([]);
+    setPlayers([]);
+  }, [selectedSeasonId, setCurrentSeasonId, setFixtures, setPlayers, setTeams]);
+
+  useEffect(() => {
+    if (!selectedSeasonId || seasonIdParam === selectedSeasonId) return;
+    const query = new URLSearchParams(searchParams.toString());
+    query.set("seasonId", selectedSeasonId);
+    router.replace(`${pathname}?${query.toString()}`, { scroll: false });
+  }, [pathname, router, searchParams, seasonIdParam, selectedSeasonId]);
+
+  const handleSeasonChange = (seasonId: string) => {
+    setSelectedSeasonId(seasonId);
+    const query = new URLSearchParams(searchParams.toString());
+    query.set("seasonId", seasonId);
+    router.replace(`${pathname}?${query.toString()}`, { scroll: false });
+  };
 
   if (isLoading || !currentCompetition) {
     return (
@@ -84,7 +112,7 @@ export default function CompetitionLayout({ children }: { children: React.ReactN
     <SeasonSelector
       seasons={seasons}
       selectedSeasonId={selectedSeasonId}
-      onSeasonChange={setSelectedSeasonId}
+      onSeasonChange={handleSeasonChange}
     />
   );
 

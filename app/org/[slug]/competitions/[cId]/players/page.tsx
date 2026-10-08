@@ -12,7 +12,6 @@ import {
   useDeleteSeasonPlayer,
 } from "@/lib/hooks/use-competitions";
 import { Users, X, Plus, AlertCircle, UserRound, ChevronDown } from "lucide-react";
-import { PageSkeleton } from "@/components/shared/skeleton";
 import { useConfirm } from "@/components/shared/confirm-dialog";
 
 export default function CompPlayersPage() {
@@ -77,11 +76,7 @@ export default function CompPlayersPage() {
   }, [seasonPlayers]);
 
   if (isLoading) {
-    return (
-      <div className="flex items-center justify-center py-20">
-        <PageSkeleton />
-      </div>
-    );
+    return null;
   }
 
   if (!seasonId) {

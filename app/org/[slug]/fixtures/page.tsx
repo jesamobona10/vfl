@@ -72,7 +72,7 @@ export default function OrgFixturesPage() {
       ]);
       if (!competitionsResponse.ok) throw new Error("Unable to load competitions.");
       const data = await competitionsResponse.json();
-      const list: CompOption[] = (data.competitions || []).filter((c: CompOption) => c.type === "league");
+      const list: CompOption[] = data.competitions || [];
       if (requestId !== fixtureLoadRequestRef.current) return;
       setComps(list);
 

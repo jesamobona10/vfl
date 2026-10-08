@@ -53,9 +53,9 @@ export async function POST(request: Request, props: { params: Promise<{ id: stri
       return adminError;
     }
 
-    if (competition.type !== "league") {
+    if (!["league", "cup", "friendly"].includes(competition.type)) {
       return json(
-        { error: "Fixtures can only be generated for league competitions." },
+        { error: "Fixtures cannot be generated for this competition type." },
         { status: 400 }
       );
     }

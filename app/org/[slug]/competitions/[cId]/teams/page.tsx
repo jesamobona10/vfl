@@ -9,7 +9,7 @@ import {
   useDeleteSeasonTeam,
 } from "@/lib/hooks/use-competitions";
 import { Plus, X, AlertCircle } from "lucide-react";
-import { PageSkeleton, EmptyState } from "@/components/shared/skeleton";
+import { EmptyState } from "@/components/shared/skeleton";
 import { useConfirm } from "@/components/shared/confirm-dialog";
 
 export default function CompTeamsPage() {
@@ -45,11 +45,7 @@ export default function CompTeamsPage() {
   const unregistered = orgTeams.filter((t) => !registeredIds.has(t.id));
 
   if (isLoading) {
-    return (
-      <div className="flex items-center justify-center py-20">
-        <PageSkeleton />
-      </div>
-    );
+    return null;
   }
 
   if (!seasonId) {

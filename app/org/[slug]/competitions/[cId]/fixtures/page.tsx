@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useParams, useSearchParams } from "next/navigation";
 import { Zap } from "lucide-react";
 import { useAppStore } from "@/lib/store";
@@ -21,6 +21,7 @@ export default function CompFixturesPage() {
   const { success: toastSuccess, error: toastError } = useToast();
 
   const [loading, setLoading] = useState(true);
+  const requestId = useRef(0);
 
   const { data: competition } = useCompetition(cId);
   const { data: seasons = [] } = useSeasons(competition?.id);
@@ -36,6 +37,9 @@ export default function CompFixturesPage() {
   const canEdit = isAdmin || userProfile?.role === "org_admin";
 
   const loadFixtures = useCallback(async () => {
+    const currentRequest = ++requestId.current;
+    setLoading(true);
+    setFixtures([]);
     const query = new URLSearchParams({ competition_id: cId });
     if (seasonId) query.set("season_id", seasonId);
 
@@ -43,11 +47,13 @@ export default function CompFixturesPage() {
       const res = await fetch(`/api/organizations/${slug}/fixtures?${query.toString()}`);
       if (!res.ok) return;
       const data = await res.json();
-      setFixtures(data.fixtures ?? []);
+      if (currentRequest === requestId.current) {
+        setFixtures(Array.isArray(data.fixtures) ? data.fixtures : []);
+      }
     } catch {
-      // keep the current list rather than blanking it on a transient failure
+      // The list was cleared above so a failed request cannot show another season.
     } finally {
-      setLoading(false);
+      if (currentRequest === requestId.current) setLoading(false);
     }
   }, [slug, cId, seasonId, setFixtures]);
 

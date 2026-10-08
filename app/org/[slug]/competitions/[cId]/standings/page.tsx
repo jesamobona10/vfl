@@ -17,6 +17,7 @@ export default function CompStandingsPage() {
   const seasonId = searchParams.get("seasonId");
   const setFixtures = useAppStore((s) => s.setFixtures);
   const setTeams = useAppStore((s) => s.setTeams);
+  const setPlayers = useAppStore((s) => s.setPlayers);
   const fixtures = useAppStore((s) => s.fixtures);
   const teams = useAppStore((s) => s.teams);
   const [loading, setLoading] = useState(true);
@@ -28,6 +29,16 @@ export default function CompStandingsPage() {
 
   useEffect(() => {
     let cancelled = false;
+    setLoading(true);
+    setFixtures([]);
+    setTeams([]);
+    setPlayers([]);
+    if (!seasonId) {
+      setLoading(false);
+      return () => {
+        cancelled = true;
+      };
+    }
     const q = new URLSearchParams({ competition_id: cId });
     if (seasonId) q.set("season_id", seasonId);
 
@@ -39,8 +50,8 @@ export default function CompStandingsPage() {
     ])
       .then(([fixturesData, teamsData]) => {
         if (!cancelled) {
-          if (fixturesData.fixtures?.length) setFixtures(fixturesData.fixtures);
-          if (teamsData.teams?.length) {
+          setFixtures(Array.isArray(fixturesData.fixtures) ? fixturesData.fixtures : []);
+          if (Array.isArray(teamsData.teams)) {
             const resolved = teamsData.teams.map(
               (st: SeasonTeam & { team?: SeasonTeam["team"] }) => st.team ?? st
             );
@@ -56,7 +67,7 @@ export default function CompStandingsPage() {
     return () => {
       cancelled = true;
     };
-  }, [slug, cId, seasonId]);
+  }, [slug, cId, seasonId, setFixtures, setPlayers, setTeams]);
 
   if (loading) return <LoadingState label="Loading standings" />;
 

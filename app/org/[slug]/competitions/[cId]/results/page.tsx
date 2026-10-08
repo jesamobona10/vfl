@@ -19,14 +19,16 @@ export default function CompResultsPage() {
 
   useEffect(() => {
     let cancelled = false;
+    setLoading(true);
+    setFixtures([]);
     const query = new URLSearchParams({ competition_id: cId });
     if (seasonId) query.set("season_id", seasonId);
 
     fetch(`/api/organizations/${slug}/fixtures?${query.toString()}`)
       .then((r) => r.json())
       .then((data) => {
-        if (!cancelled && data.fixtures?.length) {
-          setFixtures(data.fixtures);
+        if (!cancelled) {
+          setFixtures(Array.isArray(data.fixtures) ? data.fixtures : []);
         }
       })
       .catch(() => {})
@@ -37,7 +39,7 @@ export default function CompResultsPage() {
     return () => {
       cancelled = true;
     };
-  }, [slug, cId, seasonId]);
+  }, [slug, cId, seasonId, setFixtures]);
 
   const teams = useAppStore((s) => s.teams);
   const results = useMemo(() => completedMatches(fixtures), [fixtures]);

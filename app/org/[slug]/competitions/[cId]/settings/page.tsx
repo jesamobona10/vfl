@@ -28,7 +28,6 @@ import {
   BarChart3,
   ChevronRight,
 } from "lucide-react";
-import { SkeletonForm } from "@/components/shared/skeleton";
 import { useToast } from "@/components/ui/toast";
 import { useConfirm } from "@/components/shared/confirm-dialog";
 import { useSeasonHasFixtures } from "@/lib/hooks/use-competition-stats";
@@ -222,11 +221,7 @@ export default function CompetitionSettingsPage() {
   };
 
   if (isLoading || !currentCompetition) {
-    return (
-      <div className="flex items-center justify-center py-20">
-        <SkeletonForm fields={5} />
-      </div>
-    );
+    return null;
   }
 
   const handleStatusChange = async () => {
@@ -349,9 +344,8 @@ export default function CompetitionSettingsPage() {
     );
   };
 
-  const isLeague = currentCompetition?.type === "league";
   const canGenerateFixtures =
-    isLeague && (status === "draft" || status === "active") && !seasonHasFixtures;
+    (status === "draft" || status === "active") && !seasonHasFixtures;
   const pending =
     updateMutation.isPending ||
     generateFixturesMutation.isPending ||
@@ -778,7 +772,7 @@ export default function CompetitionSettingsPage() {
         <div className="card p-6 space-y-4">
           <h2 className="text-lg font-semibold">Fixtures</h2>
           <p className="text-sm text-muted">
-            Generate round-robin fixtures for all teams in this league.
+            Generate round-robin fixtures for all teams in this competition.
           </p>
           <button
             onClick={handleGenerateFixtures}

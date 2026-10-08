@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useParams, useSearchParams } from "next/navigation";
 import { useAppStore } from "@/lib/store";
 import { useCompetition } from "@/lib/hooks/use-competitions";
@@ -51,6 +51,7 @@ export default function LiveEventPage() {
   const [startingId, setStartingId] = useState<number | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [nowTs, setNowTs] = useState(() => Date.now());
+  const requestId = useRef(0);
 
   const settings: LiveClockSettings | undefined = useMemo(
     () => (competition ? liveSettings(competition.settings) : undefined),
@@ -60,6 +61,7 @@ export default function LiveEventPage() {
   const canEdit = isAdmin || userProfile?.role === "org_admin";
 
   const load = () => {
+    const currentRequest = ++requestId.current;
     const query = new URLSearchParams({ competition_id: cId });
     if (seasonId) query.set("season_id", seasonId);
     query.set("tz", String(new Date().getTimezoneOffset()));
@@ -67,6 +69,7 @@ export default function LiveEventPage() {
     fetch(`/api/organizations/${slug}/live?${query.toString()}`)
       .then((r) => r.json())
       .then((d) => {
+        if (currentRequest !== requestId.current) return;
         if (d.error) {
           setError(d.error);
           return;
@@ -74,12 +77,18 @@ export default function LiveEventPage() {
         setData(d);
         setError(null);
       })
-      .catch(() => setError("Failed to load live matches."))
-      .finally(() => setLoading(false));
+      .catch(() => {
+        if (currentRequest === requestId.current) setError("Failed to load live matches.");
+      })
+      .finally(() => {
+        if (currentRequest === requestId.current) setLoading(false);
+      });
   };
 
   useEffect(() => {
     setLoading(true);
+    setData(null);
+    setError(null);
     load();
     const id = window.setInterval(load, 15000);
     return () => window.clearInterval(id);

@@ -6,7 +6,6 @@ import Link from "next/link";
 import { Trophy, Calendar, Shield, BarChart3, TrendingUp, TrendingDown, Users, Activity } from "lucide-react";
 import { useCompetition, useSeasons, useSeasonTeams } from "@/lib/hooks/use-competitions";
 import { useCompetitionOverviewStats, usePreviousSeason } from "@/lib/hooks/use-competition-stats";
-import { PageSkeleton } from "@/components/shared/skeleton";
 import { StandingsTable } from "@/components/standings/standings-table";
 import { formatRelativeTime } from "@/lib/utils/helpers";
 
@@ -32,11 +31,7 @@ export default function CompetitionOverviewPage() {
   const previousSeason = usePreviousSeason(competition?.id, currentSeason?.id);
 
   if (isLoading || !competition) {
-    return (
-      <div className="flex items-center justify-center py-20">
-        <PageSkeleton />
-      </div>
-    );
+    return null;
   }
 
   const basePath = `/org/${slug}/competitions/${cId}`;
