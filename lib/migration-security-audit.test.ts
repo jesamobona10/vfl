@@ -7,7 +7,6 @@ const MIGRATIONS = join(process.cwd(), "supabase/migrations");
 /** Tables that live in `public` and are therefore unsafe to name unqualified. */
 const PUBLIC_TABLES = [
   "team_accounts",
-  "team_account_invites",
   "teams",
   "organizations",
   "organization_members",

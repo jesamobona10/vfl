@@ -19,7 +19,6 @@ const PLAYER_DEFAULT_PAGE = "/fixtures";
 const CHANGE_PASSWORD_PAGE = "/auth/change-password";
 
 const RESET_PASSWORD_PAGE = "/auth/reset";
-const CALLBACK_PATH = "/auth/callback";
 
 function isPlayerAllowedPage(pathname: string): boolean {
   return PLAYER_PAGE_PREFIXES.some(
@@ -150,19 +149,6 @@ export async function proxy(request: NextRequest) {
   const pathname = request.nextUrl.pathname;
   const search = request.nextUrl.searchParams;
 
-  // A PKCE authorization code is only ever consumed by /auth/callback. If one
-  // arrives on any other path it is silently discarded and the visitor ends up
-  // signed out with no error. Supabase does exactly that whenever the
-  // requested redirect_to is missing from the Auth allowlist: it falls back to
-  // the Site URL and drops ?code= on the home page. Forward it to the callback
-  // so that misconfiguration self-heals instead of dead-ending.
-  if (search.has("code") && pathname !== CALLBACK_PATH) {
-    const url = request.nextUrl.clone();
-    url.pathname = CALLBACK_PATH;
-    url.search = search.toString();
-    return respond(NextResponse.redirect(url), request);
-  }
-
   const isAuthPage = pathname.startsWith("/auth");
   const isAdminPage = pathname.startsWith("/admin");
   const isOrgPage = pathname.startsWith("/org/");
@@ -230,7 +216,7 @@ export async function proxy(request: NextRequest) {
   // A code can only be redeemed once, by a signed-out visitor. Bouncing a
   // signed-in one off the callback would strand it, so the callback is exempt
   // whenever a code is actually present.
-  const isCallbackWithCode = pathname === CALLBACK_PATH && search.has("code");
+  const isCallbackWithCode = pathname === "/auth/callback" && search.has("code");
   if (isAuthPage && !isChangePasswordPage && !isResetPasswordPage && !isCallbackWithCode) {
     return respond(NextResponse.redirect(new URL("/", request.url)), request);
   }

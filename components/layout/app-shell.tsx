@@ -123,11 +123,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
     }
   }, [isOrgAdmin, isOrgRoute, authLoading, userProfile, router]);
 
-  // Entry redirect for coaches. Without this a coach who just signed in with
-  // Google lands on the marketing page (a public path, so AppShell renders it
-  // immediately) and sees no navigation at all — the org shell has no way to
-  // render them without a slug. A coach whose team_accounts.organization_id is
-  // still null has no slug to redirect to and stays put, matching the proxy.
+  // Entry redirect for team accounts.
   useEffect(() => {
     if (isTeamAccount && !isOrgRoute && !authLoading) {
       const slug = userProfile?.org?.slug;

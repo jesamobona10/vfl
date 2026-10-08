@@ -51,7 +51,15 @@ self.addEventListener("fetch", (event) => {
     event.respondWith(
       fetch(request)
         .then((response) => {
-          if (response.ok) caches.open(CACHE_NAME).then((cache) => cache.put(request, response.clone()));
+          // Clone before returning: `return response` hands the body to the
+          // page, so cloning inside the async `caches.open(...).then(...)`
+          // below always raced it and threw "body is already used".
+          if (response.ok) {
+            const copy = response.clone();
+            event.waitUntil(
+              caches.open(CACHE_NAME).then((cache) => cache.put(request, copy)).catch(() => {})
+            );
+          }
           return response;
         })
         .catch(async () => (await caches.match(request)) || Response.error())
