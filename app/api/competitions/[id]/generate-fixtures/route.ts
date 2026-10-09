@@ -157,7 +157,10 @@ export async function POST(request: Request, props: { params: Promise<{ id: stri
       rating: st.team.rating ?? 6.0,
     }));
 
-    const rounds = generateRoundRobinFixtures(teams, []);
+    const rounds =
+      competition.type === "friendly"
+        ? generateRoundRobinFixtures(teams, []).slice(0, 1)
+        : generateRoundRobinFixtures(teams, []);
 
     const fixtureInserts: any[] = [];
     for (const round of rounds) {

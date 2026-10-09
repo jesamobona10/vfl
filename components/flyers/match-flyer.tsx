@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import html2canvas from "html2canvas";
 import type { Match, Team } from "@/lib/types";
 import { useAppStore } from "@/lib/store";
@@ -36,6 +36,21 @@ const INITIALS_CSS = `
     overflow: hidden;
     box-shadow: 0 20px 60px rgba(0,0,0,0.3);
     font-family: system-ui, -apple-system, sans-serif;
+  }
+  .flyer-card.dark {
+    background: #171717;
+    color: #f5f5f5;
+  }
+  .flyer-card.dark .flyer-team-name,
+  .flyer-card.dark .flyer-date {
+    color: #f5f5f5;
+  }
+  .flyer-card.dark .flyer-time,
+  .flyer-card.dark .flyer-venue {
+    color: #b5b5b5;
+  }
+  .flyer-card.dark .flyer-divider {
+    background: #404040;
   }
   .flyer-header {
     background: linear-gradient(135deg, var(--brand-dark), var(--brand));
@@ -199,12 +214,21 @@ export function MatchFlyer({ match, homeTeam, awayTeam, onClose }: MatchFlyerPro
   const [saved, setSaved] = useState(Boolean(match.date && match.time));
   const [dirty, setDirty] = useState(false);
   const [error, setError] = useState("");
+  const [darkMode, setDarkMode] = useState(false);
 
   const isAdmin = useAppStore((s) => s.isAdmin);
   const userProfile = useAppStore((s) => s.userProfile);
   const updateMatch = useAppStore((s) => s.updateMatch);
 
   const { data: competition } = useCompetition(match.competition_id || undefined);
+  useEffect(() => {
+    const media = window.matchMedia("(prefers-color-scheme: dark)");
+    const update = () =>
+      setDarkMode(document.documentElement.classList.contains("dark") || media.matches);
+    update();
+    media.addEventListener("change", update);
+    return () => media.removeEventListener("change", update);
+  }, []);
   const flyerSettings = (() => {
     const s = (
       competition?.settings && typeof competition.settings === "object" ? competition.settings : {}
@@ -277,7 +301,7 @@ export function MatchFlyer({ match, homeTeam, awayTeam, onClose }: MatchFlyerPro
       const canvas = await html2canvas(flyerRef.current, {
         scale: 3,
         useCORS: true,
-        backgroundColor: "#ffffff",
+        backgroundColor: darkMode ? "#171717" : "#ffffff",
         allowTaint: true,
       });
       const blob = await new Promise<Blob | null>((r) => canvas.toBlob(r, "image/png"));
@@ -317,7 +341,7 @@ export function MatchFlyer({ match, homeTeam, awayTeam, onClose }: MatchFlyerPro
       }}
     >
       <style>{INITIALS_CSS}</style>
-      <div className="flyer-card">
+      <div className={`flyer-card${darkMode ? " dark" : ""}`}>
         <div ref={flyerRef}>
           {customBg ? (
             <div

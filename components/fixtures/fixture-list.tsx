@@ -115,6 +115,14 @@ export function FixtureList({
 
       {showAdminFeatures && (
         <div className="mb-6">
+          <div className="mb-3 rounded-xl border border-brand/20 bg-brand-50/50 px-4 py-3 text-sm text-ink-2">
+            <p className="font-semibold text-ink">Set the match date and time</p>
+            <p className="mt-1">
+              Open <strong>Add Fixture</strong>, select both teams, choose the match date, enter
+              the kickoff time, and save. You can also open a scheduled match to edit its date
+              and time from the flyer.
+            </p>
+          </div>
           <FixtureCreator
             competitionId={competitionId}
             seasonId={seasonId}

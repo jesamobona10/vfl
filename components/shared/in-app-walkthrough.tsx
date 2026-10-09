@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import { ArrowLeft, ArrowRight, HelpCircle, Rocket } from "lucide-react";
 import { Modal } from "@/components/ui/modal";
 
-type WalkthroughAudience = "admin" | "org_admin" | "team_account" | "player";
+type WalkthroughAudience = "admin" | "org_admin" | "team_account" | "player" | "public";
 
 type WalkthroughStep = {
   title: string;
@@ -128,6 +128,23 @@ const STEPS: Record<WalkthroughAudience, WalkthroughStep[]> = {
         "Public Match Centre is the easiest place to follow fixtures, live matches, results, and standings shared by your organization.",
       action: "Open public centre",
       href: "/public",
+    },
+  ],
+  public: [
+    {
+      title: "Browse match updates",
+      description:
+        "Use Matches to see scheduled, live, and completed games. Select a match to open its live match centre.",
+    },
+    {
+      title: "Filter the public centre",
+      description:
+        "Use the competition, season, and status filters to find the fixtures and results you want.",
+    },
+    {
+      title: "Follow your organization",
+      description:
+        "Save your match-centre preferences and enable notifications when you want updates about a specific organization.",
     },
   ],
 };

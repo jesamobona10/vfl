@@ -26,7 +26,7 @@ const statusColors: Record<string, string> = {
 };
 
 const tabs = [
-  { href: "standings", label: "Standings", icon: Trophy },
+  { href: "standings", label: "Standings", icon: Trophy, standingsOnly: true },
   { href: "fixtures", label: "Schedule", icon: Calendar },
   { href: "live", label: "Live", icon: Activity },
   { href: "teams", label: "Teams", icon: Shield },
@@ -92,6 +92,16 @@ export default function CompetitionLayout({ children }: { children: React.ReactN
     router.replace(`${pathname}?${query.toString()}`, { scroll: false });
   };
 
+  const basePath = `/org/${slug}/competitions/${cId}`;
+  const seasonQuery = selectedSeasonId ? `?seasonId=${selectedSeasonId}` : "";
+  const isFriendly = currentCompetition?.type === "friendly";
+
+  useEffect(() => {
+    if (isFriendly && pathname.startsWith(`${basePath}/standings`)) {
+      router.replace(`${basePath}/fixtures${seasonQuery}`);
+    }
+  }, [basePath, isFriendly, pathname, router, seasonQuery]);
+
   if (isLoading || !currentCompetition) {
     return (
       <div className="flex items-center justify-center py-20">
@@ -100,8 +110,9 @@ export default function CompetitionLayout({ children }: { children: React.ReactN
     );
   }
 
-  const basePath = `/org/${slug}/competitions/${cId}`;
-  const seasonQuery = selectedSeasonId ? `?seasonId=${selectedSeasonId}` : "";
+  if (isFriendly && pathname.startsWith(`${basePath}/standings`)) {
+    return null;
+  }
 
   const isActive = (href: string) => {
     const target = `${basePath}/${href}`;
@@ -172,7 +183,7 @@ export default function CompetitionLayout({ children }: { children: React.ReactN
       {/* Competition Navigation */}
       <div className="overflow-x-auto border-b border-line">
         <nav aria-label="Competition" className="flex min-w-max gap-1">
-          {tabs.map((tab) => {
+          {tabs.filter((tab) => !tab.standingsOnly || !isFriendly).map((tab) => {
             const active = isActive(tab.href);
             const Icon = tab.icon;
             return (

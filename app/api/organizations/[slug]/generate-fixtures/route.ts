@@ -76,7 +76,7 @@ export async function POST(request: Request, props: { params: Promise<{ slug: st
     // fixtures into it via the service-role client (bypasses RLS).
     const { data: competition } = await sb
       .from("competitions")
-      .select("id")
+      .select("id, type")
       .eq("id", competitionId)
       .eq("organization_id", org.id)
       .maybeSingle();
@@ -154,7 +154,10 @@ export async function POST(request: Request, props: { params: Promise<{ slug: st
       rating: st.team.rating ?? 6.0,
     }));
 
-    const rounds = generateRoundRobinFixtures(teams, []);
+    const rounds =
+      competition.type === "friendly"
+        ? generateRoundRobinFixtures(teams, []).slice(0, 1)
+        : generateRoundRobinFixtures(teams, []);
 
     const fixtureInserts: any[] = [];
     for (const round of rounds) {

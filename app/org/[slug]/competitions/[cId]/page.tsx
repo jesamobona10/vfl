@@ -195,9 +195,9 @@ const statsCards = [
         </div>
       )}
 
-      <div className="grid gap-6 lg:grid-cols-3">
+      <div className={`grid gap-6 ${competition?.type === "friendly" ? "" : "lg:grid-cols-3"}`}>
         {/* Main Content: Standings (Overview Mode) */}
-        <div className="lg:col-span-2 card p-6">
+        {competition?.type !== "friendly" && <div className="lg:col-span-2 card p-6">
           <div className="flex flex-wrap items-center justify-between gap-2 mb-4">
             <h2 className="text-lg font-semibold">Standings — {currentSeason?.name}</h2>
             <div className="flex items-center gap-2">
@@ -211,6 +211,7 @@ const statsCards = [
           </div>
           <StandingsTable overviewMode leagueName={competition?.name} />
         </div>
+        }
 
         {/* Sidebar: Seasons with Enhanced UX */}
         <div className="card p-6 space-y-4">

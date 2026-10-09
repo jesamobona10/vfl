@@ -11,6 +11,7 @@ import { Modal } from "@/components/ui/modal";
 import { readPublicPreferences, savePublicPreferences, type PublicPreferences } from "@/lib/public-preferences";
 import { useAppStore } from "@/lib/store";
 import { livePhase, liveSettings } from "@/lib/logic/live";
+import { InAppWalkthrough } from "@/components/shared/in-app-walkthrough";
 
 type MatchFilter = "all" | "scheduled" | "live" | "halftime" | "completed";
 type PublicSection = "matches" | "standings" | "players";
@@ -460,6 +461,9 @@ export function PublicDashboard() {
   if (!preferenceIsValid) {
     return (
       <div className="mx-auto max-w-xl space-y-5 p-4 py-10 sm:p-6 sm:py-16">
+        <div className="fixed right-4 top-4 z-40">
+          <InAppWalkthrough audience="public" />
+        </div>
         <div className="card space-y-5 p-5 sm:p-7">
           <div><span className="text-xs font-bold uppercase tracking-widest text-brand">Personalize match updates</span><h1 className="mt-2 text-2xl font-bold">Choose what you follow</h1><p className="mt-2 text-sm text-ink-3">Select an organization and optionally one or more teams. This public page stays available without an account.</p></div>
           {error || preferencesError ? <p className="text-sm text-danger">{error || preferencesError}</p> : (
@@ -478,6 +482,9 @@ export function PublicDashboard() {
 
   return (
     <div className="mx-auto max-w-4xl space-y-6 p-4 sm:p-6">
+      <div className="fixed right-4 top-4 z-40">
+        <InAppWalkthrough audience="public" />
+      </div>
       <header className="overflow-hidden rounded-2xl border border-line bg-gradient-to-br from-surface via-surface to-brand/5 p-5 sm:p-7">
         <div className="flex items-start justify-between gap-4">
           <div>
