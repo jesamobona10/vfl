@@ -20,6 +20,7 @@ export const viewport: Viewport = {
   width: "device-width",
   initialScale: 1,
   viewportFit: "cover",
+  themeColor: "#0a0f0b",
   // Resize the layout viewport for the on-screen keyboard so dialogs can size
   // themselves against the space that is actually visible. iOS Safari ignores
   // this; the --kb-inset custom property covers it there.

@@ -38,6 +38,10 @@ export default function OrgFixturesPage() {
   const fixtures = useAppStore((s) => s.fixtures);
   const setFixtures = useAppStore((s) => s.setFixtures);
   const isAdmin = useAppStore((s) => s.isAdmin);
+  const userProfile = useAppStore((s) => s.userProfile);
+  // Org admins manage their org's fixtures (the APIs authorize them); super
+  // admins can manage every org. Coaches have read-only access.
+  const canEdit = isAdmin || userProfile?.role === "org_admin";
 
   const {
     selectedOrgSeasonId,
@@ -89,8 +93,11 @@ export default function OrgFixturesPage() {
       // Empty is valid for a new season and must replace the old season rows.
       setFixtures(nextFixtures);
       prevFixturesRef.current = JSON.stringify(nextFixtures);
+      setError("");
     } catch {
-      // Keep the active season visible; a later refetch can recover transient failures.
+      // Keep the active season visible; a later refetch can recover transient
+      // failures, but don't hide the problem entirely.
+      setError("Failed to load fixtures. Pull to refresh or try again shortly.");
     } finally {
       if (requestId === fixtureLoadRequestRef.current) setLoadingDb(false);
     }
@@ -113,13 +120,18 @@ export default function OrgFixturesPage() {
     if (autoSaveTimer.current) clearTimeout(autoSaveTimer.current);
     autoSaveTimer.current = setTimeout(async () => {
       try {
-        await fetch("/api/sync/fixtures", {
+        const res = await fetch("/api/sync/fixtures", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ fixtures }),
         });
+        if (res.ok) {
+          setError("");
+        } else {
+          setError("Failed to save fixtures to the database. Retrying on next change.");
+        }
       } catch {
-        // silent
+        setError("Failed to save fixtures to the database. Retrying on next change.");
       }
     }, 1500);
     return () => {
@@ -244,7 +256,7 @@ export default function OrgFixturesPage() {
         </div>
       )}
 
-      {isAdmin && comps.length > 0 && (
+      {canEdit && comps.length > 0 && (
         <div className="flex flex-wrap items-center gap-3 mb-4">
           <label className="text-sm text-muted whitespace-nowrap">Competition:</label>
           <select
@@ -262,7 +274,7 @@ export default function OrgFixturesPage() {
         </div>
       )}
 
-      {isAdmin && hasFixtures && (
+      {canEdit && hasFixtures && (
         <div className="flex flex-wrap items-center justify-between gap-2 mb-4">
           <button
             onClick={handleReset}
@@ -299,19 +311,19 @@ export default function OrgFixturesPage() {
         </div>
       )}
 
-      {viewMode === "edit" && isAdmin ? (
+      {viewMode === "edit" && canEdit ? (
         <MatchEditor />
-      ) : viewMode === "table" && isAdmin ? (
+      ) : viewMode === "table" && canEdit ? (
         <BulkScoreEntry />
       ) : (
         <>
           <FixtureList loading={loadingDb} />
           {/*
-            Generate/reset are super-admin mutations. Coaches reach this page
-            too, so gate the whole block on isAdmin rather than letting them see
-            a control that would only 403.
+            Generate/reset are org-admin+ mutations. Coaches reach this page
+            too, so gate the whole block on canEdit rather than letting them
+            see controls that would only 403.
           */}
-          {!loadingDb && isAdmin && (
+          {!loadingDb && canEdit && (
             <div className="mt-4 text-center">
               {hasFixtures ? (
                 <div className="space-y-2">

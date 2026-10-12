@@ -50,6 +50,7 @@ export default function Notifications() {
           if (!open) setTimeout(fetchItems, 0);
         }}
         title="Notifications"
+        aria-label={unreadCount > 0 ? `Notifications, ${unreadCount} unread` : "Notifications"}
       >
         <Bell size={18} />
         {unreadCount > 0 && (

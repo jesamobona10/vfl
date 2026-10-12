@@ -94,11 +94,21 @@ function addCors(response: NextResponse, request: NextRequest) {
   return response;
 }
 
-function secure(response: NextResponse) {
+function secure(response: NextResponse, pathname?: string) {
   response.headers.set("X-Content-Type-Options", "nosniff");
   response.headers.set("X-Frame-Options", "DENY");
   response.headers.set("Referrer-Policy", "strict-origin-when-cross-origin");
   response.headers.set("Permissions-Policy", "camera=(), microphone=(), geolocation=()");
+  // Everything behind a login is private to an org — keep it out of search.
+  if (
+    pathname &&
+    (pathname.startsWith("/auth") ||
+      pathname.startsWith("/admin") ||
+      pathname.startsWith("/org/") ||
+      pathname.startsWith("/dashboard"))
+  ) {
+    response.headers.set("X-Robots-Tag", "noindex, nofollow");
+  }
   const isDev = process.env.NODE_ENV !== "production";
   response.headers.set(
     "Content-Security-Policy",
@@ -116,7 +126,7 @@ function secure(response: NextResponse) {
 /** Apply CORS then security headers in one call. */
 function respond(response: NextResponse, request: NextRequest): NextResponse {
   addCors(response, request);
-  return secure(response);
+  return secure(response, request.nextUrl.pathname);
 }
 
 export async function proxy(request: NextRequest) {

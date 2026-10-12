@@ -105,6 +105,13 @@ export function FixtureCard({
         ? `${match.homeScore ?? "?"} - ${match.awayScore ?? "?"}`
         : null;
 
+  const handleCardKeyDown = (e: React.KeyboardEvent<HTMLElement>) => {
+    if (e.key === "Enter" || e.key === " ") {
+      e.preventDefault();
+      setShowFlyer(true);
+    }
+  };
+
   const handleRemoveEvent = (index: number) => {
     const store = useAppStore.getState();
     const event = events[index];
@@ -187,6 +194,7 @@ export function FixtureCard({
               e.stopPropagation();
               handleRemoveEvent(events.indexOf(event));
             }}
+            aria-label={`Remove ${event.type} event for ${getPlayerName(event.playerId)}`}
             className="ml-0.5 hover:text-danger leading-none"
           >
             &times;
@@ -200,7 +208,10 @@ export function FixtureCard({
     <>
       <article
         onClick={() => setShowFlyer(true)}
-        className={`card-hover flex flex-col gap-3 px-4 py-4 rounded-xl border cursor-pointer ${
+        onKeyDown={handleCardKeyDown}
+        tabIndex={0}
+        aria-label={`${homeTeam?.name || "Unknown"} vs ${awayTeam?.name || "Unknown"} — ${label}, open match card`}
+        className={`card-hover flex flex-col gap-3 px-4 py-4 rounded-xl border cursor-pointer outline-none focus-visible:ring-2 focus-visible:ring-brand-500 focus-visible:border-brand-500 ${
           editable
             ? "border-line bg-surface hover:bg-surface-2/30"
             : "border-line bg-surface"

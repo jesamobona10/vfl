@@ -199,6 +199,7 @@ export function AppHeader({ onOpenSearch, onOpenMenu }: AppHeaderProps) {
             disabled={refreshing}
             className="btn-icon"
             title="Refresh team data"
+            aria-label="Refresh team data"
           >
             <RefreshCw size={16} className={refreshing ? "animate-spin" : ""} />
           </button>
@@ -206,7 +207,7 @@ export function AppHeader({ onOpenSearch, onOpenMenu }: AppHeaderProps) {
 
         {isAdmin && (
           <div className="relative" ref={menuRef}>
-            <button onClick={() => setMenuOpen((o) => !o)} className="btn-icon" title="Data tools">
+            <button onClick={() => setMenuOpen((o) => !o)} className="btn-icon" title="Data tools" aria-label="Data tools" aria-expanded={menuOpen}>
               <Settings2 size={17} />
             </button>
             {menuOpen && (
@@ -232,7 +233,7 @@ export function AppHeader({ onOpenSearch, onOpenMenu }: AppHeaderProps) {
         {userProfile && (
           <div className="flex items-center gap-2 ml-2 pl-3 border-l border-line">
             <span className="text-sm text-ink-2 hidden sm:inline">{displayName}</span>
-            <button onClick={logout} className="btn-icon" title="Logout">
+            <button onClick={logout} className="btn-icon" title="Logout" aria-label="Logout">
               <LogOut size={18} />
             </button>
           </div>

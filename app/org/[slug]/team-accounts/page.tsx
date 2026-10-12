@@ -80,9 +80,13 @@ export default function OrgTeamAccountsPage() {
     try {
       const res = await fetch(`/api/org/team-accounts?org_id=${currentOrg.id}`);
       const data = await res.json();
-      if (res.ok) setAccounts(data.accounts || []);
+      if (res.ok) {
+        setAccounts(data.accounts || []);
+      } else {
+        setMessage({ type: "error", text: data.error || "Failed to load team accounts." });
+      }
     } catch {
-      // ignore
+      setMessage({ type: "error", text: "Unable to load team accounts. Please try again." });
     } finally {
       setLoading(false);
     }
