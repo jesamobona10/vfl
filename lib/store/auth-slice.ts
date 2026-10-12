@@ -341,13 +341,10 @@ export const createAuthSlice: StateCreator<AppStore, [], [], AuthSlice> = (set, 
     } catch (error) {
       console.warn("Logout request failed (session may already be expired):", error);
     }
-    set({
-      currentTeamAccount: null,
-      isAdmin: false,
-      userProfile: null,
-      teamDataLoaded: false,
-      authLoading: false,
-    });
+    // Empty every slice so the next user on this device never sees cached
+    // teams/fixtures/players (also clears the persisted storage).
+    get().resetAll();
+    set({ authLoading: false });
   },
 
   setTeamDataLoaded: (v) => set({ teamDataLoaded: v }),

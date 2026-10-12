@@ -21,19 +21,32 @@ export type AppStore = AuthSlice &
   PlayersSlice &
   CupSlice &
   OrgSlice &
-  CompetitionSlice;
+  CompetitionSlice & {
+    /** Reverts every slice to its initial empty state (used on logout). */
+    resetAll: () => void;
+  };
+
+let initialState: AppStore | undefined;
 
 export const useAppStore = create<AppStore>()(
   persist(
-    (...a) => ({
-      ...createAuthSlice(...a),
-      ...createTeamsSlice(...a),
-      ...createFixturesSlice(...a),
-      ...createPlayersSlice(...a),
-      ...createCupSlice(...a),
-      ...createOrgSlice(...a),
-      ...createCompetitionSlice(...a),
-    }),
+    (set, get, api) => {
+      const composed = {
+        ...createAuthSlice(set, get, api),
+        ...createTeamsSlice(set, get, api),
+        ...createFixturesSlice(set, get, api),
+        ...createPlayersSlice(set, get, api),
+        ...createCupSlice(set, get, api),
+        ...createOrgSlice(set, get, api),
+        ...createCompetitionSlice(set, get, api),
+      } as AppStore;
+      const withReset = {
+        ...composed,
+        resetAll: () => set(initialState as AppStore, true),
+      };
+      initialState ??= { ...withReset };
+      return withReset;
+    },
     {
       name: "vfl-app-state",
       partialize: (state) => ({

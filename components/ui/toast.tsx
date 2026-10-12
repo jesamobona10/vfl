@@ -56,7 +56,7 @@ function ToastItem({ toast, onDismiss }: { toast: Toast; onDismiss: (id: number)
     <div
       role={toast.variant === "error" ? "alert" : "status"}
       className={cn(
-        "pointer-events-auto flex w-full max-w-sm items-start gap-3 rounded-xl border px-4 py-3 shadow-lg",
+        "toast-pop pointer-events-auto flex w-full max-w-sm items-start gap-3 rounded-xl border px-4 py-3 shadow-lg",
         styles.container
       )}
     >
@@ -138,9 +138,10 @@ export function ToastProvider({ children }: { children: React.ReactNode }) {
         createPortal(
           <div
             aria-live="assertive"
-            // Sits above the modal (z-80) so confirmations stay visible; the
-            // inset keeps it clear of the on-screen keyboard on mobile.
-            className="pointer-events-none fixed inset-x-0 bottom-0 z-[100] flex flex-col items-center gap-2 p-4 sm:items-end"
+            // Pop-up notifications: bottom-center on mobile (clear of the
+            // on-screen keyboard), top-right on desktop. Sits above the modal
+            // (z-80) so confirmations stay visible.
+            className="pointer-events-none fixed inset-x-0 bottom-0 z-[100] flex flex-col items-center gap-2 p-4 sm:inset-x-auto sm:right-4 sm:top-4 sm:items-end sm:p-0"
             style={{ transform: "translateY(calc(-1 * var(--kb-inset, 0px)))" }}
           >
             {toasts.map((t) => (

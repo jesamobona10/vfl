@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Bell } from "lucide-react";
 import { EmptyState, LoadingState } from "@/components/shared/skeleton";
 
@@ -8,15 +8,20 @@ export default function Notifications() {
   const [items, setItems] = useState<any[]>([]);
   const [open, setOpen] = useState(false);
   const [loading, setLoading] = useState(false);
+  const abortRef = useRef<AbortController | null>(null);
 
   const fetchItems = async () => {
+    abortRef.current?.abort();
+    const controller = new AbortController();
+    abortRef.current = controller;
     setLoading(true);
     try {
-      const res = await fetch("/api/notifications");
+      const res = await fetch("/api/notifications", { signal: controller.signal });
       const body = await res.json();
       if (res.ok) setItems(body.notifications || []);
     } catch (e) {
-      // ignore
+      if ((e as Error)?.name === "AbortError") return;
+      // ignore transient network failures; the next poll retries
     } finally {
       setLoading(false);
     }
@@ -25,7 +30,10 @@ export default function Notifications() {
   useEffect(() => {
     fetchItems();
     const id = setInterval(fetchItems, 10000);
-    return () => clearInterval(id);
+    return () => {
+      clearInterval(id);
+      abortRef.current?.abort();
+    };
   }, []);
 
   const markRead = async (ids: number[]) => {
