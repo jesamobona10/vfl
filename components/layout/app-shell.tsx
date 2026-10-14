@@ -42,6 +42,33 @@ const adminNav: SidebarItem[] = [
 // explicit /auth/* route.
 const publicPaths: Set<string> = new Set(["/"]);
 
+async function refreshOrgData(orgId?: string) {
+  const store = useAppStore.getState();
+  try {
+    const params = orgId ? `?org_id=${orgId}` : "";
+    const [teamsRes, playersRes, fixturesRes] = await Promise.all([
+      fetch(`/api/teams${params}`),
+      fetch(`/api/players${params}`),
+      fetch(`/api/fixtures${params}`),
+    ]);
+    if (teamsRes.ok) {
+      const data = await teamsRes.json();
+      store.setTeams(data.teams || []);
+    }
+    if (playersRes.ok) {
+      const data = await playersRes.json();
+      store.setPlayers(data.players || []);
+    }
+    if (fixturesRes.ok) {
+      const data = await fixturesRes.json();
+      store.setFixtures(data.fixtures || []);
+    }
+    store.setTeamDataLoaded(true);
+  } catch {
+    store.setTeamDataLoaded(true);
+  }
+}
+
 export function AppShell({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const router = useRouter();
@@ -52,6 +79,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   const userProfile = useAppStore((s) => s.userProfile);
   const initializeAuth = useAppStore((s) => s.initializeAuth);
   const [fetchingAdminData, setFetchingAdminData] = useState(false);
+  const [fetchingOrgData, setFetchingOrgData] = useState(false);
   const [isSearchOpen, setSearchOpen] = useState(false);
   const [isDrawerOpen, setDrawerOpen] = useState(false);
   const isPublicPath =
@@ -74,6 +102,13 @@ export function AppShell({ children }: { children: React.ReactNode }) {
       refreshAdminData().finally(() => setFetchingAdminData(false));
     }
   }, [isAdmin, teamDataLoaded, fetchingAdminData]);
+
+  useEffect(() => {
+    if (isOrgAdmin && !teamDataLoaded && !fetchingOrgData && !authLoading) {
+      setFetchingOrgData(true);
+      refreshOrgData(userProfile?.org?.id).finally(() => setFetchingOrgData(false));
+    }
+  }, [isOrgAdmin, teamDataLoaded, fetchingOrgData, authLoading, userProfile?.org?.id]);
 
   useEffect(() => {
     if (isOrgAdmin && !isOrgRoute && !authLoading) {

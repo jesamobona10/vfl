@@ -25,24 +25,6 @@ function slugify(name: string): string {
     .slice(0, 60);
 }
 
-async function ensureBucket(
-  sb: ReturnType<typeof createServiceRoleClient>
-): Promise<string | null> {
-  const { data: buckets } = await sb.storage.listBuckets();
-  const existing = buckets?.find((b) => b.name === "team-logos");
-  if (existing?.public) return null;
-  if (existing) {
-    const { error } = await sb.storage.updateBucket("team-logos", { public: true });
-    return error ? "Unable to configure storage bucket." : null;
-  }
-  const { error } = await sb.storage.createBucket("team-logos", {
-    public: true,
-    fileSizeLimit: 2 * 1024 * 1024,
-    allowedMimeTypes: ["image/png", "image/jpeg", "image/webp", "image/gif"],
-  });
-  return error ? "Unable to create storage bucket." : null;
-}
-
 export async function POST(request: Request) {
   try {
     const supabase = await createClient();
@@ -115,12 +97,6 @@ export async function POST(request: Request) {
     const slug = slugify(sanitizeText(teamName));
     const fileName = `team-${slug}-${teamId}.${ext}`;
 
-    const bucketError = await ensureBucket(sb);
-    if (bucketError) {
-      logApiError("team_logo_bucket_error", bucketError, { userId: auth!.userId, teamId });
-      return json({ error: bucketError }, { status: 500 });
-    }
-
     const { error: uploadError } = await sb.storage.from("team-logos").upload(fileName, buffer, {
       contentType: file.type,
       upsert: true,
@@ -128,10 +104,7 @@ export async function POST(request: Request) {
 
     if (uploadError) {
       logApiError("logo_upload_failed", uploadError, { userId: auth!.userId, teamId });
-      return json(
-        { error: "Unable to upload logo. Storage bucket may need configuration." },
-        { status: 500 }
-      );
+      return json({ error: "Unable to upload logo." }, { status: 500 });
     }
 
     const { data: urlData } = sb.storage.from("team-logos").getPublicUrl(fileName);
