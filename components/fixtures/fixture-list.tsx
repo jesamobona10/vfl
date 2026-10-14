@@ -14,6 +14,8 @@ interface FixtureListProps {
   seasonId?: string | null;
   /** Called after a fixture is created server-side so the list can refetch. */
   onFixtureCreated?: () => void;
+  /** Render the manual "Add Fixture" creator block. Defaults to true. */
+  showCreator?: boolean;
 }
 
 export function FixtureList({
@@ -21,6 +23,7 @@ export function FixtureList({
   competitionId,
   seasonId,
   onFixtureCreated,
+  showCreator = true,
 }: FixtureListProps) {
   const [roundFilter, setRoundFilter] = useState("all");
   const [teamFilter, setTeamFilter] = useState("all");
@@ -113,7 +116,7 @@ export function FixtureList({
         </div>
       )}
 
-      {showAdminFeatures && (
+      {showAdminFeatures && showCreator && (
         <div className="mb-6">
           <div className="mb-3 rounded-xl border border-brand/20 bg-brand-50/50 px-4 py-3 text-sm text-ink-2">
             <p className="font-semibold text-ink">Set the match date and time</p>
@@ -137,7 +140,11 @@ export function FixtureList({
         ) : !fixturesExist ? (
           <EmptyState
             title="No fixtures yet"
-            description="Generate fixtures above or add one manually to build the match calendar."
+            description={
+              showCreator
+                ? "Generate fixtures above or add one manually to build the match calendar."
+                : "Generate fixtures above to build the match calendar."
+            }
           />
         ) : (
           visibleRoundPanels

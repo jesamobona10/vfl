@@ -107,6 +107,7 @@ export default function CompFixturesPage() {
         loading={loading}
         competitionId={cId}
         seasonId={seasonId}
+        showCreator={false}
         onFixtureCreated={loadFixtures}
       />
     </div>
