@@ -12,25 +12,29 @@ ON CONFLICT (id) DO UPDATE
 
 -- Allow anyone (including unauthenticated visitors and next/image) to read
 -- public team logos.
-CREATE POLICY IF NOT EXISTS "team_logos_public_select"
+DROP POLICY IF EXISTS "team_logos_public_select" ON storage.objects;
+CREATE POLICY "team_logos_public_select"
   ON storage.objects
   FOR SELECT
   USING (bucket_id = 'team-logos');
 
 -- Allow authenticated users to manage team logo objects in this bucket.
-CREATE POLICY IF NOT EXISTS "team_logos_authenticated_insert"
+DROP POLICY IF EXISTS "team_logos_authenticated_insert" ON storage.objects;
+CREATE POLICY "team_logos_authenticated_insert"
   ON storage.objects
   FOR INSERT
   TO authenticated
   WITH CHECK (bucket_id = 'team-logos');
 
-CREATE POLICY IF NOT EXISTS "team_logos_authenticated_update"
+DROP POLICY IF EXISTS "team_logos_authenticated_update" ON storage.objects;
+CREATE POLICY "team_logos_authenticated_update"
   ON storage.objects
   FOR UPDATE
   TO authenticated
   USING (bucket_id = 'team-logos');
 
-CREATE POLICY IF NOT EXISTS "team_logos_authenticated_delete"
+DROP POLICY IF EXISTS "team_logos_authenticated_delete" ON storage.objects;
+CREATE POLICY "team_logos_authenticated_delete"
   ON storage.objects
   FOR DELETE
   TO authenticated
