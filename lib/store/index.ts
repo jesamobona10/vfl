@@ -49,23 +49,13 @@ export const useAppStore = create<AppStore>()(
     },
     {
       name: "vfl-app-state",
+      // Server-fetched, season-scoped slices (teams, fixtures, players) are
+      // deliberately not persisted: stale persisted season data is rehydrated
+      // after the selected season has already loaded, which makes the UI flip
+      // between seasons. They are always refetched from the server on load.
       partialize: (state) => ({
-        teams: state.teams,
-        fixtures: state.fixtures,
-        players: state.players,
         cup: state.cup,
       }),
-      onRehydrateStorage: () => (state) => {
-        if (!state) return;
-        const teamIds = new Set((state.teams as { id: number }[] | undefined)?.map((t) => t.id));
-        if (!teamIds.size) return;
-        const hasOrphanedMatches = (
-          state.fixtures as { matches: { homeId: number; awayId: number }[] }[]
-        )?.some((r) => r.matches?.some((m) => !teamIds.has(m.homeId) || !teamIds.has(m.awayId)));
-        if (hasOrphanedMatches) {
-          (state as { setFixtures?: (f: []) => void }).setFixtures?.([]);
-        }
-      },
     }
   )
 );
