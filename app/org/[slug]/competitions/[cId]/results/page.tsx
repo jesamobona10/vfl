@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { useParams, useSearchParams } from "next/navigation";
 import { useAppStore } from "@/lib/store";
+import { useResolvedTeams } from "@/lib/hooks/use-resolved-teams";
 import { teamName } from "@/lib/utils/helpers";
 import { completedMatches } from "@/lib/logic/standings";
 import { EmptyState, LoadingState } from "@/components/shared/skeleton";
@@ -41,7 +42,7 @@ export default function CompResultsPage() {
     };
   }, [slug, cId, seasonId, setFixtures]);
 
-  const teams = useAppStore((s) => s.teams);
+  const teams = useResolvedTeams(seasonId);
   const results = useMemo(() => completedMatches(fixtures), [fixtures]);
 
   if (loading) return <LoadingState label="Loading results" />;

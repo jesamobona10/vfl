@@ -3,10 +3,10 @@
 import { useCompetition, useSeasons } from "@/lib/hooks/use-competitions";
 import { useParams, usePathname, useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
-import { Calendar, Trophy, Settings, Activity, ListOrdered, Users, Shield } from "lucide-react";
+import { Calendar, Trophy, Settings, Activity, ListOrdered, Users, Shield, LayoutDashboard } from "lucide-react";
 import { PageSkeleton } from "@/components/shared/skeleton";
 import { SeasonSelector } from "@/components/competitions/season-selector";
-import { useState, useEffect } from "react";
+import { useEffect } from "react";
 import { useAppStore } from "@/lib/store";
 import { useCompetitionOverviewStats } from "@/lib/hooks/use-competition-stats";
 import { formatRelativeTime } from "@/lib/utils/helpers";
@@ -26,6 +26,7 @@ const statusColors: Record<string, string> = {
 };
 
 const tabs = [
+  { href: "", label: "Overview", icon: LayoutDashboard },
   { href: "standings", label: "Standings", icon: Trophy, standingsOnly: true },
   { href: "fixtures", label: "Schedule", icon: Calendar },
   { href: "live", label: "Live", icon: Activity },
@@ -44,33 +45,38 @@ export default function CompetitionLayout({ children }: { children: React.ReactN
   const cId = params.cId as string;
   const { data: currentCompetition, isLoading } = useCompetition(cId);
   const { data: seasons = [] } = useSeasons(currentCompetition?.id);
-  const [selectedSeasonId, setSelectedSeasonId] = useState<string | null>(null);
   const setCurrentSeasonId = useAppStore((s) => s.setCurrentSeasonId);
   const setFixtures = useAppStore((s) => s.setFixtures);
   const setTeams = useAppStore((s) => s.setTeams);
   const setPlayers = useAppStore((s) => s.setPlayers);
 
   const currentSeason = seasons.find((s) => s.is_current);
-  const stats = useCompetitionOverviewStats(selectedSeasonId ?? undefined, currentCompetition?.id);
+
+  // The URL is the single source of truth for the selected season. Deriving it
+  // from the `seasonId` param (instead of mirroring it in component state)
+  // avoids the race where a stale param would snap the selection back to the
+  // current season for a frame right after the user picks another one.
   const seasonIdParam = searchParams.get("seasonId");
+  const requestedSeason = seasonIdParam
+    ? seasons.find((season) => season.id === seasonIdParam)
+    : undefined;
+  const hasValidRequestedSeason = Boolean(requestedSeason);
+  const selectedSeasonId =
+    requestedSeason?.id ?? currentSeason?.id ?? seasons[0]?.id ?? null;
 
+  const stats = useCompetitionOverviewStats(selectedSeasonId ?? undefined, currentCompetition?.id);
+
+  // Backfill a default (or repair an unknown) season id into the URL so the
+  // selection persists across navigation and refresh.
   useEffect(() => {
-    if (!seasons.length) return;
-    const requestedSeason = seasonIdParam
-      ? seasons.find((season) => season.id === seasonIdParam)
-      : undefined;
-    const nextSeasonId = requestedSeason?.id ?? currentSeason?.id ?? seasons[0]?.id ?? null;
-    if (nextSeasonId && nextSeasonId !== selectedSeasonId) {
-      setSelectedSeasonId(nextSeasonId);
-    }
-  }, [currentSeason?.id, seasonIdParam, seasons, selectedSeasonId]);
+    if (!selectedSeasonId || hasValidRequestedSeason) return;
+    const query = new URLSearchParams(searchParams.toString());
+    query.set("seasonId", selectedSeasonId);
+    router.replace(`${pathname}?${query.toString()}`, { scroll: false });
+  }, [selectedSeasonId, hasValidRequestedSeason, searchParams, pathname, router]);
 
-  useEffect(() => {
-    if (selectedSeasonId && seasons.length > 0 && !seasons.some((s) => s.id === selectedSeasonId)) {
-      setSelectedSeasonId(null);
-    }
-  }, [seasons, selectedSeasonId]);
-
+  // Reset season-scoped store data whenever the selection changes so no stale
+  // or mixed-season data renders while the new season's queries are in flight.
   useEffect(() => {
     setCurrentSeasonId(selectedSeasonId);
     setFixtures([]);
@@ -78,15 +84,7 @@ export default function CompetitionLayout({ children }: { children: React.ReactN
     setPlayers([]);
   }, [selectedSeasonId, setCurrentSeasonId, setFixtures, setPlayers, setTeams]);
 
-  useEffect(() => {
-    if (!selectedSeasonId || seasonIdParam === selectedSeasonId) return;
-    const query = new URLSearchParams(searchParams.toString());
-    query.set("seasonId", selectedSeasonId);
-    router.replace(`${pathname}?${query.toString()}`, { scroll: false });
-  }, [pathname, router, searchParams, seasonIdParam, selectedSeasonId]);
-
   const handleSeasonChange = (seasonId: string) => {
-    setSelectedSeasonId(seasonId);
     const query = new URLSearchParams(searchParams.toString());
     query.set("seasonId", seasonId);
     router.replace(`${pathname}?${query.toString()}`, { scroll: false });
@@ -115,6 +113,7 @@ export default function CompetitionLayout({ children }: { children: React.ReactN
   }
 
   const isActive = (href: string) => {
+    if (!href) return pathname === basePath;
     const target = `${basePath}/${href}`;
     return pathname === target || pathname.startsWith(`${target}/`);
   };
@@ -188,8 +187,8 @@ export default function CompetitionLayout({ children }: { children: React.ReactN
             const Icon = tab.icon;
             return (
               <Link
-                key={tab.href}
-                href={`${basePath}/${tab.href}${seasonQuery}`}
+                key={tab.href || "overview"}
+                href={`${basePath}${tab.href ? `/${tab.href}` : ""}${seasonQuery}`}
                 aria-current={active ? "page" : undefined}
                 className={cn(
                   "flex items-center gap-2 px-4 py-3 text-sm font-medium border-b-2 transition-colors shrink-0",
