@@ -8,6 +8,8 @@ import { useParams, useRouter } from "next/navigation";
 import { Trophy, Plus, Swords, Users, Trash2, AlertCircle } from "lucide-react";
 import { useState } from "react";
 import { PageSkeleton } from "@/components/shared/skeleton";
+import { EmptyState } from "@/components/ui/empty-state";
+import { ErrorState } from "@/components/ui/error-state";
 import { useConfirm } from "@/components/shared/confirm-dialog";
 import { useToast } from "@/components/ui/toast";
 import { Badge } from "@/components/ui/badge";
@@ -28,7 +30,7 @@ export default function CompetitionsPage() {
   const { confirm, dialog: confirmDialog } = useConfirm();
   const queryClient = useQueryClient();
   const { data: currentOrg } = useOrg(slug);
-  const { data: competitions = [], isLoading } = useCompetitions(currentOrg?.id);
+  const { data: competitions = [], isLoading, isError, refetch } = useCompetitions(currentOrg?.id);
   const isTeamAccount = useAppStore((state) => state.currentTeamAccount !== null);
   const [deletingId, setDeletingId] = useState<string | null>(null);
   const [error, setError] = useState("");
@@ -68,6 +70,18 @@ export default function CompetitionsPage() {
     );
   }
 
+  if (isError) {
+    return (
+      <div className="panel">
+        <ErrorState
+          title="Couldn't load competitions"
+          description="We couldn't reach the server. Check your connection and try again."
+          onRetry={() => refetch()}
+        />
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-5">
       {confirmDialog}
@@ -85,18 +99,23 @@ export default function CompetitionsPage() {
       </div>
 
       {competitions.length === 0 ? (
-        <div className="panel p-8 sm:p-12 text-center">
-          <Trophy size={48} className="mx-auto text-ink-3/40 mb-4" />
-          <h2 className="text-lg font-semibold mb-1">No competitions yet</h2>
-          <p className="text-sm text-ink-2 max-w-md mx-auto mb-6">
-            {isTeamAccount ? "The organization has not added a competition yet." : "Create your first competition to get started — a league, cup, or friendly match."}
-          </p>
-          {!isTeamAccount && <a
-            href={`/org/${slug}/competitions/new`}
-            className="btn-primary inline-flex items-center gap-2"
-          >
-            <Plus size={16} /> Create Competition
-          </a>}
+        <div className="panel">
+          <EmptyState
+            icon={Trophy}
+            title="No competitions yet"
+            description={
+              isTeamAccount
+                ? "The organization has not added a competition yet."
+                : "Create your first competition to get started — a league, cup, or friendly match."
+            }
+            action={
+              !isTeamAccount ? (
+                <a href={`/org/${slug}/competitions/new`} className="btn-primary inline-flex items-center gap-2">
+                  <Plus size={16} /> Create Competition
+                </a>
+              ) : undefined
+            }
+          />
         </div>
       ) : (
         <>

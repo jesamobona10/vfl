@@ -7,6 +7,7 @@ import { useOrg } from "@/lib/hooks/use-org";
 import { TeamCard } from "./team-card";
 import { RotateCcw, AlertCircle, Plus, Trash2, Shield } from "lucide-react";
 import { SkeletonForm } from "@/components/shared/skeleton";
+import { EmptyState } from "@/components/ui/empty-state";
 import { useConfirm } from "@/components/shared/confirm-dialog";
 import type { Team } from "@/lib/types";
 
@@ -226,10 +227,12 @@ export function TeamForm({ orgSeasonId }: { orgSeasonId?: string | null }) {
           <SkeletonForm fields={4} />
         </div>
       ) : visibleTeams.length === 0 ? (
-        <div className="panel p-8 sm:p-12 text-center text-ink-2">
-          <Shield size={48} className="mx-auto mb-4 text-ink-3/40" />
-          <p className="text-lg font-medium">No teams yet</p>
-          <p className="text-sm mt-1">Add your first team to get started.</p>
+        <div className="panel">
+          <EmptyState
+            icon={Shield}
+            title="No teams yet"
+            description="Add your first team to get started."
+          />
         </div>
       ) : (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">

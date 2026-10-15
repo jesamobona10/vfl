@@ -47,6 +47,7 @@ import {
   type FlyerTemplate,
 } from "@/lib/flyer/settings";
 import { FlyerCanvas } from "@/components/flyers/flyer-canvas";
+import { PageSkeleton } from "@/components/shared/skeleton";
 
 const statusOptions: { value: string; label: string }[] = [
   { value: "draft", label: "Draft" },
@@ -208,7 +209,7 @@ export default function CompetitionSettingsPage() {
   };
 
   if (isLoading || !currentCompetition) {
-    return null;
+    return <PageSkeleton />;
   }
 
   const handleStatusChange = async () => {

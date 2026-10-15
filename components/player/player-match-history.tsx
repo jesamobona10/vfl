@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { Calendar, ChevronDown, ChevronRight } from "lucide-react";
+import { EmptyState } from "@/components/ui/empty-state";
 import { RatingExplanation } from "@/components/players/rating-explanation";
 
 interface Match {
@@ -49,9 +50,8 @@ export function PlayerMatchHistory({
 
   if (completed.length === 0) {
     return (
-      <div className="card p-8 text-center text-muted">
-        <Calendar size={36} className="mx-auto mb-3 opacity-30" />
-        <p className="text-sm">No completed matches yet.</p>
+      <div className="card">
+        <EmptyState icon={Calendar} size="sm" title="No completed matches yet" />
       </div>
     );
   }

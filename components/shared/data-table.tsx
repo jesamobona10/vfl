@@ -3,6 +3,7 @@
 import { Fragment } from "react";
 import { cn } from "@/lib/utils";
 import { SkeletonCard, SkeletonTable } from "@/components/shared/skeleton";
+import { EmptyState } from "@/components/ui/empty-state";
 
 export interface DataTableColumn<T> {
   key: string;
@@ -153,7 +154,7 @@ export function DataTable<T>({
   );
 }
 
-const DEFAULT_EMPTY = <p className="text-sm text-muted p-4 text-center">No records to show.</p>;
+const DEFAULT_EMPTY = <EmptyState size="sm" title="No records to show" />;
 
 /** Label/value pair used inside mobile cards. */
 export function DataField({

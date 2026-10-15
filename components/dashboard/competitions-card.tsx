@@ -2,6 +2,7 @@
 
 import { useParams, useRouter } from "next/navigation";
 import { Trophy, Swords, Users, Plus, ArrowRight } from "lucide-react";
+import { EmptyState } from "@/components/ui/empty-state";
 
 interface CompetitionCardItem {
   id: string;
@@ -36,15 +37,19 @@ export function CompetitionsCard({
         </button>
       </div>
       {competitions.length === 0 ? (
-        <div className="text-center py-6">
-          <Trophy size={32} className="mx-auto text-ink-3/40 mb-2" />
-          <p className="text-sm text-ink-2 mb-3">No competitions yet</p>
-          {canCreate ? (
-            <button onClick={() => router.push(createHref)} className="btn-ghost text-sm">
-              <Plus size={14} /> Create Competition
-            </button>
-          ) : <p className="text-xs text-muted">The organization has not added a competition yet.</p>}
-        </div>
+        <EmptyState
+          icon={Trophy}
+          size="sm"
+          title="No competitions yet"
+          description={canCreate ? undefined : "The organization has not added a competition yet."}
+          action={
+            canCreate ? (
+              <button onClick={() => router.push(createHref)} className="btn-ghost text-sm">
+                <Plus size={14} /> Create Competition
+              </button>
+            ) : undefined
+          }
+        />
       ) : (
         <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
           {competitions.slice(0, 6).map((comp) => (

@@ -7,6 +7,8 @@ import { Trophy, Calendar, Shield, BarChart3, TrendingUp, TrendingDown, Users, A
 import { useCompetition, useSeasons, useSeasonTeams } from "@/lib/hooks/use-competitions";
 import { useCompetitionOverviewStats, usePreviousSeason } from "@/lib/hooks/use-competition-stats";
 import { StandingsTable } from "@/components/standings/standings-table";
+import { EmptyState } from "@/components/ui/empty-state";
+import { PageSkeleton } from "@/components/shared/skeleton";
 import { formatRelativeTime } from "@/lib/utils/helpers";
 
 export default function CompetitionOverviewPage() {
@@ -31,7 +33,7 @@ export default function CompetitionOverviewPage() {
   const previousSeason = usePreviousSeason(competition?.id, currentSeason?.id);
 
   if (isLoading || !competition) {
-    return null;
+    return <PageSkeleton />;
   }
 
   const basePath = `/org/${slug}/competitions/${cId}`;
@@ -127,18 +129,17 @@ const statsCards = [
           })}
         </div>
 
-        <div className="card p-8 sm:p-12 text-center">
-          <Trophy size={48} className="mx-auto text-ink-3/40 mb-4" />
-          <h2 className="text-lg font-semibold mb-1">No seasons yet</h2>
-          <p className="text-sm text-muted mb-6">
-            Create a season to start organizing fixtures, teams, and results.
-          </p>
-          <Link
-            href={`${basePath}/settings`}
-            className="btn-primary inline-flex items-center gap-2"
-          >
-            Manage Seasons
-          </Link>
+        <div className="card">
+          <EmptyState
+            icon={Trophy}
+            title="No seasons yet"
+            description="Create a season to start organizing fixtures, teams, and results."
+            action={
+              <Link href={`${basePath}/settings`} className="btn-primary inline-flex items-center gap-2">
+                Manage Seasons
+              </Link>
+            }
+          />
         </div>
       </div>
     );

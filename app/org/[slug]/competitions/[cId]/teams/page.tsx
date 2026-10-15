@@ -9,7 +9,7 @@ import {
   useDeleteSeasonTeam,
 } from "@/lib/hooks/use-competitions";
 import { Plus, X, AlertCircle } from "lucide-react";
-import { EmptyState } from "@/components/shared/skeleton";
+import { EmptyState, SkeletonList } from "@/components/shared/skeleton";
 import { useConfirm } from "@/components/shared/confirm-dialog";
 
 export default function CompTeamsPage() {
@@ -45,7 +45,11 @@ export default function CompTeamsPage() {
   const unregistered = orgTeams.filter((t) => !registeredIds.has(t.id));
 
   if (isLoading) {
-    return null;
+    return (
+      <div className="card">
+        <SkeletonList items={4} />
+      </div>
+    );
   }
 
   if (!seasonId) {

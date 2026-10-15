@@ -13,6 +13,7 @@ import {
   ChevronRight,
 } from "lucide-react";
 import { SkeletonTable } from "@/components/shared/skeleton";
+import { EmptyState } from "@/components/ui/empty-state";
 import { AUDIT_ACTIONS } from "@/lib/audit/actions";
 import { titleCase } from "@/lib/utils/helpers";
 import { DataTable, type DataTableColumn } from "@/components/shared/data-table";
@@ -425,12 +426,13 @@ export default function OrgAuditLogsPage() {
           )}
         </div>
       ) : (
-        <div className="panel p-5 sm:p-8 text-center text-ink-2">
-          <ScrollText size={32} className="mx-auto text-ink-3/40 mb-3" />
-          <p>No audit events found.</p>
-          <p className="text-sm text-ink-3 mt-1">
-            Try clearing the filters or check back after some activity.
-          </p>
+        <div className="panel">
+          <EmptyState
+            icon={ScrollText}
+            size="sm"
+            title="No audit events found"
+            description="Try clearing the filters or check back after some activity."
+          />
         </div>
       )}
 

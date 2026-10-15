@@ -12,6 +12,7 @@ import { UsersManager } from "./users-manager";
 import { AdminTeamAccountManager } from "./admin-team-account-manager";
 import { ChevronDown, ChevronRight, Building2, Calendar, Trash2, Search } from "lucide-react";
 import { PageSkeleton } from "@/components/shared/skeleton";
+import { EmptyState } from "@/components/ui/empty-state";
 import { DashboardTabs } from "@/components/shared/dashboard-tabs";
 import { PublicDashboard } from "@/components/public/public-dashboard";
 
@@ -160,9 +161,12 @@ function FixtureManager() {
 
   if (!data?.organizations?.length) {
     return (
-      <div className="card p-8 text-center text-muted">
-        <Calendar size={32} className="mx-auto mb-2" />
-        <p>No fixtures have been generated yet.</p>
+      <div className="card">
+        <EmptyState
+          icon={Calendar}
+          size="sm"
+          title="No fixtures have been generated yet"
+        />
       </div>
     );
   }

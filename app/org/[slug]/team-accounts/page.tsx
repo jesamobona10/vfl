@@ -15,6 +15,7 @@ import {
   Trash2,
 } from "lucide-react";
 import { SkeletonList } from "@/components/shared/skeleton";
+import { EmptyState } from "@/components/ui/empty-state";
 import { useConfirm } from "@/components/shared/confirm-dialog";
 
 interface TeamAccount {
@@ -266,12 +267,12 @@ export default function OrgTeamAccountsPage() {
           <SkeletonList items={4} />
         </div>
       ) : accounts.length === 0 ? (
-        <div className="panel p-8 sm:p-12 text-center text-ink-2">
-          <UserCog size={48} className="mx-auto mb-4 text-ink-3/40" />
-          <p className="text-lg font-medium">No team accounts yet</p>
-          <p className="text-sm mt-1">
-            Create an account with a password to give a team access.
-          </p>
+        <div className="panel">
+          <EmptyState
+            icon={UserCog}
+            title="No team accounts yet"
+            description="Create an account with a password to give a team access."
+          />
         </div>
       ) : (
         <div className="space-y-3">

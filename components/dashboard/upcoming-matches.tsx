@@ -5,6 +5,7 @@ import { useParams } from "next/navigation";
 import { useAppStore } from "@/lib/store";
 import { matchMeta, titleCase } from "@/lib/utils/helpers";
 import { Calendar, Clock, MapPin, ArrowUpRight } from "lucide-react";
+import { EmptyState } from "@/components/ui/empty-state";
 
 export function UpcomingMatches() {
   const params = useParams();
@@ -25,9 +26,13 @@ export function UpcomingMatches() {
 
   if (!fixtures.length) {
     return (
-      <div className="panel p-4 sm:p-6 text-center">
-        <Calendar size={32} className="mx-auto text-ink-3/40 mb-3" />
-        <p className="text-sm text-ink-2">Generate fixtures to see upcoming matches.</p>
+      <div className="panel">
+        <EmptyState
+          icon={Calendar}
+          size="sm"
+          title="No upcoming matches"
+          description="Generate fixtures to see upcoming matches."
+        />
       </div>
     );
   }
@@ -38,8 +43,8 @@ export function UpcomingMatches() {
 
   if (!nextRound) {
     return (
-      <div className="panel p-4 sm:p-6 text-center">
-        <p className="text-sm text-ink-2">All fixtures are completed.</p>
+      <div className="panel">
+        <EmptyState icon={Calendar} size="sm" title="All fixtures are completed" />
       </div>
     );
   }

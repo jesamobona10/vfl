@@ -1,5 +1,7 @@
 "use client";
 
+import { EmptyState } from "@/components/ui/empty-state";
+
 interface PlayerBadgesProps {
   goals: number;
   assists: number;
@@ -58,8 +60,12 @@ export function PlayerBadges({ goals, assists, motm, cleanSheets, saves }: Playe
 
   if (earned.length === 0) {
     return (
-      <div className="card p-6 text-center text-muted">
-        <p className="text-sm">No badges earned yet. Start playing to earn achievements!</p>
+      <div className="card">
+        <EmptyState
+          size="sm"
+          title="No badges earned yet"
+          description="Start playing to earn achievements!"
+        />
       </div>
     );
   }

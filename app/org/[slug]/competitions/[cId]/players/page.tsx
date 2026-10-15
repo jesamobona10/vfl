@@ -12,6 +12,8 @@ import {
   useDeleteSeasonPlayer,
 } from "@/lib/hooks/use-competitions";
 import { Users, X, Plus, AlertCircle, UserRound, ChevronDown } from "lucide-react";
+import { EmptyState } from "@/components/ui/empty-state";
+import { SkeletonList } from "@/components/shared/skeleton";
 import { useConfirm } from "@/components/shared/confirm-dialog";
 
 export default function CompPlayersPage() {
@@ -76,7 +78,11 @@ export default function CompPlayersPage() {
   }, [seasonPlayers]);
 
   if (isLoading) {
-    return null;
+    return (
+      <div className="card">
+        <SkeletonList items={4} />
+      </div>
+    );
   }
 
   if (!seasonId) {
@@ -87,19 +93,21 @@ export default function CompPlayersPage() {
 
   if (seasonTeams.length === 0) {
     return (
-      <div className="card p-8 sm:p-12 text-center">
-        <Users size={48} className="mx-auto text-ink-3/40 mb-4" />
-        <h2 className="text-lg font-semibold mb-1">No teams registered yet</h2>
-        <p className="text-sm text-muted mb-6">
-          Register teams for this season first, then come back to add players.
-        </p>
-        <Link
-          href={`/org/${slug}/competitions/${params.cId}/teams?seasonId=${seasonId}`}
-          className="btn-primary inline-flex items-center gap-2"
-        >
-          <Plus size={16} />
-          Register Teams
-        </Link>
+      <div className="card">
+        <EmptyState
+          icon={Users}
+          title="No teams registered yet"
+          description="Register teams for this season first, then come back to add players."
+          action={
+            <Link
+              href={`/org/${slug}/competitions/${params.cId}/teams?seasonId=${seasonId}`}
+              className="btn-primary inline-flex items-center gap-2"
+            >
+              <Plus size={16} />
+              Register Teams
+            </Link>
+          }
+        />
       </div>
     );
   }
