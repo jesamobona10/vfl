@@ -10,6 +10,8 @@ import type { LiveClockSettings } from "@/lib/logic/live";
 import { createPublicClient } from "@/lib/supabase/public";
 import type { PublicLiveEventRow, PublicMatchRow } from "@/lib/types";
 import { readPublicPreferences } from "@/lib/public-preferences";
+import { ShareMatchButton } from "@/components/public/share-match-button";
+import { FollowTeamsButton } from "@/components/public/follow-teams-button";
 
 type Event = PublicLiveEventRow;
 
@@ -188,6 +190,14 @@ export default function PublicLiveMatchPage() {
   }
 
   const isLive = match.status === "live" || match.status === "in-progress";
+  const hasScore = match.status === "completed" || isLive;
+  const targetTeamIds = [match.home_team_id, match.away_team_id].filter(
+    (id): id is number => typeof id === "number"
+  );
+  const shareTitle = `${match.home_team_name} vs ${match.away_team_name}`;
+  const shareText = hasScore
+    ? `${match.home_team_name} ${match.home_score ?? 0}\u2013${match.away_score ?? 0} ${match.away_team_name} \u2014 live on LeagueForge`
+    : `${match.home_team_name} vs ${match.away_team_name}${match.venue ? ` at ${match.venue}` : ""} \u2014 on LeagueForge`;
   return (
     <div className="mx-auto max-w-3xl space-y-5 p-4 sm:p-6">
       <div className="flex items-center justify-between gap-3">
@@ -200,6 +210,13 @@ export default function PublicLiveMatchPage() {
         <div className="text-xs text-ink-3">
           Round {match.round}{match.date ? ` · ${match.date}` : ""}{match.time ? ` · ${match.time}` : ""}
         </div>
+      </div>
+
+      <div className="flex flex-wrap items-center gap-2">
+        <ShareMatchButton title={shareTitle} text={shareText} />
+        {match.organization_id && targetTeamIds.length > 0 && (
+          <FollowTeamsButton organizationId={match.organization_id} teamIds={targetTeamIds} />
+        )}
       </div>
 
       <section className="card overflow-hidden">
