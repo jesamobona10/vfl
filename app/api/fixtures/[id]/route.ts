@@ -52,8 +52,15 @@ export async function GET(_request: Request, props: { params: Promise<{ id: stri
       .select("id, name, logo_url, rating, organization_id")
       .in("id", [fixture.home_team_id, fixture.away_team_id]);
 
-    const homeTeam = (teams || []).find((t: any) => t.id === fixture.home_team_id);
-    const awayTeam = (teams || []).find((t: any) => t.id === fixture.away_team_id);
+    const teamRows: {
+      id: number;
+      name: string;
+      logo_url: string | null;
+      rating: number | null;
+      organization_id: string | null;
+    }[] = teams || [];
+    const homeTeam = teamRows.find((t) => t.id === fixture.home_team_id);
+    const awayTeam = teamRows.find((t) => t.id === fixture.away_team_id);
     const organizationId = homeTeam?.organization_id ?? null;
 
     const hasAccess =
