@@ -2,13 +2,14 @@
 
 import { useState } from "react";
 import { useAppStore } from "@/lib/store";
-import type { Match, MatchEvent, Player } from "@/lib/types";
+import type { Match } from "@/lib/types";
 import { CheckCircle } from "lucide-react";
 import { useQueryClient } from "@tanstack/react-query";
 import { Modal } from "@/components/ui/modal";
 import { useToast } from "@/components/ui/toast";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { submitMatchEvent, finishMatch } from "@/lib/match-events";
 
 const EVENT_CATEGORIES = [
   {
@@ -77,52 +78,14 @@ const EVENT_COLOR: Record<string, string> = {
   "bonus-5-saves": "bg-live-500/20 text-live-500",
 };
 
-const STAT_FIELD: Record<string, keyof Player> = {
-  goal: "goals",
-  assist: "assists",
-  "own-goal": "ownGoals",
-  yellow: "yellowCards",
-  red: "redCards",
-  save: "saves",
-  "penalty-save": "penaltySaves",
-  "clean-sheet": "cleanSheets",
-  motm: "motm",
-  error: "errorsLeadingToGoal",
-  "penalty-conceded": "penaltiesConceded",
-  tackle: "tackles",
-  interception: "interceptions",
-  block: "blocks",
-  aerial: "aerialDuelsWon",
-  "goal-conceded": "goalsConceded",
-  "match-win": "matchWins",
-  "bonus-5-saves": "bonus5Saves",
-};
-
 interface AddEventModalProps {
   match: Match;
   homeTeamName: string;
   awayTeamName: string;
   onClose: () => void;
   initialMinute?: number;
-}
-
-function updateMatchScore(
-  match: Match,
-  playerTeamId: number,
-  eventType: string
-): { homeScore: number | null; awayScore: number | null } {
-  const home = match.homeScore ?? 0;
-  const away = match.awayScore ?? 0;
-
-  if (eventType === "goal") {
-    if (playerTeamId === match.homeId) return { homeScore: home + 1, awayScore: away };
-    return { homeScore: home, awayScore: away + 1 };
-  }
-  if (eventType === "own-goal") {
-    if (playerTeamId === match.homeId) return { homeScore: home, awayScore: away + 1 };
-    return { homeScore: home + 1, awayScore: away };
-  }
-  return { homeScore: match.homeScore, awayScore: match.awayScore };
+  /** Preselects an event type (match mode's big Goal/Card buttons). */
+  initialType?: string;
 }
 
 export function AddEventModal({
@@ -131,15 +94,14 @@ export function AddEventModal({
   awayTeamName,
   onClose,
   initialMinute,
+  initialType,
 }: AddEventModalProps) {
-  const [selectedType, setSelectedType] = useState<string>("goal");
+  const [selectedType, setSelectedType] = useState<string>(initialType ?? "goal");
   const [playerSearch, setPlayerSearch] = useState("");
   const [showAllTypes, setShowAllTypes] = useState(false);
   const [saving, setSaving] = useState(false);
 
   const players = useAppStore((s) => s.players);
-  const updateMatch = useAppStore((s) => s.updateMatch);
-  const updatePlayer = useAppStore((s) => s.updatePlayer);
   const queryClient = useQueryClient();
   const toast = useToast();
 
@@ -164,112 +126,22 @@ export function AddEventModal({
 
     const player = players.find((p) => p.id === playerId);
     if (!player) return;
-    const teamId = player?.teamId ?? match.homeId;
-    const minute = initialMinute;
-    const newEvent: MatchEvent = { playerId, type: selectedType, teamId, minute };
-    const prevHome = match.homeScore;
-    const prevAway = match.awayScore;
-
-    const events = [...(match.events || []), newEvent];
-    updateMatch(match.id, "events", events);
-
-    const score = updateMatchScore(match, teamId, selectedType);
-    updateMatch(match.id, "homeScore", score.homeScore);
-    updateMatch(match.id, "awayScore", score.awayScore);
-
-    if (player) {
-      const field = STAT_FIELD[selectedType];
-      if (field) {
-        updatePlayer(playerId, {
-          [field]: ((player[field] as number) || 0) + 1,
-        });
-      }
-    }
-    useAppStore.getState().recalculateRatings();
+    const teamId = player.teamId ?? match.homeId;
 
     setSaving(true);
     onClose();
 
-    const persistScore = (home: number | null | undefined, away: number | null | undefined) => {
-      fetch(`/api/fixtures/${match.id}`, {
-        method: "PUT",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ homeScore: home ?? 0, awayScore: away ?? 0 }),
-      }).catch(() => {
-        // persist silently
-      });
-    };
-
-    const undoAdd = (serverId: number | null) => {
-      const store = useAppStore.getState();
-      let targetEvents = events;
-      for (const round of store.fixtures) {
-        const found = round.matches.find((m) => m.id === match.id);
-        if (found) {
-          targetEvents = found.events || [];
-          break;
-        }
-      }
-      const list = [...targetEvents];
-      for (let i = list.length - 1; i >= 0; i--) {
-        const e = list[i];
-        if (e.playerId === playerId && e.type === selectedType && e.teamId === teamId) {
-          list.splice(i, 1);
-          break;
-        }
-      }
-      store.updateMatch(match.id, "events", list);
-
-      const current = store.players.find((p) => p.id === playerId);
-      const field = STAT_FIELD[selectedType];
-      if (current && field) {
-        store.updatePlayer(playerId, {
-          [field]: Math.max(0, ((current[field] as number) || 0) - 1),
-        });
-      }
-      store.updateMatch(match.id, "homeScore", prevHome);
-      store.updateMatch(match.id, "awayScore", prevAway);
-      persistScore(prevHome, prevAway);
-      store.recalculateRatings();
-
-      if (serverId) {
-        fetch(`/api/events/${serverId}`, { method: "DELETE" })
-          .then(() => invalidateStandings())
-          .catch(() => {
-            // persist silently
-          });
-      } else {
-        invalidateStandings();
-      }
-    };
-
-    const eventSave = fetch(`/api/fixtures/${match.id}/events`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ playerId, teamId, type: selectedType, minute }),
-      });
-
-    const scoreSave = selectedType === "goal" || selectedType === "own-goal"
-      ? fetch(`/api/fixtures/${match.id}`, {
-          method: "PUT",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            homeScore: score.homeScore ?? 0,
-            awayScore: score.awayScore ?? 0,
-          }),
-        })
-      : Promise.resolve(null);
-
-    void Promise.all([eventSave, scoreSave])
-      .then(async ([eventResponse, scoreResponse]) => {
-        if (!eventResponse.ok || (scoreResponse && !scoreResponse.ok)) {
-          throw new Error("Match event save failed");
-        }
-        const payload = await eventResponse.json().catch(() => null);
-        const serverId: number | null = payload?.event?.id ?? null;
-        invalidateStandings();
+    void submitMatchEvent({
+      match,
+      playerId,
+      teamId,
+      type: selectedType,
+      minute: initialMinute,
+      onSettled: invalidateStandings,
+    })
+      .then(({ undo }) => {
         toast.success(`${selectedLabel} added.`, {
-          action: { label: "Undo", onAction: () => undoAdd(serverId) },
+          action: { label: "Undo", onAction: undo },
         });
       })
       .catch(() => {
@@ -280,15 +152,8 @@ export function AddEventModal({
   const handleMarkComplete = async () => {
     const home = match.homeScore ?? 0;
     const away = match.awayScore ?? 0;
-    updateMatch(match.id, "homeScore", home);
-    updateMatch(match.id, "awayScore", away);
-    useAppStore.getState().recalculateRatings();
     try {
-      await fetch(`/api/fixtures/${match.id}`, {
-        method: "PUT",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ homeScore: home, awayScore: away, status: "completed" }),
-      });
+      await finishMatch(match.id, home, away);
       invalidateStandings();
     } catch {
       // persist silently

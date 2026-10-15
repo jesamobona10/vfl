@@ -8,6 +8,7 @@ import { useCompetition } from "@/lib/hooks/use-competitions";
 import { LiveMatchCard } from "@/components/live/live-match-card";
 import { EmptyState, LoadingState } from "@/components/shared/skeleton";
 import { liveSettings, matchKickoff, type LiveClockSettings } from "@/lib/logic/live";
+import { startMatch } from "@/lib/match-events";
 import { Play } from "lucide-react";
 import type { Match, Team } from "@/lib/types";
 
@@ -105,17 +106,10 @@ export default function LiveEventPage() {
     setStartingId(match.id);
     setError(null);
     try {
-      const res = await fetch(`/api/fixtures/${match.id}/start`, { method: "POST" });
-      const body = await res.json();
-      if (!res.ok) {
-        setError(body.error || "Unable to start the match.");
-        return;
-      }
-      useAppStore.getState().updateMatch(match.id, "status", "live");
-      useAppStore.getState().updateMatch(match.id, "live_started_at", new Date().toISOString());
+      await startMatch(match.id);
       load();
-    } catch {
-      setError("Unable to start the match.");
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Unable to start the match.");
     } finally {
       setStartingId(null);
     }

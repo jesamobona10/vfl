@@ -22,8 +22,85 @@ import {
 } from "@/lib/security";
 import { AUDIT_ACTIONS } from "@/lib/audit/actions";
 import { dispatchMatchEvent } from "@/lib/notifications/dispatch";
+import type { Match, MatchEvent, MatchEventRow } from "@/lib/types";
 
 export const dynamic = "force-dynamic";
+
+export async function GET(_request: Request, props: { params: Promise<{ id: string }> }) {
+  const params = await props.params;
+  try {
+    const supabase = await createClient();
+    const auth = await getAuthContext(supabase);
+    const authError = requireAuth(auth);
+    if (authError) return authError;
+    const authed = auth!;
+
+    const fixtureId = asInteger(params.id, 1);
+    if (!fixtureId) return json({ error: "Invalid fixture id." }, { status: 400 });
+
+    const sb = createServiceRoleClient();
+    const { data: fixture } = await sb
+      .from("fixtures")
+      .select("*, match_events(*)")
+      .eq("id", fixtureId)
+      .maybeSingle();
+
+    if (!fixture) return json({ error: "Fixture not found." }, { status: 404 });
+
+    const { data: teams } = await sb
+      .from("teams")
+      .select("id, name, logo_url, rating, organization_id")
+      .in("id", [fixture.home_team_id, fixture.away_team_id]);
+
+    const homeTeam = (teams || []).find((t: any) => t.id === fixture.home_team_id);
+    const awayTeam = (teams || []).find((t: any) => t.id === fixture.away_team_id);
+    const organizationId = homeTeam?.organization_id ?? null;
+
+    const hasAccess =
+      authed.isAdmin ||
+      (organizationId && authed.orgMembership?.organization_id === organizationId) ||
+      (organizationId && authed.teamAccount?.organization_id === organizationId);
+    if (!hasAccess) return json({ error: "Forbidden" }, { status: 403 });
+
+    const events: MatchEvent[] = (fixture.match_events || []).map((e: MatchEventRow) => ({
+      playerId: e.player_id,
+      type: e.event_type,
+      teamId: e.team_id ?? undefined,
+      minute: e.minute ?? undefined,
+    }));
+
+    const match: Match = {
+      id: fixture.id,
+      round: fixture.round,
+      homeId: fixture.home_team_id,
+      awayId: fixture.away_team_id,
+      homeScore: fixture.home_score,
+      awayScore: fixture.away_score,
+      status: (fixture.status as Match["status"]) || "scheduled",
+      date: fixture.date || "",
+      time: fixture.time || "",
+      venue: fixture.venue || "",
+      events,
+      competition_id: fixture.competition_id ?? null,
+      season_id: fixture.season_id ?? null,
+      live_started_at: fixture.live_started_at ?? null,
+    };
+
+    return json({
+      match,
+      organizationId,
+      homeTeam: homeTeam
+        ? { id: homeTeam.id, name: homeTeam.name, logo_url: homeTeam.logo_url || undefined, rating: homeTeam.rating ?? 6.0 }
+        : null,
+      awayTeam: awayTeam
+        ? { id: awayTeam.id, name: awayTeam.name, logo_url: awayTeam.logo_url || undefined, rating: awayTeam.rating ?? 6.0 }
+        : null,
+    });
+  } catch (error) {
+    logApiError("fixture_get_error", error);
+    return json({ error: "Something went wrong. Please try again." }, { status: 500 });
+  }
+}
 
 export async function PUT(request: Request, props: { params: Promise<{ id: string }> }) {
   const params = await props.params;

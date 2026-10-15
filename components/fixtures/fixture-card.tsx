@@ -10,8 +10,11 @@ import { matchStatusVariant, statusLabel } from "@/lib/status";
 import { MatchReportModal } from "./match-report-modal";
 import { LiveBadgeWithLink } from "@/components/live/live-badge";
 import { useToast } from "@/components/ui/toast";
-import { Sparkles } from "lucide-react";
+import { removeMatchEvent } from "@/lib/match-events";
+import { Sparkles, Radio } from "lucide-react";
 import Image from "next/image";
+import Link from "next/link";
+import { useParams } from "next/navigation";
 
 /** Grace window before a removed match event is actually deleted on the server. */
 const UNDO_WINDOW_MS = 5000;
@@ -83,9 +86,10 @@ export function FixtureCard({
   const [showFlyer, setShowFlyer] = useState(false);
   const [showReport, setShowReport] = useState(false);
   const players = useAppStore((s) => s.players);
-  const updateMatch = useAppStore((s) => s.updateMatch);
   const queryClient = useQueryClient();
   const toast = useToast();
+  const params = useParams();
+  const slug = typeof params?.slug === "string" ? params.slug : undefined;
 
   const invalidateSeasonQueries = () => {
     if (match.season_id) {
@@ -111,88 +115,25 @@ export function FixtureCard({
   };
 
   const handleRemoveEvent = (index: number) => {
-    const store = useAppStore.getState();
-    const event = events[index];
-    if (!event) return;
-
-    const updatedEvents = events.filter((_, i) => i !== index);
-    const prevHome = match.homeScore;
-    const prevAway = match.awayScore;
-
-    const STAT_FIELD: Record<string, string> = {
-      goal: "goals",
-      assist: "assists",
-      "own-goal": "ownGoals",
-      yellow: "yellowCards",
-      red: "redCards",
-    };
-    const field = STAT_FIELD[event.type];
-    const player = store.players.find((p) => p.id === event.playerId);
-    const prevStatValue = player && field ? ((player as any)[field] as number) || 0 : undefined;
-
-    const persistScore = (home: number | null | undefined, away: number | null | undefined) => {
-      fetch(`/api/fixtures/${match.id}`, {
-        method: "PUT",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ homeScore: home ?? 0, awayScore: away ?? 0 }),
-      }).catch(() => {
-        // persist silently
-      });
-    };
-
-    // Optimistic removal: hide the event and roll back score/stat locally.
-    updateMatch(match.id, "events", updatedEvents);
-    if (player && field && prevStatValue !== undefined) {
-      store.updatePlayer(event.playerId, { [field]: Math.max(0, prevStatValue - 1) });
-    }
-    let nextHome = prevHome;
-    let nextAway = prevAway;
-    if (event.type === "goal" || event.type === "own-goal") {
-      const p = store.players.find((pl) => pl.id === event.playerId);
-      const teamId = p?.teamId ?? match.homeId;
-      const isOwnGoal = event.type === "own-goal";
-      const scoringTeam = isOwnGoal
-        ? teamId === match.homeId
-          ? match.awayId
-          : match.homeId
-        : teamId;
-      nextHome = scoringTeam === match.homeId ? Math.max(0, (prevHome ?? 0) - 1) : prevHome;
-      nextAway = scoringTeam === match.awayId ? Math.max(0, (prevAway ?? 0) - 1) : prevAway;
-      store.updateMatch(match.id, "homeScore", nextHome);
-      store.updateMatch(match.id, "awayScore", nextAway);
-      persistScore(nextHome, nextAway);
-    }
-    store.recalculateRatings();
+    const removed = removeMatchEvent({
+      match,
+      index,
+      onSettled: invalidateSeasonQueries,
+    });
+    if (!removed) return;
 
     // The server delete is deferred: the event hides immediately, the DELETE
     // only fires after the grace window unless the user taps Undo.
-    const timer = setTimeout(() => {
-      fetch(`/api/events/0?match_id=${match.id}&player_id=${event.playerId}&type=${event.type}`, {
-        method: "DELETE",
-      })
-        .then(() => invalidateSeasonQueries())
-        .catch(() => {
-          // persist silently
-        });
-    }, UNDO_WINDOW_MS);
-
-    const undoRemoval = () => {
-      clearTimeout(timer);
-      const fresh = useAppStore.getState();
-      updateMatch(match.id, "events", events);
-      if (player && field && prevStatValue !== undefined) {
-        fresh.updatePlayer(event.playerId, { [field]: prevStatValue });
-      }
-      if (event.type === "goal" || event.type === "own-goal") {
-        fresh.updateMatch(match.id, "homeScore", prevHome);
-        fresh.updateMatch(match.id, "awayScore", prevAway);
-        persistScore(prevHome, prevAway);
-      }
-      fresh.recalculateRatings();
-    };
+    const timer = setTimeout(removed.persistDelete, UNDO_WINDOW_MS);
 
     toast.info("Event removed", {
-      action: { label: "Undo", onAction: undoRemoval },
+      action: {
+        label: "Undo",
+        onAction: () => {
+          clearTimeout(timer);
+          removed.undo();
+        },
+      },
       durationMs: UNDO_WINDOW_MS,
     });
   };
@@ -312,12 +253,18 @@ export function FixtureCard({
         )}
 
         {editable && (
-          <div className="pt-2 border-t border-line" onClick={(e) => e.stopPropagation()}>
+          <div className="flex gap-2 pt-2 border-t border-line" onClick={(e) => e.stopPropagation()}>
+            <Link
+              href={slug ? `/org/${slug}/match/${match.id}` : "#"}
+              className="btn btn-ghost btn-sm flex-1 justify-center gap-1.5 text-brand border border-brand/25 hover:bg-brand/5"
+            >
+              <Radio size={13} /> Match mode
+            </Link>
             <Button
               size="sm"
               variant="ghost"
               onClick={() => setShowReport(true)}
-              className="w-full gap-1.5 text-brand border border-brand/25 hover:bg-brand/5"
+              className="flex-1 gap-1.5 text-brand border border-brand/25 hover:bg-brand/5"
             >
               <Sparkles size={13} /> AI Report
             </Button>

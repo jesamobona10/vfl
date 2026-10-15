@@ -4,6 +4,7 @@ import { useState } from "react";
 import type { Match, Team } from "@/lib/types";
 import { useAppStore } from "@/lib/store";
 import { AddEventModal } from "@/components/fixtures/add-event-modal";
+import { finishMatch } from "@/lib/match-events";
 import { LiveClock } from "./live-clock";
 import { useLiveClock } from "./live-clock";
 import { CheckCircle, Plus, Flag } from "lucide-react";
@@ -96,16 +97,8 @@ export function LiveMatchCard({
     const home = match.homeScore ?? 0;
     const away = match.awayScore ?? 0;
     try {
-      const res = await fetch(`/api/fixtures/${match.id}`, {
-        method: "PUT",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ homeScore: home, awayScore: away, status: "completed" }),
-      });
-      if (res.ok) {
-        useAppStore.getState().updateMatch(match.id, "status", "completed");
-        useAppStore.getState().recalculateRatings();
-        onFinished();
-      }
+      await finishMatch(match.id, home, away);
+      onFinished();
     } catch {
       // persist silently
     } finally {
