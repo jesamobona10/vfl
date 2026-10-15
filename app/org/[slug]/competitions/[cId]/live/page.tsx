@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useParams, useSearchParams } from "next/navigation";
 import { useAppStore } from "@/lib/store";
+import { useCan } from "@/lib/hooks/use-can";
 import { useCompetition } from "@/lib/hooks/use-competitions";
 import { LiveMatchCard } from "@/components/live/live-match-card";
 import { EmptyState, LoadingState } from "@/components/shared/skeleton";
@@ -43,8 +44,6 @@ export default function LiveEventPage() {
 
   const { data: competition } = useCompetition(cId);
   const teams = useAppStore((s) => s.teams);
-  const isAdmin = useAppStore((s) => s.isAdmin);
-  const userProfile = useAppStore((s) => s.userProfile);
 
   const [data, setData] = useState<LiveData | null>(null);
   const [loading, setLoading] = useState(true);
@@ -58,7 +57,7 @@ export default function LiveEventPage() {
     [competition]
   );
 
-  const canEdit = isAdmin || userProfile?.role === "org_admin";
+  const { allowed: canEdit } = useCan("match.edit");
 
   const load = () => {
     const currentRequest = ++requestId.current;

@@ -4,6 +4,7 @@ import { useState, Suspense } from "react";
 import dynamic from "next/dynamic";
 import { useParams } from "next/navigation";
 import { useAppStore } from "@/lib/store";
+import { useCan } from "@/lib/hooks/use-can";
 import { useOrg } from "@/lib/hooks/use-org";
 import { PlayerCard } from "@/components/players/player-card";
 import { AnonymizeConfirm } from "@/components/players/anonymize-confirm";
@@ -32,8 +33,7 @@ export default function OrgPlayersPage() {
   const players = useAppStore((s) => s.players);
   const teams = useAppStore((s) => s.teams);
   const teamName = useAppStore((s) => s.teamName);
-  const userProfile = useAppStore((s) => s.userProfile);
-  const isOrgAdmin = userProfile?.role === "org_admin";
+  const { allowed: isOrgAdmin } = useCan("players.manage");
   const { selectedOrgSeasonId, loading: seasonLoading, hasTeams, isOrgAdmin: ctxIsOrgAdmin } = useOrgSeason();
   const deletePlayer = useAppStore((s) => s.deletePlayer);
   const setPlayers = useAppStore((s) => s.setPlayers);

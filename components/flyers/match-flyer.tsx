@@ -5,6 +5,7 @@ import html2canvas from "html2canvas";
 import { CalendarClock, Check, Copy, Download, Share2, X } from "lucide-react";
 import type { Match, Team } from "@/lib/types";
 import { useAppStore } from "@/lib/store";
+import { useCan } from "@/lib/hooks/use-can";
 import { useCompetition } from "@/lib/hooks/use-competitions";
 import { useToast } from "@/components/ui/toast";
 import { readFlyerSettings } from "@/lib/flyer/settings";
@@ -176,15 +177,13 @@ export function MatchFlyer({ match, homeTeam, awayTeam, onClose }: MatchFlyerPro
   const [busy, setBusy] = useState<"download" | "copy" | "share" | null>(null);
   const [error, setError] = useState("");
 
-  const isAdmin = useAppStore((s) => s.isAdmin);
-  const userProfile = useAppStore((s) => s.userProfile);
   const updateMatch = useAppStore((s) => s.updateMatch);
   const toast = useToast();
 
   const { data: competition } = useCompetition(match.competition_id || undefined);
   const settings = readFlyerSettings(competition?.settings);
 
-  const canEdit = isAdmin || userProfile?.role === "org_admin";
+  const { allowed: canEdit } = useCan("fixtures.edit");
   const dirty = date !== baseline.date || time !== baseline.time || venue !== baseline.venue;
   const hasSchedule = Boolean(date && time);
 

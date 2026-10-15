@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { useParams } from "next/navigation";
 import { useAppStore } from "@/lib/store";
+import { useCan } from "@/lib/hooks/use-can";
 import { useResolvedTeams } from "@/lib/hooks/use-resolved-teams";
 import { Plus, X, AlertCircle, CheckCircle } from "lucide-react";
 import { TimeInput } from "../shared/time-input";
@@ -40,7 +41,7 @@ export function FixtureCreator({
   const teams = useResolvedTeams(currentSeasonId);
   const fixtures = useAppStore((s) => s.fixtures);
   const addFixture = useAppStore((s) => s.addFixture);
-  const isAdmin = useAppStore((s) => s.isAdmin);
+  const { allowed: canGenerate } = useCan("fixtures.generate");
   const slug = useParams().slug as string | undefined;
   const persistToServer = Boolean(competitionId && seasonId);
 
@@ -124,7 +125,7 @@ export function FixtureCreator({
     setTimeout(() => setSuccess(""), 3000);
   };
 
-  if (!isAdmin) return null;
+  if (!canGenerate) return null;
 
   return (
     <div className="card">

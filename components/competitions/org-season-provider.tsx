@@ -10,7 +10,8 @@ import {
   useOrgSeasonPlayers,
   useOrgSeasonFixtures,
 } from "@/lib/hooks/use-competitions";
-import type { OrganizationSeason } from "@/lib/types";
+import type { OrganizationSeason, OrgRole } from "@/lib/types";
+import { isOrgAdminLike } from "@/lib/permissions";
 
 interface OrgSeasonContextValue {
   seasons: OrganizationSeason[];
@@ -83,8 +84,12 @@ export function OrgSeasonProvider({ children }: { children: React.ReactNode }) {
   const setPlayers = useAppStore((s) => s.setPlayers);
   const setFixtures = useAppStore((s) => s.setFixtures);
 
-  const isOrgAdmin =
-    isAdmin || (userProfile?.role === "org_admin" && !currentTeamAccount);
+  const isOrgAdmin = isOrgAdminLike({
+    isAdmin,
+    role: currentTeamAccount ? "team_account" : (userProfile?.role ?? null),
+    orgRole: (userProfile?.orgRole as OrgRole | undefined) ?? null,
+    teamId: currentTeamAccount?.teamId ?? null,
+  });
 
   /**
    * Whether this role may *read* the organization's season-scoped data.

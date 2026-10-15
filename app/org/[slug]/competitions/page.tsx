@@ -14,7 +14,7 @@ import { useConfirm } from "@/components/shared/confirm-dialog";
 import { useToast } from "@/components/ui/toast";
 import { Badge } from "@/components/ui/badge";
 import { competitionStatusVariant, statusLabel } from "@/lib/status";
-import { useAppStore } from "@/lib/store";
+import { useCan } from "@/lib/hooks/use-can";
 
 const typeConfig: Record<string, { label: string; icon: React.ReactNode }> = {
   league: { label: "League", icon: <Trophy size={16} /> },
@@ -31,7 +31,8 @@ export default function CompetitionsPage() {
   const queryClient = useQueryClient();
   const { data: currentOrg } = useOrg(slug);
   const { data: competitions = [], isLoading, isError, refetch } = useCompetitions(currentOrg?.id);
-  const isTeamAccount = useAppStore((state) => state.currentTeamAccount !== null);
+  const { allowed: canCreate } = useCan("competition.create");
+  const { allowed: canDelete } = useCan("competition.delete");
   const [deletingId, setDeletingId] = useState<string | null>(null);
   const [error, setError] = useState("");
 
@@ -90,7 +91,7 @@ export default function CompetitionsPage() {
           <p className="page-title">Competitions</p>
           <p className="page-sub">Manage leagues, cups and friendlies</p>
         </div>
-        {!isTeamAccount && competitions.length > 0 && (
+        {canCreate && competitions.length > 0 && (
           <a href={`/org/${slug}/competitions/new`} className="btn-primary flex items-center gap-2">
             <Plus size={16} />
             Create Competition
@@ -104,12 +105,12 @@ export default function CompetitionsPage() {
             icon={Trophy}
             title="No competitions yet"
             description={
-              isTeamAccount
+              !canCreate
                 ? "The organization has not added a competition yet."
                 : "Create your first competition to get started — a league, cup, or friendly match."
             }
             action={
-              !isTeamAccount ? (
+              canCreate ? (
                 <a href={`/org/${slug}/competitions/new`} className="btn-primary inline-flex items-center gap-2">
                   <Plus size={16} /> Create Competition
                 </a>
@@ -151,18 +152,20 @@ export default function CompetitionsPage() {
                       ) : null;
                     })()}
                   </a>
-                  <button
-                    onClick={() => handleDelete(comp)}
-                    disabled={deletingId === comp.id}
-                    className="btn-icon absolute top-2 right-2 text-danger opacity-100 md:opacity-0 md:group-hover:opacity-100 md:group-focus-within:opacity-100 transition-opacity"
-                    title="Delete competition"
-                  >
-                    {deletingId === comp.id ? (
-                      <span className="block w-3 h-3 bg-surface-2 rounded animate-pulse" />
-                    ) : (
-                      <Trash2 size={15} />
-                    )}
-                  </button>
+                  {canDelete && (
+                    <button
+                      onClick={() => handleDelete(comp)}
+                      disabled={deletingId === comp.id}
+                      className="btn-icon absolute top-2 right-2 text-danger opacity-100 md:opacity-0 md:group-hover:opacity-100 md:group-focus-within:opacity-100 transition-opacity"
+                      title="Delete competition"
+                    >
+                      {deletingId === comp.id ? (
+                        <span className="block w-3 h-3 bg-surface-2 rounded animate-pulse" />
+                      ) : (
+                        <Trash2 size={15} />
+                      )}
+                    </button>
+                  )}
                 </div>
               );
             })}

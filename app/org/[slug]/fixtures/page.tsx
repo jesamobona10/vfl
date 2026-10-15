@@ -3,6 +3,7 @@
 import { useState, useEffect, useRef, useCallback } from "react";
 import dynamic from "next/dynamic";
 import { useAppStore } from "@/lib/store";
+import { useCan } from "@/lib/hooks/use-can";
 import { useOrg } from "@/lib/hooks/use-org";
 import { useParams } from "next/navigation";
 import { FixtureList } from "@/components/fixtures/fixture-list";
@@ -38,11 +39,9 @@ export default function OrgFixturesPage() {
   const teams = useAppStore((s) => s.teams);
   const fixtures = useAppStore((s) => s.fixtures);
   const setFixtures = useAppStore((s) => s.setFixtures);
-  const isAdmin = useAppStore((s) => s.isAdmin);
-  const userProfile = useAppStore((s) => s.userProfile);
   // Org admins manage their org's fixtures (the APIs authorize them); super
   // admins can manage every org. Coaches have read-only access.
-  const canEdit = isAdmin || userProfile?.role === "org_admin";
+  const { allowed: canEdit } = useCan("fixtures.edit");
 
   const {
     selectedOrgSeasonId,

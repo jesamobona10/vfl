@@ -2,6 +2,7 @@
 
 import { useState, useRef } from "react";
 import { useAppStore } from "@/lib/store";
+import { useCan } from "@/lib/hooks/use-can";
 import { FixtureFilters } from "./fixture-filters";
 import { FixtureCreator } from "./fixture-creator";
 import { FixtureRoundPanel } from "./fixture-round";
@@ -31,12 +32,10 @@ export function FixtureList({
 
   const fixtures = useAppStore((s) => s.fixtures);
   const reorderMatch = useAppStore((s) => s.reorderMatch);
-  const isAdmin = useAppStore((s) => s.isAdmin);
-  const userProfile = useAppStore((s) => s.userProfile);
   const isTeamAccount = useAppStore((s) => s.isTeamAccount);
   const managedId = useAppStore((s) => s.getManagedTeamId)();
 
-  const showAdminFeatures = isAdmin || userProfile?.role === "org_admin";
+  const { allowed: showAdminFeatures } = useCan("fixtures.edit");
   const effectiveTeamFilter = isTeamAccount() ? String(managedId) : teamFilter;
   const captureRef = useRef<HTMLDivElement>(null);
 

@@ -4,6 +4,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useParams, useSearchParams } from "next/navigation";
 import { Zap } from "lucide-react";
 import { useAppStore } from "@/lib/store";
+import { useCan } from "@/lib/hooks/use-can";
 import { FixtureList } from "@/components/fixtures/fixture-list";
 import { useCompetition, useGenerateFixtures, useSeasons } from "@/lib/hooks/use-competitions";
 import { useSeasonHasFixtures } from "@/lib/hooks/use-competition-stats";
@@ -16,8 +17,7 @@ export default function CompFixturesPage() {
   const slug = params.slug as string;
   const seasonIdParam = searchParams.get("seasonId");
   const setFixtures = useAppStore((s) => s.setFixtures);
-  const userProfile = useAppStore((s) => s.userProfile);
-  const isAdmin = useAppStore((s) => s.isAdmin);
+  const { allowed: canEdit } = useCan("fixtures.edit");
   const { success: toastSuccess, error: toastError } = useToast();
 
   const [loading, setLoading] = useState(true);
@@ -34,7 +34,6 @@ export default function CompFixturesPage() {
   const { data: hasFixtures, isLoading: checkingFixtures } = useSeasonHasFixtures(
     seasonId ?? undefined
   );
-  const canEdit = isAdmin || userProfile?.role === "org_admin";
 
   const loadFixtures = useCallback(async () => {
     const currentRequest = ++requestId.current;
