@@ -157,7 +157,8 @@ body {
     @apply btn px-3 py-1.5 text-xs;
   }
   .btn-primary {
-    @apply btn bg-brand-600 text-white hover:bg-brand-700;
+    @apply btn bg-brand-600 hover:bg-brand-700;
+    color: var(--brand-foreground, #ffffff);
   }
   .btn-secondary {
     @apply btn bg-surface-2 text-text hover:bg-line;

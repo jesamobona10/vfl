@@ -36,6 +36,7 @@ import { useConfirm } from "@/components/shared/confirm-dialog";
 import { useSeasonHasFixtures } from "@/lib/hooks/use-competition-stats";
 import type { Season, Team } from "@/lib/types";
 import {
+  DEFAULT_FLYER_SETTINGS,
   FLYER_FORMATS,
   FLYER_FORMAT_SPECS,
   FLYER_TEMPLATE_OPTIONS,
@@ -551,6 +552,11 @@ export default function CompetitionSettingsPage() {
               />
               <span className="text-xs font-mono text-muted">{flyer.accent_color}</span>
             </div>
+            {flyer.accent_color === DEFAULT_FLYER_SETTINGS.accent_color && (
+              <p className="text-xs text-ink-3">
+                This default follows your organization&apos;s brand color. Pick a colour to override it.
+              </p>
+            )}
             {flyer.background_url && (
               <>
                 <div className="flex items-center gap-3">

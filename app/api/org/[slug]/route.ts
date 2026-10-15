@@ -1,5 +1,6 @@
 import { createClient } from "@/lib/supabase/server";
 import { createServiceRoleClient } from "@/lib/supabase/service-role";
+import { validateBrandColor } from "@/lib/branding";
 import {
   asOptionalString,
   getAuthContext,
@@ -93,6 +94,18 @@ export async function PUT(request: Request, props: { params: Promise<{ slug: str
 
     if (name) update.name = name;
     if (logo_url !== null) update.logo_url = logo_url;
+    if (parsed.data!.brand_color !== undefined) {
+      const raw = parsed.data!.brand_color;
+      if (raw === null || raw === "") {
+        update.brand_color = null;
+      } else {
+        const check = validateBrandColor(raw);
+        if (!check.ok || !check.palette) {
+          return json({ error: check.error ?? "Invalid brand color." }, { status: 400 });
+        }
+        update.brand_color = check.palette.base;
+      }
+    }
     if (settings !== undefined && typeof settings === "object" && !Array.isArray(settings)) {
       update.settings = settings;
     }

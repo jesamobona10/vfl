@@ -9,6 +9,7 @@ import { AppHeader } from "@/components/layout/app-header";
 import { Sidebar, type SidebarItem } from "@/components/layout/sidebar";
 import { MobileNavDrawer } from "@/components/layout/mobile-nav-drawer";
 import { OrgSeasonProvider } from "@/components/competitions/org-season-provider";
+import { brandStyleVars } from "@/lib/branding";
 import { LayoutDashboard, Users, Shield, UserCog, Swords, Radio } from "lucide-react";
 
 const SearchModal = dynamic(() => import("@/components/search/search-modal").then(m => m.SearchModal), {
@@ -105,7 +106,10 @@ export default function OrgLayout({ children }: { children: React.ReactNode }) {
   return (
     <Suspense>
       <OrgSeasonProvider>
-        <div className="min-h-screen bg-page flex">
+        <div
+          className="min-h-screen bg-page flex"
+          style={brandStyleVars(currentOrg.brand_color) as React.CSSProperties}
+        >
           <Sidebar items={items} footer={footer} />
           <div className="flex-1 min-w-0 flex flex-col">
             <AppHeader

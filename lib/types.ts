@@ -427,6 +427,8 @@ export interface Organization {
   type: OrgType;
   /** Optional logo URL. */
   logo_url?: string;
+  /** Optional per-org accent color as `#rrggbb`; unset falls back to default. */
+  brand_color?: string | null;
   /** JSON settings blob. */
   settings?: Record<string, unknown>;
   /** Whether public match pages may show player names. */

@@ -2,7 +2,7 @@
 
 import type { CSSProperties, Ref } from "react";
 import type { Team } from "@/lib/types";
-import { FLYER_FORMAT_SPECS, type FlyerSettings } from "@/lib/flyer/settings";
+import { FLYER_FORMAT_SPECS, DEFAULT_FLYER_SETTINGS, type FlyerSettings } from "@/lib/flyer/settings";
 
 export interface FlyerCanvasProps {
   homeTeam?: Team;
@@ -207,7 +207,10 @@ export function FlyerCanvas({
     width: spec.width,
     height: spec.height,
     ["--fc-text" as string]: settings.text_color,
-    ["--fc-accent" as string]: settings.accent_color,
+    ["--fc-accent" as string]:
+      settings.accent_color === DEFAULT_FLYER_SETTINGS.accent_color
+        ? "var(--brand-600, #0f7c45)"
+        : settings.accent_color,
     transform: scale !== 1 ? `scale(${scale})` : undefined,
     transformOrigin: "top left",
   };

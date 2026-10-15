@@ -1,10 +1,18 @@
-export default function OrgSettingsPage() {
+import { BrandSettings } from "@/components/settings/brand-settings";
+
+export default async function OrgSettingsPage({
+  params,
+}: {
+  params: Promise<{ slug: string }>;
+}) {
+  const { slug } = await params;
   return (
     <div className="space-y-6 p-4 sm:p-6">
       <div>
         <h2 className="text-lg font-semibold">Organization Settings</h2>
         <p className="text-sm text-muted">Public match updates include player names for recorded events.</p>
       </div>
+      <BrandSettings slug={slug} />
       <div className="card p-4 space-y-3">
         <p className="text-sm font-medium">Public match updates</p>
         <p className="text-xs text-ink-3">
