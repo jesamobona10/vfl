@@ -6,6 +6,7 @@ import { useParams } from "next/navigation";
 import { useOrg } from "@/lib/hooks/use-org";
 import { useAppStore } from "@/lib/store";
 import { AppHeader } from "@/components/layout/app-header";
+import { OrgContextBar } from "@/components/layout/org-context-bar";
 import { Sidebar, type SidebarItem } from "@/components/layout/sidebar";
 import { MobileNavDrawer } from "@/components/layout/mobile-nav-drawer";
 import { OrgSeasonProvider } from "@/components/competitions/org-season-provider";
@@ -116,6 +117,7 @@ export default function OrgLayout({ children }: { children: React.ReactNode }) {
               onOpenSearch={() => setSearchOpen(true)}
               onOpenMenu={() => setDrawerOpen(true)}
             />
+            <OrgContextBar />
             <main className="flex-1 px-4 sm:px-6 py-6">{children}</main>
           </div>
           <MobileNavDrawer

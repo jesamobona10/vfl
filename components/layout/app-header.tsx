@@ -17,8 +17,6 @@ import {
 } from "lucide-react";
 import { useResolvedTeams } from "@/lib/hooks/use-resolved-teams";
 import { useToast } from "@/components/ui/toast";
-import { useOrgSeason } from "@/components/competitions/org-season-provider";
-import { OrgSeasonSelector } from "@/components/competitions/org-season-selector";
 import { InAppWalkthrough } from "@/components/shared/in-app-walkthrough";
 import { usePathname } from "next/navigation";
 
@@ -47,14 +45,6 @@ export function AppHeader({ onOpenSearch, onOpenMenu }: AppHeaderProps) {
   const [menuOpen, setMenuOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
   const pathname = usePathname();
-
-  const {
-    seasons: orgSeasons,
-    selectedOrgSeasonId,
-    setSelectedOrgSeason,
-    isOrgAdmin,
-    isCompetitionPage,
-  } = useOrgSeason();
 
   useEffect(() => {
     const onClick = (e: MouseEvent) => {
@@ -168,14 +158,6 @@ export function AppHeader({ onOpenSearch, onOpenMenu }: AppHeaderProps) {
           <Search size={15} className="shrink-0" />
           <span className="hidden truncate md:inline">Search teams, players, fixtures&hellip;</span>
         </button>
-
-        {isOrgAdmin && !isCompetitionPage && orgSeasons.length > 0 && (
-          <OrgSeasonSelector
-            seasons={orgSeasons}
-            selectedSeasonId={selectedOrgSeasonId}
-            onSeasonChange={setSelectedOrgSeason}
-          />
-        )}
       </div>
 
       <div className="flex items-center gap-1 shrink-0">
