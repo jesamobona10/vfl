@@ -148,6 +148,8 @@ export default function StatsPage() {
           columns={statColumns}
           rowKey={(entry) => String(entry.playerId)}
           headClassName="text-muted font-medium normal-case tracking-normal"
+          stickyHeader
+          pinnedFirstColumn
           mobileCard={(entry, i) => (
             <div className="card px-3 py-2.5 flex items-center gap-3 text-sm">
               <span className="text-muted shrink-0 w-5">{i + 1}</span>

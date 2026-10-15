@@ -195,6 +195,8 @@ export function BulkScoreEntry() {
               rows={round.matches}
               rowKey={(match) => String(match.id)}
               headClassName="text-xs text-muted uppercase tracking-wider"
+              stickyHeader
+              pinnedFirstColumn
               columns={scoreColumns}
               mobileCard={(match) => {
                 const home = getTeam(match.homeId);

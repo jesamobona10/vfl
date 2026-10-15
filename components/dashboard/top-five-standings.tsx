@@ -73,6 +73,8 @@ export function TopFiveStandings() {
         rows={topFive}
         columns={columns}
         rowKey={(team) => String(team.id)}
+        stickyHeader
+        pinnedFirstColumn
         mobileCard={(team, index) => (
           <div className="card px-3 py-2.5 flex items-center gap-2 text-[12.5px]">
             <span className="w-5 text-ink-3 shrink-0">{index + 1}</span>
