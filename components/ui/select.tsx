@@ -18,7 +18,7 @@ export const Select = forwardRef<HTMLSelectElement, SelectProps>(function Select
   const describedBy = error ? `${selectId}-error` : hint ? `${selectId}-hint` : undefined;
 
   return (
-    <div className={cn("w-full", containerClassName)}>
+    <div className={cn(containerClassName ?? "w-full")}>
       {label && (
         <label htmlFor={selectId} className="mb-1 block text-sm font-medium text-text">
           {label}

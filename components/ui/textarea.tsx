@@ -18,7 +18,7 @@ export const Textarea = forwardRef<HTMLTextAreaElement, TextareaProps>(function 
   const describedBy = error ? `${textareaId}-error` : hint ? `${textareaId}-hint` : undefined;
 
   return (
-    <div className={cn("w-full", containerClassName)}>
+    <div className={cn(containerClassName ?? "w-full")}>
       {label && (
         <label htmlFor={textareaId} className="mb-1 block text-sm font-medium text-text">
           {label}

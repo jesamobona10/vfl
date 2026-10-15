@@ -18,7 +18,7 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(function Input(
   const describedBy = error ? `${inputId}-error` : hint ? `${inputId}-hint` : undefined;
 
   return (
-    <div className={cn("w-full", containerClassName)}>
+    <div className={cn(containerClassName ?? "w-full")}>
       {label && (
         <label htmlFor={inputId} className="mb-1 block text-sm font-medium text-text">
           {label}

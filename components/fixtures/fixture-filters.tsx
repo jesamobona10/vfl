@@ -6,6 +6,8 @@ import { useResolvedTeams } from "@/lib/hooks/use-resolved-teams";
 import { Download, ChevronDown } from "lucide-react";
 import { exportAsJSON, exportAsPNG, exportAsPDF } from "@/lib/utils/export";
 import { useToast } from "@/components/ui/toast";
+import { Button } from "@/components/ui/button";
+import { Select } from "@/components/ui/select";
 
 interface FixtureFiltersProps {
   roundFilter: string;
@@ -85,10 +87,11 @@ export function FixtureFilters({
 
   return (
     <div className="flex flex-wrap items-center gap-3">
-      <select
+      <Select
         value={roundFilter}
         onChange={(e) => onRoundChange(e.target.value)}
-        className="input w-auto min-w-[130px]"
+        containerClassName="w-auto"
+        className="w-auto min-w-[130px]"
         aria-label="Filter by round"
       >
         <option value="all">All Rounds</option>
@@ -97,12 +100,13 @@ export function FixtureFilters({
             Round {r.round}
           </option>
         ))}
-      </select>
+      </Select>
 
-      <select
+      <Select
         value={teamFilter}
         onChange={(e) => onTeamChange(e.target.value)}
-        className="input w-auto min-w-[150px]"
+        containerClassName="w-auto"
+        className="w-auto min-w-[150px]"
         aria-label="Filter by team"
       >
         <option value="all">All Teams</option>
@@ -111,26 +115,27 @@ export function FixtureFilters({
             {t.name}
           </option>
         ))}
-      </select>
+      </Select>
 
-      <select
+      <Select
         value={statusFilter}
         onChange={(e) => onStatusChange(e.target.value)}
-        className="input w-auto min-w-[140px]"
+        containerClassName="w-auto"
+        className="w-auto min-w-[140px]"
         aria-label="Filter by status"
       >
         <option value="all">All Statuses</option>
         <option value="scheduled">Scheduled</option>
         <option value="in-progress">In Progress</option>
         <option value="completed">Completed</option>
-      </select>
+      </Select>
 
       <div className="relative" ref={menuRef}>
-        <button onClick={() => setMenuOpen(!menuOpen)} className="btn-ghost">
+        <Button variant="ghost" onClick={() => setMenuOpen(!menuOpen)}>
           <Download size={16} />
           Download
           <ChevronDown size={14} />
-        </button>
+        </Button>
         {menuOpen && (
           <div className="absolute right-0 top-full mt-1 bg-surface border border-line rounded-lg shadow-lg py-1 z-20 w-36">
             <button

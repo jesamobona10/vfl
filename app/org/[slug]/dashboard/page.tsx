@@ -20,6 +20,7 @@ import { Shield, RefreshCw, Plus, Upload, Loader2 } from "lucide-react";
 import { DashboardSkeleton } from "@/components/shared/skeleton";
 import { useOrgSeason } from "@/components/competitions/org-season-provider";
 import { useToast } from "@/components/ui/toast";
+import { Button } from "@/components/ui/button";
 import { useParams, useRouter } from "next/navigation";
 import Image from "next/image";
 
@@ -173,7 +174,9 @@ export default function OrgDashboardPage() {
         </div>
         <div className="flex items-center gap-2 shrink-0">
           {currentTeamAccount ? (
-            <button
+            <Button
+              variant="ghost"
+              className="text-sm"
               onClick={async () => {
                 setTeamDataLoaded(false);
                 setFetching(true);
@@ -181,25 +184,24 @@ export default function OrgDashboardPage() {
                 setFetching(false);
               }}
               disabled={fetching}
-              className="btn-ghost text-sm"
             >
               <RefreshCw size={16} className={fetching ? "animate-spin" : ""} />
               Refresh
-            </button>
+            </Button>
           ) : competitions.length === 0 ? (
-            <button
+            <Button
+              className="text-sm"
               onClick={() => router.push(`/org/${currentOrg?.slug}/competitions/new`)}
-              className="btn-primary text-sm"
             >
               <Plus size={14} /> Create Competition
-            </button>
+            </Button>
           ) : (
-            <button
+            <Button
+              className="text-sm"
               onClick={() => router.push(`/org/${currentOrg?.slug}/fixtures`)}
-              className="btn-primary text-sm"
             >
               <Plus size={14} /> Generate fixtures
-            </button>
+            </Button>
           )}
         </div>
       </div>
