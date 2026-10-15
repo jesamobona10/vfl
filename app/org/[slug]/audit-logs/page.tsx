@@ -369,6 +369,8 @@ export default function OrgAuditLogsPage() {
               rowKey={(log) => log.id}
               onRowClick={(log) => setSelected(log)}
               headClassName="text-left"
+              stickyHeader
+              pinnedFirstColumn
               columns={auditColumns}
               mobileCard={(log) => (
                 <button

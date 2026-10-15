@@ -33,7 +33,7 @@ export function DashboardTabs({
         <button
           key={tab.key}
           onClick={() => setTab(tab.key)}
-          className={`px-3 py-1.5 text-sm font-medium whitespace-nowrap rounded-md transition-colors ${
+          className={`px-3 py-1.5 text-sm font-medium whitespace-nowrap rounded-lg transition-colors ${
             current === tab.key ? "bg-surface shadow-sm" : "text-muted hover:text-text"
           }`}
         >

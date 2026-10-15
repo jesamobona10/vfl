@@ -4,6 +4,8 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { useAppStore } from "@/lib/store";
 import { Shield, User, LogIn, AlertCircle, UserCog } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 
 type LoginMode = "team" | "player" | "admin" | "org";
 
@@ -98,7 +100,7 @@ export function LoginForm() {
                 setMode(value);
                 setError("");
               }}
-              className={`flex-1 py-2 px-2 text-xs sm:text-sm font-medium rounded-md transition-colors whitespace-nowrap ${
+              className={`flex-1 py-2 px-2 text-xs sm:text-sm font-medium rounded-lg transition-colors whitespace-nowrap ${
                 mode === value ? "bg-surface shadow-sm text-text" : "text-muted hover:text-text"
               }`}
             >
@@ -119,123 +121,98 @@ export function LoginForm() {
         )}
 
         {mode === "team" ? (
-          <div className="space-y-4">
-            <form onSubmit={handleTeamLogin} className="space-y-4">
-            <div>
-              <label htmlFor="login-username" className="block text-sm font-medium mb-1">
-                Username
-              </label>
-              <input
-                id="login-username"
-                type="text"
-                value={username}
-                onChange={(e) => setUsername(e.target.value)}
-                className="input"
-                placeholder="e.g. TEAM-001"
-                required
-                autoComplete="username"
-              />
-            </div>
-            <div>
-              <label htmlFor="login-password" className="block text-sm font-medium mb-1">
-                Password
-              </label>
-              <input
-                id="login-password"
-                type="password"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                className="input"
-                placeholder="Enter your password"
-                required
-                autoComplete="current-password"
-              />
-            </div>
-            <button type="submit" className="btn-primary w-full" disabled={loading}>
-              <LogIn size={16} />
-              {loading ? "Signing in..." : "Sign In"}
-            </button>
+          <form onSubmit={handleTeamLogin} className="space-y-4">
+            <Input
+              label="Username"
+              type="text"
+              value={username}
+              onChange={(e) => setUsername(e.target.value)}
+              placeholder="e.g. TEAM-001"
+              required
+              autoComplete="username"
+            />
+            <Input
+              label="Password"
+              type="password"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              placeholder="Enter your password"
+              required
+              autoComplete="current-password"
+            />
+            <Button
+              type="submit"
+              loading={loading}
+              leftIcon={<LogIn size={16} />}
+              className="w-full"
+            >
+              Sign In
+            </Button>
             <p className="text-center text-xs text-muted">
               Don&apos;t have an account?{" "}
               <a href="/auth/register" className="text-brand hover:underline">
                 Register your organization
               </a>
             </p>
-            </form>
-          </div>
+          </form>
         ) : mode === "player" ? (
           <form onSubmit={handlePlayerLogin} className="space-y-4">
-            <div>
-              <label htmlFor="login-player-username" className="block text-sm font-medium mb-1">
-                Username
-              </label>
-              <input
-                id="login-player-username"
-                type="text"
-                value={username}
-                onChange={(e) => setUsername(e.target.value.toUpperCase())}
-                className="input font-mono"
-                placeholder="e.g. MESSI_VOXMACHINA_001"
-                required
-                autoComplete="username"
-              />
-            </div>
-            <div>
-              <label htmlFor="login-player-password" className="block text-sm font-medium mb-1">
-                Password
-              </label>
-              <input
-                id="login-player-password"
-                type="password"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                className="input"
-                placeholder="e.g. MESSI_001"
-                required
-                autoComplete="current-password"
-              />
-            </div>
-            <button type="submit" className="btn-primary w-full" disabled={loading}>
-              <LogIn size={16} />
-              {loading ? "Signing in..." : "Sign In as Player"}
-            </button>
+            <Input
+              label="Username"
+              type="text"
+              value={username}
+              onChange={(e) => setUsername(e.target.value.toUpperCase())}
+              className="font-mono"
+              placeholder="e.g. MESSI_VOXMACHINA_001"
+              required
+              autoComplete="username"
+            />
+            <Input
+              label="Password"
+              type="password"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              placeholder="e.g. MESSI_001"
+              required
+              autoComplete="current-password"
+            />
+            <Button
+              type="submit"
+              loading={loading}
+              leftIcon={<LogIn size={16} />}
+              className="w-full"
+            >
+              Sign In as Player
+            </Button>
           </form>
         ) : mode === "org" ? (
           <form onSubmit={handleOrgLogin} className="space-y-4">
-            <div>
-              <label htmlFor="login-email" className="block text-sm font-medium mb-1">
-                Email
-              </label>
-              <input
-                id="login-email"
-                type="email"
-                value={adminEmail}
-                onChange={(e) => setAdminEmail(e.target.value)}
-                className="input"
-                placeholder="admin@example.com"
-                required
-                autoComplete="email"
-              />
-            </div>
-            <div>
-              <label htmlFor="login-org-password" className="block text-sm font-medium mb-1">
-                Password
-              </label>
-              <input
-                id="login-org-password"
-                type="password"
-                value={adminPassword}
-                onChange={(e) => setAdminPassword(e.target.value)}
-                className="input"
-                placeholder="Enter your password"
-                required
-                autoComplete="current-password"
-              />
-            </div>
-            <button type="submit" className="btn-primary w-full" disabled={loading}>
-              <Shield size={16} />
-              {loading ? "Signing in..." : "Sign In"}
-            </button>
+            <Input
+              label="Email"
+              type="email"
+              value={adminEmail}
+              onChange={(e) => setAdminEmail(e.target.value)}
+              placeholder="admin@example.com"
+              required
+              autoComplete="email"
+            />
+            <Input
+              label="Password"
+              type="password"
+              value={adminPassword}
+              onChange={(e) => setAdminPassword(e.target.value)}
+              placeholder="Enter your password"
+              required
+              autoComplete="current-password"
+            />
+            <Button
+              type="submit"
+              loading={loading}
+              leftIcon={<Shield size={16} />}
+              className="w-full"
+            >
+              Sign In
+            </Button>
             <p className="text-center text-xs text-muted">
               Don&apos;t have an organization?{" "}
               <a href="/auth/register" className="text-brand hover:underline">
@@ -250,40 +227,32 @@ export function LoginForm() {
           </form>
         ) : (
           <form onSubmit={handleAdminLogin} className="space-y-4">
-            <div>
-              <label htmlFor="login-admin-email" className="block text-sm font-medium mb-1">
-                Email
-              </label>
-              <input
-                id="login-admin-email"
-                type="email"
-                value={adminEmail}
-                onChange={(e) => setAdminEmail(e.target.value)}
-                className="input"
-                placeholder="admin@vfl.league"
-                required
-                autoComplete="email"
-              />
-            </div>
-            <div>
-              <label htmlFor="login-admin-password" className="block text-sm font-medium mb-1">
-                Password
-              </label>
-              <input
-                id="login-admin-password"
-                type="password"
-                value={adminPassword}
-                onChange={(e) => setAdminPassword(e.target.value)}
-                className="input"
-                placeholder="Enter admin password"
-                required
-                autoComplete="current-password"
-              />
-            </div>
-            <button type="submit" className="btn-primary w-full" disabled={loading}>
-              <Shield size={16} />
-              {loading ? "Signing in..." : "Sign In as Admin"}
-            </button>
+            <Input
+              label="Email"
+              type="email"
+              value={adminEmail}
+              onChange={(e) => setAdminEmail(e.target.value)}
+              placeholder="admin@vfl.league"
+              required
+              autoComplete="email"
+            />
+            <Input
+              label="Password"
+              type="password"
+              value={adminPassword}
+              onChange={(e) => setAdminPassword(e.target.value)}
+              placeholder="Enter admin password"
+              required
+              autoComplete="current-password"
+            />
+            <Button
+              type="submit"
+              loading={loading}
+              leftIcon={<Shield size={16} />}
+              className="w-full"
+            >
+              Sign In as Admin
+            </Button>
             <p className="text-center text-xs text-muted">
               <a href="/auth/forgot" className="text-brand hover:underline">
                 Forgot password?

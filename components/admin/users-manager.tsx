@@ -24,7 +24,7 @@ export function UsersManager() {
           <button
             key={key}
             onClick={() => setTab(key)}
-            className={`px-3 py-1.5 text-sm font-medium rounded-md transition-colors text-center truncate ${tab === key ? "bg-surface shadow-sm" : "text-muted hover:text-text"}`}
+            className={`px-3 py-1.5 text-sm font-medium rounded-lg transition-colors text-center truncate ${tab === key ? "bg-surface shadow-sm" : "text-muted hover:text-text"}`}
           >
             {label}
           </button>

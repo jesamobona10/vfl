@@ -2,6 +2,7 @@
 
 import { Fragment } from "react";
 import { cn } from "@/lib/utils";
+import { SkeletonCard, SkeletonTable } from "@/components/shared/skeleton";
 
 export interface DataTableColumn<T> {
   key: string;
@@ -32,6 +33,14 @@ export interface DataTableProps<T> {
    * handler. Passing this alone does not make the card tappable.
    */
   onRowClick?: (row: T, index: number) => void;
+  /** Show a skeleton table instead of rows while data loads. */
+  loading?: boolean;
+  /** Number of skeleton rows/cards rendered while loading. */
+  skeletonRows?: number;
+  /** Keep the header row visible while the page scrolls. */
+  stickyHeader?: boolean;
+  /** Keep the first column visible while the table scrolls sideways. */
+  pinnedFirstColumn?: boolean;
 }
 
 /**
@@ -51,14 +60,38 @@ export function DataTable<T>({
   headClassName,
   minWidth,
   onRowClick,
+  loading = false,
+  skeletonRows = 5,
+  stickyHeader = false,
+  pinnedFirstColumn = false,
 }: DataTableProps<T>) {
+  if (loading) {
+    return (
+      <div className={className}>
+        <div className="hidden lg:block">
+          <SkeletonTable rows={skeletonRows} cols={columns.length} />
+        </div>
+        <div className="lg:hidden space-y-2">
+          {Array.from({ length: skeletonRows }).map((_, i) => (
+            <SkeletonCard key={i} />
+          ))}
+        </div>
+      </div>
+    );
+  }
+
   if (rows.length === 0) {
     return <>{empty ?? DEFAULT_EMPTY}</>;
   }
 
   return (
     <div className={className}>
-      <div className="hidden lg:block overflow-x-auto">
+      <div
+        className={cn(
+          "hidden lg:block",
+          stickyHeader ? "max-h-[70vh] overflow-auto" : "overflow-x-auto"
+        )}
+      >
         <table className="w-full text-sm" style={minWidth ? { minWidth } : undefined}>
           <thead>
             <tr
@@ -67,10 +100,15 @@ export function DataTable<T>({
                 headClassName
               )}
             >
-              {columns.map((col) => (
+              {columns.map((col, colIndex) => (
                 <th
                   key={col.key}
-                  className={cn("px-3 py-2.5 border-b border-line font-semibold", col.className)}
+                  className={cn(
+                    "px-3 py-2.5 border-b border-line font-semibold",
+                    stickyHeader && "sticky top-0 z-20 bg-surface",
+                    pinnedFirstColumn && colIndex === 0 && "sticky left-0 z-30 bg-surface",
+                    col.className
+                  )}
                   style={col.width ? { width: col.width } : undefined}
                 >
                   {col.header}
@@ -88,8 +126,15 @@ export function DataTable<T>({
                   onRowClick && "hover:bg-surface-2/40 cursor-pointer"
                 )}
               >
-                {columns.map((col) => (
-                  <td key={col.key} className={cn("px-3 py-2.5", col.className)}>
+                {columns.map((col, colIndex) => (
+                  <td
+                    key={col.key}
+                    className={cn(
+                      "px-3 py-2.5",
+                      pinnedFirstColumn && colIndex === 0 && "sticky left-0 z-10 bg-surface",
+                      col.className
+                    )}
+                  >
                     {col.render(row, index)}
                   </td>
                 ))}
