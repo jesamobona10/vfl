@@ -4,6 +4,8 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { Shield, AlertCircle, CheckCircle } from "lucide-react";
 import { describeFetchError } from "@/lib/utils/error-message";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 
 export default function SetupPage() {
   const router = useRouter();
@@ -70,44 +72,31 @@ export default function SetupPage() {
           )}
 
           <form onSubmit={handleSetup} className="space-y-4">
-            <div>
-              <label htmlFor="setup-email" className="block text-sm font-medium mb-1">Email</label>
-              <input
-                id="setup-email"
-                type="email"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                className="input"
-                placeholder="admin@vfl.league"
-                required
-              />
-            </div>
-            <div>
-              <label htmlFor="setup-password" className="block text-sm font-medium mb-1">Password</label>
-              <input
-                id="setup-password"
-                type="password"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                className="input"
-                placeholder="Choose a strong password"
-                minLength={6}
-                required
-              />
-            </div>
-            <button type="submit" className="btn-primary w-full" disabled={loading}>
-              {loading ? (
-                <>
-                  <span className="block w-4 h-4 bg-surface-2 rounded animate-pulse" />
-                  Creating...
-                </>
-              ) : (
-                <>
-                  <Shield size={16} />
-                  Create Admin Account
-                </>
-              )}
-            </button>
+            <Input
+              label="Email"
+              type="email"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              placeholder="admin@vfl.league"
+              required
+            />
+            <Input
+              label="Password"
+              type="password"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              placeholder="Choose a strong password"
+              minLength={6}
+              required
+            />
+            <Button
+              type="submit"
+              loading={loading}
+              leftIcon={<Shield size={16} />}
+              className="w-full"
+            >
+              {loading ? "Creating..." : "Create Admin Account"}
+            </Button>
           </form>
         </div>
       </div>

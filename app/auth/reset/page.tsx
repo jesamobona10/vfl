@@ -4,6 +4,8 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { Shield, AlertCircle, CheckCircle } from "lucide-react";
 import { describeFetchError } from "@/lib/utils/error-message";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 
 export default function ResetPasswordPage() {
   const router = useRouter();
@@ -72,36 +74,28 @@ export default function ResetPasswordPage() {
             </div>
           ) : (
             <form onSubmit={handleReset} className="space-y-4">
-              <div>
-                <label htmlFor="reset-password" className="block text-sm font-medium mb-1">New Password</label>
-                <input
-                  id="reset-password"
-                  type="password"
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  className="input"
-                  placeholder="Min 12 characters, uppercase, lowercase, number"
-                  minLength={12}
-                  required
-                  autoComplete="new-password"
-                />
-              </div>
-              <div>
-                <label htmlFor="reset-confirm" className="block text-sm font-medium mb-1">Confirm New Password</label>
-                <input
-                  id="reset-confirm"
-                  type="password"
-                  value={confirmPassword}
-                  onChange={(e) => setConfirmPassword(e.target.value)}
-                  className="input"
-                  minLength={12}
-                  required
-                  autoComplete="new-password"
-                />
-              </div>
-              <button type="submit" className="btn-primary w-full" disabled={loading}>
+              <Input
+                label="New Password"
+                type="password"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                placeholder="Min 12 characters, uppercase, lowercase, number"
+                minLength={12}
+                required
+                autoComplete="new-password"
+              />
+              <Input
+                label="Confirm New Password"
+                type="password"
+                value={confirmPassword}
+                onChange={(e) => setConfirmPassword(e.target.value)}
+                minLength={12}
+                required
+                autoComplete="new-password"
+              />
+              <Button type="submit" loading={loading} className="w-full">
                 {loading ? "Updating..." : "Update Password"}
-              </button>
+              </Button>
             </form>
           )}
         </div>

@@ -4,6 +4,8 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { Shield, AlertCircle, CheckCircle } from "lucide-react";
 import { describeFetchError } from "@/lib/utils/error-message";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 
 export default function ForgotPasswordPage() {
   const router = useRouter();
@@ -61,30 +63,26 @@ export default function ForgotPasswordPage() {
               <p className="text-sm text-muted mt-1">
                 If an account exists for {email}, a password reset link has been sent.
               </p>
-              <button
+              <Button
                 onClick={() => router.push("/auth/login")}
-                className="btn-primary w-full mt-6"
+                className="w-full mt-6"
               >
                 Back to Sign In
-              </button>
+              </Button>
             </div>
           ) : (
             <form onSubmit={handleSubmit} className="space-y-4">
-              <div>
-                <label htmlFor="forgot-email" className="block text-sm font-medium mb-1">Email</label>
-                <input
-                  id="forgot-email"
-                  type="email"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  className="input"
-                  placeholder="admin@example.com"
-                  required
-                />
-              </div>
-              <button type="submit" className="btn-primary w-full" disabled={loading}>
+              <Input
+                label="Email"
+                type="email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                placeholder="admin@example.com"
+                required
+              />
+              <Button type="submit" loading={loading} className="w-full">
                 {loading ? "Sending..." : "Send Reset Link"}
-              </button>
+              </Button>
               <p className="text-center text-xs text-muted">
                 Remembered it?{" "}
                 <a href="/auth/login" className="text-brand hover:underline">

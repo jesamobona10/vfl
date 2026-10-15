@@ -4,6 +4,8 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { Shield, AlertCircle, Check, School, Building2, Users } from "lucide-react";
 import { describeFetchError } from "@/lib/utils/error-message";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import type { OrgType } from "@/lib/types";
 
 type Step = "choose-type" | "details" | "done";
@@ -138,59 +140,43 @@ export default function RegisterPage() {
                 </div>
               )}
 
-              <div>
-                <label htmlFor="register-org" className="block text-sm font-medium mb-1">Organization Name</label>
-                <input
-                  id="register-org"
-                  type="text"
-                  value={orgName}
-                  onChange={(e) => setOrgName(e.target.value)}
-                  className="input"
-                  placeholder="e.g. St. Mary's School"
-                  required
-                />
-              </div>
+              <Input
+                label="Organization Name"
+                type="text"
+                value={orgName}
+                onChange={(e) => setOrgName(e.target.value)}
+                placeholder="e.g. St. Mary's School"
+                required
+              />
 
-              <div>
-                <label htmlFor="register-email" className="block text-sm font-medium mb-1">Admin Email</label>
-                <input
-                  id="register-email"
-                  type="email"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  className="input"
-                  placeholder="admin@example.com"
-                  required
-                />
-              </div>
+              <Input
+                label="Admin Email"
+                type="email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                placeholder="admin@example.com"
+                required
+              />
 
-              <div>
-                <label htmlFor="register-password" className="block text-sm font-medium mb-1">Password</label>
-                <input
-                  id="register-password"
-                  type="password"
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  className="input"
-                  placeholder="Min 12 characters, uppercase, lowercase, number"
-                  minLength={12}
-                  required
-                />
-                <p className="text-xs text-muted mt-1">
-                  At least 12 characters with uppercase, lowercase, and a number.
-                </p>
-              </div>
+              <Input
+                label="Password"
+                type="password"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                placeholder="Min 12 characters, uppercase, lowercase, number"
+                hint="At least 12 characters with uppercase, lowercase, and a number."
+                minLength={12}
+                required
+              />
 
-              <button
+              <Button
                 type="submit"
-                className="btn-primary w-full"
+                loading={loading}
+                className="w-full"
                 disabled={loading || !orgName || !email || !password}
               >
-                {loading ? (
-                  <span className="block w-4 h-4 bg-surface-2 rounded animate-pulse" />
-                ) : null}
                 {loading ? "Creating..." : "Create Organization"}
-              </button>
+              </Button>
             </form>
           )}
 
@@ -205,12 +191,12 @@ export default function RegisterPage() {
                   Your organization has been created. You are now the owner.
                 </p>
               </div>
-              <button
+              <Button
                 onClick={() => router.push(`/org/${createdOrg.slug}/dashboard`)}
-                className="btn-primary w-full"
+                className="w-full"
               >
                 Go to Dashboard
-              </button>
+              </Button>
             </div>
           )}
         </div>
