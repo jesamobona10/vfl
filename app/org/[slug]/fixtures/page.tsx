@@ -11,6 +11,7 @@ import { useOrgSeason } from "@/components/competitions/org-season-provider";
 import { RefreshCw, Pencil, Eye, Table2, AlertCircle, Trash2, Lock } from "lucide-react";
 import { useConfirm } from "@/components/shared/confirm-dialog";
 import { useToast } from "@/components/ui/toast";
+import { Button } from "@/components/ui/button";
 
 const MatchEditor = dynamic(() => import("@/components/admin/match-editor").then(m => m.MatchEditor), {
   ssr: false,
@@ -289,24 +290,27 @@ export default function OrgFixturesPage() {
             Reset Fixtures
           </button>
           <div className="flex items-center gap-2">
-            <button
+            <Button
+              size="sm"
+              variant={viewMode === "view" ? "primary" : "ghost"}
               onClick={() => setViewMode("view")}
-              className={`btn-sm flex items-center gap-1.5 ${viewMode === "view" ? "btn-primary" : "btn-ghost"}`}
             >
               <Eye size={14} /> View
-            </button>
-            <button
+            </Button>
+            <Button
+              size="sm"
+              variant={viewMode === "table" ? "primary" : "ghost"}
               onClick={() => setViewMode("table")}
-              className={`btn-sm flex items-center gap-1.5 ${viewMode === "table" ? "btn-primary" : "btn-ghost"}`}
             >
               <Table2 size={14} /> Table
-            </button>
-            <button
+            </Button>
+            <Button
+              size="sm"
+              variant={viewMode === "edit" ? "primary" : "ghost"}
               onClick={() => setViewMode("edit")}
-              className={`btn-sm flex items-center gap-1.5 ${viewMode === "edit" ? "btn-primary" : "btn-ghost"}`}
             >
               <Pencil size={14} /> Edit
-            </button>
+            </Button>
           </div>
         </div>
       )}
@@ -327,28 +331,24 @@ export default function OrgFixturesPage() {
             <div className="mt-4 text-center">
               {hasFixtures ? (
                 <div className="space-y-2">
-                  <button disabled className="btn-primary opacity-50 cursor-not-allowed">
+                  <Button disabled>
                     <Lock size={16} />
                     Fixtures Generated
-                  </button>
+                  </Button>
                   <p className="text-sm text-muted">
                     Fixtures are saved and locked. Reset to regenerate.
                   </p>
                 </div>
               ) : (
                 <>
-                  <button
+                  <Button
                     onClick={handleGenerate}
+                    loading={generating}
                     disabled={generating || teams.length < 2}
-                    className="btn-primary"
+                    leftIcon={<RefreshCw size={16} />}
                   >
-                    {generating ? (
-                      <span className="block w-4 h-4 bg-surface-2 rounded animate-pulse" />
-                    ) : (
-                      <RefreshCw size={16} />
-                    )}
                     Generate Fixtures
-                  </button>
+                  </Button>
                   {teams.length < 2 && (
                     <p className="text-sm text-muted mt-2">
                       Need at least 2 teams to generate fixtures.

@@ -21,6 +21,8 @@ const DataImporter = dynamic(() => import("./data-importer").then((m) => m.DataI
 });
 import { useToast } from "@/components/ui/toast";
 import { useConfirm } from "@/components/shared/confirm-dialog";
+import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
 import type { Team, Player } from "@/lib/types";
 
 type AdminTab =
@@ -171,12 +173,12 @@ function FixtureManager() {
       <p className="text-sm text-muted">Viewing all fixtures across the platform (read-only).</p>
       <div className="relative">
         <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted" />
-        <input
+        <Input
           type="text"
           value={searchQuery}
           onChange={(e) => setSearchQuery(e.target.value)}
           placeholder="Search by team or organization..."
-          className="input w-full pl-9 text-sm"
+          className="pl-9 text-sm"
         />
       </div>
       {filteredOrgs.map((org) => (
@@ -207,18 +209,14 @@ function FixtureManager() {
                 </span>
               </div>
             </button>
-            <button
+            <Button
+              variant="ghost"
               onClick={() => handleDeleteOrgFixtures(org)}
-              disabled={deletingOrg === org.id}
-              className="btn-ghost text-xs text-danger shrink-0 mr-4"
+              loading={deletingOrg === org.id}
+              className="text-xs text-danger shrink-0 mr-4"
               title="Delete all fixtures for this organization"
-            >
-              {deletingOrg === org.id ? (
-                <span className="block w-3 h-3 bg-surface-2 rounded animate-pulse" />
-              ) : (
-                <Trash2 size={13} />
-              )}
-            </button>
+              leftIcon={<Trash2 size={13} />}
+            />
           </div>
 
           {expandedOrg === org.id && (

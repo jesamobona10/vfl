@@ -21,6 +21,9 @@ import { SkeletonTable } from "@/components/shared/skeleton";
 import { ErrorBanner } from "@/components/shared/error-banner";
 import { useToast } from "@/components/ui/toast";
 import { useConfirm } from "@/components/shared/confirm-dialog";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Select } from "@/components/ui/select";
 import type { Season } from "@/lib/types";
 
 interface CompRow {
@@ -312,22 +315,24 @@ export function CompManager() {
       {confirmDialog}
       <div className="flex items-center justify-between">
         <h3 className="text-lg font-bold">Competitions</h3>
-        <button
+        <Button
+          className="text-sm"
           onClick={() => {
             resetForm();
             setShowForm(true);
           }}
-          className="btn-primary text-sm"
         >
           <Plus size={14} /> Create
-        </button>
+        </Button>
       </div>
 
       <div className="flex flex-wrap items-center gap-2">
-        <select
+        <Select
           value={filterOrg}
           onChange={(e) => setFilterOrg(e.target.value)}
-          className="input text-sm w-auto max-w-full min-w-0 flex-1 sm:flex-none"
+          containerClassName="max-w-full min-w-0 flex-1 sm:flex-none"
+          className="text-sm"
+          aria-label="Filter by organization"
         >
           <option value="">All Organizations</option>
           {orgs.map((o) => (
@@ -335,7 +340,7 @@ export function CompManager() {
               {o.name}
             </option>
           ))}
-        </select>
+        </Select>
         <span className="text-xs text-muted">{comps.length} competition(s)</span>
       </div>
 
@@ -347,18 +352,20 @@ export function CompManager() {
             {editingComp ? "Edit" : "Create"} Competition
           </h4>
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
-            <input
+            <Input
               value={formName}
               onChange={(e) => setFormName(e.target.value)}
-              className="input text-sm"
+              className="text-sm"
               placeholder="Name"
+              aria-label="Name"
               required
             />
             {!editingComp && (
-              <select
+              <Select
                 value={formOrgId}
                 onChange={(e) => setFormOrgId(e.target.value)}
-                className="input text-sm"
+                className="text-sm"
+                aria-label="Organization"
                 required
               >
                 <option value="">Organization...</option>
@@ -367,33 +374,36 @@ export function CompManager() {
                     {o.name}
                   </option>
                 ))}
-              </select>
+              </Select>
             )}
-            <select
+            <Select
               value={formType}
               onChange={(e) => setFormType(e.target.value)}
-              className="input text-sm"
+              className="text-sm"
+              aria-label="Type"
             >
               <option value="league">League</option>
               <option value="cup">Cup</option>
               <option value="friendly">Friendly</option>
-            </select>
-            <input
+            </Select>
+            <Input
               value={formSeason}
               onChange={(e) => setFormSeason(e.target.value)}
-              className="input text-sm"
+              className="text-sm"
               placeholder="Season (e.g. 2025/26)"
+              aria-label="Season"
             />
             {editingComp && (
-              <select
+              <Select
                 value={formStatus}
                 onChange={(e) => setFormStatus(e.target.value)}
-                className="input text-sm"
+                className="text-sm"
+                aria-label="Status"
               >
                 <option value="draft">Draft</option>
                 <option value="active">Active</option>
                 <option value="completed">Completed</option>
-              </select>
+              </Select>
             )}
           </div>
           {editingComp && (
@@ -422,19 +432,15 @@ export function CompManager() {
                 }}
                 className="hidden"
               />
-              <button
-                type="button"
+              <Button
+                variant="ghost"
+                className="text-xs"
                 onClick={() => logoInputRef.current?.click()}
-                disabled={logoUploading}
-                className="btn-ghost text-xs"
+                loading={logoUploading}
+                leftIcon={<Upload size={12} />}
               >
-                {logoUploading ? (
-                  <span className="block w-3 h-3 bg-surface-2 rounded animate-pulse" />
-                ) : (
-                  <Upload size={12} />
-                )}
                 {editingComp.logo_url || editingLogoUrl ? "Change Logo" : "Upload Logo"}
-              </button>
+              </Button>
             </div>
           )}
           {editingComp && (
@@ -477,74 +483,73 @@ export function CompManager() {
                       </div>
                       <div className="flex items-center gap-1 shrink-0">
                         {s.status !== "active" && s.status !== "completed" && (
-                          <button
-                            type="button"
+                          <Button
+                            variant="ghost"
+                            className="text-xs py-0.5 px-1.5"
                             onClick={() => handleActivateSeason(s)}
-                            className="btn-ghost text-xs py-0.5 px-1.5"
                           >
                             Activate
-                          </button>
+                          </Button>
                         )}
                         {s.status === "active" && (
-                          <button
-                            type="button"
+                          <Button
+                            variant="ghost"
+                            className="text-xs py-0.5 px-1.5 text-danger"
                             onClick={() => handleCompleteSeason(s)}
-                            className="btn-ghost text-xs py-0.5 px-1.5 text-danger"
                           >
                             Complete
-                          </button>
+                          </Button>
                         )}
                       </div>
                     </div>
                   ))}
-                  <button
-                    type="button"
+                  <Button
+                    variant="ghost"
+                    className="text-xs"
                     onClick={() => setShowNewSeasonForm(!showNewSeasonForm)}
-                    className="btn-ghost text-xs"
                   >
                     <Plus size={12} /> New Season
-                  </button>
+                  </Button>
                   {showNewSeasonForm && (
                     <div className="space-y-2 p-3 rounded-lg bg-surface-2">
-                      <input
+                      <Input
                         value={newSeasonName}
                         onChange={(e) => setNewSeasonName(e.target.value)}
-                        className="input text-xs py-1"
+                        className="text-xs py-1"
                         placeholder="Season name (e.g. 2025/2026)"
                       />
                       <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                        <input
+                        <Input
                           type="date"
                           value={newSeasonStart}
                           onChange={(e) => setNewSeasonStart(e.target.value)}
-                          className="input text-xs py-1"
+                          className="text-xs py-1"
                         />
-                        <input
+                        <Input
                           type="date"
                           value={newSeasonEnd}
                           onChange={(e) => setNewSeasonEnd(e.target.value)}
-                          className="input text-xs py-1"
+                          className="text-xs py-1"
                         />
                       </div>
                       <div className="flex gap-2">
-                        <button
-                          type="button"
+                        <Button
+                          className="text-xs py-1 px-2"
                           onClick={handleCreateSeason}
                           disabled={!newSeasonName.trim()}
-                          className="btn-primary text-xs py-1 px-2"
                         >
                           <Check size={12} /> Create
-                        </button>
-                        <button
-                          type="button"
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          className="text-xs py-1 px-2"
                           onClick={() => {
                             setShowNewSeasonForm(false);
                             setNewSeasonName("");
                           }}
-                          className="btn-ghost text-xs py-1 px-2"
                         >
                           Cancel
-                        </button>
+                        </Button>
                       </div>
                     </div>
                   )}
@@ -553,21 +558,18 @@ export function CompManager() {
             </div>
           )}
           <div className="flex gap-2">
-            <button
+            <Button
               type="submit"
+              loading={submitting}
+              leftIcon={<Check size={14} />}
               disabled={submitting || !formName || (!editingComp && !formOrgId)}
-              className="btn-primary text-sm"
+              className="text-sm"
             >
-              {submitting ? (
-                <span className="block w-4 h-4 bg-surface-2 rounded animate-pulse" />
-              ) : (
-                <Check size={14} />
-              )}
               {editingComp ? "Update" : "Create"}
-            </button>
-            <button type="button" onClick={resetForm} className="btn-ghost text-sm">
+            </Button>
+            <Button type="button" variant="ghost" className="text-sm" onClick={resetForm}>
               Cancel
-            </button>
+            </Button>
           </div>
         </form>
       )}
@@ -605,12 +607,18 @@ export function CompManager() {
                 <Swords size={10} />
                 {comp.cupMatchCount}
               </span>
-              <button onClick={() => openEditWithSeasons(comp)} className="btn-ghost text-xs">
-                <Edit2 size={12} />
-              </button>
-              <button onClick={() => handleDelete(comp)} className="btn-ghost text-xs text-danger">
-                <Trash2 size={12} />
-              </button>
+              <Button
+                variant="ghost"
+                className="text-xs"
+                onClick={() => openEditWithSeasons(comp)}
+                leftIcon={<Edit2 size={12} />}
+              />
+              <Button
+                variant="ghost"
+                className="text-xs text-danger"
+                onClick={() => handleDelete(comp)}
+                leftIcon={<Trash2 size={12} />}
+              />
             </div>
           ))}
         </div>

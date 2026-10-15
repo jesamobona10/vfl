@@ -21,6 +21,8 @@ import {
 } from "lucide-react";
 import { useToast } from "@/components/ui/toast";
 import { useConfirm } from "@/components/shared/confirm-dialog";
+import { Button } from "@/components/ui/button";
+import { Textarea } from "@/components/ui/textarea";
 
 type Step = "upload" | "preview" | "confirm" | "done";
 
@@ -262,9 +264,9 @@ export function DataImporter() {
         </div>
 
         <div className="text-center">
-          <button onClick={handleReset} className="btn-primary">
+          <Button onClick={handleReset}>
             <Upload size={16} /> Import Another File
-          </button>
+          </Button>
         </div>
       </div>
     );
@@ -313,15 +315,15 @@ export function DataImporter() {
             </div>
           </div>
 
-          <textarea
+          <Textarea
             value={jsonText}
             onChange={(e) => setJsonText(e.target.value)}
-            className="input w-full h-40 font-mono text-sm"
+            className="h-40 font-mono text-sm"
             placeholder='{"teams": [...], "fixtures": [...], "players": [...]}'
           />
-          <button onClick={handlePaste} className="btn-primary" disabled={!jsonText.trim()}>
+          <Button onClick={handlePaste} disabled={!jsonText.trim()}>
             <FileText size={16} /> Parse JSON
-          </button>
+          </Button>
         </div>
       )}
 
@@ -376,12 +378,12 @@ export function DataImporter() {
           </div>
 
           <div className="flex gap-3">
-            <button onClick={handleReset} className="btn-ghost">
+            <Button variant="ghost" onClick={handleReset}>
               <X size={16} /> Cancel
-            </button>
-            <button onClick={() => setStep("confirm")} className="btn-primary">
+            </Button>
+            <Button onClick={() => setStep("confirm")}>
               <ArrowRight size={16} /> Continue to Import
-            </button>
+            </Button>
           </div>
         </div>
       )}
@@ -399,20 +401,17 @@ export function DataImporter() {
           </div>
 
           <div className="flex gap-3 justify-center">
-            <button onClick={() => setStep("preview")} className="btn-ghost">
+            <Button variant="ghost" onClick={() => setStep("preview")}>
               <X size={16} /> Go Back
-            </button>
-            <button onClick={handleImport} disabled={importing} className="btn-danger">
-              {importing ? (
-                <>
-                  <span className="block w-4 h-4 bg-surface-2 rounded animate-pulse" /> Importing...
-                </>
-              ) : (
-                <>
-                  <Download size={16} /> Confirm Import
-                </>
-              )}
-            </button>
+            </Button>
+            <Button
+              variant="danger"
+              onClick={handleImport}
+              loading={importing}
+              leftIcon={<Download size={16} />}
+            >
+              {importing ? "Importing..." : "Confirm Import"}
+            </Button>
           </div>
         </div>
       )}
@@ -424,9 +423,9 @@ export function DataImporter() {
         <p className="text-sm text-muted mb-4">
           Clears all local teams, fixtures, and players and restores the default demo data.
         </p>
-        <button onClick={handleFactoryReset} className="btn-danger">
+        <Button variant="danger" onClick={handleFactoryReset}>
           <RotateCcw size={15} /> Reset to defaults
-        </button>
+        </Button>
       </div>
     </div>
   );
