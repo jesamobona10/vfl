@@ -14,7 +14,7 @@ import {
   requireAuth,
   requireOrgAdmin,
 } from "@/lib/security";
-import { enqueuePublicPush } from "@/lib/public-push";
+import { dispatchMatchEvent } from "@/lib/notifications/dispatch";
 
 export const dynamic = "force-dynamic";
 
@@ -161,7 +161,7 @@ export async function POST(request: Request, props: { params: Promise<{ id: stri
       "match-win": `${scoringTeamName} won the match.`,
       "bonus-5-saves": `${subject} reached five saves for ${scoringTeamName}.`,
     };
-    enqueuePublicPush({
+    dispatchMatchEvent({
       title: eventType === "goal" || eventType === "own-goal" ? "Goal scored" : "Match update",
       body: `${eventDescription[eventType]}${minute ? ` ${minute}′` : ""}`,
       matchId: fixtureId,

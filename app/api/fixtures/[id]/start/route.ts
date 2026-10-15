@@ -15,7 +15,7 @@ import {
   writeAuditRecord,
 } from "@/lib/security";
 import { AUDIT_ACTIONS } from "@/lib/audit/actions";
-import { enqueuePublicPush } from "@/lib/public-push";
+import { dispatchMatchEvent } from "@/lib/notifications/dispatch";
 import { registeredPlayersStartError } from "@/lib/match-guard";
 
 export const dynamic = "force-dynamic";
@@ -176,7 +176,7 @@ export async function POST(request: Request, props: { params: Promise<{ id: stri
     }
 
     if (fixture.status !== "live" && fixture.status !== "in-progress") {
-      enqueuePublicPush({
+      dispatchMatchEvent({
         title: "Match started",
         body: `${homeTeam.name} vs ${awayTeam?.name || "their opponent"} is underway.`,
         matchId: fixtureId,

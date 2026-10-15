@@ -1,4 +1,3 @@
-import { after } from "next/server";
 import webpush, { WebPushError } from "web-push";
 import { createServiceRoleClient } from "@/lib/supabase/service-role";
 
@@ -117,19 +116,6 @@ async function deliverPublicPush(payload: PublicPushPayload) {
 
 export function sendPublicPushNow(payload: PublicPushPayload) {
   return deliverPublicPush(payload);
-}
-
-/** Deliver after the API response so push providers don't slow match edits. */
-export function enqueuePublicPush(payload: PublicPushPayload) {
-  if (!vapidConfig()) return;
-  after(async () => {
-    try {
-      await deliverPublicPush(payload);
-    } catch {
-      // Push errors can contain subscriber endpoints; keep them out of application logs.
-      console.error("Public match push dispatch failed", { matchId: payload.matchId });
-    }
-  });
 }
 
 export function isSupportedPushEndpoint(rawEndpoint: unknown): rawEndpoint is string {

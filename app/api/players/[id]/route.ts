@@ -1,5 +1,6 @@
 import { createClient } from "@/lib/supabase/server";
 import { createServiceRoleClient } from "@/lib/supabase/service-role";
+import { dispatchNotification, type InAppNotification } from "@/lib/notifications/dispatch";
 import {
   asBoolean,
   asInteger,
@@ -159,33 +160,28 @@ export async function PUT(request: Request, props: { params: Promise<{ id: strin
       console.error("Failed to record transfer:", e);
     }
 
-    // Insert notifications for involved teams (non-blocking)
-    try {
-      const oldTeam = existingPlayer?.team_id ?? null;
-      const newTeam = data?.team_id ?? null;
-      const payload = {
+    // Fan out team-transfer notifications (non-blocking, isolated per channel)
+    const oldTeam = existingPlayer?.team_id ?? null;
+    const newTeam = data?.team_id ?? null;
+    if (oldTeam || newTeam) {
+      const transferPayload = {
         player_id: playerId,
         player_name: existingPlayer?.name ?? null,
         from_team_id: oldTeam,
         to_team_id: newTeam,
         performed_by: authed.userId,
       };
+      const inApp: InAppNotification[] = [];
       if (oldTeam) {
-        await supabase.from("notifications").insert({
-          team_id: oldTeam,
-          type: "player_transfer_out",
-          payload,
-        });
+        inApp.push({ teamId: oldTeam, type: "player_transfer_out", payload: transferPayload });
       }
       if (newTeam) {
-        await supabase.from("notifications").insert({
-          team_id: newTeam,
-          type: "player_transfer_in",
-          payload,
-        });
+        inApp.push({ teamId: newTeam, type: "player_transfer_in", payload: transferPayload });
       }
-    } catch (e) {
-      console.error("Failed to insert notifications:", e);
+      void dispatchNotification({
+        idempotencyKey: `player-transfer-${playerId}-${oldTeam ?? "none"}-${newTeam ?? "none"}-${authed.userId}`,
+        inApp,
+      });
     }
 
     return json({ player: data });

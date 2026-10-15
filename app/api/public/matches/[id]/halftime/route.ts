@@ -1,4 +1,4 @@
-import { enqueuePublicPush } from "@/lib/public-push";
+import { dispatchMatchEvent } from "@/lib/notifications/dispatch";
 import { livePhase, liveSettings } from "@/lib/logic/live";
 import { createServiceRoleClient } from "@/lib/supabase/service-role";
 import { asInteger, getClientIp, json, logApiError, rateLimit, rateLimitResponse } from "@/lib/security";
@@ -65,7 +65,7 @@ export async function POST(request: Request, props: { params: Promise<{ id: stri
       .in("id", [fixture.home_team_id, fixture.away_team_id]);
     const homeTeam = teams?.find((team) => team.id === fixture.home_team_id)?.name || "Home";
     const awayTeam = teams?.find((team) => team.id === fixture.away_team_id)?.name || "Away";
-    enqueuePublicPush({
+    dispatchMatchEvent({
       title: "Half-time",
       body: `${homeTeam} ${fixture.home_score ?? 0}–${fixture.away_score ?? 0} ${awayTeam} at half-time.`,
       matchId: fixtureId,
