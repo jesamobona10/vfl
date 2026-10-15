@@ -2,10 +2,13 @@
 
 import { useEffect, useRef, useState } from "react";
 import html2canvas from "html2canvas";
+import { CalendarClock, Check, Copy, Download, Share2, X } from "lucide-react";
 import type { Match, Team } from "@/lib/types";
 import { useAppStore } from "@/lib/store";
 import { useCompetition } from "@/lib/hooks/use-competitions";
-import { CalendarClock } from "lucide-react";
+import { useToast } from "@/components/ui/toast";
+import { readFlyerSettings } from "@/lib/flyer/settings";
+import { FlyerCanvas } from "./flyer-canvas";
 
 interface MatchFlyerProps {
   match: Match;
@@ -14,258 +17,224 @@ interface MatchFlyerProps {
   onClose: () => void;
 }
 
-const INITIALS_CSS = `
+const MODAL_CSS = `
   .flyer-container {
     position: fixed;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
+    inset: 0;
     z-index: 9999;
     display: flex;
-    background: rgba(0,0,0,0.5);
+    background: rgba(0, 0, 0, 0.55);
     overflow-y: auto;
     padding: 24px 16px;
   }
-  .flyer-card {
-    width: 390px;
+  .flyer-panel {
+    position: relative;
+    width: 460px;
     max-width: 100%;
     margin: auto;
-    background: white;
+    display: flex;
+    flex-direction: column;
+    background: rgb(var(--surface));
+    border: 1px solid rgb(var(--line));
     border-radius: 16px;
-    overflow: hidden;
-    box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+    box-shadow: 0 24px 70px rgba(0, 0, 0, 0.35);
+    outline: none;
     font-family: system-ui, -apple-system, sans-serif;
+    max-height: calc(100vh - 48px);
   }
-  .flyer-card.dark {
-    background: #171717;
-    color: #f5f5f5;
-  }
-  .flyer-card.dark .flyer-team-name,
-  .flyer-card.dark .flyer-date {
-    color: #f5f5f5;
-  }
-  .flyer-card.dark .flyer-time,
-  .flyer-card.dark .flyer-venue {
-    color: #b5b5b5;
-  }
-  .flyer-card.dark .flyer-divider {
-    background: #404040;
-  }
-  .flyer-header {
-    background: linear-gradient(135deg, var(--brand-dark), var(--brand));
-    padding: 32px;
-    text-align: center;
-    color: white;
-  }
-  .flyer-header h2 {
-    margin: 0 0 4px;
-    font-size: 13px;
-    font-weight: 600;
-    letter-spacing: 0.2em;
-    text-transform: uppercase;
-    opacity: 0.8;
-  }
-  .flyer-teams {
+  .flyer-panel-header {
     display: flex;
     align-items: center;
-    justify-content: center;
-    gap: 20px;
-    padding: 20px 32px 0;
-  }
-  .flyer-team {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: 8px;
-    width: 120px;
-  }
-  .flyer-logo {
-    width: 64px;
-    height: 64px;
-    border-radius: 12px;
-    object-fit: contain;
-    background: rgba(255,255,255,0.15);
-  }
-  .flyer-logo-fallback {
-    width: 64px;
-    height: 64px;
-    border-radius: 12px;
-    background: var(--brand-50);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 24px;
-    font-weight: 700;
-    color: var(--brand);
-  }
-  .flyer-team-name {
-    font-size: 14px;
-    font-weight: 700;
-    text-align: center;
-    color: rgb(var(--text));
-  }
-  .flyer-vs {
-    font-size: 20px;
-    font-weight: 800;
-    color: var(--ink-3);
-  }
-  .flyer-details {
-    padding: 20px 32px 32px;
-    text-align: center;
-  }
-  .flyer-divider {
-    width: 80px;
-    height: 2px;
-    background: rgb(var(--line));
-    margin: 0 auto 16px;
-  }
-  .flyer-date {
-    font-size: 15px;
-    font-weight: 600;
-    color: rgb(var(--text));
-  }
-  .flyer-time {
-    font-size: 13px;
-    color: rgb(var(--muted));
-    margin-top: 4px;
-  }
-  .flyer-venue {
-    font-size: 13px;
-    color: var(--ink-3);
-    margin-top: 4px;
-  }
-  .flyer-custom {
-    position: relative;
-    width: 390px;
-    min-height: 520px;
-    background-size: cover;
-    background-position: center;
-    background-repeat: no-repeat;
-  }
-  .flyer-custom-body {
-    position: absolute;
-    inset: 0;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    padding: 32px;
+    justify-content: space-between;
     gap: 12px;
-    color: var(--flyer-text, #ffffff);
+    padding: 16px 20px;
+    border-bottom: 1px solid rgb(var(--line));
   }
-  .flyer-custom-teams {
-    display: flex;
+  .flyer-panel-header h2 {
+    margin: 0;
+    font-size: 15px;
+    font-weight: 700;
+    color: rgb(var(--text));
+  }
+  .flyer-close {
+    display: inline-flex;
     align-items: center;
     justify-content: center;
-    gap: 20px;
-    width: 100%;
+    width: 32px;
+    height: 32px;
+    border-radius: 8px;
+    border: 1px solid rgb(var(--line));
+    background: transparent;
+    color: rgb(var(--text));
+    cursor: pointer;
   }
-  .flyer-custom-team {
+  .flyer-close:hover { background: rgb(var(--surface-2)); }
+  .flyer-scroll {
+    overflow-y: auto;
+    padding: 20px;
     display: flex;
     flex-direction: column;
+    gap: 16px;
+  }
+  .flyer-canvas-holder {
+    align-self: center;
+    max-width: 100%;
+    overflow: hidden;
+    border-radius: 8px;
+    border: 1px solid rgb(var(--line));
+  }
+  .flyer-section-title {
+    display: flex;
     align-items: center;
     gap: 8px;
-    width: 130px;
-  }
-  .flyer-custom-team-name {
-    font-size: 16px;
-    font-weight: 800;
-    text-align: center;
-    color: var(--flyer-text, #ffffff);
-  }
-  .flyer-custom-vs {
-    font-size: 22px;
-    font-weight: 900;
-    letter-spacing: 0.05em;
-    color: var(--flyer-text, #ffffff);
-  }
-  .flyer-custom-details {
-    text-align: center;
-    margin-top: 8px;
-  }
-  .flyer-custom-date {
-    font-size: 16px;
+    font-size: 12px;
     font-weight: 700;
-    color: var(--flyer-text, #ffffff);
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: rgb(var(--muted));
   }
-  .flyer-custom-time {
-    font-size: 14px;
-    margin-top: 4px;
-    color: var(--flyer-text, #ffffff);
-  }
-  .flyer-custom-venue {
-    font-size: 14px;
-    margin-top: 4px;
-    color: var(--flyer-text, #ffffff);
-    opacity: 0.9;
+  .flyer-field { font-size: 12px; color: var(--ink-3); margin-top: -4px; }
+  .flyer-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    padding: 16px 20px;
+    border-top: 1px solid rgb(var(--line));
   }
 `;
 
-const FIXED_VENUE = "School Stadium";
+/** Wait for every raster asset and webfont used by the canvas before capture. */
+async function waitForAssets(element: HTMLElement): Promise<void> {
+  const images = Array.from(element.querySelectorAll("img"));
+  await Promise.all(
+    images.map((image) => {
+      if (image.complete) return Promise.resolve();
+      return new Promise<void>((resolve) => {
+        image.onload = () => resolve();
+        image.onerror = () => resolve();
+      });
+    })
+  );
+
+  const backgrounds = Array.from(
+    element.querySelectorAll<HTMLElement>(".fc-bg")
+  ).map((node) => (node.style.backgroundImage || "").replace(/^url\(["']?/, "").replace(/["']?\)$/, ""));
+  await Promise.all(
+    backgrounds.filter(Boolean).map(
+      (src) =>
+        new Promise<void>((resolve) => {
+          const img = new Image();
+          img.onload = () => resolve();
+          img.onerror = () => resolve();
+          img.src = src;
+        })
+    )
+  );
+
+  if (typeof document !== "undefined" && "fonts" in document) {
+    await document.fonts.ready;
+  }
+}
+
+async function captureFlyer(element: HTMLElement): Promise<Blob | null> {
+  await waitForAssets(element);
+  const canvas = await html2canvas(element, {
+    scale: 3,
+    useCORS: true,
+    allowTaint: false,
+    backgroundColor: null,
+    width: element.scrollWidth,
+    height: element.scrollHeight,
+    scrollX: 0,
+    scrollY: 0,
+  });
+  return new Promise<Blob | null>((resolve) => canvas.toBlob(resolve, "image/png"));
+}
+
+function flyerFileName(matchId: string | number, home?: string, away?: string): string {
+  const parts = [home || "home", "vs", away || "away"]
+    .join("-")
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-+|-+$/g, "");
+  return `flyer-${parts || matchId}.png`;
+}
 
 export function MatchFlyer({ match, homeTeam, awayTeam, onClose }: MatchFlyerProps) {
   const flyerRef = useRef<HTMLDivElement>(null);
-  const [capturing, setCapturing] = useState(false);
-  const [date, setDate] = useState(match.date || "");
-  const [time, setTime] = useState(match.time || "");
-  const [venue, setVenue] = useState(match.venue || FIXED_VENUE);
+  const panelRef = useRef<HTMLDivElement>(null);
+
+  const [baseline, setBaseline] = useState(() => ({
+    date: match.date || "",
+    time: match.time || "",
+    venue: match.venue || "",
+  }));
+  const [date, setDate] = useState(() => match.date || "");
+  const [time, setTime] = useState(() => match.time || "");
+  const [venue, setVenue] = useState(() => match.venue || "");
   const [saving, setSaving] = useState(false);
-  const [saved, setSaved] = useState(Boolean(match.date && match.time));
-  const [dirty, setDirty] = useState(false);
+  const [busy, setBusy] = useState<"download" | "copy" | "share" | null>(null);
   const [error, setError] = useState("");
-  const [darkMode, setDarkMode] = useState(false);
 
   const isAdmin = useAppStore((s) => s.isAdmin);
   const userProfile = useAppStore((s) => s.userProfile);
   const updateMatch = useAppStore((s) => s.updateMatch);
+  const toast = useToast();
 
   const { data: competition } = useCompetition(match.competition_id || undefined);
-  useEffect(() => {
-    const media = window.matchMedia("(prefers-color-scheme: dark)");
-    const update = () =>
-      setDarkMode(document.documentElement.classList.contains("dark") || media.matches);
-    update();
-    media.addEventListener("change", update);
-    return () => media.removeEventListener("change", update);
-  }, []);
-  const flyerSettings = (() => {
-    const s = (
-      competition?.settings && typeof competition.settings === "object" ? competition.settings : {}
-    ) as Record<string, unknown>;
-    const f = (s.flyer && typeof s.flyer === "object" ? s.flyer : {}) as Record<string, unknown>;
-    return f;
-  })();
-  const customBg =
-    typeof flyerSettings.background_url === "string" && flyerSettings.background_url
-      ? flyerSettings.background_url
-      : null;
-  const customTextColor =
-    typeof flyerSettings.text_color === "string" && flyerSettings.text_color
-      ? flyerSettings.text_color
-      : "#ffffff";
+  const settings = readFlyerSettings(competition?.settings);
 
   const canEdit = isAdmin || userProfile?.role === "org_admin";
+  const dirty = date !== baseline.date || time !== baseline.time || venue !== baseline.venue;
   const hasSchedule = Boolean(date && time);
-  const downloadDisabled = capturing || !hasSchedule || !saved || saving;
 
-  const handleDateChange = (value: string) => {
-    setDate(value);
-    setDirty(true);
-    setSaved(false);
-    setError("");
-  };
+  // Modal a11y: focus management, Escape, focus trap, body scroll lock.
+  useEffect(() => {
+    const previouslyFocused = document.activeElement as HTMLElement | null;
+    const { overflow } = document.body.style;
+    document.body.style.overflow = "hidden";
+    panelRef.current?.focus();
 
-  const handleTimeChange = (value: string) => {
-    setTime(value);
-    setDirty(true);
-    setSaved(false);
-    setError("");
-  };
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === "Escape") {
+        event.preventDefault();
+        onClose();
+        return;
+      }
+      if (event.key !== "Tab" || !panelRef.current) return;
+
+      const focusable = Array.from(
+        panelRef.current.querySelectorAll<HTMLElement>(
+          'a[href], button:not([disabled]), input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])'
+        )
+      );
+      if (focusable.length === 0) return;
+      const first = focusable[0];
+      const last = focusable[focusable.length - 1];
+      if (event.shiftKey && document.activeElement === first) {
+        event.preventDefault();
+        last.focus();
+      } else if (!event.shiftKey && document.activeElement === last) {
+        event.preventDefault();
+        first.focus();
+      }
+    };
+
+    document.addEventListener("keydown", handleKeyDown);
+    return () => {
+      document.removeEventListener("keydown", handleKeyDown);
+      document.body.style.overflow = overflow;
+      previouslyFocused?.focus?.();
+    };
+  }, [onClose]);
 
   const handleSave = async () => {
-    if (!date || !time) {
-      setError("Both date and time are required.");
+    if (date && !time) {
+      setError("Add a kick-off time too, or clear the date.");
+      return;
+    }
+    if (time && !date) {
+      setError("Add a match date too, or clear the time.");
       return;
     }
     setSaving(true);
@@ -274,7 +243,7 @@ export function MatchFlyer({ match, homeTeam, awayTeam, onClose }: MatchFlyerPro
       const res = await fetch(`/api/fixtures/${match.id}`, {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ date, time, venue: FIXED_VENUE }),
+        body: JSON.stringify({ date, time, venue }),
       });
       const body = await res.json();
       if (!res.ok) {
@@ -283,10 +252,9 @@ export function MatchFlyer({ match, homeTeam, awayTeam, onClose }: MatchFlyerPro
       }
       updateMatch(match.id, "date", date);
       updateMatch(match.id, "time", time);
-      updateMatch(match.id, "venue", FIXED_VENUE);
-      setVenue(FIXED_VENUE);
-      setSaved(true);
-      setDirty(false);
+      updateMatch(match.id, "venue", venue);
+      setBaseline({ date, time, venue });
+      toast.success("Match details saved.");
     } catch {
       setError("Unable to save. Check your connection.");
     } finally {
@@ -294,251 +262,214 @@ export function MatchFlyer({ match, homeTeam, awayTeam, onClose }: MatchFlyerPro
     }
   };
 
+  const getCanvasBlob = async (): Promise<Blob | null> => {
+    if (!flyerRef.current) return null;
+    return captureFlyer(flyerRef.current);
+  };
+
   const handleDownload = async () => {
-    if (!flyerRef.current || !hasSchedule || !saved) return;
-    setCapturing(true);
+    setBusy("download");
+    setError("");
     try {
-      const canvas = await html2canvas(flyerRef.current, {
-        scale: 3,
-        useCORS: true,
-        backgroundColor: darkMode ? "#171717" : "#ffffff",
-        allowTaint: true,
-      });
-      const blob = await new Promise<Blob | null>((r) => canvas.toBlob(r, "image/png"));
-      if (!blob) return;
+      const blob = await getCanvasBlob();
+      if (!blob) {
+        setError("Could not generate the flyer.");
+        return;
+      }
       const url = URL.createObjectURL(blob);
-      const a = document.createElement("a");
-      a.href = url;
-      a.download = `flyer-${match.id}.png`;
-      a.click();
+      const anchor = document.createElement("a");
+      anchor.href = url;
+      anchor.download = flyerFileName(match.id, homeTeam?.name, awayTeam?.name);
+      anchor.click();
       URL.revokeObjectURL(url);
-    } catch (e) {
-      console.error("Flyer capture failed", e);
+    } catch {
+      setError("Flyer generation failed. Try again.");
     } finally {
-      setCapturing(false);
+      setBusy(null);
     }
   };
 
-  const formatDate = (d: string | null) => {
-    if (!d) return "TBD";
+  const handleCopy = async () => {
+    if (!navigator.clipboard || typeof ClipboardItem === "undefined") {
+      toast.error("Copying images is not supported in this browser.");
+      return;
+    }
+    setBusy("copy");
+    setError("");
     try {
-      return new Date(d).toLocaleDateString("en-US", {
-        weekday: "long",
-        month: "long",
-        day: "numeric",
-        year: "numeric",
-      });
+      const blob = await getCanvasBlob();
+      if (!blob) {
+        setError("Could not generate the flyer.");
+        return;
+      }
+      await navigator.clipboard.write([new ClipboardItem({ "image/png": blob })]);
+      toast.success("Flyer copied to clipboard.");
     } catch {
-      return d;
+      setError("Could not copy the image. Try downloading instead.");
+    } finally {
+      setBusy(null);
+    }
+  };
+
+  const handleShare = async () => {
+    if (!navigator.share) {
+      toast.error("Sharing is not supported in this browser.");
+      return;
+    }
+    setBusy("share");
+    setError("");
+    try {
+      const blob = await getCanvasBlob();
+      if (!blob) {
+        setError("Could not generate the flyer.");
+        return;
+      }
+      const file = new File([blob], flyerFileName(match.id, homeTeam?.name, awayTeam?.name), {
+        type: "image/png",
+      });
+      const shareData: ShareData = { files: [file], title: "Match flyer", text: "Match day flyer" };
+      if (navigator.canShare && !navigator.canShare({ files: [file] })) {
+        toast.error("This browser cannot share image files.");
+        return;
+      }
+      await navigator.share(shareData);
+    } catch {
+      // User cancellation is not an error.
+      setError("");
+    } finally {
+      setBusy(null);
     }
   };
 
   return (
     <div
       className="flyer-container"
-      onClick={(e) => {
-        if (e.target === e.currentTarget) onClose();
+      role="presentation"
+      onClick={(event) => {
+        if (event.target === event.currentTarget) onClose();
       }}
     >
-      <style>{INITIALS_CSS}</style>
-      <div className={`flyer-card${darkMode ? " dark" : ""}`}>
-        <div ref={flyerRef}>
-          {customBg ? (
-            <div
-              className="flyer-custom"
-              style={{
-                backgroundImage: `url(${customBg})`,
-                ["--flyer-text" as string]: customTextColor,
-              }}
-            >
-              <div className="flyer-custom-body">
-                <div className="flyer-custom-teams">
-                  <div className="flyer-custom-team">
-                    {homeTeam?.logo_url ? (
-                      <img
-                        src={homeTeam.logo_url}
-                        alt=""
-                        className="flyer-logo"
-                        crossOrigin="anonymous"
-                      />
-                    ) : (
-                      <div className="flyer-logo-fallback">{homeTeam?.name?.charAt(0) || "?"}</div>
-                    )}
-                    <div className="flyer-custom-team-name">{homeTeam?.name || "Home"}</div>
-                  </div>
-
-                  <div className="flyer-custom-vs">VS</div>
-
-                  <div className="flyer-custom-team">
-                    {awayTeam?.logo_url ? (
-                      <img
-                        src={awayTeam.logo_url}
-                        alt=""
-                        className="flyer-logo"
-                        crossOrigin="anonymous"
-                      />
-                    ) : (
-                      <div className="flyer-logo-fallback">{awayTeam?.name?.charAt(0) || "?"}</div>
-                    )}
-                    <div className="flyer-custom-team-name">{awayTeam?.name || "Away"}</div>
-                  </div>
-                </div>
-
-                <div className="flyer-custom-details">
-                  <div className="flyer-custom-date">{date ? formatDate(date) : "Date TBD"}</div>
-                  <div className="flyer-custom-time">{time || "Time TBD"}</div>
-                  <div className="flyer-custom-venue">{venue || FIXED_VENUE}</div>
-                </div>
-              </div>
-            </div>
-          ) : (
-            <>
-              <div className="flyer-header">
-                <h2>Match Day</h2>
-              </div>
-
-              <div className="flyer-teams">
-                <div className="flyer-team">
-                  {homeTeam?.logo_url ? (
-                    <img
-                      src={homeTeam.logo_url}
-                      alt=""
-                      className="flyer-logo"
-                      crossOrigin="anonymous"
-                    />
-                  ) : (
-                    <div className="flyer-logo-fallback">{homeTeam?.name?.charAt(0) || "?"}</div>
-                  )}
-                  <div className="flyer-team-name">{homeTeam?.name || "Home"}</div>
-                </div>
-
-                <div className="flyer-vs">VS</div>
-
-                <div className="flyer-team">
-                  {awayTeam?.logo_url ? (
-                    <img
-                      src={awayTeam.logo_url}
-                      alt=""
-                      className="flyer-logo"
-                      crossOrigin="anonymous"
-                    />
-                  ) : (
-                    <div className="flyer-logo-fallback">{awayTeam?.name?.charAt(0) || "?"}</div>
-                  )}
-                  <div className="flyer-team-name">{awayTeam?.name || "Away"}</div>
-                </div>
-              </div>
-
-              <div className="flyer-details">
-                <div className="flyer-divider" />
-                <div className="flyer-date">{date ? formatDate(date) : "Date TBD"}</div>
-                <div className="flyer-time">{time || "Time TBD"}</div>
-                <div className="flyer-venue">{venue || FIXED_VENUE}</div>
-              </div>
-            </>
-          )}
-        </div>
-
-        <div style={{ padding: "0 32px 20px", display: "flex", flexDirection: "column", gap: 12 }}>
-          <div
-            style={{
-              display: "flex",
-              alignItems: "center",
-              gap: 8,
-              fontSize: 13,
-              color: "rgb(var(--muted))",
-              fontWeight: 600,
-            }}
-          >
-            <CalendarClock size={15} />
-            Match Date &amp; Time
-          </div>
-          <div style={{ display: "flex", gap: 8 }}>
-            <input
-              type="date"
-              value={date}
-              onChange={(e) => handleDateChange(e.target.value)}
-              disabled={!canEdit}
-              className="input flex-1 text-sm py-1.5"
-              aria-label="Match date"
-            />
-            <input
-              type="time"
-              value={time}
-              onChange={(e) => handleTimeChange(e.target.value)}
-              disabled={!canEdit}
-              className="input flex-1 text-sm py-1.5"
-              aria-label="Match time"
-            />
-          </div>
-          <input
-            type="text"
-            value={venue}
-            onChange={() => {}}
-            disabled
-            className="input w-full text-sm py-1.5 disabled:opacity-60 disabled:cursor-not-allowed"
-            aria-label="Match venue"
-          />
-          <p style={{ fontSize: 11, color: "var(--ink-3)", marginTop: -6 }}>
-            Venue is fixed and cannot be changed.
-          </p>
-          {canEdit && (
-            <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-              <button
-                onClick={handleSave}
-                disabled={saving || (!dirty && saved)}
-                className="btn-secondary flex-1 justify-center text-sm py-1.5 disabled:opacity-40 disabled:cursor-not-allowed"
-              >
-                {saving ? (
-                  <>
-                    {" "}
-                    <span className="block w-4 h-4 bg-surface-2 rounded animate-pulse" /> Saving...
-                  </>
-                ) : saved && !dirty ? (
-                  "Saved"
-                ) : (
-                  "Save Date & Time"
-                )}
-              </button>
-            </div>
-          )}
-          {error && <p style={{ fontSize: 12, color: "var(--danger-500)" }}>{error}</p>}
-          {!canEdit && !hasSchedule && (
-            <p style={{ fontSize: 12, color: "var(--warn-500)" }}>
-              Date and time must be set by an admin before this flyer can be downloaded.
-            </p>
-          )}
-          {canEdit && hasSchedule && saved && !dirty && (
-            <p style={{ fontSize: 12, color: "var(--brand-600)" }}>
-              Schedule saved to the database.
-            </p>
-          )}
-          {canEdit && (!hasSchedule || dirty) && (
-            <p style={{ fontSize: 12, color: "var(--warn-500)" }}>
-              Save the date and time before downloading the flyer.
-            </p>
-          )}
-        </div>
-
-        <div style={{ padding: "0 32px 24px", display: "flex", gap: 8 }}>
-          <button
-            onClick={handleDownload}
-            disabled={downloadDisabled}
-            className="btn-primary flex-1 justify-center text-sm disabled:opacity-40 disabled:cursor-not-allowed"
-          >
-            {capturing ? (
-              <>
-                {" "}
-                <span className="block w-4 h-4 bg-surface-2 rounded animate-pulse" /> Generating...
-              </>
-            ) : hasSchedule && saved ? (
-              "Download Flyer"
-            ) : (
-              "Save Date & Time to Download"
-            )}
+      <style>{MODAL_CSS}</style>
+      <div
+        ref={panelRef}
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="flyer-dialog-title"
+        tabIndex={-1}
+        className="flyer-panel"
+      >
+        <div className="flyer-panel-header">
+          <h2 id="flyer-dialog-title">Match Flyer</h2>
+          <button type="button" className="flyer-close" aria-label="Close" onClick={onClose}>
+            <X size={16} />
           </button>
-          <button onClick={onClose} className="btn-ghost text-sm">
-            Cancel
+        </div>
+
+        <div className="flyer-scroll">
+          <div ref={flyerRef} className="flyer-canvas-holder">
+            <FlyerCanvas
+              homeTeam={homeTeam}
+              awayTeam={awayTeam}
+              date={date}
+              time={time}
+              venue={venue}
+              competitionName={competition?.name}
+              settings={settings}
+            />
+          </div>
+
+          <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+            <div className="flyer-section-title">
+              <CalendarClock size={14} />
+              Match details
+            </div>
+            <div style={{ display: "flex", gap: 8 }}>
+              <input
+                type="date"
+                value={date}
+                onChange={(e) => {
+                  setDate(e.target.value);
+                  setError("");
+                }}
+                disabled={!canEdit}
+                className="input flex-1 text-sm py-1.5"
+                aria-label="Match date"
+              />
+              <input
+                type="time"
+                value={time}
+                onChange={(e) => {
+                  setTime(e.target.value);
+                  setError("");
+                }}
+                disabled={!canEdit}
+                className="input flex-1 text-sm py-1.5"
+                aria-label="Match time"
+              />
+            </div>
+            <input
+              type="text"
+              value={venue}
+              onChange={(e) => {
+                setVenue(e.target.value);
+                setError("");
+              }}
+              disabled={!canEdit}
+              placeholder="Venue"
+              className="input w-full text-sm py-1.5 disabled:opacity-60 disabled:cursor-not-allowed"
+              aria-label="Match venue"
+            />
+            {!canEdit && (
+              <p className="flyer-field">
+                Date, time and venue are managed by an organizer — download or share as-is.
+              </p>
+            )}
+            {!hasSchedule && (
+              <p className="flyer-field">No kick-off set yet — the flyer shows “TBD”.</p>
+            )}
+            {error && <p style={{ fontSize: 12, color: "var(--danger-500)" }}>{error}</p>}
+          </div>
+        </div>
+
+        <div className="flyer-actions">
+          {canEdit && dirty && (
+            <button
+              type="button"
+              onClick={handleSave}
+              disabled={saving}
+              className="btn-primary flex-1 justify-center text-sm disabled:opacity-50"
+            >
+              {saving ? "Saving…" : "Save changes"}
+            </button>
+          )}
+          <button
+            type="button"
+            onClick={handleDownload}
+            disabled={busy !== null || saving}
+            className={`btn-secondary justify-center text-sm disabled:opacity-50 ${
+              canEdit && dirty ? "" : "flex-1"
+            }`}
+          >
+            <Download size={15} />
+            {busy === "download" ? "Generating…" : "Download"}
+          </button>
+          <button
+            type="button"
+            onClick={handleCopy}
+            disabled={busy !== null || saving}
+            aria-label="Copy flyer to clipboard"
+            className="btn-secondary justify-center text-sm disabled:opacity-50"
+          >
+            {busy === "copy" ? <Check size={15} /> : <Copy size={15} />}
+          </button>
+          <button
+            type="button"
+            onClick={handleShare}
+            disabled={busy !== null || saving}
+            aria-label="Share flyer"
+            className="btn-secondary justify-center text-sm disabled:opacity-50"
+          >
+            <Share2 size={15} />
           </button>
         </div>
       </div>

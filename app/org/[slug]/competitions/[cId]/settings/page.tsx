@@ -9,6 +9,7 @@ import {
   useCreateSeason,
   useUpdateSeason,
   useCreateSeasonRollover,
+  useSeasonTeams,
 } from "@/lib/hooks/use-competitions";
 import { useQueryClient } from "@tanstack/react-query";
 import { useParams } from "next/navigation";
@@ -31,7 +32,18 @@ import {
 import { useToast } from "@/components/ui/toast";
 import { useConfirm } from "@/components/shared/confirm-dialog";
 import { useSeasonHasFixtures } from "@/lib/hooks/use-competition-stats";
-import type { Season } from "@/lib/types";
+import type { Season, Team } from "@/lib/types";
+import {
+  FLYER_FORMATS,
+  FLYER_FORMAT_SPECS,
+  FLYER_TEMPLATE_OPTIONS,
+  parseFlyerSettings,
+  readFlyerSettings,
+  type FlyerFormat,
+  type FlyerSettings,
+  type FlyerTemplate,
+} from "@/lib/flyer/settings";
+import { FlyerCanvas } from "@/components/flyers/flyer-canvas";
 
 const statusOptions: { value: string; label: string }[] = [
   { value: "draft", label: "Draft" },
@@ -60,6 +72,7 @@ export default function CompetitionSettingsPage() {
   const { data: seasonHasFixtures, isLoading: checkingFixtures } = useSeasonHasFixtures(
     currentSeasonId ?? undefined
   );
+  const { data: previewSeasonTeams = [] } = useSeasonTeams(currentSeasonId);
   const updateMutation = useUpdateCompetition();
   const generateFixturesMutation = useGenerateFixtures();
   const createSeasonMutation = useCreateSeason();
@@ -83,10 +96,18 @@ export default function CompetitionSettingsPage() {
   const compLogoInputRef = useRef<HTMLInputElement>(null);
 
   const [flyerUploading, setFlyerUploading] = useState(false);
-  const [flyerBgUrl, setFlyerBgUrl] = useState<string | null>(null);
-  const [flyerTextColor, setFlyerTextColor] = useState("#ffffff");
+  const [flyerDraft, setFlyerDraft] = useState<FlyerSettings | null>(null);
   const [flyerSaving, setFlyerSaving] = useState(false);
   const flyerInputRef = useRef<HTMLInputElement>(null);
+
+  // Derive the live flyer config: the edited draft when present, otherwise the
+  // value persisted on the competition. No pre-load seeding needed.
+  const savedFlyerSettings = readFlyerSettings(currentCompetition?.settings);
+  const flyer = flyerDraft ?? savedFlyerSettings;
+  const flyerDirty =
+    flyerDraft !== null && JSON.stringify(flyerDraft) !== JSON.stringify(savedFlyerSettings);
+  const updateFlyer = (patch: Partial<FlyerSettings>) =>
+    setFlyerDraft({ ...flyer, ...patch });
 
   const [showNewSeasonForm, setShowNewSeasonForm] = useState(false);
   const [newSeasonName, setNewSeasonName] = useState("");
@@ -147,7 +168,7 @@ export default function CompetitionSettingsPage() {
         toast.error(data.error);
         return;
       }
-      setFlyerBgUrl(data.url);
+      setFlyerDraft({ ...flyer, background_url: data.url });
       queryClient.invalidateQueries({ queryKey: ["competition", cId] });
     } catch {
       toast.error("Upload failed. Please try again.");
@@ -165,21 +186,16 @@ export default function CompetitionSettingsPage() {
         ? currentCompetition.settings
         : {}
     ) as Record<string, unknown>;
-    const flyer = (
-      currentSettings.flyer && typeof currentSettings.flyer === "object"
-        ? currentSettings.flyer
-        : {}
-    ) as Record<string, unknown>;
     updateMutation.mutate(
       {
         id: cId,
-        settings: {
-          ...currentSettings,
-          flyer: { ...flyer, text_color: flyerTextColor },
-        },
+        settings: { ...currentSettings, flyer: parseFlyerSettings(flyer) },
       },
       {
-        onSuccess: () => setMessage({ type: "success", text: "Flyer settings saved." }),
+        onSuccess: () => {
+          setFlyerDraft(null);
+          setMessage({ type: "success", text: "Flyer settings saved." });
+        },
         onError: (err) =>
           setMessage({
             type: "error",
@@ -193,31 +209,7 @@ export default function CompetitionSettingsPage() {
   const handleRemoveFlyerBg = () => {
     if (!currentCompetition) return;
     setMessage(null);
-    setFlyerBgUrl(null);
-    const currentSettings = (
-      currentCompetition.settings && typeof currentCompetition.settings === "object"
-        ? currentCompetition.settings
-        : {}
-    ) as Record<string, unknown>;
-    const flyer = (
-      currentSettings.flyer && typeof currentSettings.flyer === "object"
-        ? currentSettings.flyer
-        : {}
-    ) as Record<string, unknown>;
-    updateMutation.mutate(
-      {
-        id: cId,
-        settings: { ...currentSettings, flyer: { ...flyer, background_url: null } },
-      },
-      {
-        onSuccess: () => setMessage({ type: "success", text: "Custom flyer background removed." }),
-        onError: (err) =>
-          setMessage({
-            type: "error",
-            text: err instanceof Error ? err.message : "Something went wrong",
-          }),
-      }
-    );
+    updateFlyer({ background_url: null });
   };
 
   if (isLoading || !currentCompetition) {
@@ -355,24 +347,22 @@ export default function CompetitionSettingsPage() {
 
   const logoDisplayUrl = compLogoUrl || currentCompetition.logo_url;
 
-  const flyerSettings = (() => {
-    const s = (
-      currentCompetition.settings && typeof currentCompetition.settings === "object"
-        ? currentCompetition.settings
-        : {}
-    ) as Record<string, unknown>;
-    const f = (s.flyer && typeof s.flyer === "object" ? s.flyer : {}) as Record<string, unknown>;
-    return f;
-  })();
-  const flyerBgDisplayUrl =
-    flyerBgUrl ||
-    (typeof flyerSettings.background_url === "string" ? flyerSettings.background_url : null);
-  const savedFlyerTextColor =
-    typeof flyerSettings.text_color === "string" ? flyerSettings.text_color : "#ffffff";
-  const flyerTextColorValue =
-    flyerTextColor === "#ffffff" && savedFlyerTextColor !== "#ffffff"
-      ? savedFlyerTextColor
-      : flyerTextColor;
+  // Sample teams from the active season so the preview reflects real names/logos.
+  const toPreviewTeam = (index: number, fallback: string): Team | undefined => {
+    const entry = previewSeasonTeams[index];
+    if (!entry) return undefined;
+    return {
+      id: entry.team_id,
+      name: entry.display_name || entry.team?.name || fallback,
+      rating: entry.team?.rating ?? 0,
+      logo_url: entry.logo_url || entry.team?.logo_url || undefined,
+    };
+  };
+  const previewHome = toPreviewTeam(0, "Home");
+  const previewAway = toPreviewTeam(1, "Away");
+  const flyerPreviewScale = flyer.format === "story" ? 0.62 : 0.75;
+  const flyerPreviewDate =
+    seasons.find((s) => s.is_current)?.start_date || new Date().toISOString().slice(0, 10);
 
   const seasonQuery = currentSeasonId ? `?seasonId=${currentSeasonId}` : "";
 
@@ -462,103 +452,253 @@ export default function CompetitionSettingsPage() {
         </div>
       </div>
 
-      <div className="card p-6 space-y-4">
+      <div className="card p-6 space-y-5">
         <div className="flex items-center justify-between">
           <h2 className="text-lg font-semibold">Match Flyer Design</h2>
           <span className="flex items-center gap-1.5 text-xs text-muted">
             <Sparkles size={13} />
-            Custom background per competition
+            Live preview
           </span>
         </div>
         <p className="text-sm text-muted">
-          Upload your own flyer design. It renders as a full-bleed background on generated match
-          flyers, with team names, date and time overlaid on top. Leave it empty to use the built-in
-          design.
+          Pick a template and size, tweak the text and colours, and optionally add a custom
+          background. These settings apply to every match flyer generated for this competition.
         </p>
 
-        <div>
-          <p className="text-xs text-muted mb-2">Flyer Background</p>
-          <div className="flex items-center gap-4">
-            <div className="relative shrink-0">
-              <div
-                onClick={() => flyerInputRef.current?.click()}
-                className="w-28 h-40 rounded-xl bg-surface-2 flex items-center justify-center overflow-hidden border border-line cursor-pointer hover:opacity-80 transition-opacity"
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+          <div className="space-y-3">
+            <div>
+              <label htmlFor="flyer-template" className="block text-xs text-muted mb-1">
+                Template
+              </label>
+              <select
+                id="flyer-template"
+                value={flyer.template}
+                onChange={(e) => updateFlyer({ template: e.target.value as FlyerTemplate })}
+                className="input w-full text-sm"
               >
-                {flyerBgDisplayUrl ? (
-                  <img
-                    src={flyerBgDisplayUrl}
-                    alt="Flyer background"
-                    className="w-full h-full object-cover"
-                  />
-                ) : (
-                  <ImageIcon size={30} className="text-muted/40" />
-                )}
-                {flyerUploading && (
-                  <div className="absolute inset-0 bg-black/40 flex items-center justify-center rounded-xl">
-                    <span className="block w-5 h-5 bg-surface-2 rounded animate-pulse" />
-                  </div>
-                )}
-              </div>
+                {FLYER_TEMPLATE_OPTIONS.map((opt) => (
+                  <option key={opt.id} value={opt.id}>
+                    {opt.label} — {opt.description}
+                  </option>
+                ))}
+              </select>
+            </div>
+            <div>
+              <label htmlFor="flyer-format" className="block text-xs text-muted mb-1">
+                Size
+              </label>
+              <select
+                id="flyer-format"
+                value={flyer.format}
+                onChange={(e) => updateFlyer({ format: e.target.value as FlyerFormat })}
+                className="input w-full text-sm"
+              >
+                {FLYER_FORMATS.map((f) => (
+                  <option key={f} value={f}>
+                    {FLYER_FORMAT_SPECS[f].label} ({FLYER_FORMAT_SPECS[f].width}×
+                    {FLYER_FORMAT_SPECS[f].height})
+                  </option>
+                ))}
+              </select>
+            </div>
+            <div>
+              <label htmlFor="flyer-headline" className="block text-xs text-muted mb-1">
+                Headline
+              </label>
               <input
-                ref={flyerInputRef}
-                type="file"
-                accept="image/*"
-                onChange={(e) => {
-                  const file = e.target.files?.[0];
-                  if (file) handleFlyerBgUpload(file);
-                }}
-                className="hidden"
+                id="flyer-headline"
+                value={flyer.headline}
+                maxLength={60}
+                onChange={(e) => updateFlyer({ headline: e.target.value })}
+                className="input w-full text-sm"
+                placeholder="Match Day"
               />
             </div>
-            <div className="flex-1 space-y-3">
-              <div className="flex flex-wrap gap-2">
-                <button
-                  onClick={() => flyerInputRef.current?.click()}
-                  disabled={flyerUploading}
-                  className="btn-ghost text-sm"
-                >
-                  {flyerUploading ? (
-                    <span className="block w-4 h-4 bg-surface-2 rounded animate-pulse" />
-                  ) : (
-                    <Upload size={14} />
-                  )}
-                  {flyerBgDisplayUrl ? "Change" : "Upload"}
-                </button>
-                {flyerBgDisplayUrl && (
-                  <button onClick={handleRemoveFlyerBg} className="btn-ghost text-sm text-danger">
-                    Remove
-                  </button>
-                )}
-              </div>
-              <div className="flex items-center gap-3">
-                <label htmlFor="flyer-text-color" className="text-sm text-muted shrink-0">
-                  Text color
+            <div>
+              <label htmlFor="flyer-subtitle" className="block text-xs text-muted mb-1">
+                Subtitle (optional)
+              </label>
+              <input
+                id="flyer-subtitle"
+                value={flyer.subtitle}
+                maxLength={80}
+                onChange={(e) => updateFlyer({ subtitle: e.target.value })}
+                className="input w-full text-sm"
+                placeholder="e.g. Round 5"
+              />
+            </div>
+            <div>
+              <label htmlFor="flyer-footer" className="block text-xs text-muted mb-1">
+                Footer (optional)
+              </label>
+              <input
+                id="flyer-footer"
+                value={flyer.footer_text}
+                maxLength={80}
+                onChange={(e) => updateFlyer({ footer_text: e.target.value })}
+                className="input w-full text-sm"
+                placeholder="e.g. #MatchDay"
+              />
+            </div>
+          </div>
+
+          <div className="space-y-4">
+            <div className="flex items-center gap-3">
+              <label htmlFor="flyer-accent-color" className="text-sm text-muted flex-1">
+                Accent colour
+              </label>
+              <input
+                id="flyer-accent-color"
+                type="color"
+                value={flyer.accent_color}
+                onChange={(e) => updateFlyer({ accent_color: e.target.value })}
+                className="w-10 h-9 rounded-lg border border-line bg-transparent cursor-pointer"
+              />
+              <span className="text-xs font-mono text-muted">{flyer.accent_color}</span>
+            </div>
+            {flyer.background_url && (
+              <>
+                <div className="flex items-center gap-3">
+                  <label htmlFor="flyer-text-color" className="text-sm text-muted flex-1">
+                    Text colour
+                  </label>
+                  <input
+                    id="flyer-text-color"
+                    type="color"
+                    value={flyer.text_color}
+                    onChange={(e) => updateFlyer({ text_color: e.target.value })}
+                    className="w-10 h-9 rounded-lg border border-line bg-transparent cursor-pointer"
+                  />
+                  <span className="text-xs font-mono text-muted">{flyer.text_color}</span>
+                </div>
+                <div>
+                  <label htmlFor="flyer-overlay" className="text-sm text-muted">
+                    Background dim — {flyer.overlay}%
+                  </label>
+                  <input
+                    id="flyer-overlay"
+                    type="range"
+                    min={0}
+                    max={100}
+                    value={flyer.overlay}
+                    onChange={(e) => updateFlyer({ overlay: Number(e.target.value) })}
+                    className="w-full accent-brand mt-1"
+                  />
+                </div>
+              </>
+            )}
+
+            <div className="space-y-2 pt-1">
+              {(
+                [
+                  ["show_competition", "Show competition name"],
+                  ["show_logos", "Show team logos"],
+                  ["show_venue", "Show venue"],
+                ] as const
+              ).map(([key, label]) => (
+                <label key={key} className="flex items-center gap-2 text-sm text-muted">
+                  <input
+                    type="checkbox"
+                    checked={flyer[key]}
+                    onChange={(e) =>
+                      updateFlyer({ [key]: e.target.checked } as Partial<FlyerSettings>)
+                    }
+                    className="rounded border-line"
+                  />
+                  {label}
                 </label>
-                <input
-                  id="flyer-text-color"
-                  type="color"
-                  value={flyerTextColorValue}
-                  onChange={(e) => setFlyerTextColor(e.target.value)}
-                  className="w-10 h-9 rounded-lg border border-line bg-transparent cursor-pointer"
-                />
-                <span className="text-xs font-mono text-muted">{flyerTextColorValue}</span>
-              </div>
-              <div>
-                <button
-                  onClick={handleFlyerSave}
-                  disabled={flyerSaving || flyerTextColor === savedFlyerTextColor}
-                  className="btn-primary text-sm disabled:opacity-40 disabled:cursor-not-allowed"
+              ))}
+            </div>
+
+            <div>
+              <p className="text-xs text-muted mb-2">Background (optional)</p>
+              <div className="flex items-center gap-3">
+                <div
+                  onClick={() => flyerInputRef.current?.click()}
+                  className="relative w-20 h-28 rounded-lg bg-surface-2 flex items-center justify-center overflow-hidden border border-line cursor-pointer hover:opacity-80 transition-opacity"
                 >
-                  {flyerSaving ? (
-                    <span className="block w-4 h-4 bg-surface-2 rounded animate-pulse" />
+                  {flyer.background_url ? (
+                    <img
+                      src={flyer.background_url}
+                      alt="Flyer background"
+                      className="w-full h-full object-cover"
+                    />
                   ) : (
-                    <Check size={14} />
+                    <ImageIcon size={24} className="text-muted/40" />
                   )}
-                  Save Flyer Settings
-                </button>
+                  {flyerUploading && (
+                    <div className="absolute inset-0 bg-black/40 flex items-center justify-center">
+                      <span className="block w-5 h-5 bg-surface-2 rounded animate-pulse" />
+                    </div>
+                  )}
+                </div>
+                <div className="flex flex-wrap gap-2">
+                  <button
+                    onClick={() => flyerInputRef.current?.click()}
+                    disabled={flyerUploading}
+                    className="btn-ghost text-sm"
+                  >
+                    {flyerUploading ? (
+                      <span className="block w-4 h-4 bg-surface-2 rounded animate-pulse" />
+                    ) : (
+                      <Upload size={14} />
+                    )}
+                    {flyer.background_url ? "Change" : "Upload"}
+                  </button>
+                  {flyer.background_url && (
+                    <button onClick={handleRemoveFlyerBg} className="btn-ghost text-sm text-danger">
+                      Remove
+                    </button>
+                  )}
+                </div>
+                <input
+                  ref={flyerInputRef}
+                  type="file"
+                  accept="image/*"
+                  onChange={(e) => {
+                    const file = e.target.files?.[0];
+                    if (file) handleFlyerBgUpload(file);
+                  }}
+                  className="hidden"
+                />
               </div>
             </div>
           </div>
+        </div>
+
+        <div>
+          <p className="text-xs text-muted mb-2">Preview</p>
+          <div className="rounded-xl border border-line bg-surface-2 p-4 flex justify-center overflow-hidden">
+            <FlyerCanvas
+              homeTeam={previewHome}
+              awayTeam={previewAway}
+              date={flyerPreviewDate}
+              time="15:00"
+              venue="Home Ground"
+              competitionName={currentCompetition.name}
+              settings={flyer}
+              scale={flyerPreviewScale}
+            />
+          </div>
+        </div>
+
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <p className="text-xs text-muted">
+            {flyerDirty ? "You have unsaved changes." : "Saved — used by all match flyers."}
+          </p>
+          <button
+            onClick={handleFlyerSave}
+            disabled={flyerSaving || !flyerDirty}
+            className="btn-primary text-sm disabled:opacity-40 disabled:cursor-not-allowed"
+          >
+            {flyerSaving ? (
+              <span className="block w-4 h-4 bg-surface-2 rounded animate-pulse" />
+            ) : (
+              <Check size={14} />
+            )}
+            Save Flyer Settings
+          </button>
         </div>
       </div>
 

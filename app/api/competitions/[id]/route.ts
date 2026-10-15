@@ -13,6 +13,7 @@ import {
   requireOrgReadAccess,
   writeAuditEvent,
 } from "@/lib/security";
+import { parseFlyerSettings } from "@/lib/flyer/settings";
 
 const ALLOWED_UPDATE_FIELDS = ["name", "type", "status", "settings", "current_season_id"] as const;
 
@@ -52,7 +53,12 @@ function validateSettings(value: unknown): { data?: Record<string, unknown>; err
   if (!serialized || serialized.length > MAX_SETTINGS_BYTES) {
     return { error: "settings is too large." };
   }
-  return { data: value as Record<string, unknown> };
+  const data = value as Record<string, unknown>;
+  // Normalize the flyer sub-object so only known, safe values are persisted.
+  if (data.flyer !== undefined && data.flyer !== null) {
+    data.flyer = parseFlyerSettings(data.flyer);
+  }
+  return { data };
 }
 
 export const dynamic = "force-dynamic";
