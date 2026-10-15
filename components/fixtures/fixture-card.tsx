@@ -9,8 +9,12 @@ import { Button } from "@/components/ui/button";
 import { matchStatusVariant, statusLabel } from "@/lib/status";
 import { MatchReportModal } from "./match-report-modal";
 import { LiveBadgeWithLink } from "@/components/live/live-badge";
+import { useToast } from "@/components/ui/toast";
 import { Sparkles } from "lucide-react";
 import Image from "next/image";
+
+/** Grace window before a removed match event is actually deleted on the server. */
+const UNDO_WINDOW_MS = 5000;
 
 /** Lazy-loaded flyer — only fetched when the user clicks the card. */
 const MatchFlyer = lazy(() =>
@@ -81,6 +85,7 @@ export function FixtureCard({
   const players = useAppStore((s) => s.players);
   const updateMatch = useAppStore((s) => s.updateMatch);
   const queryClient = useQueryClient();
+  const toast = useToast();
 
   const invalidateSeasonQueries = () => {
     if (match.season_id) {
@@ -109,26 +114,39 @@ export function FixtureCard({
     const store = useAppStore.getState();
     const event = events[index];
     if (!event) return;
+
     const updatedEvents = events.filter((_, i) => i !== index);
-    updateMatch(match.id, "events", updatedEvents);
+    const prevHome = match.homeScore;
+    const prevAway = match.awayScore;
 
+    const STAT_FIELD: Record<string, string> = {
+      goal: "goals",
+      assist: "assists",
+      "own-goal": "ownGoals",
+      yellow: "yellowCards",
+      red: "redCards",
+    };
+    const field = STAT_FIELD[event.type];
     const player = store.players.find((p) => p.id === event.playerId);
-    if (player) {
-      const STAT_FIELD: Record<string, string> = {
-        goal: "goals",
-        assist: "assists",
-        "own-goal": "ownGoals",
-        yellow: "yellowCards",
-        red: "redCards",
-      };
-      const field = STAT_FIELD[event.type];
-      if (field) {
-        store.updatePlayer(event.playerId, {
-          [field]: Math.max(0, ((player as any)[field] || 0) - 1),
-        });
-      }
-    }
+    const prevStatValue = player && field ? ((player as any)[field] as number) || 0 : undefined;
 
+    const persistScore = (home: number | null | undefined, away: number | null | undefined) => {
+      fetch(`/api/fixtures/${match.id}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ homeScore: home ?? 0, awayScore: away ?? 0 }),
+      }).catch(() => {
+        // persist silently
+      });
+    };
+
+    // Optimistic removal: hide the event and roll back score/stat locally.
+    updateMatch(match.id, "events", updatedEvents);
+    if (player && field && prevStatValue !== undefined) {
+      store.updatePlayer(event.playerId, { [field]: Math.max(0, prevStatValue - 1) });
+    }
+    let nextHome = prevHome;
+    let nextAway = prevAway;
     if (event.type === "goal" || event.type === "own-goal") {
       const p = store.players.find((pl) => pl.id === event.playerId);
       const teamId = p?.teamId ?? match.homeId;
@@ -138,33 +156,45 @@ export function FixtureCard({
           ? match.awayId
           : match.homeId
         : teamId;
-      const currentHome = match.homeScore ?? 0;
-      const currentAway = match.awayScore ?? 0;
-      const newHome = scoringTeam === match.homeId ? Math.max(0, currentHome - 1) : currentHome;
-      const newAway = scoringTeam === match.awayId ? Math.max(0, currentAway - 1) : currentAway;
-      store.updateMatch(match.id, "homeScore", newHome);
-      store.updateMatch(match.id, "awayScore", newAway);
-      try {
-        fetch(`/api/fixtures/${match.id}`, {
-          method: "PUT",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ homeScore: newHome, awayScore: newAway }),
-        });
-      } catch {
-        // persist silently
-      }
+      nextHome = scoringTeam === match.homeId ? Math.max(0, (prevHome ?? 0) - 1) : prevHome;
+      nextAway = scoringTeam === match.awayId ? Math.max(0, (prevAway ?? 0) - 1) : prevAway;
+      store.updateMatch(match.id, "homeScore", nextHome);
+      store.updateMatch(match.id, "awayScore", nextAway);
+      persistScore(nextHome, nextAway);
     }
-
     store.recalculateRatings();
 
-    try {
+    // The server delete is deferred: the event hides immediately, the DELETE
+    // only fires after the grace window unless the user taps Undo.
+    const timer = setTimeout(() => {
       fetch(`/api/events/0?match_id=${match.id}&player_id=${event.playerId}&type=${event.type}`, {
         method: "DELETE",
-      });
-      invalidateSeasonQueries();
-    } catch {
-      // persist silently
-    }
+      })
+        .then(() => invalidateSeasonQueries())
+        .catch(() => {
+          // persist silently
+        });
+    }, UNDO_WINDOW_MS);
+
+    const undoRemoval = () => {
+      clearTimeout(timer);
+      const fresh = useAppStore.getState();
+      updateMatch(match.id, "events", events);
+      if (player && field && prevStatValue !== undefined) {
+        fresh.updatePlayer(event.playerId, { [field]: prevStatValue });
+      }
+      if (event.type === "goal" || event.type === "own-goal") {
+        fresh.updateMatch(match.id, "homeScore", prevHome);
+        fresh.updateMatch(match.id, "awayScore", prevAway);
+        persistScore(prevHome, prevAway);
+      }
+      fresh.recalculateRatings();
+    };
+
+    toast.info("Event removed", {
+      action: { label: "Undo", onAction: undoRemoval },
+      durationMs: UNDO_WINDOW_MS,
+    });
   };
 
   const getPlayerName = (playerId: number) => {

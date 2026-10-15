@@ -1,4 +1,5 @@
 import { createClient } from "@/lib/supabase/server";
+import { createServiceRoleClient } from "@/lib/supabase/service-role";
 import {
   asInteger,
   asString,
@@ -87,11 +88,23 @@ export async function DELETE(request: Request, props: { params: Promise<{ id: st
       const ownershipError = await checkEventOwnership(supabase, authed, event.match_id);
       if (ownershipError) return ownershipError;
 
-      const { error } = await supabase.from("match_events").delete().eq("id", eventIdParam);
+      // Delete via the service-role client: the API has already authorized the
+      // caller (org admin or team owner), but the RLS delete policy only allows
+      // org-level admins, so a coach's delete would otherwise silently affect
+      // zero rows and still report success.
+      const sb = createServiceRoleClient();
+      const { data: deleted, error } = await sb
+        .from("match_events")
+        .delete()
+        .eq("id", eventIdParam)
+        .select("id");
 
       if (error) {
         logApiError("event_delete_failed", error, { userId: authed.userId, eventId: eventIdParam });
         return json({ error: "Unable to delete event." }, { status: 400 });
+      }
+      if (!deleted || deleted.length === 0) {
+        return json({ error: "Event not found." }, { status: 404 });
       }
       return json({ success: true });
     }
@@ -122,11 +135,19 @@ export async function DELETE(request: Request, props: { params: Promise<{ id: st
       return json({ error: "Event not found." }, { status: 404 });
     }
 
-    const { error } = await supabase.from("match_events").delete().eq("id", existing[0].id);
+    const sb = createServiceRoleClient();
+    const { data: deletedByKey, error } = await sb
+      .from("match_events")
+      .delete()
+      .eq("id", existing[0].id)
+      .select("id");
 
     if (error) {
       logApiError("event_delete_failed", error, { userId: authed.userId });
       return json({ error: "Unable to delete event." }, { status: 400 });
+    }
+    if (!deletedByKey || deletedByKey.length === 0) {
+      return json({ error: "Event not found." }, { status: 404 });
     }
 
     return json({ success: true });

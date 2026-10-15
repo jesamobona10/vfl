@@ -167,6 +167,8 @@ export function AddEventModal({
     const teamId = player?.teamId ?? match.homeId;
     const minute = initialMinute;
     const newEvent: MatchEvent = { playerId, type: selectedType, teamId, minute };
+    const prevHome = match.homeScore;
+    const prevAway = match.awayScore;
 
     const events = [...(match.events || []), newEvent];
     updateMatch(match.id, "events", events);
@@ -188,6 +190,59 @@ export function AddEventModal({
     setSaving(true);
     onClose();
 
+    const persistScore = (home: number | null | undefined, away: number | null | undefined) => {
+      fetch(`/api/fixtures/${match.id}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ homeScore: home ?? 0, awayScore: away ?? 0 }),
+      }).catch(() => {
+        // persist silently
+      });
+    };
+
+    const undoAdd = (serverId: number | null) => {
+      const store = useAppStore.getState();
+      let targetEvents = events;
+      for (const round of store.fixtures) {
+        const found = round.matches.find((m) => m.id === match.id);
+        if (found) {
+          targetEvents = found.events || [];
+          break;
+        }
+      }
+      const list = [...targetEvents];
+      for (let i = list.length - 1; i >= 0; i--) {
+        const e = list[i];
+        if (e.playerId === playerId && e.type === selectedType && e.teamId === teamId) {
+          list.splice(i, 1);
+          break;
+        }
+      }
+      store.updateMatch(match.id, "events", list);
+
+      const current = store.players.find((p) => p.id === playerId);
+      const field = STAT_FIELD[selectedType];
+      if (current && field) {
+        store.updatePlayer(playerId, {
+          [field]: Math.max(0, ((current[field] as number) || 0) - 1),
+        });
+      }
+      store.updateMatch(match.id, "homeScore", prevHome);
+      store.updateMatch(match.id, "awayScore", prevAway);
+      persistScore(prevHome, prevAway);
+      store.recalculateRatings();
+
+      if (serverId) {
+        fetch(`/api/events/${serverId}`, { method: "DELETE" })
+          .then(() => invalidateStandings())
+          .catch(() => {
+            // persist silently
+          });
+      } else {
+        invalidateStandings();
+      }
+    };
+
     const eventSave = fetch(`/api/fixtures/${match.id}/events`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -206,12 +261,16 @@ export function AddEventModal({
       : Promise.resolve(null);
 
     void Promise.all([eventSave, scoreSave])
-      .then(([eventResponse, scoreResponse]) => {
+      .then(async ([eventResponse, scoreResponse]) => {
         if (!eventResponse.ok || (scoreResponse && !scoreResponse.ok)) {
           throw new Error("Match event save failed");
         }
+        const payload = await eventResponse.json().catch(() => null);
+        const serverId: number | null = payload?.event?.id ?? null;
         invalidateStandings();
-        toast.success(`${selectedLabel} added.`);
+        toast.success(`${selectedLabel} added.`, {
+          action: { label: "Undo", onAction: () => undoAdd(serverId) },
+        });
       })
       .catch(() => {
         toast.error("The event was added on this screen but could not be saved. Please refresh and try again.");

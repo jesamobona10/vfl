@@ -17,22 +17,39 @@ function useMounted() {
 
 export type ToastVariant = "success" | "error" | "info";
 
+export interface ToastAction {
+  label: string;
+  onAction: () => void;
+}
+
+export interface ToastOptions {
+  /** Optional inline action (for example "Undo"). Dismisses the toast on click. */
+  action?: ToastAction;
+  /** Override the auto-dismiss delay in milliseconds. */
+  durationMs?: number;
+}
+
 export interface Toast {
   id: number;
   variant: ToastVariant;
   message: string;
+  action?: ToastAction;
+  durationMs: number;
 }
 
 interface ToastContextValue {
-  toast: (variant: ToastVariant, message: string) => void;
-  success: (message: string) => void;
-  error: (message: string) => void;
-  info: (message: string) => void;
+  toast: (variant: ToastVariant, message: string, options?: ToastOptions) => number;
+  success: (message: string, options?: ToastOptions) => number;
+  error: (message: string, options?: ToastOptions) => number;
+  info: (message: string, options?: ToastOptions) => number;
+  dismiss: (id: number) => void;
 }
 
 const ToastContext = createContext<ToastContextValue | null>(null);
 
 const AUTO_DISMISS_MS = 5000;
+// Action toasts (undo) get a little longer so the button is reachable.
+const ACTION_DISMISS_MS = 7000;
 
 const VARIANT_STYLES: Record<ToastVariant, { container: string; icon: string }> = {
   success: {
@@ -70,6 +87,18 @@ function ToastItem({ toast, onDismiss }: { toast: Toast; onDismiss: (id: number)
         {toast.variant === "success" ? "✓" : toast.variant === "error" ? "!" : "i"}
       </span>
       <p className="flex-1 break-words text-sm leading-snug text-text">{toast.message}</p>
+      {toast.action && (
+        <button
+          type="button"
+          onClick={() => {
+            toast.action?.onAction();
+            onDismiss(toast.id);
+          }}
+          className="-mr-1 -mt-1 shrink-0 rounded-lg px-2 py-1 text-sm font-semibold text-brand-600 transition-colors hover:bg-brand-600/10"
+        >
+          {toast.action.label}
+        </button>
+      )}
       <button
         type="button"
         onClick={() => onDismiss(toast.id)}
@@ -100,15 +129,21 @@ export function ToastProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   const push = useCallback(
-    (variant: ToastVariant, message: string) => {
-      if (!message) return;
+    (variant: ToastVariant, message: string, options?: ToastOptions) => {
       const id = nextId.current++;
+      if (!message) return id;
+      const durationMs =
+        options?.durationMs ?? (options?.action ? ACTION_DISMISS_MS : AUTO_DISMISS_MS);
       // Cap the stack so a burst of failures can't cover the screen.
-      setToasts((prev) => [...prev.slice(-4), { id, variant, message }]);
+      setToasts((prev) => [
+        ...prev.slice(-4),
+        { id, variant, message, action: options?.action, durationMs },
+      ]);
       timers.current.set(
         id,
-        setTimeout(() => dismiss(id), AUTO_DISMISS_MS)
+        setTimeout(() => dismiss(id), durationMs)
       );
+      return id;
     },
     [dismiss]
   );
@@ -124,11 +159,12 @@ export function ToastProvider({ children }: { children: React.ReactNode }) {
   const value = useMemo<ToastContextValue>(
     () => ({
       toast: push,
-      success: (message) => push("success", message),
-      error: (message) => push("error", message),
-      info: (message) => push("info", message),
+      success: (message, options) => push("success", message, options),
+      error: (message, options) => push("error", message, options),
+      info: (message, options) => push("info", message, options),
+      dismiss,
     }),
-    [push]
+    [push, dismiss]
   );
 
   return (
