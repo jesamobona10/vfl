@@ -277,18 +277,16 @@ export default function OrgFixturesPage() {
 
       {canEdit && hasFixtures && (
         <div className="flex flex-wrap items-center justify-between gap-2 mb-4">
-          <button
+          <Button
+            size="sm"
+            variant="ghost"
             onClick={handleReset}
-            disabled={resetting}
-            className="btn-sm flex items-center gap-1.5 text-danger border border-danger/30 hover:bg-danger/10"
+            loading={resetting}
+            leftIcon={resetting ? undefined : <Trash2 size={14} />}
+            className="gap-1.5 text-danger hover:text-danger border border-danger/30 hover:bg-danger/10"
           >
-            {resetting ? (
-              <span className="block w-4 h-4 bg-surface-2 rounded animate-pulse" />
-            ) : (
-              <Trash2 size={14} />
-            )}
             Reset Fixtures
-          </button>
+          </Button>
           <div className="flex items-center gap-2">
             <Button
               size="sm"
