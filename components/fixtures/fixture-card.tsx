@@ -4,7 +4,8 @@ import { Suspense, lazy, useState } from "react";
 import type { Match, Team } from "@/lib/types";
 import { useAppStore } from "@/lib/store";
 import { useQueryClient } from "@tanstack/react-query";
-import { titleCase } from "@/lib/utils/helpers";
+import { Badge } from "@/components/ui/badge";
+import { matchStatusVariant, statusLabel } from "@/lib/status";
 import { MatchReportModal } from "./match-report-modal";
 import { LiveBadgeWithLink } from "@/components/live/live-badge";
 import { Sparkles } from "lucide-react";
@@ -86,15 +87,6 @@ export function FixtureCard({
       queryClient.invalidateQueries({ queryKey: ["season-statistics", match.season_id] });
     }
   };
-
-  const statusColors: Record<string, string> = {
-    scheduled: "bg-muted/20 text-muted",
-    "in-progress": "bg-accent/20 text-accent",
-    completed: "bg-brand/20 text-brand",
-    live: "bg-danger/20 text-danger",
-  };
-
-  const statusColor = statusColors[match.status] || "bg-muted/20 text-muted";
 
   const events = match.events || [];
   const hasScore = match.homeScore != null || match.awayScore != null;
@@ -223,9 +215,9 @@ export function FixtureCard({
             {match.status === "live" || match.status === "in-progress" ? (
               <LiveBadgeWithLink match={match} />
             ) : (
-              <span className={`rounded-full px-2 py-1 text-xs font-semibold ${statusColor}`}>
-                {titleCase(match.status)}
-              </span>
+              <Badge variant={matchStatusVariant(match.status)}>
+                {statusLabel(match.status)}
+              </Badge>
             )}
           </div>
           {editable && (

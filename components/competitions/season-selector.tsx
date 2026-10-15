@@ -3,6 +3,8 @@
 import { useState } from "react";
 import { ChevronDown, Plus, Settings } from "lucide-react";
 import type { Season } from "@/lib/types";
+import { Badge } from "@/components/ui/badge";
+import { seasonStatusVariant, statusLabel } from "@/lib/status";
 import Link from "next/link";
 
 interface SeasonSelectorProps {
@@ -12,14 +14,6 @@ interface SeasonSelectorProps {
   competitionId?: string;
   basePath?: string;
 }
-
-const statusStyles: Record<string, string> = {
-  active: "bg-live-tint text-live-500",
-  completed: "bg-brand-50 text-brand-700",
-  draft: "bg-surface-2 text-ink-3",
-  upcoming: "bg-gold-tint text-gold-700",
-  archived: "bg-muted/20 text-muted",
-};
 
 export function SeasonSelector({
   seasons,
@@ -68,13 +62,12 @@ export function SeasonSelector({
               >
                 <div className="flex items-center gap-2 min-w-0 flex-1">
                   <span className="truncate min-w-0">{s.name}</span>
-                  <span
-                    className={`text-xs font-medium px-2 py-0.5 rounded-full shrink-0 ml-2 ${
-                      statusStyles[s.status] || "bg-surface-2 text-ink-3"
-                    }`}
+                  <Badge
+                    variant={seasonStatusVariant(s.status)}
+                    className="ml-2 shrink-0"
                   >
-                    {s.status}
-                  </span>
+                    {statusLabel(s.status)}
+                  </Badge>
                 </div>
                 {s.is_current && (
                   <span className="flex items-center gap-1 text-xs font-medium text-brand shrink-0 ml-2">

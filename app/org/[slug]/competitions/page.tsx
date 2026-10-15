@@ -10,19 +10,14 @@ import { useState } from "react";
 import { PageSkeleton } from "@/components/shared/skeleton";
 import { useConfirm } from "@/components/shared/confirm-dialog";
 import { useToast } from "@/components/ui/toast";
+import { Badge } from "@/components/ui/badge";
+import { competitionStatusVariant, statusLabel } from "@/lib/status";
 import { useAppStore } from "@/lib/store";
 
 const typeConfig: Record<string, { label: string; icon: React.ReactNode }> = {
   league: { label: "League", icon: <Trophy size={16} /> },
   cup: { label: "Cup", icon: <Swords size={16} /> },
   friendly: { label: "Friendly", icon: <Users size={16} /> },
-};
-
-const statusColors: Record<string, string> = {
-  draft: "bg-surface-2 text-ink-3",
-  active: "bg-live-tint text-live-500",
-  completed: "bg-brand-50 text-brand-700",
-  archived: "bg-muted/20 text-muted",
 };
 
 export default function CompetitionsPage() {
@@ -124,11 +119,9 @@ export default function CompetitionsPage() {
                         {cfg.icon}
                         <span className="text-xs uppercase tracking-wider">{cfg.label}</span>
                       </div>
-                      <span
-                        className={`text-xs font-medium px-2 py-0.5 rounded-full ${statusColors[comp.status] ?? statusColors.draft}`}
-                      >
-                        {comp.status}
-                      </span>
+                      <Badge variant={competitionStatusVariant(comp.status)}>
+                        {statusLabel(comp.status)}
+                      </Badge>
                     </div>
                     <h3 className="font-semibold text-base mb-1">{comp.name}</h3>
                     {(() => {

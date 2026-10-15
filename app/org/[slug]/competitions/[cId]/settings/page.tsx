@@ -30,6 +30,8 @@ import {
   ChevronRight,
 } from "lucide-react";
 import { useToast } from "@/components/ui/toast";
+import { Badge } from "@/components/ui/badge";
+import { seasonStatusVariant, statusLabel } from "@/lib/status";
 import { useConfirm } from "@/components/shared/confirm-dialog";
 import { useSeasonHasFixtures } from "@/lib/hooks/use-competition-stats";
 import type { Season, Team } from "@/lib/types";
@@ -51,14 +53,6 @@ const statusOptions: { value: string; label: string }[] = [
   { value: "completed", label: "Completed" },
   { value: "archived", label: "Archived" },
 ];
-
-const seasonStatusColors: Record<string, string> = {
-  draft: "bg-surface-2 text-ink-3",
-  upcoming: "bg-surface-2 text-ink-3",
-  active: "bg-live-tint text-live-500",
-  completed: "bg-brand-50 text-brand-700",
-  archived: "bg-muted/20 text-muted",
-};
 
 export default function CompetitionSettingsPage() {
   const params = useParams();
@@ -811,13 +805,12 @@ export default function CompetitionSettingsPage() {
                 className="flex flex-wrap items-center justify-between gap-x-3 gap-y-2 p-3 rounded-lg bg-surface-2"
               >
                 <div className="flex items-center gap-3 min-w-0">
-                  <span
-                    className={`text-xs font-medium px-2 py-0.5 rounded-full shrink-0 ${
-                      seasonStatusColors[season.status] || seasonStatusColors.upcoming
-                    }`}
+                  <Badge
+                    variant={seasonStatusVariant(season.status)}
+                    className="shrink-0"
                   >
-                    {season.status}
-                  </span>
+                    {statusLabel(season.status)}
+                  </Badge>
                   <div className="min-w-0">
                     <p className="text-sm font-medium truncate">
                       {season.name}

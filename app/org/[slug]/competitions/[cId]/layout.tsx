@@ -6,6 +6,8 @@ import Link from "next/link";
 import { Calendar, Trophy, Settings, Activity, ListOrdered, Users, Shield, LayoutDashboard } from "lucide-react";
 import { PageSkeleton } from "@/components/shared/skeleton";
 import { SeasonSelector } from "@/components/competitions/season-selector";
+import { Badge } from "@/components/ui/badge";
+import { competitionStatusVariant, statusLabel } from "@/lib/status";
 import { useEffect } from "react";
 import { useAppStore } from "@/lib/store";
 import { useCompetitionOverviewStats } from "@/lib/hooks/use-competition-stats";
@@ -16,13 +18,6 @@ const typeLabels: Record<string, string> = {
   league: "League",
   cup: "Cup",
   friendly: "Friendly",
-};
-
-const statusColors: Record<string, string> = {
-  draft: "bg-surface-2 text-ink-3",
-  active: "bg-live-tint text-live-500",
-  completed: "bg-brand-50 text-brand-700",
-  archived: "bg-muted/20 text-muted",
 };
 
 const tabs = [
@@ -147,13 +142,9 @@ export default function CompetitionLayout({ children }: { children: React.ReactN
             <span className="uppercase tracking-wider text-xs">
               {typeLabels[currentCompetition.type] ?? "Competition"}
             </span>
-            <span
-              className={`text-xs font-medium px-2 py-0.5 rounded-full ${
-                statusColors[currentCompetition.status] ?? statusColors.draft
-              }`}
-            >
-              {currentCompetition.status}
-            </span>
+            <Badge variant={competitionStatusVariant(currentCompetition.status)}>
+              {statusLabel(currentCompetition.status)}
+            </Badge>
             {currentSeason && (
               <span className="text-xs font-medium px-2 py-0.5 rounded-full bg-brand-50 text-brand-700">
                 Current Season

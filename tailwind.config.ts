@@ -38,6 +38,21 @@ const config: Config = {
           500: "#B67D16",
           tint: "rgb(var(--warn-tint-rgb) / <alpha-value>)",
         },
+        upcoming: {
+          DEFAULT: "#1D4ED8",
+          500: "var(--upcoming-500)",
+          tint: "rgb(var(--upcoming-tint-rgb) / <alpha-value>)",
+        },
+        finished: {
+          DEFAULT: "#3F4A41",
+          500: "var(--finished-500)",
+          tint: "rgb(var(--finished-tint-rgb) / <alpha-value>)",
+        },
+        cancelled: {
+          DEFAULT: "#6B4A46",
+          500: "var(--cancelled-500)",
+          tint: "rgb(var(--cancelled-tint-rgb) / <alpha-value>)",
+        },
         accent: "#d99a21",
         surface: {
           DEFAULT: "rgb(var(--surface) / <alpha-value>)",
@@ -60,6 +75,12 @@ const config: Config = {
         sm: "var(--shadow-sm)",
         md: "var(--shadow-md)",
         lg: "var(--shadow-lg)",
+      },
+      fontSize: {
+        title: ["19px", { lineHeight: "1.3", letterSpacing: "-0.01em" }],
+        section: ["15px", { lineHeight: "1.4" }],
+        body: ["14px", { lineHeight: "1.5" }],
+        caption: ["12px", { lineHeight: "1.4" }],
       },
       fontFamily: {
         sans: [
