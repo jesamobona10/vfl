@@ -5,6 +5,8 @@ import { useAppStore } from "@/lib/store";
 import { Check } from "lucide-react";
 import { TimeInput } from "../shared/time-input";
 import { DataTable, DataField, type DataTableColumn } from "@/components/shared/data-table";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import type { Match } from "@/lib/types";
 
 type TeamLike = { name?: string; logo_url?: string | null } | undefined | null;
@@ -86,23 +88,25 @@ export function BulkScoreEntry() {
         className: "text-center",
         render: (match) => (
           <div className="flex items-center justify-center gap-1">
-            <input
+            <Input
+              containerClassName="w-auto"
               type="number"
               min={0}
               max={99}
               value={match.homeScore ?? ""}
               onChange={(e) => handleScoreChange(match.id, "homeScore", e.target.value)}
-              className="input w-12 text-center text-base font-bold py-1"
+              className="w-12 text-center text-base font-bold py-1"
               aria-label={`${getTeam(match.homeId)?.name || "Home"} goals`}
             />
             <span className="text-muted font-bold">-</span>
-            <input
+            <Input
+              containerClassName="w-auto"
               type="number"
               min={0}
               max={99}
               value={match.awayScore ?? ""}
               onChange={(e) => handleScoreChange(match.id, "awayScore", e.target.value)}
-              className="input w-12 text-center text-base font-bold py-1"
+              className="w-12 text-center text-base font-bold py-1"
               aria-label={`${getTeam(match.awayId)?.name || "Away"} goals`}
             />
           </div>
@@ -120,11 +124,11 @@ export function BulkScoreEntry() {
         width: "7rem",
         className: "text-center",
         render: (match) => (
-          <input
+          <Input
             type="date"
             value={match.date || ""}
             onChange={(e) => handleDateChange(match.id, e.target.value)}
-            className="input text-xs py-1 w-full text-center"
+            className="text-xs py-1 text-center"
             aria-label={`Match date for ${getTeam(match.homeId)?.name || "home"} vs ${getTeam(match.awayId)?.name || "away"}`}
           />
         ),
@@ -177,14 +181,15 @@ export function BulkScoreEntry() {
                   </span>
                 )}
               </h3>
-              <button
+              <Button
+                size="sm"
+                variant={isSaved ? "ghost" : "primary"}
                 onClick={() => saveRound(round.round)}
                 disabled={isSaved}
-                className={`btn-sm flex items-center gap-1.5 ${isSaved ? "text-muted" : "btn-primary"}`}
               >
                 <Check size={14} />
                 {isSaved ? "Saved" : "Save Round"}
-              </button>
+              </Button>
             </div>
             <DataTable
               rows={round.matches}
@@ -203,7 +208,8 @@ export function BulkScoreEntry() {
                     <div className="flex items-end gap-3 flex-wrap">
                       <DataField label="Score" className="flex-1 min-w-[140px]">
                         <div className="flex items-center gap-1">
-                          <input
+                          <Input
+                            containerClassName="flex-1 min-w-0"
                             type="number"
                             min={0}
                             max={99}
@@ -211,11 +217,12 @@ export function BulkScoreEntry() {
                             onChange={(e) =>
                               handleScoreChange(match.id, "homeScore", e.target.value)
                             }
-                            className="input w-full text-center text-base font-bold py-1.5"
+                            className="text-center text-base font-bold py-1.5"
                             aria-label={`${home?.name || "Home"} goals`}
                           />
                           <span className="text-muted font-bold">-</span>
-                          <input
+                          <Input
+                            containerClassName="flex-1 min-w-0"
                             type="number"
                             min={0}
                             max={99}
@@ -223,7 +230,7 @@ export function BulkScoreEntry() {
                             onChange={(e) =>
                               handleScoreChange(match.id, "awayScore", e.target.value)
                             }
-                            className="input w-full text-center text-base font-bold py-1.5"
+                            className="text-center text-base font-bold py-1.5"
                             aria-label={`${away?.name || "Away"} goals`}
                           />
                         </div>
@@ -242,11 +249,11 @@ export function BulkScoreEntry() {
                     </div>
                     <div className="flex items-end gap-3 flex-wrap">
                       <DataField label="Date" className="flex-1 min-w-[140px]">
-                        <input
+                        <Input
                           type="date"
                           value={match.date || ""}
                           onChange={(e) => handleDateChange(match.id, e.target.value)}
-                          className="input text-xs py-1.5"
+                          className="text-xs py-1.5"
                           aria-label={`Match date for ${home?.name || "home"} vs ${away?.name || "away"}`}
                         />
                       </DataField>

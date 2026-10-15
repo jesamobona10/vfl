@@ -4,11 +4,14 @@ import { useState } from "react";
 import type { Match, MatchEvent, Player } from "@/lib/types";
 import { useAppStore } from "@/lib/store";
 import { Modal } from "@/components/ui/modal";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Select } from "@/components/ui/select";
+import { Textarea } from "@/components/ui/textarea";
 import {
   Sparkles,
   AlertTriangle,
   CheckCircle2,
-  Loader2,
   ShieldQuestion,
   UserX,
 } from "lucide-react";
@@ -212,68 +215,56 @@ export function MatchReportModal({
         <>
           {step === "input" && (
             <>
-              <button onClick={onClose} className="btn-ghost text-sm">
+              <Button variant="ghost" className="text-sm" onClick={onClose}>
                 Cancel
-              </button>
-              <button
+              </Button>
+              <Button
+                className="text-sm"
                 onClick={handleAnalyze}
+                loading={analyzing}
+                leftIcon={analyzing ? undefined : <Sparkles size={14} />}
                 disabled={analyzing || !report.trim()}
-                className="btn-primary text-sm flex items-center gap-1.5"
               >
-                {analyzing ? (
-                  <>
-                    <Loader2 size={14} className="animate-spin" /> Analyzing…
-                  </>
-                ) : (
-                  <>
-                    <Sparkles size={14} /> Analyze Report
-                  </>
-                )}
-              </button>
+                {analyzing ? "Analyzing…" : "Analyze Report"}
+              </Button>
             </>
           )}
 
           {step === "review" && analysis && (
             <>
-              <button onClick={onClose} className="btn-ghost text-sm">
+              <Button variant="ghost" className="text-sm" onClick={onClose}>
                 Discard
-              </button>
+              </Button>
               <div className="flex items-center gap-2">
                 {requiresAction && (
                   <span className="text-xs text-warn-500 flex items-center gap-1">
                     <AlertTriangle size={13} /> Resolve issues before confirming
                   </span>
                 )}
-                <button
+                <Button
+                  className="text-sm"
                   onClick={handleConfirm}
+                  loading={confirming}
+                  leftIcon={confirming ? undefined : <CheckCircle2 size={14} />}
                   disabled={confirming || requiresAction}
-                  className="btn-primary text-sm flex items-center gap-1.5"
                 >
-                  {confirming ? (
-                    <>
-                      <Loader2 size={14} className="animate-spin" /> Saving…
-                    </>
-                  ) : (
-                    <>
-                      <CheckCircle2 size={14} /> Confirm Events
-                    </>
-                  )}
-                </button>
+                  {confirming ? "Saving…" : "Confirm Events"}
+                </Button>
               </div>
             </>
           )}
 
           {step === "done" && (
-            <button onClick={onClose} className="btn-primary text-sm ml-auto">
+            <Button className="text-sm ml-auto" onClick={onClose}>
               Done
-            </button>
+            </Button>
           )}
         </>
       }
     >
           {step === "input" && (
             <>
-              <textarea
+              <Textarea
                 value={report}
                 onChange={(e) => setReport(e.target.value)}
                 rows={8}
@@ -282,7 +273,7 @@ export function MatchReportModal({
                 placeholder={
                   'Paste or type the match report here.\n\nExample:\n"Veritas FC opened strongly. Daniel Musa scored in the 17th minute after a pass from David John. Samuel Peter equalised shortly before halftime from a free kick."'
                 }
-                className="input w-full resize-y text-sm min-h-40"
+                className="resize-y text-sm min-h-40"
               />
               <p className="text-xs text-muted text-right">
                 {report.length.toLocaleString()} / 4,000
@@ -357,9 +348,10 @@ export function MatchReportModal({
                           >
                             {meta.abbr}
                           </span>
-                          <select
+                          <Select
                             value={ev.type}
                             aria-label={`Event ${i + 1} type`}
+                            containerClassName="flex-1 min-w-[120px]"
                             onChange={(e) => {
                               const type = e.target.value;
                               updateEvent(i, {
@@ -368,26 +360,27 @@ export function MatchReportModal({
                                 assistStatus: "NONE",
                               });
                             }}
-                            className="input text-xs w-auto flex-1 min-w-[120px] font-semibold uppercase"
+                            className="text-xs w-auto font-semibold uppercase"
                           >
                             {EVENT_TYPES.map((t) => (
                               <option key={t} value={t}>
                                 {EVENT_META[t].label}
                               </option>
                             ))}
-                          </select>
+                          </Select>
                           <span className="text-xs text-muted">at</span>
-                          <input
+                          <Input
                             type="number"
                             min={0}
                             max={130}
                             value={ev.minute ?? ""}
+                            containerClassName="w-auto"
                             onChange={(e) =>
                               updateEvent(i, {
                                 minute: e.target.value ? Number(e.target.value) : null,
                               })
                             }
-                            className="input text-xs w-16 text-center"
+                            className="text-xs w-16 text-center"
                             placeholder="?"
                             aria-label={`Event ${i + 1} minute`}
                           />
@@ -408,7 +401,7 @@ export function MatchReportModal({
                             <label className="text-xs uppercase tracking-wide text-muted font-semibold">
                               Player {statusBadge}
                             </label>
-                            <select
+                            <Select
                               value={ev.playerId ?? ""}
                               aria-label={`Event ${i + 1} player`}
                               onChange={(e) => {
@@ -421,7 +414,7 @@ export function MatchReportModal({
                                   teamId: player?.teamId || null,
                                 });
                               }}
-                              className="input text-sm mt-1"
+                              className="text-sm mt-1"
                             >
                               <option value="">— select player —</option>
                               <optgroup label={homeTeamName}>
@@ -444,7 +437,7 @@ export function MatchReportModal({
                                     </option>
                                   ))}
                               </optgroup>
-                            </select>
+                            </Select>
                           </div>
 
                           {(ev.type === "GOAL" || ev.type === "PENALTY_GOAL") && (
@@ -452,7 +445,7 @@ export function MatchReportModal({
                               <label className="text-xs uppercase tracking-wide text-muted font-semibold">
                                 Assist
                               </label>
-                              <select
+                              <Select
                                 value={ev.assistPlayerId ?? ""}
                                 aria-label={`Event ${i + 1} assist player`}
                                 onChange={(e) =>
@@ -461,7 +454,7 @@ export function MatchReportModal({
                                     assistStatus: e.target.value ? "CLEAR" : "NONE",
                                   })
                                 }
-                                className="input text-sm mt-1"
+                                className="text-sm mt-1"
                               >
                                 <option value="">No assist</option>
                                 {eligiblePlayers
@@ -471,7 +464,7 @@ export function MatchReportModal({
                                       {p.name}
                                     </option>
                                   ))}
-                              </select>
+                              </Select>
                             </div>
                           )}
 

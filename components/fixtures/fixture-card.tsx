@@ -5,6 +5,7 @@ import type { Match, Team } from "@/lib/types";
 import { useAppStore } from "@/lib/store";
 import { useQueryClient } from "@tanstack/react-query";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import { matchStatusVariant, statusLabel } from "@/lib/status";
 import { MatchReportModal } from "./match-report-modal";
 import { LiveBadgeWithLink } from "@/components/live/live-badge";
@@ -282,12 +283,14 @@ export function FixtureCard({
 
         {editable && (
           <div className="pt-2 border-t border-line" onClick={(e) => e.stopPropagation()}>
-            <button
+            <Button
+              size="sm"
+              variant="ghost"
               onClick={() => setShowReport(true)}
-              className="btn-sm w-full flex items-center justify-center gap-1.5 text-brand border border-brand/25 hover:bg-brand/5"
+              className="w-full gap-1.5 text-brand border border-brand/25 hover:bg-brand/5"
             >
               <Sparkles size={13} /> AI Report
-            </button>
+            </Button>
           </div>
         )}
       </article>

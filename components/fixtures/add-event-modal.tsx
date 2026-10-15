@@ -7,6 +7,8 @@ import { CheckCircle } from "lucide-react";
 import { useQueryClient } from "@tanstack/react-query";
 import { Modal } from "@/components/ui/modal";
 import { useToast } from "@/components/ui/toast";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 
 const EVENT_CATEGORIES = [
   {
@@ -251,13 +253,13 @@ export function AddEventModal({
       footer={
         match.status !== "completed" ? (
           <div className="flex justify-center">
-            <button
+            <Button
+              className="text-sm py-1.5 px-4"
               onClick={handleMarkComplete}
-              className="btn-primary text-sm py-1.5 px-4 flex items-center gap-1.5"
             >
               <CheckCircle size={14} />
               MARK COMPLETED
-            </button>
+            </Button>
           </div>
         ) : undefined
       }
@@ -325,12 +327,11 @@ export function AddEventModal({
 
         <label className="block">
           <span className="mb-1.5 block text-xs font-semibold uppercase tracking-wider text-muted">Player</span>
-          <input
+          <Input
             type="search"
             value={playerSearch}
             onChange={(event) => setPlayerSearch(event.target.value)}
             placeholder="Search name or shirt number"
-            className="input w-full"
           />
         </label>
 

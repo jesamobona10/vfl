@@ -6,6 +6,9 @@ import { useAppStore } from "@/lib/store";
 import { useResolvedTeams } from "@/lib/hooks/use-resolved-teams";
 import { Plus, X, AlertCircle, CheckCircle } from "lucide-react";
 import { TimeInput } from "../shared/time-input";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Select } from "@/components/ui/select";
 
 interface FixtureCreatorProps {
   /**
@@ -142,45 +145,44 @@ export function FixtureCreator({
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 mb-4">
             <div>
               <label htmlFor="fc-home" className="block text-sm font-medium mb-1">Home Team</label>
-              <select id="fc-home" value={homeId} onChange={(e) => setHomeId(e.target.value)} className="input">
+              <Select id="fc-home" value={homeId} onChange={(e) => setHomeId(e.target.value)}>
                 <option value="">Select home team</option>
                 {teams.map((t) => (
                   <option key={t.id} value={t.id}>
                     {t.name}
                   </option>
                 ))}
-              </select>
+              </Select>
             </div>
             <div>
               <label htmlFor="fc-away" className="block text-sm font-medium mb-1">Away Team</label>
-              <select id="fc-away" value={awayId} onChange={(e) => setAwayId(e.target.value)} className="input">
+              <Select id="fc-away" value={awayId} onChange={(e) => setAwayId(e.target.value)}>
                 <option value="">Select away team</option>
                 {teams.map((t) => (
                   <option key={t.id} value={t.id}>
                     {t.name}
                   </option>
                 ))}
-              </select>
+              </Select>
             </div>
             <div>
               <label htmlFor="fc-round" className="block text-sm font-medium mb-1">Round</label>
-              <select id="fc-round" value={round} onChange={(e) => setRound(e.target.value)} className="input">
+              <Select id="fc-round" value={round} onChange={(e) => setRound(e.target.value)}>
                 <option value="">Auto (next available)</option>
                 {fixtures.map((r) => (
                   <option key={r.round} value={r.round}>
                     Round {r.round}
                   </option>
                 ))}
-              </select>
+              </Select>
             </div>
             <div>
               <label htmlFor="fc-date" className="block text-sm font-medium mb-1">Date</label>
-              <input
+              <Input
                 id="fc-date"
                 type="date"
                 value={date}
                 onChange={(e) => setDate(e.target.value)}
-                className="input"
               />
             </div>
             <div>
@@ -189,12 +191,11 @@ export function FixtureCreator({
             </div>
             <div>
               <label htmlFor="fc-venue" className="block text-sm font-medium mb-1">Venue</label>
-              <input
+              <Input
                 id="fc-venue"
                 type="text"
                 value={venue}
                 onChange={(e) => setVenue(e.target.value)}
-                className="input"
                 placeholder="Main pitch"
               />
             </div>
@@ -213,14 +214,14 @@ export function FixtureCreator({
             </div>
           )}
 
-          <button onClick={handleSubmit} disabled={submitting} className="btn-primary">
-            {submitting ? (
-              <span className="block w-4 h-4 bg-surface-2 rounded animate-pulse" />
-            ) : (
-              <Plus size={16} />
-            )}
+          <Button
+            onClick={handleSubmit}
+            loading={submitting}
+            leftIcon={<Plus size={16} />}
+            disabled={submitting}
+          >
             {submitting ? "Adding..." : "Add Fixture"}
-          </button>
+          </Button>
         </div>
       )}
     </div>
