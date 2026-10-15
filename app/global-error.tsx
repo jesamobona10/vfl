@@ -1,5 +1,8 @@
 "use client";
 
+import { useEffect } from "react";
+import { captureError } from "@/lib/monitoring";
+
 export default function GlobalError({
   error,
   reset,
@@ -7,6 +10,11 @@ export default function GlobalError({
   error: Error & { digest?: string };
   reset: () => void;
 }) {
+  useEffect(() => {
+    console.error(error);
+    void captureError(error, { route: "global" });
+  }, [error]);
+
   return (
     <html lang="en">
       <body style={{ fontFamily: "system-ui, sans-serif", background: "#fafafa" }}>

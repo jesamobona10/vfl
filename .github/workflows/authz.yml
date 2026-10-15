@@ -1,0 +1,44 @@
+name: Authorization tests
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+
+concurrency:
+  group: authz-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  authz:
+    name: API authorization (real RLS)
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Install PostgreSQL client
+        run: sudo apt-get update && sudo apt-get install -y postgresql-client
+
+      - name: Start local Supabase and seed the database
+        run: npm run test:db:setup
+
+      - name: Run authorization tests
+        run: |
+          set -a
+          source .env.authz
+          set +a
+          npm run test:authz
+
+      - name: Stop local Supabase
+        if: always()
+        run: npx supabase stop --no-backup

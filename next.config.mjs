@@ -1,3 +1,7 @@
+import sentryNextConfig from "@sentry/nextjs/config";
+
+const { withSentryConfig } = sentryNextConfig;
+
 /** @type {import('next').NextConfig} */
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || "";
 const supabaseHostname = supabaseUrl ? new URL(supabaseUrl).hostname : "*.supabase.co";
@@ -44,4 +48,12 @@ const nextConfig = {
     ],
   },
 };
-export default nextConfig;
+export default withSentryConfig(nextConfig, {
+  // Error tracking is a no-op until a DSN is configured; silence all build noise.
+  silent: true,
+  // Proxy browser events through our own origin so the CSP connect-src stays tight.
+  tunnelRoute: "/monitoring",
+  disableLogger: true,
+  // No source-map upload unless an auth token is provided for the build.
+  sourcemaps: { disable: !process.env.SENTRY_AUTH_TOKEN },
+});

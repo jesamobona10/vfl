@@ -10,6 +10,7 @@
 
 import { NextResponse } from "next/server";
 import type { SupabaseClient } from "@supabase/supabase-js";
+import { captureError } from "@/lib/monitoring";
 
 type RateLimitEntry = {
   count: number;
@@ -298,6 +299,13 @@ export function logApiError(event: string, error: unknown, details: Record<strin
       ...details,
     })
   );
+
+  // Mirror unexpected server errors into error tracking (no-op without a DSN).
+  void captureError(error, {
+    route: event,
+    organizationId: (details.orgId ?? details.organization_id ?? null) as string | null,
+    role: (details.role ?? null) as string | null,
+  });
 }
 
 /** Safely parse the request body as a JSON object. Returns `{ data, error }`. */
