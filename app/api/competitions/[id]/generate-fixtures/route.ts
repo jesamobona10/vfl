@@ -14,7 +14,7 @@ import {
   writeAuditRecord,
 } from "@/lib/security";
 import { AUDIT_ACTIONS } from "@/lib/audit/actions";
-import { generateRoundRobinFixtures } from "@/lib/logic/round-robin";
+import { generateFriendlyFixtures, generateRoundRobinFixtures } from "@/lib/logic/round-robin";
 import { resolveCurrentOrgSeasonId } from "@/lib/season-org";
 import { requireSeasonEntitlementForCompetitionSeason } from "@/lib/entitlements";
 import type { Team, FixtureRound, Match } from "@/lib/types";
@@ -62,11 +62,21 @@ export async function POST(request: Request, props: { params: Promise<{ id: stri
     }
 
     let seasonId: string | null = null;
+    let gamesPerTeam = 1;
+    let friendlySeed = 1;
     try {
       const body = await request.json();
       seasonId = body.season_id || null;
+      if (competition.type === "friendly") {
+        if (typeof body.games_per_team === "number" && Number.isFinite(body.games_per_team)) {
+          gamesPerTeam = Math.floor(body.games_per_team);
+        }
+        if (typeof body.seed === "number" && Number.isFinite(body.seed)) {
+          friendlySeed = Math.floor(body.seed);
+        }
+      }
     } catch {
-      // body is optional, proceed without season_id
+      // body is optional, proceed without it
     }
 
     // Entitlement gate: creating fixtures needs an active season. When no
@@ -166,9 +176,19 @@ export async function POST(request: Request, props: { params: Promise<{ id: stri
       rating: st.team.rating ?? 6.0,
     }));
 
+    if (competition.type === "friendly") {
+      if (gamesPerTeam < 1) gamesPerTeam = 1;
+      if (gamesPerTeam > teams.length - 1) {
+        return json(
+          { error: `Each team can play at most ${teams.length - 1} games.` },
+          { status: 400 }
+        );
+      }
+    }
+
     const rounds =
       competition.type === "friendly"
-        ? generateRoundRobinFixtures(teams, []).slice(0, 1)
+        ? generateFriendlyFixtures(teams, { gamesPerTeam, seed: friendlySeed })
         : generateRoundRobinFixtures(teams, []);
 
     const fixtureInserts: any[] = [];

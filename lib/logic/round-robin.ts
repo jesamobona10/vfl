@@ -5,6 +5,122 @@ function getPairKey(m: { homeId: number; awayId: number }): string {
   return pairKey(m.homeId, m.awayId);
 }
 
+/** Deterministic PRNG so a given seed always produces the same schedule. */
+function mulberry32(seed: number) {
+  let a = seed >>> 0;
+  return function next() {
+    a = (a + 0x6d2b79f5) | 0;
+    let t = Math.imul(a ^ (a >>> 15), 1 | a);
+    t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+  };
+}
+
+function seededShuffle<T>(items: T[], seed: number): T[] {
+  const rand = mulberry32(seed);
+  const out = [...items];
+  for (let i = out.length - 1; i > 0; i--) {
+    const j = Math.floor(rand() * (i + 1));
+    [out[i], out[j]] = [out[j], out[i]];
+  }
+  return out;
+}
+
+/** Circle-method pairings for one full single round-robin, with rotating byes. */
+function buildRoundPairings(teamIds: number[]): { pairs: [number, number][]; byeId: number | null }[] {
+  const isOdd = teamIds.length % 2 === 1;
+  const circle: (number | null)[] = [...teamIds];
+  if (isOdd) circle.push(null);
+  const total = circle.length;
+
+  const rounds: { pairs: [number, number][]; byeId: number | null }[] = [];
+  for (let r = 0; r < total - 1; r++) {
+    const pairs: [number, number][] = [];
+    let byeId: number | null = null;
+    for (let i = 0; i < total / 2; i++) {
+      const left = circle[i];
+      const right = circle[total - 1 - i];
+      if (left === null || right === null) {
+        byeId = left !== null ? left : right;
+      } else {
+        pairs.push([left, right]);
+      }
+    }
+    rounds.push({ pairs, byeId });
+    const last = circle.pop()!;
+    circle.splice(1, 0, last);
+  }
+  return rounds;
+}
+
+export interface FriendlyOptions {
+  /** Games each team should play. Must be between 1 and teams − 1. */
+  gamesPerTeam: number;
+  /** Seed for the shuffle; the same seed yields the same schedule. */
+  seed?: number;
+  /** Optional category per team id; when set, only same-category pairs are kept. */
+  categories?: Record<number, string>;
+}
+
+/**
+ * Generate a friendly schedule: a seeded shuffle of the teams, then the first
+ * `gamesPerTeam` rounds of the standard circle method.
+ *
+ * With an even team count every team plays exactly `gamesPerTeam` games. With an
+ * odd count each round has a bye, so `gamesPerTeam` teams play one game fewer —
+ * the caller can add a manual fixture to balance.
+ */
+export function generateFriendlyFixtures(
+  teams: { id: number; name: string }[],
+  options: FriendlyOptions
+): FixtureRound[] {
+  if (!Array.isArray(teams) || teams.length < 2) {
+    throw new Error("At least 2 teams are required.");
+  }
+  const names = teams.map((team) => team.name.trim());
+  if (names.some((name) => !name)) {
+    throw new Error("Enter all team names before generating fixtures.");
+  }
+  if (new Set(names.map((name) => name.toLowerCase())).size !== names.length) {
+    throw new Error("Team names must be unique before generating fixtures.");
+  }
+
+  const { gamesPerTeam, seed = 1, categories } = options;
+  if (!Number.isInteger(gamesPerTeam) || gamesPerTeam < 1) {
+    throw new Error("Choose at least 1 game per team.");
+  }
+  if (gamesPerTeam > teams.length - 1) {
+    throw new Error(`Each team can play at most ${teams.length - 1} games.`);
+  }
+
+  const shuffledIds = seededShuffle(teams.map((t) => t.id), seed);
+  const rounds = buildRoundPairings(shuffledIds).slice(0, gamesPerTeam);
+
+  let matchId = 1;
+  return rounds.map((rp, i) => {
+    const pairs = categories
+      ? rp.pairs.filter(([h, a]) => categories[h] && categories[h] === categories[a])
+      : rp.pairs;
+    return {
+      round: i + 1,
+      byeId: rp.byeId,
+      matches: pairs.map(([homeId, awayId]) => ({
+        id: matchId++,
+        round: i + 1,
+        homeId,
+        awayId,
+        homeScore: null,
+        awayScore: null,
+        status: "scheduled" as const,
+        date: "",
+        time: "",
+        venue: "",
+        events: [],
+      })),
+    };
+  });
+}
+
 export function generateRoundRobinFixtures(
   teams: { id: number; name: string }[],
   existingFixtures?: FixtureRound[]

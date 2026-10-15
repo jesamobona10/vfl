@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { generateRoundRobinFixtures } from "@/lib/logic/round-robin";
+import { generateFriendlyFixtures, generateRoundRobinFixtures } from "@/lib/logic/round-robin";
 import { pairKey } from "@/lib/utils/helpers";
 import type { FixtureRound, Match } from "@/lib/types";
 
@@ -100,6 +100,119 @@ describe("generateRoundRobinFixtures — fresh generation", () => {
     expect(match.homeScore).toBeNull();
     expect(match.awayScore).toBeNull();
     expect(match.events).toEqual([]);
+  });
+});
+
+describe("generateFriendlyFixtures", () => {
+  it("throws when gamesPerTeam is below 1 or above teams − 1", () => {
+    expect(() => generateFriendlyFixtures(makeTeams(4), { gamesPerTeam: 0 })).toThrow(
+      "at least 1 game per team"
+    );
+    expect(() => generateFriendlyFixtures(makeTeams(4), { gamesPerTeam: 4 })).toThrow(
+      "at most 3 games"
+    );
+  });
+
+  it("throws for invalid team inputs like the round-robin generator", () => {
+    expect(() => generateFriendlyFixtures([], { gamesPerTeam: 1 })).toThrow(
+      "At least 2 teams are required."
+    );
+    expect(() =>
+      generateFriendlyFixtures(
+        [
+          { id: 1, name: "A" },
+          { id: 2, name: "B" },
+        ],
+        { gamesPerTeam: 1 }
+      )
+    ).not.toThrow();
+  });
+
+  it.each([4, 6, 8, 10])(
+    "even field of %i teams: every team plays exactly N games",
+    (n) => {
+      const fixtures = generateFriendlyFixtures(makeTeams(n), { gamesPerTeam: 3 });
+      expect(fixtures).toHaveLength(3);
+
+      const counts = new Map<number, number>();
+      const pairs = new Set<string>();
+      for (const m of allMatches(fixtures)) {
+        const key = pairKey(m.homeId, m.awayId);
+        expect(pairs.has(key)).toBe(false); // no repeat opponents
+        pairs.add(key);
+        counts.set(m.homeId, (counts.get(m.homeId) ?? 0) + 1);
+        counts.set(m.awayId, (counts.get(m.awayId) ?? 0) + 1);
+      }
+      expect(counts.size).toBe(n);
+      for (const team of makeTeams(n)) {
+        expect(counts.get(team.id)).toBe(3);
+      }
+      expect(pairs.size).toBe((n * 3) / 2);
+    }
+  );
+
+  it.each([5, 7, 9])(
+    "odd field of %i teams: N teams play one game fewer, no repeat opponents",
+    (n) => {
+      const fixtures = generateFriendlyFixtures(makeTeams(n), { gamesPerTeam: 3 });
+      expect(fixtures).toHaveLength(3);
+
+      const counts = new Map<number, number>();
+      const pairs = new Set<string>();
+      for (const m of allMatches(fixtures)) {
+        const key = pairKey(m.homeId, m.awayId);
+        expect(pairs.has(key)).toBe(false);
+        pairs.add(key);
+        counts.set(m.homeId, (counts.get(m.homeId) ?? 0) + 1);
+        counts.set(m.awayId, (counts.get(m.awayId) ?? 0) + 1);
+      }
+
+      const short = [...counts.values()].filter((c) => c === 2).length;
+      const full = [...counts.values()].filter((c) => c === 3).length;
+      expect(short).toBe(3); // one bye per round → N teams miss one game
+      expect(full).toBe(n - 3);
+    }
+  );
+
+  it("is reproducible for a given seed and varies across seeds", () => {
+    const teams = makeTeams(6);
+    const a = generateFriendlyFixtures(teams, { gamesPerTeam: 3, seed: 42 });
+    const b = generateFriendlyFixtures(teams, { gamesPerTeam: 3, seed: 42 });
+    const c = generateFriendlyFixtures(teams, { gamesPerTeam: 3, seed: 7 });
+
+    const shape = (f: FixtureRound[]) =>
+      f.map((r) => r.matches.map((m) => pairKey(m.homeId, m.awayId)).join("|")).join("/");
+
+    expect(shape(a)).toBe(shape(b));
+    expect(shape(a)).not.toBe(shape(c));
+  });
+
+  it("keeps only same-category pairs when categories are supplied", () => {
+    const teams = makeTeams(6);
+    const categories: Record<number, string> = {
+      1: "senior",
+      2: "senior",
+      3: "senior",
+      4: "junior",
+      5: "junior",
+      6: "junior",
+    };
+    const fixtures = generateFriendlyFixtures(teams, {
+      gamesPerTeam: 2,
+      seed: 1,
+      categories,
+    });
+    for (const m of allMatches(fixtures)) {
+      expect(categories[m.homeId]).toBe(categories[m.awayId]);
+    }
+  });
+
+  it("numbers rounds sequentially and starts ids at 1", () => {
+    const fixtures = generateFriendlyFixtures(makeTeams(4), { gamesPerTeam: 2, seed: 3 });
+    expect(fixtures.map((r) => r.round)).toEqual([1, 2]);
+    const ids = allMatches(fixtures).map((m) => m.id);
+    expect(new Set(ids).size).toBe(ids.length);
+    expect(Math.min(...ids)).toBe(1);
   });
 });
 

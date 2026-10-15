@@ -132,14 +132,19 @@ export function useGenerateFixtures() {
     mutationFn: ({
       competitionId,
       seasonId,
+      gamesPerTeam,
     }: {
       competitionId: string;
       seasonId?: string | null;
+      gamesPerTeam?: number;
     }) =>
       fetch(`/api/competitions/${competitionId}/generate-fixtures`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ season_id: seasonId || undefined }),
+        body: JSON.stringify({
+          season_id: seasonId || undefined,
+          games_per_team: gamesPerTeam,
+        }),
       }).then(async (res) => {
         if (!res.ok) {
           // Surface the route's reason (e.g. the 409 already-generated guard).

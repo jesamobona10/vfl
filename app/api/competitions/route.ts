@@ -119,6 +119,7 @@ export async function POST(request: Request) {
         type,
         created_by: authed.userId,
         settings: type === "league" ? { includeCup: true } : {},
+        counts_toward_stats: type !== "friendly",
       })
       .select()
       .single();

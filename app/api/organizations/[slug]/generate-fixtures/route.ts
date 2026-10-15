@@ -2,7 +2,7 @@ import { createClient } from "@/lib/supabase/server";
 import { createServiceRoleClient } from "@/lib/supabase/service-role";
 import { resolveCurrentOrgSeasonId } from "@/lib/season-org";
 import { requireSeasonEntitlementForCompetitionSeason } from "@/lib/entitlements";
-import { generateRoundRobinFixtures } from "@/lib/logic/round-robin";
+import { generateFriendlyFixtures, generateRoundRobinFixtures } from "@/lib/logic/round-robin";
 import type { Team } from "@/lib/types";
 import {
   getAuthContext,
@@ -162,7 +162,7 @@ export async function POST(request: Request, props: { params: Promise<{ slug: st
 
     const rounds =
       competition.type === "friendly"
-        ? generateRoundRobinFixtures(teams, []).slice(0, 1)
+        ? generateFriendlyFixtures(teams, { gamesPerTeam: 1, seed: 1 })
         : generateRoundRobinFixtures(teams, []);
 
     const fixtureInserts: any[] = [];

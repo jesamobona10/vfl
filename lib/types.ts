@@ -473,6 +473,8 @@ export interface Competition {
   status: CompetitionStatus;
   /** JSON settings blob. */
   settings: Record<string, unknown>;
+  /** Whether results count toward aggregate standings/statistics. */
+  counts_toward_stats?: boolean;
   /** Optional logo URL. */
   logo_url?: string;
   /** ID of the currently active season, if any. */

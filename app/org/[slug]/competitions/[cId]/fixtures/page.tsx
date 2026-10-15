@@ -9,6 +9,8 @@ import { FixtureList } from "@/components/fixtures/fixture-list";
 import { useCompetition, useGenerateFixtures, useSeasons } from "@/lib/hooks/use-competitions";
 import { useSeasonHasFixtures } from "@/lib/hooks/use-competition-stats";
 import { useToast } from "@/components/ui/toast";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 
 export default function CompFixturesPage() {
   const params = useParams();
@@ -21,9 +23,11 @@ export default function CompFixturesPage() {
   const { success: toastSuccess, error: toastError } = useToast();
 
   const [loading, setLoading] = useState(true);
+  const [gamesPerTeam, setGamesPerTeam] = useState(1);
   const requestId = useRef(0);
 
   const { data: competition } = useCompetition(cId);
+  const isFriendly = competition?.type === "friendly";
   const { data: seasons = [] } = useSeasons(competition?.id);
   const seasonId = useMemo(
     () => seasonIdParam || seasons.find((s) => s.is_current)?.id || seasons[0]?.id || null,
@@ -63,7 +67,11 @@ export default function CompFixturesPage() {
   const handleGenerateFixtures = async () => {
     if (!seasonId) return;
     try {
-      await generateFixtures.mutateAsync({ competitionId: cId, seasonId });
+      await generateFixtures.mutateAsync({
+        competitionId: cId,
+        seasonId,
+        gamesPerTeam: isFriendly ? gamesPerTeam : undefined,
+      });
       toastSuccess("Fixtures generated successfully!");
       await loadFixtures();
     } catch (err) {
@@ -82,23 +90,35 @@ export default function CompFixturesPage() {
           <p className="text-sm text-muted">Manage upcoming and scheduled matches</p>
         </div>
         {canEdit && (
-          <button
-            onClick={handleGenerateFixtures}
-            disabled={generateDisabled}
-            title={
-              hasFixtures
-                ? "Fixtures have already been generated for this season. Delete them first to regenerate."
-                : undefined
-            }
-            className="btn btn-secondary btn-sm"
-          >
-            {generateFixtures.isPending ? (
-              <span className="block w-3.5 h-3.5 bg-surface-2 rounded animate-pulse" />
-            ) : (
-              <Zap size={14} />
+          <div className="flex flex-wrap items-end gap-2">
+            {isFriendly && (
+              <Input
+                type="number"
+                min={1}
+                max={99}
+                label="Games per team"
+                value={gamesPerTeam}
+                onChange={(e) => setGamesPerTeam(Math.max(1, Number(e.target.value) || 1))}
+                disabled={generateDisabled || undefined}
+                containerClassName="w-32"
+              />
             )}
-            {hasFixtures ? "Fixtures Generated" : "Generate Fixtures"}
-          </button>
+            <Button
+              onClick={handleGenerateFixtures}
+              loading={generateFixtures.isPending}
+              disabled={generateDisabled}
+              title={
+                hasFixtures
+                  ? "Fixtures have already been generated for this season. Delete them first to regenerate."
+                  : undefined
+              }
+              variant="secondary"
+              size="sm"
+              leftIcon={<Zap size={14} />}
+            >
+              {hasFixtures ? "Fixtures Generated" : isFriendly ? "Generate Games" : "Generate Fixtures"}
+            </Button>
+          </div>
         )}
       </div>
 
@@ -106,7 +126,7 @@ export default function CompFixturesPage() {
         loading={loading}
         competitionId={cId}
         seasonId={seasonId}
-        showCreator={false}
+        showCreator={isFriendly}
         onFixtureCreated={loadFixtures}
       />
     </div>

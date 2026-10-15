@@ -20,6 +20,17 @@ export async function GET(_request: Request, props: { params: Promise<{ id: stri
     const memberError = requireOrgMember(auth, organizationId as string);
     if (memberError) return memberError;
 
+    // Friendly (and other non-counting) competitions have no standings.
+    const { data: competition } = await sb
+      .from("competitions")
+      .select("counts_toward_stats")
+      .eq("id", season.competition_id)
+      .maybeSingle();
+
+    if (competition?.counts_toward_stats === false) {
+      return json({ standings: [] });
+    }
+
     // Fetch teams for season
     const { data: seasonTeams } = await sb
       .from("season_teams")
