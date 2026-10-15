@@ -16,6 +16,7 @@ import {
 } from "@/lib/security";
 import { AUDIT_ACTIONS } from "@/lib/audit/actions";
 import { dispatchMatchEvent } from "@/lib/notifications/dispatch";
+import { requireSeasonEntitlementForCompetitionSeason } from "@/lib/entitlements";
 import { registeredPlayersStartError } from "@/lib/match-guard";
 
 export const dynamic = "force-dynamic";
@@ -129,6 +130,13 @@ export async function POST(request: Request, props: { params: Promise<{ id: stri
     const orgId = homeTeam.organization_id;
     const orgAdminError = requireOrgAdmin(auth, orgId);
     if (orgAdminError) return orgAdminError;
+
+    // Entitlement gate: starting a match is a write.
+    const entitlementError = await requireSeasonEntitlementForCompetitionSeason(
+      orgId,
+      fixture.season_id
+    );
+    if (entitlementError) return entitlementError;
 
     if (fixture.status === "completed") {
       return json({ error: "A completed match cannot be started." }, { status: 400 });

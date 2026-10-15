@@ -16,6 +16,7 @@ import {
 import { AUDIT_ACTIONS } from "@/lib/audit/actions";
 import { generateRoundRobinFixtures } from "@/lib/logic/round-robin";
 import { resolveCurrentOrgSeasonId } from "@/lib/season-org";
+import { requireSeasonEntitlementForCompetitionSeason } from "@/lib/entitlements";
 import type { Team, FixtureRound, Match } from "@/lib/types";
 
 export const dynamic = "force-dynamic";
@@ -67,6 +68,14 @@ export async function POST(request: Request, props: { params: Promise<{ id: stri
     } catch {
       // body is optional, proceed without season_id
     }
+
+    // Entitlement gate: creating fixtures needs an active season. When no
+    // season is chosen yet, fall back to the org-wide entitlement.
+    const entitlementError = await requireSeasonEntitlementForCompetitionSeason(
+      competition.organization_id,
+      seasonId
+    );
+    if (entitlementError) return entitlementError;
 
     // Resolve season: use explicit season_id, or find/create active season
     if (seasonId) {

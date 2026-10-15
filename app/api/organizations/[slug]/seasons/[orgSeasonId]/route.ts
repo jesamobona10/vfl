@@ -14,6 +14,7 @@ import {
   requireOrgAdmin,
   requireOrgMember,
 } from "@/lib/security";
+import { requireSeasonEntitlement } from "@/lib/entitlements";
 
 const ALLOWED_STATUSES = ["draft", "upcoming", "active", "completed", "archived"] as const;
 
@@ -97,6 +98,10 @@ export async function PUT(
     if (!existing) {
       return json({ error: "Season not found." }, { status: 404 });
     }
+
+    // Entitlement gate: editing a season (including activation) is a write.
+    const entitlementError = await requireSeasonEntitlement(org.id, params.orgSeasonId);
+    if (entitlementError) return entitlementError;
 
     const parsed = await parseJsonObject(request);
     if (parsed.error) return json({ error: parsed.error }, { status: 400 });
@@ -200,6 +205,10 @@ export async function DELETE(
     if (!existing) {
       return json({ error: "Season not found." }, { status: 404 });
     }
+
+    // Entitlement gate: deleting a season is a write.
+    const entitlementError = await requireSeasonEntitlement(org.id, params.orgSeasonId);
+    if (entitlementError) return entitlementError;
 
     const { error } = await sb.from("organization_seasons").delete().eq("id", params.orgSeasonId);
 

@@ -13,6 +13,7 @@ import {
   rateLimitResponse,
   requireOrgAdmin,
 } from "@/lib/security";
+import { requireSeasonEntitlementForCompetitionSeason } from "@/lib/entitlements";
 
 export const dynamic = "force-dynamic";
 
@@ -83,6 +84,14 @@ export async function POST(request: Request, props: { params: Promise<{ id: stri
     if (!sourceSeason) {
       return json({ error: "No source season to copy teams from." }, { status: 400 });
     }
+
+    // Entitlement gate: rolling over creates a new season (a write), keyed by
+    // the source season's org-season.
+    const entitlementError = await requireSeasonEntitlementForCompetitionSeason(
+      competition.organization_id,
+      sourceSeason.id
+    );
+    if (entitlementError) return entitlementError;
 
     const defaultName = `${new Date().getFullYear()} Season`;
     const seasonName = name || defaultName;

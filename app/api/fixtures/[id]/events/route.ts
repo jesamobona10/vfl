@@ -15,6 +15,7 @@ import {
   requireOrgAdmin,
 } from "@/lib/security";
 import { dispatchMatchEvent } from "@/lib/notifications/dispatch";
+import { requireSeasonEntitlementForCompetitionSeason } from "@/lib/entitlements";
 
 export const dynamic = "force-dynamic";
 
@@ -81,6 +82,10 @@ export async function POST(request: Request, props: { params: Promise<{ id: stri
     if (!isOrgAdmin && !isTeamOwner) {
       return json({ error: "Forbidden" }, { status: 403 });
     }
+
+    // Entitlement gate: logging live events is a write.
+    const entitlementError = await requireSeasonEntitlementForCompetitionSeason(homeOrgId, seasonId);
+    if (entitlementError) return entitlementError;
 
     const parsed = await parseJsonObject(request);
     if (parsed.error) return json({ error: parsed.error }, { status: 400 });

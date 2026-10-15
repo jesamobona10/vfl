@@ -1,6 +1,7 @@
 import { createClient } from "@/lib/supabase/server";
 import { createServiceRoleClient } from "@/lib/supabase/service-role";
 import { resolveCurrentOrgSeasonId } from "@/lib/season-org";
+import { requireSeasonEntitlementForCompetitionSeason } from "@/lib/entitlements";
 import { generateRoundRobinFixtures } from "@/lib/logic/round-robin";
 import type { Team } from "@/lib/types";
 import {
@@ -83,6 +84,11 @@ export async function POST(request: Request, props: { params: Promise<{ slug: st
     if (!competition) {
       return json({ error: "Competition not found for this organization." }, { status: 404 });
     }
+
+    // Entitlement gate: creating fixtures is a write. Falls back to the
+    // org-wide entitlement when no season is chosen yet.
+    const entitlementError = await requireSeasonEntitlementForCompetitionSeason(org.id, seasonId);
+    if (entitlementError) return entitlementError;
 
     // Resolve season: use explicit season_id, or find/create active season for this competition
     if (seasonId) {
