@@ -74,7 +74,7 @@ function ToastItem({ toast, onDismiss }: { toast: Toast; onDismiss: (id: number)
         type="button"
         onClick={() => onDismiss(toast.id)}
         aria-label="Dismiss notification"
-        className="-mr-1 -mt-1 rounded-md p-1 text-muted transition-colors hover:bg-muted/10 hover:text-text"
+        className="-mr-1 -mt-1 rounded-lg p-1 text-muted transition-colors hover:bg-muted/10 hover:text-text"
       >
         <svg width="12" height="12" viewBox="0 0 12 12" fill="none" aria-hidden="true">
           <path d="M2 2l8 8M10 2l-8 8" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" />

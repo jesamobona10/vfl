@@ -443,7 +443,7 @@ export function LineupBuilder() {
               {slots.map((slot) => {
                 const player = availablePlayers.find((item) => item.id === slot.playerId);
                 return (
-                  <li key={slot.slotId} className="rounded-md bg-surface px-3 py-2 shadow-sm">
+                  <li key={slot.slotId} className="rounded-lg bg-surface px-3 py-2 shadow-sm">
                     <span className="font-semibold">{slot.label}</span>:{" "}
                     {player ? `${player.name} #${player.number}` : "Unassigned"}
                   </li>
