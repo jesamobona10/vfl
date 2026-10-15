@@ -7,6 +7,9 @@ import { allMatches } from "@/lib/logic/standings";
 import { fixtureIssue } from "@/lib/logic/validation";
 import { matchMeta } from "@/lib/utils/helpers";
 import { AddEventModal } from "@/components/fixtures/add-event-modal";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Select } from "@/components/ui/select";
 import { ChevronDown, ChevronRight, AlertCircle, Clock3, Plus } from "lucide-react";
 import { TimeInput } from "../shared/time-input";
 
@@ -134,24 +137,28 @@ export function MatchEditor() {
                   </div>
 
                   <div className="flex items-center gap-2 sm:gap-4 shrink-0">
-                    <input
+                    <Input
+                      containerClassName="w-auto"
                       type="number"
                       min={0}
                       max={99}
                       value={match.homeScore ?? ""}
                       onChange={(e) => handleFieldChange(match.id, "homeScore", e.target.value)}
                       onClick={(e) => e.stopPropagation()}
-                      className="input w-12 sm:w-16 text-xl sm:text-2xl font-bold text-center py-1"
+                      className="w-12 sm:w-16 text-xl sm:text-2xl font-bold text-center py-1"
+                      aria-label="Home score"
                     />
                     <span className="text-xl sm:text-2xl font-bold text-muted">-</span>
-                    <input
+                    <Input
+                      containerClassName="w-auto"
                       type="number"
                       min={0}
                       max={99}
                       value={match.awayScore ?? ""}
                       onChange={(e) => handleFieldChange(match.id, "awayScore", e.target.value)}
                       onClick={(e) => e.stopPropagation()}
-                      className="input w-12 sm:w-16 text-xl sm:text-2xl font-bold text-center py-1"
+                      className="w-12 sm:w-16 text-xl sm:text-2xl font-bold text-center py-1"
+                      aria-label="Away score"
                     />
                   </div>
 
@@ -212,54 +219,66 @@ export function MatchEditor() {
               <div className="border-t border-line px-5 py-4 space-y-4">
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
                   <div>
-                    <label className="block text-xs text-muted mb-1">Home Team</label>
-                    <select
+                    <label htmlFor="me-home-team" className="block text-xs text-muted mb-1">
+                      Home Team
+                    </label>
+                    <Select
+                      id="me-home-team"
                       value={match.homeId}
                       onChange={(e) => handleTeamChange(match.id, "homeId", e.target.value)}
                       disabled={locked}
-                      className="input text-sm py-1.5"
+                      className="text-sm py-1.5"
                     >
                       {teams.map((t) => (
                         <option key={t.id} value={t.id}>
                           {t.name}
                         </option>
                       ))}
-                    </select>
+                    </Select>
                   </div>
                   <div>
-                    <label className="block text-xs text-muted mb-1">Away Team</label>
-                    <select
+                    <label htmlFor="me-away-team" className="block text-xs text-muted mb-1">
+                      Away Team
+                    </label>
+                    <Select
+                      id="me-away-team"
                       value={match.awayId}
                       onChange={(e) => handleTeamChange(match.id, "awayId", e.target.value)}
                       disabled={locked}
-                      className="input text-sm py-1.5"
+                      className="text-sm py-1.5"
                     >
                       {teams.map((t) => (
                         <option key={t.id} value={t.id}>
                           {t.name}
                         </option>
                       ))}
-                    </select>
+                    </Select>
                   </div>
                   <div>
-                    <label className="block text-xs text-muted mb-1">Status</label>
-                    <select
+                    <label htmlFor="me-status" className="block text-xs text-muted mb-1">
+                      Status
+                    </label>
+                    <Select
+                      id="me-status"
                       value={match.status}
                       onChange={(e) => handleFieldChange(match.id, "status", e.target.value)}
-                      className="input text-sm py-1.5"
+                      className="text-sm py-1.5"
                     >
                       <option value="scheduled">Scheduled</option>
                       <option value="in-progress">In Progress</option>
                       <option value="completed">Completed</option>
-                    </select>
+                    </Select>
                   </div>
                   <div>
-                    <label className="block text-xs text-muted mb-1">Date</label>
-                    <input
+                    <label htmlFor="me-date" className="block text-xs text-muted mb-1">
+                      Date
+                    </label>
+                    <Input
+                      id="me-date"
                       type="date"
                       value={match.date || ""}
                       onChange={(e) => handleFieldChange(match.id, "date", e.target.value)}
-                      className="input text-sm py-1.5"
+                      className="text-sm py-1.5"
                     />
                   </div>
                   <div>
@@ -270,12 +289,15 @@ export function MatchEditor() {
                     />
                   </div>
                   <div>
-                    <label className="block text-xs text-muted mb-1">Venue</label>
-                    <input
+                    <label htmlFor="me-venue" className="block text-xs text-muted mb-1">
+                      Venue
+                    </label>
+                    <Input
+                      id="me-venue"
                       type="text"
                       value={match.venue || ""}
                       onChange={(e) => handleFieldChange(match.id, "venue", e.target.value)}
-                      className="input text-sm py-1.5"
+                      className="text-sm py-1.5"
                       placeholder="Main pitch"
                     />
                   </div>
@@ -288,13 +310,14 @@ export function MatchEditor() {
                     <h4 className="text-sm font-semibold text-muted uppercase tracking-wider">
                       Match Events
                     </h4>
-                    <button
+                    <Button
+                      variant="secondary"
+                      className="text-xs py-1 px-3"
                       onClick={() => setEventMatchId(match.id)}
-                      className="btn-secondary text-xs py-1 px-3 flex items-center gap-1"
                     >
                       <Plus size={12} />
                       Add Event
-                    </button>
+                    </Button>
                   </div>
 
                   {(match.events || []).length > 0 && (

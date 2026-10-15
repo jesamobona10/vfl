@@ -6,6 +6,9 @@ import { SkeletonTable } from "@/components/shared/skeleton";
 import { ErrorBanner } from "@/components/shared/error-banner";
 import { useToast } from "@/components/ui/toast";
 import { useConfirm } from "@/components/shared/confirm-dialog";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Select } from "@/components/ui/select";
 
 interface TeamRow {
   id: number;
@@ -138,22 +141,24 @@ export function AdminTeamManager() {
       {confirmDialog}
       <div className="flex items-center justify-between">
         <h3 className="text-lg font-bold">Teams</h3>
-        <button
+        <Button
+          className="text-sm"
           onClick={() => {
             resetForm();
             setShowForm(true);
           }}
-          className="btn-primary text-sm"
         >
           <Plus size={14} /> Add Team
-        </button>
+        </Button>
       </div>
 
       <div className="flex flex-wrap items-center gap-2">
-        <select
+        <Select
           value={filterOrg}
           onChange={(e) => setFilterOrg(e.target.value)}
-          className="input text-sm w-auto max-w-full min-w-0 flex-1 sm:flex-none"
+          containerClassName="max-w-full min-w-0 flex-1 sm:flex-none"
+          className="text-sm"
+          aria-label="Filter by organization"
         >
           <option value="">All Organizations</option>
           {orgs.map((o) => (
@@ -161,7 +166,7 @@ export function AdminTeamManager() {
               {o.name}
             </option>
           ))}
-        </select>
+        </Select>
         <span className="text-xs text-muted">{teams.length} team(s)</span>
       </div>
 
@@ -173,17 +178,19 @@ export function AdminTeamManager() {
             {editingTeam ? "Edit" : "Add"} Team
           </h4>
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-            <input
+            <Input
               value={formName}
               onChange={(e) => setFormName(e.target.value)}
-              className="input text-sm"
+              className="text-sm"
               placeholder="Team name"
+              aria-label="Team name"
               required
             />
-            <select
+            <Select
               value={formOrgId}
               onChange={(e) => setFormOrgId(e.target.value)}
-              className="input text-sm"
+              className="text-sm"
+              aria-label="Organization"
               required
             >
               <option value="">Organization...</option>
@@ -192,34 +199,32 @@ export function AdminTeamManager() {
                   {o.name}
                 </option>
               ))}
-            </select>
-            <input
+            </Select>
+            <Input
               type="number"
               step="0.1"
               min={0}
               max={10}
               value={formRating}
               onChange={(e) => setFormRating(e.target.value)}
-              className="input text-sm"
+              className="text-sm"
               placeholder="Rating"
+              aria-label="Rating"
             />
           </div>
           <div className="flex gap-2">
-            <button
+            <Button
               type="submit"
+              loading={submitting}
+              leftIcon={<Check size={14} />}
               disabled={submitting || !formName || !formOrgId}
-              className="btn-primary text-sm"
+              className="text-sm"
             >
-              {submitting ? (
-                <span className="block w-4 h-4 bg-surface-2 rounded animate-pulse" />
-              ) : (
-                <Check size={14} />
-              )}
               {editingTeam ? "Update" : "Create"}
-            </button>
-            <button type="button" onClick={resetForm} className="btn-ghost text-sm">
+            </Button>
+            <Button type="button" variant="ghost" className="text-sm" onClick={resetForm}>
               Cancel
-            </button>
+            </Button>
           </div>
         </form>
       )}
@@ -246,12 +251,18 @@ export function AdminTeamManager() {
               </span>
               <span className="text-xs text-muted whitespace-nowrap">★ {team.rating}</span>
               <span className="text-xs text-muted whitespace-nowrap">{team.playerCount} players</span>
-              <button onClick={() => openEdit(team)} className="btn-ghost text-xs">
-                <Edit2 size={12} />
-              </button>
-              <button onClick={() => handleDelete(team)} className="btn-ghost text-xs text-danger">
-                <Trash2 size={12} />
-              </button>
+              <Button
+                variant="ghost"
+                className="text-xs"
+                onClick={() => openEdit(team)}
+                leftIcon={<Edit2 size={12} />}
+              />
+              <Button
+                variant="ghost"
+                className="text-xs text-danger"
+                onClick={() => handleDelete(team)}
+                leftIcon={<Trash2 size={12} />}
+              />
             </div>
           ))}
         </div>

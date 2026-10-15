@@ -3,6 +3,8 @@
 import { useState, useEffect, useCallback } from "react";
 import { Shield, AlertCircle, ChevronLeft, ChevronRight, X } from "lucide-react";
 import { SkeletonList } from "@/components/shared/skeleton";
+import { Button } from "@/components/ui/button";
+import { Select } from "@/components/ui/select";
 import { AUDIT_ACTIONS } from "@/lib/audit/actions";
 import { titleCase } from "@/lib/utils/helpers";
 
@@ -246,17 +248,19 @@ export function AuditViewer() {
       </div>
 
       <div className="flex flex-wrap items-center gap-2">
-        <select
+        <Select
           value={actionFilter}
           onChange={(e) => setActionFilter(e.target.value)}
-          className="input text-sm w-auto max-w-full min-w-0 flex-1 sm:flex-none"
+          containerClassName="max-w-full min-w-0 flex-1 sm:flex-none"
+          className="text-sm"
+          aria-label="Filter by action"
         >
           {ACTION_FILTERS.map((o) => (
             <option key={o.value} value={o.value}>
               {o.label}
             </option>
           ))}
-        </select>
+        </Select>
         <span className="text-xs text-muted">{total.toLocaleString()} event(s)</span>
       </div>
 
@@ -277,23 +281,25 @@ export function AuditViewer() {
 
           {pages > 1 && (
             <div className="flex items-center justify-between mt-4">
-              <button
+              <Button
+                variant="ghost"
+                className="text-sm"
                 onClick={() => setPage((p) => Math.max(1, p - 1))}
                 disabled={page <= 1}
-                className="btn-ghost text-sm"
               >
                 <ChevronLeft size={14} /> Prev
-              </button>
+              </Button>
               <span className="text-xs text-muted">
                 Page {page} of {pages}
               </span>
-              <button
+              <Button
+                variant="ghost"
+                className="text-sm"
                 onClick={() => setPage((p) => Math.min(pages, p + 1))}
                 disabled={page >= pages}
-                className="btn-ghost text-sm"
               >
                 Next <ChevronRight size={14} />
-              </button>
+              </Button>
             </div>
           )}
         </div>

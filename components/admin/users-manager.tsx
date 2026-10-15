@@ -5,6 +5,7 @@ import { Shield, AlertCircle, KeyRound, Users, Trash2 } from "lucide-react";
 import { SkeletonList } from "@/components/shared/skeleton";
 import { useConfirm } from "@/components/shared/confirm-dialog";
 import { useToast } from "@/components/ui/toast";
+import { Button } from "@/components/ui/button";
 
 export function UsersManager() {
   const [tab, setTab] = useState<"admins" | "teams" | "players">("admins");
@@ -137,18 +138,14 @@ function TeamAccountsList() {
             <span className="text-xs text-muted ml-auto whitespace-nowrap">
               {new Date(a.created_at).toLocaleDateString()}
             </span>
-            <button
+            <Button
+              variant="ghost"
               onClick={() => handleDelete(a)}
-              disabled={deletingId === a.id}
-              className="btn-ghost text-xs text-danger"
+              loading={deletingId === a.id}
+              className="text-xs text-danger"
               title="Delete account"
-            >
-              {deletingId === a.id ? (
-                <span className="block w-3 h-3 bg-surface-2 rounded animate-pulse" />
-              ) : (
-                <Trash2 size={13} />
-              )}
-            </button>
+              leftIcon={<Trash2 size={13} />}
+            />
           </div>
         ))
       )}

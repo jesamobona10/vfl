@@ -6,6 +6,9 @@ import { useResolvedTeams } from "@/lib/hooks/use-resolved-teams";
 import { Plus, Trash2 } from "lucide-react";
 import { GeneratePlayerCredentials } from "@/components/players/generate-player-credentials";
 import { useConfirm } from "@/components/shared/confirm-dialog";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Select } from "@/components/ui/select";
 import type { Player } from "@/lib/types";
 
 /**
@@ -107,10 +110,11 @@ export function AdminPlayerManager() {
       <div className="card p-4 space-y-3">
         <h4 className="text-sm font-semibold text-muted uppercase tracking-wider">Add Player</h4>
         <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-2">
-          <select
+          <Select
             value={newTeam}
             onChange={(e) => setNewTeam(e.target.value)}
-            className="input text-sm py-1.5"
+            className="text-sm py-1.5"
+            aria-label="Team"
           >
             <option value="">Team...</option>
             {teams.map((t) => (
@@ -118,48 +122,53 @@ export function AdminPlayerManager() {
                 {t.name}
               </option>
             ))}
-          </select>
-          <input
+          </Select>
+          <Input
             type="text"
             value={newName}
             onChange={(e) => setNewName(e.target.value)}
-            className="input text-sm py-1.5"
+            className="text-sm py-1.5"
             placeholder="Player name"
+            aria-label="Player name"
           />
-          <select
+          <Select
             value={newPosition}
             onChange={(e) => setNewPosition(e.target.value as Player["position"])}
-            className="input text-sm py-1.5"
+            className="text-sm py-1.5"
+            aria-label="Position"
           >
             <option value="GK">GK</option>
             <option value="DEF">DEF</option>
             <option value="MID">MID</option>
             <option value="ATT">ATT</option>
-          </select>
-          <input
+          </Select>
+          <Input
             type="number"
             min={1}
             max={99}
             value={newNumber}
             onChange={(e) => setNewNumber(e.target.value)}
-            className="input text-sm py-1.5"
+            className="text-sm py-1.5"
             placeholder="Number"
+            aria-label="Number"
           />
-          <button
+          <Button
+            className="text-sm py-1.5"
             onClick={handleAdd}
-            className="btn-primary text-sm py-1.5"
             disabled={!newName.trim() || !newTeam}
           >
             <Plus size={14} /> Add
-          </button>
+          </Button>
         </div>
       </div>
 
       <div className="flex items-center gap-2">
-        <select
+        <Select
           value={filterTeam}
           onChange={(e) => setFilterTeam(e.target.value)}
-          className="input w-auto text-sm py-1.5"
+          containerClassName="w-auto"
+          className="w-auto text-sm py-1.5"
+          aria-label="Filter by team"
         >
           <option value="">All Teams</option>
           {teams.map((t) => (
@@ -167,11 +176,15 @@ export function AdminPlayerManager() {
               {t.name}
             </option>
           ))}
-        </select>
+        </Select>
         {filterTeam && (
-          <button onClick={handleDeleteAllFromTeam} className="btn-ghost text-xs text-danger">
+          <Button
+            variant="ghost"
+            className="text-xs text-danger"
+            onClick={handleDeleteAllFromTeam}
+          >
             <Trash2 size={14} /> Delete All from Team
-          </button>
+          </Button>
         )}
         <span className="text-xs text-muted ml-auto">{filtered.length} player(s)</span>
       </div>

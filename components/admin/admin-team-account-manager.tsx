@@ -5,6 +5,9 @@ import { useAppStore } from "@/lib/store";
 import { useResolvedTeams } from "@/lib/hooks/use-resolved-teams";
 import { AlertCircle, Shield, Eye, EyeOff, KeyRound } from "lucide-react";
 import { PageSkeleton } from "@/components/shared/skeleton";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Select } from "@/components/ui/select";
 
 interface TeamAccountRow {
   id: string;
@@ -141,19 +144,21 @@ export function AdminTeamAccountManager() {
             <p className="text-xs text-muted">
               This is the only time the password is shown. Share these credentials with the team.
             </p>
-            <button onClick={() => setCreateResult(null)} className="btn-primary text-sm">
+            <Button className="text-sm" onClick={() => setCreateResult(null)}>
               Create Another
-            </button>
+            </Button>
           </div>
         ) : (
           <form onSubmit={handleCreate} className="space-y-4">
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div>
-                <label className="block text-sm font-medium mb-1">Team</label>
-                <select
+                <label htmlFor="team-account-team" className="block text-sm font-medium mb-1">
+                  Team
+                </label>
+                <Select
+                  id="team-account-team"
                   value={selectedTeam}
                   onChange={(e) => setSelectedTeam(e.target.value)}
-                  className="input"
                   required
                 >
                   <option value="">Select a team...</option>
@@ -167,16 +172,19 @@ export function AdminTeamAccountManager() {
                   {teams.every((t) => accounts.some((a) => a.team_id === t.id)) && (
                     <option disabled>All teams have accounts</option>
                   )}
-                </select>
+                </Select>
               </div>
               <div>
-                <label className="block text-sm font-medium mb-1">Password</label>
+                <label htmlFor="team-account-password" className="block text-sm font-medium mb-1">
+                  Password
+                </label>
                 <div className="relative">
-                  <input
+                  <Input
+                    id="team-account-password"
                     type={showPassword ? "text" : "password"}
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
-                    className="input w-full pr-10"
+                    className="pr-10"
                     placeholder="Min 12 characters"
                     minLength={12}
                     required
@@ -191,21 +199,14 @@ export function AdminTeamAccountManager() {
                 </div>
               </div>
             </div>
-            <button
+            <Button
               type="submit"
-              className="btn-primary"
+              loading={creating}
+              leftIcon={<KeyRound size={16} />}
               disabled={creating || !selectedTeam || !password}
             >
-              {creating ? (
-                <>
-                  <span className="block w-4 h-4 bg-surface-2 rounded animate-pulse" /> Creating...
-                </>
-              ) : (
-                <>
-                  <KeyRound size={16} /> Create Account
-                </>
-              )}
-            </button>
+              {creating ? "Creating..." : "Create Account"}
+            </Button>
           </form>
         )}
       </div>

@@ -17,6 +17,9 @@ import { SkeletonTable, SkeletonList } from "@/components/shared/skeleton";
 import { ErrorBanner } from "@/components/shared/error-banner";
 import { useToast } from "@/components/ui/toast";
 import { useConfirm } from "@/components/shared/confirm-dialog";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Select } from "@/components/ui/select";
 
 interface OrgRow {
   id: string;
@@ -270,15 +273,15 @@ export function OrgManager() {
       {confirmDialog}
       <div className="flex items-center justify-between">
         <h3 className="text-lg font-bold">Organizations</h3>
-        <button
+        <Button
+          className="text-sm"
           onClick={() => {
             resetForm();
             setShowForm(true);
           }}
-          className="btn-primary text-sm"
         >
           <Plus size={14} /> Create
-        </button>
+        </Button>
       </div>
 
       <ErrorBanner message={error} onDismiss={() => setError("")} />
@@ -289,27 +292,30 @@ export function OrgManager() {
             {editingOrg ? "Edit" : "Create"} Organization
           </h4>
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-            <input
+            <Input
               value={formName}
               onChange={(e) => setFormName(e.target.value)}
-              className="input text-sm"
+              className="text-sm"
               placeholder="Name"
+              aria-label="Name"
               required
             />
-            <select
+            <Select
               value={formType}
               onChange={(e) => setFormType(e.target.value)}
-              className="input text-sm"
+              className="text-sm"
+              aria-label="Type"
             >
               <option value="school">School</option>
               <option value="academy">Academy</option>
               <option value="club">Club</option>
-            </select>
-            <input
+            </Select>
+            <Input
               value={formSlug}
               onChange={(e) => setFormSlug(e.target.value.toLowerCase().replace(/[^a-z0-9-]/g, ""))}
-              className="input text-sm"
+              className="text-sm"
               placeholder="slug (e.g. my-school)"
+              aria-label="Slug"
               required
             />
           </div>
@@ -339,37 +345,30 @@ export function OrgManager() {
                 }}
                 className="hidden"
               />
-              <button
-                type="button"
+              <Button
+                variant="ghost"
+                className="text-xs"
                 onClick={() => logoInputRef.current?.click()}
-                disabled={logoUploading}
-                className="btn-ghost text-xs"
+                loading={logoUploading}
+                leftIcon={<Upload size={12} />}
               >
-                {logoUploading ? (
-                  <span className="block w-3 h-3 bg-surface-2 rounded animate-pulse" />
-                ) : (
-                  <Upload size={12} />
-                )}
                 {editingOrg.logo_url || editingLogoUrl ? "Change Logo" : "Upload Logo"}
-              </button>
+              </Button>
             </div>
           )}
           <div className="flex gap-2">
-            <button
+            <Button
               type="submit"
+              loading={submitting}
+              leftIcon={<Check size={14} />}
               disabled={submitting || !formName || !formSlug}
-              className="btn-primary text-sm"
+              className="text-sm"
             >
-              {submitting ? (
-                <span className="block w-4 h-4 bg-surface-2 rounded animate-pulse" />
-              ) : (
-                <Check size={14} />
-              )}
               {editingOrg ? "Update" : "Create"}
-            </button>
-            <button type="button" onClick={resetForm} className="btn-ghost text-sm">
+            </Button>
+            <Button type="button" variant="ghost" className="text-sm" onClick={resetForm}>
               Cancel
-            </button>
+            </Button>
           </div>
         </form>
       )}
@@ -399,23 +398,27 @@ export function OrgManager() {
                   </p>
                 </div>
                 <div className="flex items-center gap-1">
-                  <button
+                  <Button
+                    variant="ghost"
+                    className="text-xs"
                     onClick={() => toggleExpand(org.id)}
-                    className="btn-ghost text-xs"
                     title="Members"
-                  >
-                    <Users size={14} />
-                  </button>
-                  <button onClick={() => openEdit(org)} className="btn-ghost text-xs" title="Edit">
-                    <Edit2 size={14} />
-                  </button>
-                  <button
+                    leftIcon={<Users size={14} />}
+                  />
+                  <Button
+                    variant="ghost"
+                    className="text-xs"
+                    onClick={() => openEdit(org)}
+                    title="Edit"
+                    leftIcon={<Edit2 size={14} />}
+                  />
+                  <Button
+                    variant="ghost"
+                    className="text-xs text-danger"
                     onClick={() => handleDelete(org)}
-                    className="btn-ghost text-xs text-danger"
                     title="Delete"
-                  >
-                    <Trash2 size={14} />
-                  </button>
+                    leftIcon={<Trash2 size={14} />}
+                  />
                 </div>
               </div>
 
@@ -425,50 +428,52 @@ export function OrgManager() {
                     <h5 className="text-xs font-semibold text-muted uppercase">
                       Members ({members[org.id]?.length || 0})
                     </h5>
-                    <button
+                    <Button
+                      variant="ghost"
+                      className="text-xs"
                       onClick={() => setMemberFormOrgId(org.id)}
-                      className="btn-ghost text-xs"
                     >
                       <Plus size={12} /> Add
-                    </button>
+                    </Button>
                   </div>
 
                   {memberFormOrgId === org.id && (
                     <div className="flex flex-wrap items-center gap-2">
-                      <input
+                      <Input
                         value={memberUserId}
                         onChange={(e) => setMemberUserId(e.target.value)}
-                        className="input text-xs flex-1 min-w-[140px]"
+                        className="text-xs"
+                        containerClassName="flex-1 min-w-[140px]"
                         placeholder="User ID (UUID)"
+                        aria-label="User ID"
                       />
-                      <select
+                      <Select
                         value={memberRole}
                         onChange={(e) => setMemberRole(e.target.value)}
-                        className="input text-xs w-auto"
+                        className="text-xs w-auto"
+                        containerClassName="w-auto"
+                        aria-label="Role"
                       >
                         <option value="owner">Owner</option>
                         <option value="admin">Admin</option>
                         <option value="coach">Coach</option>
                         <option value="player">Player</option>
-                      </select>
-                      <button
+                      </Select>
+                      <Button
+                        className="text-xs"
                         onClick={() => handleAddMember(org.id)}
+                        loading={memberSubmitting}
+                        leftIcon={<Check size={12} />}
                         disabled={memberSubmitting || !memberUserId.trim()}
-                        className="btn-primary text-xs"
                       >
-                        {memberSubmitting ? (
-                          <span className="block w-3 h-3 bg-surface-2 rounded animate-pulse" />
-                        ) : (
-                          <Check size={12} />
-                        )}{" "}
                         Add
-                      </button>
-                      <button
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        className="text-xs"
                         onClick={() => setMemberFormOrgId(null)}
-                        className="btn-ghost text-xs"
-                      >
-                        <X size={12} />
-                      </button>
+                        leftIcon={<X size={12} />}
+                      />
                     </div>
                   )}
 
@@ -484,16 +489,18 @@ export function OrgManager() {
                           className="flex items-center gap-2 text-xs py-1.5 px-2 rounded-lg bg-surface-2"
                         >
                           <span className="font-mono flex-1 truncate">{m.user_id}</span>
-                          <select
+                          <Select
                             value={m.role}
                             onChange={(e) => handleChangeRole(org.id, m.user_id, e.target.value)}
-                            className="input text-xs w-auto py-0.5"
+                            className="text-xs w-auto py-0.5"
+                            containerClassName="w-auto"
+                            aria-label="Role"
                           >
                             <option value="owner">Owner</option>
                             <option value="admin">Admin</option>
                             <option value="coach">Coach</option>
                             <option value="player">Player</option>
-                          </select>
+                          </Select>
                           <button
                             onClick={() => handleRemoveMember(org.id, m.user_id)}
                             className="btn-icon text-danger"
