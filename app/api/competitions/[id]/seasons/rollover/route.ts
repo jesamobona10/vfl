@@ -1,5 +1,6 @@
 import { createClient } from "@/lib/supabase/server";
 import { createServiceRoleClient } from "@/lib/supabase/service-role";
+import { ensureCurrentOrgSeason } from "@/lib/season-org";
 import {
   asOptionalString,
   asString,
@@ -96,14 +97,13 @@ export async function POST(request: Request, props: { params: Promise<{ id: stri
     const defaultName = `${new Date().getFullYear()} Season`;
     const seasonName = name || defaultName;
 
-    // Link the new season to the org's current org-season (if any) so it
-    // appears under the org dashboard's season selector.
-    const { data: orgSeason } = await sb
-      .from("organization_seasons")
-      .select("id")
-      .eq("organization_id", competition.organization_id)
-      .eq("is_current", true)
-      .maybeSingle();
+    // Link the new season to the org's current org-season (creating one if the
+    // org has none) so it appears under the org dashboard's season selector.
+    const orgSeasonId = await ensureCurrentOrgSeason(
+      sb,
+      competition.organization_id,
+      seasonName
+    );
 
     const newSeason = await sb
       .from("seasons")
@@ -115,7 +115,7 @@ export async function POST(request: Request, props: { params: Promise<{ id: stri
         end_date: endDate || null,
         status: "draft",
         is_current: false,
-        organization_season_id: orgSeason?.id || null,
+        organization_season_id: orgSeasonId,
       })
       .select("id, name, short_name, status, is_current")
       .single();

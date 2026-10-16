@@ -1,6 +1,6 @@
 import { createClient } from "@/lib/supabase/server";
 import { createServiceRoleClient } from "@/lib/supabase/service-role";
-import { resolveCurrentOrgSeasonId } from "@/lib/season-org";
+import { ensureCurrentOrgSeason } from "@/lib/season-org";
 import {
   asOptionalString,
   asString,
@@ -135,7 +135,7 @@ export async function POST(request: Request) {
     // Create the first season if a name was provided (guide §21)
     let season: Record<string, unknown> | null = null;
     if (seasonName) {
-      const orgSeasonId = await resolveCurrentOrgSeasonId(sb, organization_id);
+      const orgSeasonId = await ensureCurrentOrgSeason(sb, organization_id, seasonName);
       const firstSeason = await sb
         .from("seasons")
         .insert({

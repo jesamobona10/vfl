@@ -1,6 +1,6 @@
 import { createClient } from "@/lib/supabase/server";
 import { createServiceRoleClient } from "@/lib/supabase/service-role";
-import { resolveCurrentOrgSeasonId } from "@/lib/season-org";
+import { ensureCurrentOrgSeason } from "@/lib/season-org";
 import { requireSeasonEntitlementForCompetitionSeason } from "@/lib/entitlements";
 import { generateFriendlyFixtures, generateRoundRobinFixtures } from "@/lib/logic/round-robin";
 import type { Team } from "@/lib/types";
@@ -121,7 +121,11 @@ export async function POST(request: Request, props: { params: Promise<{ slug: st
       } else {
         // Auto-create a season
         const year = new Date().getFullYear();
-        const orgSeasonId = await resolveCurrentOrgSeasonId(sb, org.id);
+        const orgSeasonId = await ensureCurrentOrgSeason(
+          sb,
+          org.id,
+          `${year}/${year + 1} Season`
+        );
         const { data: newSeason } = await sb
           .from("seasons")
           .insert({

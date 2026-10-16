@@ -67,6 +67,61 @@ export async function resolveCurrentOrgSeasonId(
 }
 
 /**
+ * Resolve the org's current org-season, creating or promoting one if needed.
+ *
+ * Competition seasons are invisible to season-scoped reads unless they carry
+ * `organization_season_id`. That value was historically left null whenever the
+ * org had no current org-season, which made the org dashboard report an empty
+ * season even though teams and fixtures existed. This helper guarantees a
+ * current org-season exists so new competition seasons are always linked.
+ *
+ * @param sb - Supabase client instance
+ * @param organizationId - UUID of the owning organization
+ * @param preferredName - Name to use when a default org-season must be created
+ * @returns The org-season id (never null unless the insert failed).
+ */
+export async function ensureCurrentOrgSeason(
+  sb: SupabaseClient,
+  organizationId: string,
+  preferredName?: string
+): Promise<string | null> {
+  const current = await resolveCurrentOrgSeasonId(sb, organizationId);
+  if (current) return current;
+
+  // No current org-season: promote the most recent existing one.
+  const { data: existing } = await sb
+    .from("organization_seasons")
+    .select("id")
+    .eq("organization_id", organizationId)
+    .order("created_at", { ascending: false })
+    .limit(1)
+    .maybeSingle();
+
+  if (existing?.id) {
+    await sb
+      .from("organization_seasons")
+      .update({ is_current: true })
+      .eq("id", existing.id);
+    return existing.id;
+  }
+
+  // None exist at all: create a default current org-season.
+  const name = preferredName?.trim() || `${new Date().getFullYear()} Season`;
+  const { data: created } = await sb
+    .from("organization_seasons")
+    .insert({
+      organization_id: organizationId,
+      name,
+      status: "active",
+      is_current: true,
+    })
+    .select("id")
+    .single();
+
+  return created?.id ?? null;
+}
+
+/**
  * Resolve an org season (`organization_seasons.id`) to the competition
  * `seasons` that belong to it. Optionally verify the org season is owned by a
  * specific organization (used to scope read-only queries by access).
