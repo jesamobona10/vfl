@@ -67,17 +67,27 @@ export async function resolveCurrentOrgSeasonId(
 }
 
 /**
- * Resolve the org's current org-season, creating or promoting one if needed.
+ * Resolve (creating if needed) the org-season a competition season should
+ * link to.
+ *
+ * When `preferredName` is given, the org-season with that exact name is used,
+ * creating it if it doesn't exist yet. This keeps every named season (e.g.
+ * "2025/2026", "2026/2027") a separately switchable row in the org season
+ * selector instead of collapsing all of them into one generic "current"
+ * season. A newly created named season is marked current only when the org
+ * has no current season yet (enforced one-current-per-org by a partial unique
+ * index).
+ *
+ * When no name is given, this resolves the org's *current* org-season,
+ * promoting the most recent one or creating a default — the behaviour the
+ * fixture-generation routes rely on.
  *
  * Competition seasons are invisible to season-scoped reads unless they carry
- * `organization_season_id`. That value was historically left null whenever the
- * org had no current org-season, which made the org dashboard report an empty
- * season even though teams and fixtures existed. This helper guarantees a
- * current org-season exists so new competition seasons are always linked.
+ * `organization_season_id`, so this helper guarantees a link always exists.
  *
  * @param sb - Supabase client instance
  * @param organizationId - UUID of the owning organization
- * @param preferredName - Name to use when a default org-season must be created
+ * @param preferredName - Season name to match (or use when creating)
  * @returns The org-season id (never null unless the insert failed).
  */
 export async function ensureCurrentOrgSeason(
@@ -85,6 +95,35 @@ export async function ensureCurrentOrgSeason(
   organizationId: string,
   preferredName?: string
 ): Promise<string | null> {
+  const wanted = preferredName?.trim() || null;
+
+  if (wanted) {
+    // Prefer an existing org-season with this exact name so each named season
+    // stays separately switchable.
+    const { data: named } = await sb
+      .from("organization_seasons")
+      .select("id")
+      .eq("organization_id", organizationId)
+      .eq("name", wanted)
+      .maybeSingle();
+    if (named?.id) return named.id;
+
+    // Not found: create it. It becomes current only if none is current yet.
+    const current = await resolveCurrentOrgSeasonId(sb, organizationId);
+    const { data: created } = await sb
+      .from("organization_seasons")
+      .insert({
+        organization_id: organizationId,
+        name: wanted,
+        status: current ? "upcoming" : "active",
+        is_current: !current,
+      })
+      .select("id")
+      .single();
+    return created?.id ?? null;
+  }
+
+  // No name given: resolve the org's current org-season.
   const current = await resolveCurrentOrgSeasonId(sb, organizationId);
   if (current) return current;
 
@@ -106,12 +145,11 @@ export async function ensureCurrentOrgSeason(
   }
 
   // None exist at all: create a default current org-season.
-  const name = preferredName?.trim() || `${new Date().getFullYear()} Season`;
   const { data: created } = await sb
     .from("organization_seasons")
     .insert({
       organization_id: organizationId,
-      name,
+      name: `${new Date().getFullYear()} Season`,
       status: "active",
       is_current: true,
     })
