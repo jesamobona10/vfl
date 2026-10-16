@@ -11,7 +11,8 @@ import { Sidebar, type SidebarItem } from "@/components/layout/sidebar";
 import { MobileNavDrawer } from "@/components/layout/mobile-nav-drawer";
 import { OrgSeasonProvider } from "@/components/competitions/org-season-provider";
 import { brandStyleVars } from "@/lib/branding";
-import { LayoutDashboard, Users, Shield, UserCog, Swords, Radio } from "lucide-react";
+import { LayoutDashboard, Users, Shield, UserCog, Swords, Radio, Goal } from "lucide-react";
+import { useLiveFixtures } from "@/lib/hooks/use-live-fixtures";
 
 const SearchModal = dynamic(() => import("@/components/search/search-modal").then(m => m.SearchModal), {
   ssr: false,
@@ -21,6 +22,7 @@ const SearchModal = dynamic(() => import("@/components/search/search-modal").the
 const tabs: SidebarItem[] = [
   { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
   { href: "/competitions", label: "Competitions", icon: Swords },
+  { href: "/match-logger", label: "Match Logger", icon: Goal },
   { href: "/players", label: "Players", icon: Users },
   { href: "/teams", label: "Teams", icon: Shield },
   { href: "/team-accounts", label: "Team Accounts", icon: UserCog },
@@ -39,12 +41,13 @@ const NAV_BY_ROLE: Record<string, string[]> = {
   org_admin: [
     "/dashboard",
     "/competitions",
+    "/match-logger",
     "/players",
     "/teams",
     "/team-accounts",
     "/public",
   ],
-  team_account: ["/dashboard", "/players", "/public"],
+  team_account: ["/dashboard", "/match-logger", "/players", "/public"],
   player: ["/dashboard", "/public"],
 };
 
@@ -68,11 +71,20 @@ export default function OrgLayout({ children }: { children: React.ReactNode }) {
 
   const role = currentTeamAccount != null ? "team_account" : (userProfile?.role ?? "org_admin");
   const allowed = NAV_BY_ROLE[role] ?? NAV_BY_ROLE.org_admin!;
+
+  // Live badge on the Match Logger tab. Only fetched for roles that can see
+  // the tab; react-query shares the cached result with the page and header.
+  const canSeeLogger = allowed.includes("/match-logger");
+  const { data: liveData } = useLiveFixtures(slug, { enabled: canSeeLogger });
+  const liveCount = liveData?.liveCount ?? 0;
+
   const items = tabs
     .filter((tab) => allowed.includes(tab.href))
     .map((tab) => ({
       ...tab,
       href: `/org/${slug}${tab.href}`,
+      badge:
+        tab.href === "/match-logger" && liveCount > 0 ? liveCount : undefined,
     }));
 
   const footer = currentOrg

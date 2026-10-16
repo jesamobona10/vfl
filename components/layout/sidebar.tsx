@@ -9,6 +9,35 @@ export interface SidebarItem {
   href: string;
   label: string;
   icon: LucideIcon;
+  /**
+   * Optional trailing indicator. `"live"` renders a pulsing dot; a number
+   * renders a count pill (hidden when 0).
+   */
+  badge?: "live" | number;
+}
+
+/** Shared trailing badge renderer for the desktop sidebar and mobile drawer. */
+export function SidebarItemBadge({ badge, active }: { badge: SidebarItem["badge"]; active: boolean }) {
+  if (badge === "live") {
+    return (
+      <span
+        aria-hidden="true"
+        className="ml-auto inline-block h-2 w-2 shrink-0 rounded-full bg-live-500 animate-pulse"
+      />
+    );
+  }
+  if (typeof badge === "number" && badge > 0) {
+    return (
+      <span
+        className={`ml-auto inline-flex min-w-[20px] items-center justify-center rounded-full px-1.5 py-0.5 text-[11px] font-semibold ${
+          active ? "bg-white/20 text-white" : "bg-live-tint text-live-500"
+        }`}
+      >
+        {badge > 99 ? "99+" : badge}
+      </span>
+    );
+  }
+  return null;
 }
 
 interface SidebarProps {
@@ -63,6 +92,7 @@ export function Sidebar({ items, footer }: SidebarProps) {
             >
               <Icon size={16} className="shrink-0" />
               {item.label}
+              <SidebarItemBadge badge={item.badge} active={active} />
             </Link>
           );
         })}

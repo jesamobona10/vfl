@@ -53,6 +53,7 @@ describe("coach nav audit", () => {
   it("keeps team accounts on the simplified organization navigation", () => {
     expect(nav.team_account).toEqual([
       "/dashboard",
+      "/match-logger",
       "/players",
       "/public",
     ]);
