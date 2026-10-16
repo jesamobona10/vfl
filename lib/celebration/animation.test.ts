@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import {
   buildConfetti,
   confettiAt,
+  createCelebrationRenderer,
   easeOutBack,
   easeOutCubic,
   mulberry32,
@@ -112,5 +113,61 @@ describe("easing", () => {
     expect(easeOutCubic(1)).toBe(1);
     expect(easeOutBack(0)).toBeCloseTo(0, 5);
     expect(easeOutBack(1)).toBeCloseTo(1, 5);
+  });
+});
+
+describe("createCelebrationRenderer", () => {
+  function stubCtx() {
+    const stops: string[] = [];
+    const fills: unknown[] = [];
+    const gradient = {
+      addColorStop: (_offset: number, color: string) => {
+        stops.push(color);
+      },
+    };
+    const ctx: Record<string, unknown> = {
+      createLinearGradient: () => gradient,
+      createRadialGradient: () => gradient,
+      fillRect: () => {},
+      save: () => {},
+      restore: () => {},
+      translate: () => {},
+      rotate: () => {},
+      scale: () => {},
+      beginPath: () => {},
+      arc: () => {},
+      fill: () => {},
+      moveTo: () => {},
+      lineTo: () => {},
+      closePath: () => {},
+      quadraticCurveTo: () => {},
+      stroke: () => {},
+      fillText: () => {},
+    };
+    Object.defineProperty(ctx, "fillStyle", {
+      set: (v) => fills.push(v),
+      get: () => "",
+    });
+    Object.defineProperty(ctx, "strokeStyle", {
+      set: () => {},
+      get: () => "",
+    });
+    return { ctx, stops, fills };
+  }
+
+  it("only emits valid CSS colors to the canvas", () => {
+    // Regression: bare "r,g,b" channel strings (no rgb() wrapper) made
+    // addColorStop/fillStyle throw and blanked the whole animation.
+    const { ctx, stops, fills } = stubCtx();
+    const render = createCelebrationRenderer(config);
+    render(ctx as unknown as CanvasRenderingContext2D, 2500);
+
+    const bareChannels = /^\s*\d+(\.\d+)?\s*,\s*\d+(\.\d+)?\s*,\s*\d+(\.\d+)?\s*$/;
+    const colorStrings = [...stops, ...fills].filter((c): c is string => typeof c === "string");
+    expect(colorStrings.length).toBeGreaterThan(0);
+    for (const color of colorStrings) {
+      expect(bareChannels.test(color)).toBe(false);
+      expect(color).toMatch(/^(rgb|rgba|#|hsl)/);
+    }
   });
 });

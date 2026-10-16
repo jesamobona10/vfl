@@ -186,8 +186,7 @@ export function createCelebrationRenderer(config: CelebrationConfig) {
 
     if (fadeIn > 0.1) {
       const g = ctx.createRadialGradient(cx, cy, 0, cx, cy, 280);
-      const r = centerRgb[0], gg = centerRgb[1], bb = centerRgb[2];
-      g.addColorStop(0, `rgba(${r},${gg},${bb},${0.12 * fadeIn})`);
+      g.addColorStop(0, rgbaColor(centerRgb, 0.12 * fadeIn));
       g.addColorStop(1, "rgba(0,0,0,0)");
       ctx.fillStyle = g;
       ctx.fillRect(0, 0, width, height);
@@ -224,7 +223,7 @@ export function createCelebrationRenderer(config: CelebrationConfig) {
     ctx.scale(introScale, introScale);
     // outer ring
     const ringGrad = ctx.createLinearGradient(0, -120, 0, 120);
-    ringGrad.addColorStop(0, centerRgb.map(v => v * 1.15).map(v => clamp(v,0,255)).join(","));
+    ringGrad.addColorStop(0, rgbColor(centerRgb, 1.15));
     ringGrad.addColorStop(1, theme.centerAccent);
     ctx.fillStyle = ringGrad;
     ctx.beginPath();
@@ -254,7 +253,7 @@ export function createCelebrationRenderer(config: CelebrationConfig) {
     ctx.quadraticCurveTo(22, 48, 0, 58);
     ctx.quadraticCurveTo(-22, 48, -38, -20);
     ctx.closePath();
-    ctx.fillStyle = centerRgb.map(v => clamp(v*0.9,0,255)).join(",");
+    ctx.fillStyle = rgbColor(centerRgb, 0.9);
     ctx.fill();
     // handles
     ctx.strokeStyle = theme.centerAccent;
@@ -310,4 +309,20 @@ function hexToRgb(hex: string): [number, number, number] {
     parseInt(h.slice(2,4), 16),
     parseInt(h.slice(4,6), 16),
   ];
+}
+
+/** Format an RGB tuple as a CSS `rgb(r, g, b)` string with integer channels. */
+function rgbColor(rgb: [number, number, number], scale = 1): string {
+  const r = clamp(Math.round(rgb[0] * scale), 0, 255);
+  const g = clamp(Math.round(rgb[1] * scale), 0, 255);
+  const b = clamp(Math.round(rgb[2] * scale), 0, 255);
+  return `rgb(${r}, ${g}, ${b})`;
+}
+
+/** Format an RGB tuple as a CSS `rgba(r, g, b, a)` string with integer channels. */
+function rgbaColor(rgb: [number, number, number], alpha: number, scale = 1): string {
+  const r = clamp(Math.round(rgb[0] * scale), 0, 255);
+  const g = clamp(Math.round(rgb[1] * scale), 0, 255);
+  const b = clamp(Math.round(rgb[2] * scale), 0, 255);
+  return `rgba(${r}, ${g}, ${b}, ${alpha})`;
 }

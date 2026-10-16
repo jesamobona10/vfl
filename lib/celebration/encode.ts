@@ -154,10 +154,14 @@ export async function encodeVideo(
     // progress is 0-1; map to overall 60% encoding phase
     onProgress?.(format, 0.6 + evt.progress * 0.4);
   });
+  // ffmpeg.wasm resolves these relative to its own module URL (import.meta.url),
+  // which a bundler may not populate with a usable origin. Passing fully
+  // absolute URLs sidesteps that resolution entirely.
+  const origin = window.location.origin;
   await ffmpeg.load({
-    classWorkerURL: "/ffmpeg-core/worker.js",
-    coreURL: "/ffmpeg-core/ffmpeg-core.js",
-    wasmURL: "/ffmpeg-core/ffmpeg-core.wasm",
+    classWorkerURL: `${origin}/ffmpeg-core/worker.js`,
+    coreURL: `${origin}/ffmpeg-core/ffmpeg-core.js`,
+    wasmURL: `${origin}/ffmpeg-core/ffmpeg-core.wasm`,
   });
   onProgress?.(format, 0.15);
   const canvas = createCanvas(width, height);
