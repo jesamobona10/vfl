@@ -3,7 +3,7 @@
 import { useCompetition, useSeasons } from "@/lib/hooks/use-competitions";
 import { useParams, usePathname, useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
-import { Calendar, Trophy, Settings, Activity, ListOrdered, Users, Shield, LayoutDashboard } from "lucide-react";
+import { Calendar, Trophy, Settings, ListOrdered, Users, Shield, LayoutDashboard } from "lucide-react";
 import { PageSkeleton } from "@/components/shared/skeleton";
 import { SeasonSelector } from "@/components/competitions/season-selector";
 import { Badge } from "@/components/ui/badge";
@@ -24,7 +24,6 @@ const tabs = [
   { href: "", label: "Overview", icon: LayoutDashboard },
   { href: "standings", label: "Standings", icon: Trophy, standingsOnly: true },
   { href: "fixtures", label: "Schedule", icon: Calendar },
-  { href: "live", label: "Live", icon: Activity },
   { href: "teams", label: "Teams", icon: Shield },
   { href: "players", label: "Players", icon: Users },
   { href: "results", label: "Final Match Results", icon: ListOrdered },
@@ -150,12 +149,6 @@ export default function CompetitionLayout({ children }: { children: React.ReactN
                 Current Season
               </span>
             )}
-            {stats.hasLiveMatches && (
-              <span className="flex items-center gap-1 text-xs font-medium text-live-500 animate-pulse">
-                <Activity size={10} />
-                Live
-              </span>
-            )}
           </div>
           <h1 className="text-2xl font-bold truncate">{currentCompetition.name}</h1>
           <div className="flex flex-wrap items-center gap-3">
@@ -190,15 +183,6 @@ export default function CompetitionLayout({ children }: { children: React.ReactN
               >
                 <Icon size={16} />
                 <span>{tab.label}</span>
-                {tab.href === "live" && stats.hasLiveMatches && (
-                  <>
-                    <span className="relative flex h-2 w-2" aria-hidden="true">
-                      <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-live-500 opacity-75" />
-                      <span className="relative inline-flex h-2 w-2 rounded-full bg-live-500" />
-                    </span>
-                    <span className="sr-only">— live matches in progress</span>
-                  </>
-                )}
               </Link>
             );
           })}

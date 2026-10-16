@@ -11,7 +11,6 @@ import { OrgSeasonSelector } from "@/components/competitions/org-season-selector
 const SECTION_LABELS: Record<string, string> = {
   standings: "Standings",
   fixtures: "Schedule",
-  live: "Live",
   teams: "Teams",
   players: "Players",
   results: "Final Match Results",

@@ -64,7 +64,7 @@ export function LiveBadgeWithLink({ match, settings }: LiveBadgeProps) {
 
   return (
     <a
-      href={`/live/${match.id}`}
+      href={`/public/live/${match.id}`}
       className={`inline-flex items-center gap-1.5 rounded-full border px-2 py-1 text-xs font-bold uppercase tracking-wide animate-pulse hover:opacity-80 transition-opacity ${active.ring}`}
     >
       <span className="relative flex h-2 w-2">
