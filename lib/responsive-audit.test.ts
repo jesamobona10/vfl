@@ -125,6 +125,24 @@ const ALLOWED_LINES: Array<[string, string, string]> = [
     "grid grid-cols-3 gap-2 sm:gap-4",
     "compact 3-up summary inside a modal: ~95px per tile, stacks would make the modal taller for no gain",
   ],
+  // The Match Logger is a deliberate phone-first keypad. Its 3-up grids are
+  // the design spec: on a 320px viewport each key is ~89px, above the 56px
+  // minimum touch target, so the columns must NOT stack below sm.
+  [
+    "components/match-logger/event-keypad.tsx",
+    "grid grid-cols-3 gap-2.5",
+    "match-logger keypad: 3-up discipline keys are the spec and stay >56px at 320px, so they must not stack",
+  ],
+  [
+    "components/match-logger/player-picker-sheet.tsx",
+    "grid grid-cols-3 gap-2 overflow-y-auto sm:grid-cols-4",
+    "match-logger player picker: 3-up number grid widens to 4 at sm; keys stay >56px at 320px",
+  ],
+  [
+    "app/org/[slug]/match-logger/[fixtureId]/page.tsx",
+    "grid grid-cols-3 gap-2",
+    "match-logger secondary-event picker: 3-up keys match the keypad and stay >56px at 320px",
+  ],
 ];
 
 /**

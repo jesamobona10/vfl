@@ -10,52 +10,7 @@ import { useToast } from "@/components/ui/toast";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { submitMatchEvent, finishMatch } from "@/lib/match-events";
-
-const EVENT_CATEGORIES = [
-  {
-    label: "Scoring",
-    types: [
-      { value: "goal", label: "Goal", abbr: "G" },
-      { value: "assist", label: "Assist", abbr: "A" },
-      { value: "own-goal", label: "Own Goal", abbr: "OG" },
-      { value: "penalty-save", label: "Penalty Save", abbr: "PS" },
-    ],
-  },
-  {
-    label: "Discipline",
-    types: [
-      { value: "yellow", label: "Yellow Card", abbr: "Y" },
-      { value: "red", label: "Red Card", abbr: "R" },
-    ],
-  },
-  {
-    label: "Goalkeeping",
-    types: [
-      { value: "save", label: "Save", abbr: "SV" },
-      { value: "clean-sheet", label: "Clean Sheet", abbr: "CS" },
-      { value: "goal-conceded", label: "Goal Conceded", abbr: "GC" },
-      { value: "bonus-5-saves", label: "5+ Saves", abbr: "5+S" },
-    ],
-  },
-  {
-    label: "Performance",
-    types: [
-      { value: "motm", label: "Man of the Match", abbr: "MOTM" },
-      { value: "match-win", label: "Match Win", abbr: "W" },
-      { value: "error", label: "Error Leading to Goal", abbr: "ERR" },
-      { value: "penalty-conceded", label: "Penalty Conceded", abbr: "PC" },
-    ],
-  },
-  {
-    label: "Defensive",
-    types: [
-      { value: "tackle", label: "Tackle", abbr: "T" },
-      { value: "interception", label: "Interception", abbr: "INT" },
-      { value: "block", label: "Block", abbr: "BLK" },
-      { value: "aerial", label: "Aerial Duel Won", abbr: "AD" },
-    ],
-  },
-];
+import { EVENT_CATEGORIES } from "@/lib/logic/events";
 
 const EVENT_COLOR: Record<string, string> = {
   goal: "bg-brand/20 text-brand",

@@ -2,7 +2,7 @@
 
 import { useState, Suspense } from "react";
 import dynamic from "next/dynamic";
-import { useParams } from "next/navigation";
+import { useParams, usePathname } from "next/navigation";
 import { useOrg } from "@/lib/hooks/use-org";
 import { useAppStore } from "@/lib/store";
 import { AppHeader } from "@/components/layout/app-header";
@@ -13,6 +13,7 @@ import { OrgSeasonProvider } from "@/components/competitions/org-season-provider
 import { brandStyleVars } from "@/lib/branding";
 import { LayoutDashboard, Users, Shield, UserCog, Swords, Radio, Goal } from "lucide-react";
 import { useLiveFixtures } from "@/lib/hooks/use-live-fixtures";
+import { cn } from "@/lib/utils";
 
 const SearchModal = dynamic(() => import("@/components/search/search-modal").then(m => m.SearchModal), {
   ssr: false,
@@ -53,12 +54,18 @@ const NAV_BY_ROLE: Record<string, string[]> = {
 
 export default function OrgLayout({ children }: { children: React.ReactNode }) {
   const params = useParams();
+  const pathname = usePathname();
   const slug = params.slug as string;
   const { data: currentOrg, isLoading } = useOrg(slug);
   const userProfile = useAppStore((s) => s.userProfile);
   const currentTeamAccount = useAppStore((s) => s.currentTeamAccount);
   const [isSearchOpen, setSearchOpen] = useState(false);
   const [isDrawerOpen, setDrawerOpen] = useState(false);
+
+  // Match Logger's detail route is phone-first and hides the shell chrome on
+  // small screens so the logger owns the whole viewport. The desktop shell
+  // stays intact and simply centres the logger column.
+  const isLoggerFocus = /^\/org\/[^/]+\/match-logger\/[^/]+\/?$/.test(pathname);
 
   const roleLabel =
     currentTeamAccount != null
@@ -125,12 +132,23 @@ export default function OrgLayout({ children }: { children: React.ReactNode }) {
         >
           <Sidebar items={items} footer={footer} />
           <div className="flex-1 min-w-0 flex flex-col">
-            <AppHeader
-              onOpenSearch={() => setSearchOpen(true)}
-              onOpenMenu={() => setDrawerOpen(true)}
-            />
-            <OrgContextBar />
-            <main className="flex-1 px-4 sm:px-6 py-6">{children}</main>
+            <div className={cn(isLoggerFocus && "hidden lg:block")}>
+              <AppHeader
+                onOpenSearch={() => setSearchOpen(true)}
+                onOpenMenu={() => setDrawerOpen(true)}
+              />
+            </div>
+            <div className={cn(isLoggerFocus && "hidden lg:block")}>
+              <OrgContextBar />
+            </div>
+            <main
+              className={cn(
+                "flex-1",
+                isLoggerFocus ? "px-0 py-0 lg:px-6 lg:py-6" : "px-4 sm:px-6 py-6"
+              )}
+            >
+              {children}
+            </main>
           </div>
           <MobileNavDrawer
             items={items}

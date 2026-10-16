@@ -70,10 +70,13 @@ export async function GET(_request: Request, props: { params: Promise<{ id: stri
     if (!hasAccess) return json({ error: "Forbidden" }, { status: 403 });
 
     const events: MatchEvent[] = (fixture.match_events || []).map((e: MatchEventRow) => ({
+      id: e.id,
       playerId: e.player_id,
       type: e.event_type,
       teamId: e.team_id ?? undefined,
       minute: e.minute ?? undefined,
+      clientEventId: e.client_event_id ?? null,
+      createdAt: e.created_at,
     }));
 
     const match: Match = {

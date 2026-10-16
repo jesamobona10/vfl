@@ -75,6 +75,8 @@ export interface TeamLineup {
 
 /** A single event that occurred during a match (goal, card, save, etc.). */
 export interface MatchEvent {
+  /** Server id of the event row, when it has been persisted. */
+  id?: number;
   /** ID of the player involved. */
   playerId: number;
   /** Event type (e.g. "goal", "yellow_card", "save", "own_goal"). */
@@ -83,6 +85,10 @@ export interface MatchEvent {
   minute?: number;
   /** ID of the team the player belongs to. */
   teamId?: number;
+  /** Client-generated id used for idempotent writes, when present. */
+  clientEventId?: string | null;
+  /** ISO timestamp when the event was created. */
+  createdAt?: string;
 }
 
 // ─── Match & Fixture Types ────────────────────────────────────────────────────
@@ -666,6 +672,7 @@ export interface MatchEventRow {
   event_type: string;
   team_id: number | null;
   minute: number | null;
+  client_event_id?: string | null;
   created_at: string;
 }
 

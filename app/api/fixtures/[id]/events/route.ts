@@ -16,8 +16,17 @@ import {
 } from "@/lib/security";
 import { dispatchMatchEvent } from "@/lib/notifications/dispatch";
 import { requireSeasonEntitlementForCompetitionSeason } from "@/lib/entitlements";
+import { ALL_EVENT_TYPES } from "@/lib/logic/events";
 
 export const dynamic = "force-dynamic";
+
+/** Validate a client-generated UUID (used for idempotent event logging). */
+function asUuid(value: unknown): string | null {
+  if (typeof value !== "string") return null;
+  return /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(value)
+    ? value
+    : null;
+}
 
 export async function POST(request: Request, props: { params: Promise<{ id: string }> }) {
   const params = await props.params;
@@ -94,18 +103,16 @@ export async function POST(request: Request, props: { params: Promise<{ id: stri
     const teamId = asInteger(parsed.data!.team_id ?? parsed.data!.teamId, 1);
     const eventType = asString(parsed.data!.type ?? parsed.data!.event_type, 30);
     const minute = asInteger(parsed.data!.minute, 1, 150);
+    const clientEventId = asUuid(
+      parsed.data!.client_event_id ?? parsed.data!.clientEventId
+    );
 
     if (!playerId) return json({ error: "Player ID is required." }, { status: 400 });
     if (!teamId) return json({ error: "Team ID is required." }, { status: 400 });
     if (!eventType) return json({ error: "Event type is required." }, { status: 400 });
 
-    const ALLOWED_EVENT_TYPES = [
-      "goal", "assist", "own-goal", "yellow", "red", "save", "penalty-save",
-      "clean-sheet", "motm", "error", "penalty-conceded", "tackle", "interception",
-      "block", "aerial", "goal-conceded", "match-win", "bonus-5-saves",
-    ];
-    if (!ALLOWED_EVENT_TYPES.includes(eventType)) {
-      return json({ error: `Invalid event type. Allowed: ${ALLOWED_EVENT_TYPES.join(", ")}` }, { status: 400 });
+    if (!ALL_EVENT_TYPES.includes(eventType)) {
+      return json({ error: `Invalid event type. Allowed: ${ALL_EVENT_TYPES.join(", ")}` }, { status: 400 });
     }
 
     if (teamId !== homeTeamId && teamId !== awayTeamId) {
@@ -124,6 +131,19 @@ export async function POST(request: Request, props: { params: Promise<{ id: stri
     }
 
     const sb = createServiceRoleClient();
+
+    // Idempotent replay: a repeated client_event_id (double tap, offline retry)
+    // returns the row that already exists instead of inserting a duplicate.
+    if (clientEventId) {
+      const { data: existing } = await sb
+        .from("match_events")
+        .select("*")
+        .eq("match_id", fixtureId)
+        .eq("client_event_id", clientEventId)
+        .maybeSingle();
+      if (existing) return json({ event: existing, replay: true });
+    }
+
     const { data, error } = await sb
       .from("match_events")
       .insert({
@@ -135,11 +155,23 @@ export async function POST(request: Request, props: { params: Promise<{ id: stri
         competition_id: competitionId,
         season_id: seasonId,
         organization_id: homeOrgId,
+        client_event_id: clientEventId,
       })
       .select()
       .single();
 
     if (error) {
+      // Unique violation on the client_event_id index: a concurrent request won
+      // the race — return its row so the caller still gets a success.
+      if (clientEventId && error.code === "23505") {
+        const { data: existing } = await sb
+          .from("match_events")
+          .select("*")
+          .eq("match_id", fixtureId)
+          .eq("client_event_id", clientEventId)
+          .maybeSingle();
+        if (existing) return json({ event: existing, replay: true });
+      }
       logApiError("event_create_failed", error, { userId: authed.userId, fixtureId });
       return json({ error: "Unable to save event." }, { status: 400 });
     }
