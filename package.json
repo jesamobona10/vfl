@@ -14,15 +14,21 @@
     "test:db:setup": "bash scripts/test-db-bootstrap.sh",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "postinstall": "node scripts/copy-ffmpeg-core.mjs",
+    "prebuild": "node scripts/copy-ffmpeg-core.mjs"
   },
   "dependencies": {
+    "@ffmpeg/core": "^0.12.10",
+    "@ffmpeg/ffmpeg": "^0.12.15",
+    "@ffmpeg/util": "^0.12.2",
     "@sentry/nextjs": "^11.7.0",
     "@supabase/ssr": "^0.10.3",
     "@tanstack/react-query": "^5.101.0",
     "@vercel/analytics": "^2.0.1",
     "clsx": "^2.1.0",
     "date-fns": "^4.4.0",
+    "gifenc": "^1.0.3",
     "html2canvas": "^1.4.1",
     "jspdf": "^4.2.1",
     "lucide-react": "^1.33.0",

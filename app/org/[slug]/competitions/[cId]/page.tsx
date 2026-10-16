@@ -3,13 +3,22 @@
 import { useMemo } from "react";
 import { useParams, useSearchParams } from "next/navigation";
 import Link from "next/link";
-import { Trophy, Calendar, Shield, BarChart3, TrendingUp, TrendingDown, Users, Activity } from "lucide-react";
-import { useCompetition, useSeasons, useSeasonTeams } from "@/lib/hooks/use-competitions";
+import { Trophy, Calendar, Shield, TrendingUp, TrendingDown, Users, BarChart3 } from "lucide-react";
+import {
+  useCompetition,
+  useSeasons,
+  useSeasonTeams,
+  useSeasonStandings,
+} from "@/lib/hooks/use-competitions";
 import { useCompetitionOverviewStats, usePreviousSeason } from "@/lib/hooks/use-competition-stats";
 import { StandingsTable } from "@/components/standings/standings-table";
 import { EmptyState } from "@/components/ui/empty-state";
 import { PageSkeleton } from "@/components/shared/skeleton";
 import { formatRelativeTime } from "@/lib/utils/helpers";
+import { useOrg } from "@/lib/hooks/use-org";
+import { useAppStore } from "@/lib/store";
+import { ChampionBanner } from "@/components/celebration/champion-banner";
+import { resolveChampion } from "@/lib/celebration/winner";
 
 export default function CompetitionOverviewPage() {
   const params = useParams();
@@ -19,6 +28,7 @@ export default function CompetitionOverviewPage() {
   const seasonId = searchParams.get("seasonId");
 
   const { data: competition, isLoading } = useCompetition(cId);
+  const { data: currentOrg } = useOrg(slug);
   const { data: seasons = [] } = useSeasons(competition?.id);
 
   const currentSeason = useMemo(
@@ -27,10 +37,46 @@ export default function CompetitionOverviewPage() {
   );
 
   const { data: seasonTeams = [] } = useSeasonTeams(currentSeason?.id);
+  const { data: standings = [] } = useSeasonStandings(currentSeason?.id);
+  const cupChampionId = useAppStore((s) => s.cup.champion);
 
   // Enhanced stats with real counts and trends
   const stats = useCompetitionOverviewStats(currentSeason?.id, competition?.id);
   const previousSeason = usePreviousSeason(competition?.id, currentSeason?.id);
+
+  const champion = useMemo(() => {
+    if (!competition) return null;
+    if (competition.type === "cup") {
+      return resolveChampion({
+        competitionName: competition.name,
+        seasonName: currentSeason?.name,
+        championTeamId: cupChampionId,
+        teams: seasonTeams.map((st) => ({
+          id: st.team_id,
+          name: st.display_name ?? st.team?.name ?? `Team ${st.team_id}`,
+          logo_url: st.logo_url ?? st.team?.logo_url ?? null,
+        })),
+      });
+    }
+    if (competition.type === "league") {
+      return resolveChampion({
+        competitionName: competition.name,
+        seasonName: currentSeason?.name,
+        standings,
+        fixturesCompleted: stats.fixtures.completed,
+        fixturesTotal: stats.fixtures.total,
+      });
+    }
+    return null;
+  }, [
+    competition,
+    currentSeason?.name,
+    cupChampionId,
+    seasonTeams,
+    standings,
+    stats.fixtures.completed,
+    stats.fixtures.total,
+  ]);
 
   if (isLoading || !competition) {
     return <PageSkeleton />;
@@ -39,7 +85,6 @@ export default function CompetitionOverviewPage() {
   const basePath = `/org/${slug}/competitions/${cId}`;
   const seasonQuery = currentSeason?.id ? `?seasonId=${currentSeason.id}` : "";
 
-  // Calculate trend indicators vs previous season
   // Calculate trend indicators vs previous season
   const getTrend = (current: number, previous: number | null | undefined): { direction: "up" | "down" | "neutral"; diff: number } | null => {
     const prev = previous ?? null;
@@ -69,8 +114,8 @@ const statsCards = [
       value: stats.fixtures.completed,
       secondary: `${stats.fixtures.total} total (${stats.fixtures.scheduled} upcoming)`,
       icon: Calendar,
-      iconColor: "text-live-500",
-      iconBg: "bg-live-tint",
+      iconColor: "text-brand",
+      iconBg: "bg-brand-50",
       href: `${basePath}/fixtures${seasonQuery}`,
       trend: fixtureTrend as { direction: "up" | "down" | "neutral"; diff: number } | null,
     },
@@ -85,14 +130,13 @@ const statsCards = [
       trend: playerTrend as { direction: "up" | "down" | "neutral"; diff: number } | null,
     },
     {
-      label: "Live",
-      value: stats.hasLiveMatches ? "Live" : "None",
-      secondary: stats.fixtures.liveCount > 0 ? `${stats.fixtures.liveCount} in progress` : `${stats.fixtures.inProgress} in progress`,
-      icon: Activity,
-      iconColor: stats.hasLiveMatches ? "text-live-500" : "text-muted",
-      iconBg: stats.hasLiveMatches ? "bg-live-tint" : "bg-surface-2",
-      href: `${basePath}/live${seasonQuery}`,
-      isLive: stats.hasLiveMatches,
+      label: "Completion",
+      value: `${stats.fixtures.total > 0 ? Math.round((stats.fixtures.completed / stats.fixtures.total) * 100) : 0}%`,
+      secondary: `${stats.fixtures.completed} of ${stats.fixtures.total} played`,
+      icon: BarChart3,
+      iconColor: "text-upcoming-500",
+      iconBg: "bg-upcoming-tint",
+      href: `${basePath}/results${seasonQuery}`,
       trend: null,
     },
   ];
@@ -119,7 +163,6 @@ const statsCards = [
                   <div className={`inline-flex items-center justify-center w-10 h-10 rounded-xl ${s.iconBg}`}>
                     <Icon size={18} className={s.iconColor} />
                   </div>
-                  {s.isLive && <span className="flex items-center gap-1 text-xs font-medium text-live-500 animate-pulse"><Activity size={10} /> Live</span>}
                 </div>
                 <p className="text-2xl font-bold">{s.value}</p>
                 <p className="text-sm text-muted">{s.label}</p>
@@ -161,12 +204,6 @@ const statsCards = [
                 <div className={`inline-flex items-center justify-center w-10 h-10 rounded-xl ${s.iconBg}`}>
                   <Icon size={18} className={s.iconColor} />
                 </div>
-                {s.isLive && (
-                  <span className="flex items-center gap-1 text-xs font-medium text-live-500 animate-pulse">
-                    <Activity size={10} />
-                    Live
-                  </span>
-                )}
               </div>
               <div className="flex items-baseline justify-between">
                 <div>
@@ -183,16 +220,12 @@ const statsCards = [
         })}
       </div>
 
+      {champion && <ChampionBanner champion={champion} accent={currentOrg?.brand_color ?? undefined} />}
+
       {/* Data Freshness Indicator */}
       {stats.lastUpdated && (
         <div className="flex items-center justify-between text-xs text-muted">
           <span>Data updated {formatRelativeTime(stats.lastUpdated)}</span>
-          {stats.hasLiveMatches && (
-            <span className="flex items-center gap-1 text-live-500 animate-pulse">
-              <Activity size={10} />
-              Live matches in progress
-            </span>
-          )}
         </div>
       )}
 

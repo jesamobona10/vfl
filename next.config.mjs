@@ -13,6 +13,10 @@ const CSP_DIRECTIVES = [
   `img-src 'self' blob: data: https://${supabaseHostname}`,
   `connect-src 'self' https://${supabaseHostname} wss://${supabaseHostname} https://vercel.live wss://ws-us3.pusher.com wss://*.pusher.com`,
   "font-src 'self'",
+  // ffmpeg.wasm spawns a module worker from our own origin (self); the blob:
+  // fallback covers browsers/paths that inline the worker.
+  "worker-src 'self' blob:",
+  "child-src 'self' blob:",
   "object-src 'none'",
   "base-uri 'self'",
   "form-action 'self'",

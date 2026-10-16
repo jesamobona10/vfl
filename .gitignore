@@ -13,3 +13,7 @@ agent-skills
 .vercel
 .env*
 !.env.example
+
+# ffmpeg.wasm core is copied from node_modules at install/build time (see
+# scripts/copy-ffmpeg-core.mjs); it is ~32MB and must not be committed.
+public/ffmpeg-core/
