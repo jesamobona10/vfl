@@ -1,10 +1,11 @@
 "use client";
 
 import { Minus, Plus } from "lucide-react";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import type { Player } from "@/lib/types";
 import { eventTypeLabel } from "@/lib/logic/events";
 import { cn } from "@/lib/utils";
+import { feedback } from "@/lib/match-logger/haptics";
 import { TactileKey } from "./tactile-key";
 import styles from "./match-logger.module.css";
 
@@ -38,7 +39,10 @@ function PlayerGrid({
           <button
             type="button"
             key={p.id}
-            onClick={() => onSelect(p.id)}
+            onClick={() => {
+              feedback("select");
+              onSelect(p.id);
+            }}
             aria-pressed={active}
             className={cn(
               "flex flex-col items-center gap-0.5 rounded-xl border px-2 py-2.5 text-center transition-colors",
@@ -79,7 +83,10 @@ function MinuteStepper({
         <button
           type="button"
           aria-label="Decrease minute"
-          onClick={() => onChange(Math.max(0, minute - 1))}
+          onClick={() => {
+            feedback("tap");
+            onChange(Math.max(0, minute - 1));
+          }}
           className="flex h-8 w-8 items-center justify-center rounded-full bg-[var(--ml-surface-3)] text-[var(--ml-text)]"
         >
           <Minus size={16} />
@@ -90,7 +97,10 @@ function MinuteStepper({
         <button
           type="button"
           aria-label="Increase minute"
-          onClick={() => onChange(Math.min(150, minute + 1))}
+          onClick={() => {
+            feedback("tap");
+            onChange(Math.min(150, minute + 1));
+          }}
           className="flex h-8 w-8 items-center justify-center rounded-full bg-[var(--ml-surface-3)] text-[var(--ml-text)]"
         >
           <Plus size={16} />
@@ -128,14 +138,47 @@ export function PlayerPickerSheet({
   const [playerId, setPlayerId] = useState<number | null>(null);
   const [assistId, setAssistId] = useState<number | null>(null);
   const [minute, setMinute] = useState(defaultMinute);
+  const sheetRef = useRef<HTMLDivElement>(null);
+  const triggerRef = useRef<HTMLElement | null>(null);
 
+  // Trap focus inside the sheet while it is open and return it to the key that
+  // opened it on close (guide §5 accessibility).
   useEffect(() => {
     if (!open) return;
+    triggerRef.current = (document.activeElement as HTMLElement) ?? null;
+    const node = sheetRef.current;
+    const focusables = () =>
+      node
+        ? Array.from(
+            node.querySelectorAll<HTMLElement>(
+              'button:not([disabled]),[href],input,select,textarea,[tabindex]:not([tabindex="-1"])'
+            )
+          )
+        : [];
+    focusables()[0]?.focus();
+
     const onKey = (e: KeyboardEvent) => {
-      if (e.key === "Escape") onClose();
+      if (e.key === "Escape") {
+        onClose();
+        return;
+      }
+      if (e.key !== "Tab") return;
+      const list = focusables();
+      if (list.length === 0) return;
+      const index = list.indexOf(document.activeElement as HTMLElement);
+      if (e.shiftKey && index <= 0) {
+        e.preventDefault();
+        list[list.length - 1]!.focus();
+      } else if (!e.shiftKey && index === list.length - 1) {
+        e.preventDefault();
+        list[0]!.focus();
+      }
     };
     document.addEventListener("keydown", onKey);
-    return () => document.removeEventListener("keydown", onKey);
+    return () => {
+      document.removeEventListener("keydown", onKey);
+      triggerRef.current?.focus?.();
+    };
   }, [open, onClose]);
 
   if (!open || !eventType) return null;
@@ -165,9 +208,11 @@ export function PlayerPickerSheet({
         className="absolute inset-0 bg-black/60"
       />
       <div
+        ref={sheetRef}
         role="dialog"
         aria-modal="true"
         aria-label={`Log ${eventTypeLabel(eventType)} for ${teamName}`}
+        style={{ overscrollBehavior: "contain" }}
         className="relative max-h-[85dvh] overflow-hidden rounded-t-3xl border-t border-[var(--ml-line)] bg-[var(--ml-surface)] pb-[env(safe-area-inset-bottom)]"
       >
         <div className="mx-auto mt-2 h-1 w-10 rounded-full bg-[var(--ml-line)]" />
@@ -192,7 +237,10 @@ export function PlayerPickerSheet({
           )}
         </div>
 
-        <div className="mt-3 max-h-[46dvh] space-y-3 overflow-y-auto px-4">
+        <div
+          className="mt-3 max-h-[46dvh] space-y-3 overflow-y-auto px-4"
+          style={{ overscrollBehavior: "contain" }}
+        >
           <MinuteStepper minute={minute} onChange={setMinute} />
           <PlayerGrid
             players={players}
@@ -213,6 +261,7 @@ export function PlayerPickerSheet({
             onClick={submit}
             disabled={!canConfirm || submitting}
             edge="#074D2B"
+            hapticKind="confirm"
             ariaLabel={
               step === "assist" ? "Confirm event" : `Choose ${eventTypeLabel(eventType)} player`
             }

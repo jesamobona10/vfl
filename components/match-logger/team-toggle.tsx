@@ -1,6 +1,7 @@
 "use client";
 
 import { cn } from "@/lib/utils";
+import { feedback } from "@/lib/match-logger/haptics";
 
 /** Which team the next logged event belongs to (guide §4.3). */
 export function TeamToggle({
@@ -25,7 +26,10 @@ export function TeamToggle({
         type="button"
         key={teamId}
         aria-pressed={active}
-        onClick={() => onSelect(teamId)}
+        onClick={() => {
+          feedback("select");
+          onSelect(teamId);
+        }}
         className={cn(
           "h-11 flex-1 truncate rounded-[12px] px-3 text-sm font-semibold transition-colors",
           active

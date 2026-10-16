@@ -1,7 +1,9 @@
 "use client";
 
 import type { CSSProperties, ReactNode } from "react";
+import { useRef } from "react";
 import { cn } from "@/lib/utils";
+import { feedback, type HapticKind } from "@/lib/match-logger/haptics";
 import styles from "./match-logger.module.css";
 
 export interface TactileKeyProps {
@@ -14,11 +16,15 @@ export interface TactileKeyProps {
   style?: CSSProperties;
   ariaLabel?: string;
   ariaPressed?: boolean;
+  /** Haptic pattern fired on press. Defaults to a light tap. */
+  hapticKind?: HapticKind;
+  /** Ignore further presses for this long (ms) to swallow double taps. */
+  lockMs?: number;
 }
 
 /**
- * The base pressable key for the Match Logger. Visual feedback only here;
- * the haptic call and press-lock live in Phase C.
+ * The base pressable key for the Match Logger. Fires press feedback and locks
+ * out rapid repeat presses; the visual depth comes from `.key` in the module.
  */
 export function TactileKey({
   children,
@@ -29,11 +35,23 @@ export function TactileKey({
   style,
   ariaLabel,
   ariaPressed,
+  hapticKind = "tap",
+  lockMs = 400,
 }: TactileKeyProps) {
+  const lastPress = useRef(0);
+
+  const handleClick = () => {
+    const now = Date.now();
+    if (now - lastPress.current < lockMs) return;
+    lastPress.current = now;
+    feedback(hapticKind);
+    onClick?.();
+  };
+
   return (
     <button
       type="button"
-      onClick={onClick}
+      onClick={handleClick}
       disabled={disabled}
       aria-label={ariaLabel}
       aria-pressed={ariaPressed}

@@ -1,6 +1,7 @@
 "use client";
 
 import { cn } from "@/lib/utils";
+import { feedback } from "@/lib/match-logger/haptics";
 
 /**
  * Floating confirmation bar shown after an event is logged (guide §4.3).
@@ -19,8 +20,6 @@ export function UndoBar({
 }) {
   return (
     <div
-      role="status"
-      aria-live="polite"
       className="pointer-events-none fixed inset-x-0 bottom-[max(16px,env(safe-area-inset-bottom))] z-40 flex justify-center px-4"
     >
       <div className="pointer-events-auto flex w-full max-w-[480px] items-center gap-3 rounded-2xl bg-[var(--ml-surface-2)] px-4 py-3 shadow-[0_18px_40px_rgba(0,0,0,0.55)]">
@@ -34,7 +33,10 @@ export function UndoBar({
         )}
         <button
           type="button"
-          onClick={onUndo}
+          onClick={() => {
+            feedback("undo");
+            onUndo();
+          }}
           className={cn(
             "shrink-0 rounded-xl px-3 py-2 text-sm font-bold text-[#1A1405]",
             "bg-[var(--ml-gold)] active:opacity-80"

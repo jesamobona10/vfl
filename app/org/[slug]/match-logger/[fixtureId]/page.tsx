@@ -18,6 +18,8 @@ import { EventKeypad } from "@/components/match-logger/event-keypad";
 import { Timeline } from "@/components/match-logger/timeline";
 import { UndoBar } from "@/components/match-logger/undo-bar";
 import { SyncChip } from "@/components/match-logger/sync-chip";
+import { LoggerSettings } from "@/components/match-logger/logger-settings";
+import { useWakeLock } from "@/lib/match-logger/use-wake-lock";
 import {
   PlayerPickerSheet,
   type PickerConfirmPayload,
@@ -78,6 +80,10 @@ export default function MatchLoggerPage() {
   const [now, setNow] = useState(() => Date.now());
   const [undo, setUndo] = useState<UndoState | null>(null);
   const [secondsLeft, setSecondsLeft] = useState(0);
+  const [announcement, setAnnouncement] = useState("");
+
+  // Keep the screen awake for the whole match (guide §5).
+  useWakeLock(true);
 
   const homeTeamId = match?.home_team_id ?? match?.homeId ?? null;
   const awayTeamId = match?.away_team_id ?? match?.awayId ?? null;
@@ -174,6 +180,9 @@ export default function MatchLoggerPage() {
         expiresAt: Date.now() + UNDO_WINDOW_MS,
       });
       setSecondsLeft(Math.ceil(UNDO_WINDOW_MS / 1000));
+      setAnnouncement(
+        `${eventTypeLabel(type)} added, ${playerName}, ${minute} minutes. Undo available.`
+      );
       setPickerType(null);
       success(`${eventTypeLabel(type)} logged.`);
     } catch (err) {
@@ -185,6 +194,7 @@ export default function MatchLoggerPage() {
     const current = undo;
     if (!current) return;
     setUndo(null);
+    setAnnouncement("Event undone.");
     try {
       for (const id of current.ids) {
         await deleteEvent.mutateAsync(id);
@@ -238,6 +248,9 @@ export default function MatchLoggerPage() {
 
   return (
     <div className="mx-auto w-full max-w-[480px] px-4 pb-32 pt-4">
+      <p className="sr-only" role="status" aria-live="polite">
+        {announcement}
+      </p>
       <header className="flex items-center gap-3">
         <button
           type="button"
@@ -256,6 +269,7 @@ export default function MatchLoggerPage() {
           )}
         </div>
         <SyncChip state="live" />
+        <LoggerSettings />
       </header>
 
       <div className="mt-3 space-y-3">

@@ -3,6 +3,7 @@
 import { X } from "lucide-react";
 import type { MatchEvent, Player } from "@/lib/types";
 import { eventTypeLabel } from "@/lib/logic/events";
+import { feedback } from "@/lib/match-logger/haptics";
 import styles from "./match-logger.module.css";
 
 function teamAbbr(name: string) {
@@ -83,7 +84,10 @@ export function Timeline({
                 )}
                 <button
                   type="button"
-                  onClick={() => onRemove(event)}
+                  onClick={() => {
+                    feedback("tap");
+                    onRemove(event);
+                  }}
                   disabled={disabled}
                   aria-label={`Remove ${eventTypeLabel(event.type)} for ${playerName}`}
                   className="shrink-0 rounded p-1 text-[var(--ml-muted)] hover:text-[var(--ml-red)] disabled:opacity-40"
