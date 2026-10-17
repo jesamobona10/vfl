@@ -2,7 +2,7 @@
 
 import { useState, Suspense } from "react";
 import dynamic from "next/dynamic";
-import { useParams, usePathname } from "next/navigation";
+import { useParams } from "next/navigation";
 import { useOrg } from "@/lib/hooks/use-org";
 import { useAppStore } from "@/lib/store";
 import { AppHeader } from "@/components/layout/app-header";
@@ -11,9 +11,7 @@ import { Sidebar, type SidebarItem } from "@/components/layout/sidebar";
 import { MobileNavDrawer } from "@/components/layout/mobile-nav-drawer";
 import { OrgSeasonProvider } from "@/components/competitions/org-season-provider";
 import { brandStyleVars } from "@/lib/branding";
-import { LayoutDashboard, Users, Shield, UserCog, Swords, Radio, Goal } from "lucide-react";
-import { useLiveFixtures } from "@/lib/hooks/use-live-fixtures";
-import { cn } from "@/lib/utils";
+import { LayoutDashboard, Users, Shield, UserCog, Swords, Radio } from "lucide-react";
 
 const SearchModal = dynamic(() => import("@/components/search/search-modal").then(m => m.SearchModal), {
   ssr: false,
@@ -23,7 +21,6 @@ const SearchModal = dynamic(() => import("@/components/search/search-modal").the
 const tabs: SidebarItem[] = [
   { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
   { href: "/competitions", label: "Competitions", icon: Swords },
-  { href: "/match-logger", label: "Match Logger", icon: Goal },
   { href: "/players", label: "Players", icon: Users },
   { href: "/teams", label: "Teams", icon: Shield },
   { href: "/team-accounts", label: "Team Accounts", icon: UserCog },
@@ -42,30 +39,23 @@ const NAV_BY_ROLE: Record<string, string[]> = {
   org_admin: [
     "/dashboard",
     "/competitions",
-    "/match-logger",
     "/players",
     "/teams",
     "/team-accounts",
     "/public",
   ],
-  team_account: ["/dashboard", "/match-logger", "/players", "/public"],
+  team_account: ["/dashboard", "/players", "/public"],
   player: ["/dashboard", "/public"],
 };
 
 export default function OrgLayout({ children }: { children: React.ReactNode }) {
   const params = useParams();
-  const pathname = usePathname();
   const slug = params.slug as string;
   const { data: currentOrg, isLoading } = useOrg(slug);
   const userProfile = useAppStore((s) => s.userProfile);
   const currentTeamAccount = useAppStore((s) => s.currentTeamAccount);
   const [isSearchOpen, setSearchOpen] = useState(false);
   const [isDrawerOpen, setDrawerOpen] = useState(false);
-
-  // Match Logger's detail route is phone-first and hides the shell chrome on
-  // small screens so the logger owns the whole viewport. The desktop shell
-  // stays intact and simply centres the logger column.
-  const isLoggerFocus = /^\/org\/[^/]+\/match-logger\/[^/]+\/?$/.test(pathname);
 
   const roleLabel =
     currentTeamAccount != null
@@ -78,20 +68,11 @@ export default function OrgLayout({ children }: { children: React.ReactNode }) {
 
   const role = currentTeamAccount != null ? "team_account" : (userProfile?.role ?? "org_admin");
   const allowed = NAV_BY_ROLE[role] ?? NAV_BY_ROLE.org_admin!;
-
-  // Live badge on the Match Logger tab. Only fetched for roles that can see
-  // the tab; react-query shares the cached result with the page and header.
-  const canSeeLogger = allowed.includes("/match-logger");
-  const { data: liveData } = useLiveFixtures(slug, { enabled: canSeeLogger });
-  const liveCount = liveData?.liveCount ?? 0;
-
   const items = tabs
     .filter((tab) => allowed.includes(tab.href))
     .map((tab) => ({
       ...tab,
       href: `/org/${slug}${tab.href}`,
-      badge:
-        tab.href === "/match-logger" && liveCount > 0 ? liveCount : undefined,
     }));
 
   const footer = currentOrg
@@ -132,23 +113,12 @@ export default function OrgLayout({ children }: { children: React.ReactNode }) {
         >
           <Sidebar items={items} footer={footer} />
           <div className="flex-1 min-w-0 flex flex-col">
-            <div className={cn(isLoggerFocus && "hidden lg:block")}>
-              <AppHeader
-                onOpenSearch={() => setSearchOpen(true)}
-                onOpenMenu={() => setDrawerOpen(true)}
-              />
-            </div>
-            <div className={cn(isLoggerFocus && "hidden lg:block")}>
-              <OrgContextBar />
-            </div>
-            <main
-              className={cn(
-                "flex-1",
-                isLoggerFocus ? "px-0 py-0 lg:px-6 lg:py-6" : "px-4 sm:px-6 py-6"
-              )}
-            >
-              {children}
-            </main>
+            <AppHeader
+              onOpenSearch={() => setSearchOpen(true)}
+              onOpenMenu={() => setDrawerOpen(true)}
+            />
+            <OrgContextBar />
+            <main className="flex-1 px-4 sm:px-6 py-6">{children}</main>
           </div>
           <MobileNavDrawer
             items={items}

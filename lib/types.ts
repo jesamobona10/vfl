@@ -75,8 +75,6 @@ export interface TeamLineup {
 
 /** A single event that occurred during a match (goal, card, save, etc.). */
 export interface MatchEvent {
-  /** Server id of the event row, when it has been persisted. */
-  id?: number;
   /** ID of the player involved. */
   playerId: number;
   /** Event type (e.g. "goal", "yellow_card", "save", "own_goal"). */
@@ -85,10 +83,6 @@ export interface MatchEvent {
   minute?: number;
   /** ID of the team the player belongs to. */
   teamId?: number;
-  /** Client-generated id used for idempotent writes, when present. */
-  clientEventId?: string | null;
-  /** ISO timestamp when the event was created. */
-  createdAt?: string;
 }
 
 // ─── Match & Fixture Types ────────────────────────────────────────────────────
@@ -672,47 +666,7 @@ export interface MatchEventRow {
   event_type: string;
   team_id: number | null;
   minute: number | null;
-  client_event_id?: string | null;
   created_at: string;
-}
-
-/** Minimal team shape carried on a live match-logger card. */
-export interface LiveFixtureTeam {
-  id: number;
-  name: string;
-  logo: string | null;
-}
-
-/**
- * A fixture as returned by `GET /api/org/[slug]/live-fixtures`.
- *
- * Only the fields a live card renders are included. `canLog` and `isMine`
- * are resolved server-side from the caller's identity so the client never
- * has to trust a local filter.
- */
-export interface LiveFixture {
-  id: number;
-  status: "scheduled" | "live" | "in-progress" | "completed";
-  /** ISO timestamp when the match went live, or null when not started. */
-  liveStartedAt: string | null;
-  /** Scheduled kickoff as an ISO instant, or null when date/time is unset. */
-  kickoff: string | null;
-  date: string | null;
-  time: string | null;
-  venue: string | null;
-  round: number;
-  competitionId: string | null;
-  competitionName: string | null;
-  homeTeam: LiveFixtureTeam;
-  awayTeam: LiveFixtureTeam;
-  homeScore: number | null;
-  awayScore: number | null;
-  /** True when the caller may log events for this fixture. */
-  canLog: boolean;
-  /** True when one of the caller's own teams is playing. */
-  isMine: boolean;
-  /** True when the match is live or in progress. */
-  isLive: boolean;
 }
 
 /** Raw row from the `teams` table. */

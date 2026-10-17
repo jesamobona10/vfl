@@ -5,7 +5,6 @@ import Link from "next/link";
 import { usePathname, useSearchParams } from "next/navigation";
 import { X } from "lucide-react";
 import type { SidebarItem } from "./sidebar";
-import { SidebarItemBadge } from "./sidebar";
 
 interface MobileNavDrawerProps {
   items: SidebarItem[];
@@ -96,7 +95,6 @@ export function MobileNavDrawer({ items, footer, isOpen, onClose }: MobileNavDra
               >
                 <Icon size={16} className="shrink-0" />
                 {item.label}
-                <SidebarItemBadge badge={item.badge} active={active} />
               </Link>
             );
           })}

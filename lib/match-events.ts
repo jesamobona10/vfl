@@ -1,6 +1,5 @@
 import type { Match, MatchEvent, Player } from "./types";
 import { useAppStore } from "./store";
-import { scoreDelta } from "./logic/events";
 
 /**
  * The single seam through which every match-day write flows.
@@ -72,14 +71,18 @@ export function computeEventScore(
   playerTeamId: number,
   eventType: string
 ): { homeScore: number | null; awayScore: number | null } {
-  const delta = scoreDelta(eventType, playerTeamId, match.homeId, match.awayId);
-  if (delta.home === 0 && delta.away === 0) {
-    return { homeScore: match.homeScore, awayScore: match.awayScore };
+  const home = match.homeScore ?? 0;
+  const away = match.awayScore ?? 0;
+
+  if (eventType === "goal") {
+    if (playerTeamId === match.homeId) return { homeScore: home + 1, awayScore: away };
+    return { homeScore: home, awayScore: away + 1 };
   }
-  return {
-    homeScore: (match.homeScore ?? 0) + delta.home,
-    awayScore: (match.awayScore ?? 0) + delta.away,
-  };
+  if (eventType === "own-goal") {
+    if (playerTeamId === match.homeId) return { homeScore: home, awayScore: away + 1 };
+    return { homeScore: home + 1, awayScore: away };
+  }
+  return { homeScore: match.homeScore, awayScore: match.awayScore };
 }
 
 function persistScore(matchId: number, home: number | null | undefined, away: number | null | undefined) {

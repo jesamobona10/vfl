@@ -19,9 +19,6 @@ import { useResolvedTeams } from "@/lib/hooks/use-resolved-teams";
 import { useToast } from "@/components/ui/toast";
 import { InAppWalkthrough } from "@/components/shared/in-app-walkthrough";
 import { usePathname } from "next/navigation";
-import Link from "next/link";
-import { useLiveFixtures } from "@/lib/hooks/use-live-fixtures";
-import { useCan } from "@/lib/hooks/use-can";
 
 interface AppHeaderProps {
   onOpenSearch: () => void;
@@ -48,10 +45,6 @@ export function AppHeader({ onOpenSearch, onOpenMenu }: AppHeaderProps) {
   const [menuOpen, setMenuOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
   const pathname = usePathname();
-  const slug = pathname.match(/^\/org\/([^/]+)/)?.[1];
-  const { allowed: canLog } = useCan("match.edit");
-  const { data: liveData } = useLiveFixtures(slug, { enabled: canLog });
-  const liveCount = liveData?.liveCount ?? 0;
 
   useEffect(() => {
     const onClick = (e: MouseEvent) => {
@@ -165,16 +158,6 @@ export function AppHeader({ onOpenSearch, onOpenMenu }: AppHeaderProps) {
           <Search size={15} className="shrink-0" />
           <span className="hidden truncate md:inline">Search teams, players, fixtures&hellip;</span>
         </button>
-        {slug && liveCount > 0 && (
-          <Link
-            href={`/org/${slug}/match-logger`}
-            className="lg:hidden inline-flex items-center gap-1.5 rounded-full bg-live-tint px-2.5 py-1.5 text-xs font-semibold text-live-500 shrink-0"
-            aria-label={`${liveCount} live ${liveCount === 1 ? "match" : "matches"}`}
-          >
-            <span aria-hidden="true" className="h-2 w-2 rounded-full bg-live-500 animate-pulse" />
-            Live · {liveCount}
-          </Link>
-        )}
       </div>
 
       <div className="flex items-center gap-1 shrink-0">
@@ -189,7 +172,7 @@ export function AppHeader({ onOpenSearch, onOpenMenu }: AppHeaderProps) {
                   ? "player"
                   : "org_admin"
           }
-          slug={slug}
+          slug={pathname.match(/^\/org\/([^/]+)/)?.[1]}
         />
         <Notifications />
         {currentTeamAccount && (
