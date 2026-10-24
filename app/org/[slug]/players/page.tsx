@@ -10,7 +10,7 @@ import { PlayerCard } from "@/components/players/player-card";
 import { AnonymizeConfirm } from "@/components/players/anonymize-confirm";
 import { SeasonEmptyState } from "@/components/dashboard/season-empty-state";
 import { useOrgSeason } from "@/components/competitions/org-season-provider";
-import { Plus, AlertCircle, Upload } from "lucide-react";
+import { Plus, AlertCircle, Upload, BarChart3, Users } from "lucide-react";
 import { EmptyState } from "@/components/shared/skeleton";
 import { useConfirm } from "@/components/shared/confirm-dialog";
 import type { Player } from "@/lib/types";
@@ -43,6 +43,7 @@ export default function OrgPlayersPage() {
   const [importOpen, setImportOpen] = useState(false);
   const [anonymizePlayer, setAnonymizePlayer] = useState<Player | null>(null);
   const [error, setError] = useState("");
+  const [activeTab, setActiveTab] = useState<"players" | "statistics">("players");
 
   const handleImported = async () => {
     if (!currentOrg?.id) return;
@@ -168,6 +169,27 @@ export default function OrgPlayersPage() {
         </div>
       )}
 
+      <div className="inline-flex rounded-xl border border-line bg-surface-2 p-1" role="tablist" aria-label="Players views">
+        <button
+          type="button"
+          role="tab"
+          aria-selected={activeTab === "players"}
+          onClick={() => setActiveTab("players")}
+          className={`inline-flex items-center gap-2 rounded-lg px-4 py-2 text-sm font-medium transition-colors ${activeTab === "players" ? "bg-surface text-brand shadow-sm" : "text-muted hover:text-ink"}`}
+        >
+          <Users size={15} /> Players
+        </button>
+        <button
+          type="button"
+          role="tab"
+          aria-selected={activeTab === "statistics"}
+          onClick={() => setActiveTab("statistics")}
+          className={`inline-flex items-center gap-2 rounded-lg px-4 py-2 text-sm font-medium transition-colors ${activeTab === "statistics" ? "bg-surface text-brand shadow-sm" : "text-muted hover:text-ink"}`}
+        >
+          <BarChart3 size={15} /> Statistics
+        </button>
+      </div>
+
       {ctxIsOrgAdmin && selectedOrgSeasonId && !seasonLoading && !hasTeams && (
         <SeasonEmptyState
           hasTeams={false}
@@ -176,7 +198,43 @@ export default function OrgPlayersPage() {
         />
       )}
 
-      {grouped.length === 0 ? (
+      {activeTab === "statistics" ? (
+        <div className="card overflow-hidden">
+          <div className="border-b border-line px-4 py-4">
+            <h2 className="font-semibold">Player statistics</h2>
+            <p className="mt-1 text-xs text-muted">Match events and current ratings for this season</p>
+          </div>
+          {players.length === 0 ? (
+            <p className="p-6 text-center text-sm text-muted">No player statistics available yet.</p>
+          ) : (
+            <div className="overflow-x-auto">
+              <table className="w-full min-w-[680px] text-left text-sm">
+                <thead className="bg-surface-2/60 text-[10px] uppercase tracking-wider text-muted">
+                  <tr>
+                    <th className="px-4 py-3">Player</th><th className="px-4 py-3">Team</th>
+                    <th className="px-3 py-3 text-center">Goals</th><th className="px-3 py-3 text-center">Assists</th>
+                    <th className="px-3 py-3 text-center">Yellow</th><th className="px-3 py-3 text-center">Red</th>
+                    <th className="px-4 py-3 text-center">Rating</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-line/70">
+                  {[...players].sort((a, b) => b.goals - a.goals || b.assists - a.assists || b.rating - a.rating).map((player) => (
+                    <tr key={player.id}>
+                      <td className="px-4 py-3 font-medium">{player.name}</td>
+                      <td className="px-4 py-3 text-muted">{teamName(player.teamId)}</td>
+                      <td className="px-3 py-3 text-center tabular-nums">{player.goals}</td>
+                      <td className="px-3 py-3 text-center tabular-nums">{player.assists}</td>
+                      <td className="px-3 py-3 text-center tabular-nums">{player.yellowCards}</td>
+                      <td className="px-3 py-3 text-center tabular-nums">{player.redCards}</td>
+                      <td className="px-4 py-3 text-center font-semibold tabular-nums">{player.rating.toFixed(1)}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </div>
+      ) : grouped.length === 0 ? (
         <div className="card">
           <EmptyState
             title="No players yet"

@@ -79,6 +79,8 @@ export interface MatchEvent {
   id?: number;
   /** ID of the player involved; null until a player is attributed. */
   playerId: number | null;
+  /** Resolved display name included by fixture APIs when available. */
+  playerName?: string | null;
   /** Event type (e.g. "goal", "yellow_card", "save", "own_goal"). */
   type: string;
   /** Minute of the match when the event occurred. */

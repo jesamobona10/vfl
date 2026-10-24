@@ -18,8 +18,44 @@ import {
 } from "@/lib/security";
 import { AUDIT_ACTIONS } from "@/lib/audit/actions";
 import { resolveOrgSeasonIds } from "@/lib/season-org";
+import { updateTeamRatings } from "@/lib/logic/ratings";
+import type { Match, Player, Team } from "@/lib/types";
 
 export const dynamic = "force-dynamic";
+
+async function attachCurrentRatings(sb: ReturnType<typeof createServiceRoleClient>, rows: any[]) {
+  if (!rows.length) return rows;
+  const teamIds = rows.map((team) => team.id as number);
+  const condition = teamIds.map((id) => `home_team_id.eq.${id},away_team_id.eq.${id}`).join(",");
+  const [{ data: fixtureRows }, { data: playerRows }] = await Promise.all([
+    sb.from("fixtures")
+      .select("id, round, home_team_id, away_team_id, home_score, away_score, status, date, time, venue")
+      .or(condition),
+    sb.from("players").select("id, team_id, rating").in("team_id", teamIds),
+  ]);
+  const teams = rows.map((team): Team => ({ id: team.id, name: team.name, rating: team.rating ?? 6 }));
+  const matches: Match[] = (fixtureRows || []).map((fixture: any) => ({
+    id: fixture.id,
+    round: fixture.round,
+    homeId: fixture.home_team_id,
+    awayId: fixture.away_team_id,
+    homeScore: fixture.home_score,
+    awayScore: fixture.away_score,
+    status: fixture.status,
+    date: fixture.date || "",
+    time: fixture.time || "",
+    venue: fixture.venue || "",
+    events: [],
+  }));
+  const players = (playerRows || []).map((player: any) => ({
+    id: player.id,
+    teamId: player.team_id,
+    rating: player.rating ?? 6,
+  })) as Player[];
+  updateTeamRatings(teams, matches, players);
+  const ratingById = new Map(teams.map((team) => [team.id, team.rating]));
+  return rows.map((team) => ({ ...team, rating: ratingById.get(team.id) ?? team.rating ?? 6 }));
+}
 
 export async function GET(request: Request) {
   try {
@@ -87,7 +123,7 @@ export async function GET(request: Request) {
         logApiError("teams_list_failed", error);
         return json({ error: "Unable to load teams." }, { status: 500 });
       }
-      return json({ teams: data });
+      return json({ teams: await attachCurrentRatings(sb, data || []) });
     }
 
     const { data, error } = await sb
@@ -100,7 +136,7 @@ export async function GET(request: Request) {
       logApiError("teams_list_failed", error);
       return json({ error: "Unable to load teams." }, { status: 500 });
     }
-    return json({ teams: data });
+    return json({ teams: await attachCurrentRatings(sb, data || []) });
   } catch (error) {
     logApiError("teams_list_error", error);
     return json({ error: "Something went wrong. Please try again." }, { status: 500 });

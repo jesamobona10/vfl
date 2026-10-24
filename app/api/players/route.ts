@@ -20,6 +20,7 @@ import {
 } from "@/lib/security";
 import { AUDIT_ACTIONS } from "@/lib/audit/actions";
 import { resolveOrgSeasonIds } from "@/lib/season-org";
+import { updatePlayerRatings } from "@/lib/logic/ratings";
 
 export const dynamic = "force-dynamic";
 
@@ -32,6 +33,7 @@ export async function GET(request: Request) {
 
     const url = new URL(request.url);
     const orgId = url.searchParams.get("org_id") || auth!.orgMembership?.organization_id;
+    let scopedSeasonIds: string[] | null = null;
 
     let query = supabase.from("players").select("*").order("id");
 
@@ -43,6 +45,7 @@ export async function GET(request: Request) {
 
       const sb = createServiceRoleClient();
       const seasonIds = await resolveOrgSeasonIds(sb, orgSeasonId, orgId);
+      scopedSeasonIds = seasonIds;
       if (seasonIds.length === 0) return json({ players: [] });
 
       const { data: seasonTeams } = await sb
@@ -80,17 +83,71 @@ export async function GET(request: Request) {
       return json({ error: "Unable to load players." }, { status: 500 });
     }
 
-    const players: Player[] = (data || []).map((p: any) => ({
+    const playerRows = data || [];
+    const playerIds = playerRows.map((p: any) => p.id as number);
+    const eventCounts = new Map<number, Record<string, number>>();
+    const participatedMatches = new Map<number, Set<number>>();
+    if (playerIds.length > 0) {
+      const sb = createServiceRoleClient();
+      let from = 0;
+      const pageSize = 1000;
+      while (true) {
+        let eventsQuery = sb
+          .from("match_events")
+          .select("player_id, event_type, match_id")
+          .in("player_id", playerIds);
+        if (scopedSeasonIds) eventsQuery = eventsQuery.in("season_id", scopedSeasonIds);
+        const { data: eventPage, error: eventError } = await eventsQuery.range(from, from + pageSize - 1);
+        if (eventError) {
+          logApiError("player_event_stats_failed", eventError, { userId: auth!.userId });
+          return json({ error: "Unable to load player statistics." }, { status: 500 });
+        }
+        for (const event of eventPage || []) {
+          if (event.player_id == null) continue;
+          const counts = eventCounts.get(event.player_id) || {};
+          counts[event.event_type] = (counts[event.event_type] || 0) + 1;
+          eventCounts.set(event.player_id, counts);
+          const matches = participatedMatches.get(event.player_id) || new Set<number>();
+          matches.add(event.match_id);
+          participatedMatches.set(event.player_id, matches);
+        }
+        if (!eventPage || eventPage.length < pageSize) break;
+        from += pageSize;
+      }
+    }
+
+    const matchIds = [...new Set([...participatedMatches.values()].flatMap((matches) => [...matches]))];
+    const winByMatch = new Map<number, number>();
+    if (matchIds.length > 0) {
+      const sb = createServiceRoleClient();
+      const { data: matches } = await sb
+        .from("fixtures")
+        .select("id, home_team_id, away_team_id, home_score, away_score, status")
+        .in("id", matchIds)
+        .eq("status", "completed");
+      for (const match of matches || []) {
+        if (match.home_score > match.away_score) winByMatch.set(match.id, match.home_team_id);
+        else if (match.away_score > match.home_score) winByMatch.set(match.id, match.away_team_id);
+      }
+    }
+
+    const players: Player[] = playerRows.map((p: any) => {
+      const counts = eventCounts.get(p.id) || {};
+      const wins = [...(participatedMatches.get(p.id) || [])].filter((matchId) => {
+        const winningTeamId = winByMatch.get(matchId);
+        return winningTeamId != null && winningTeamId === p.team_id;
+      }).length;
+      return {
       id: p.id,
       teamId: p.team_id,
       name: p.name,
       position: p.position as Player["position"],
       number: p.jersey_number || 0,
-      goals: p.goals ?? 0,
-      assists: p.assists ?? 0,
+      goals: counts.goal ?? 0,
+      assists: counts.assist ?? 0,
       ownGoals: 0,
-      yellowCards: p.yellow_cards ?? 0,
-      redCards: p.red_cards ?? 0,
+      yellowCards: counts.yellow ?? 0,
+      redCards: counts.red ?? 0,
       saves: p.saves ?? 0,
       penaltySaves: 0,
       cleanSheets: p.clean_sheets ?? 0,
@@ -102,12 +159,15 @@ export async function GET(request: Request) {
       errorsLeadingToGoal: 0,
       penaltiesConceded: 0,
       goalsConceded: 0,
-      matchWins: 0,
+      matchWins: wins,
       bonus5Saves: 0,
       captain: p.is_captain ?? false,
       rating: p.rating ?? 6.0,
       matchRatings: {},
-    }));
+    };
+    });
+
+    updatePlayerRatings(players);
 
     return json({ players });
   } catch (error) {

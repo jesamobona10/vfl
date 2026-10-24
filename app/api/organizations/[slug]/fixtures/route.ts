@@ -115,6 +115,13 @@ export async function GET(request: Request, props: { params: Promise<{ slug: str
       return json({ error: "Failed to load fixtures." }, { status: 500 });
     }
 
+    const eventRows = (dbMatches || []).flatMap((match: any) => match.match_events || []);
+    const playerIds = [...new Set(eventRows.map((event: any) => event.player_id).filter((id: unknown): id is number => typeof id === "number"))];
+    const { data: playerRows } = playerIds.length
+      ? await sb.from("players").select("id, name").in("id", playerIds)
+      : { data: [] };
+    const playerNames = new Map((playerRows || []).map((player: { id: number; name: string | null }) => [player.id, player.name]));
+
     const grouped = new Map<number, Match[]>();
     const roundSet = new Set<number>();
 
@@ -133,12 +140,14 @@ export async function GET(request: Request, props: { params: Promise<{ slug: str
         events: ((m.match_events || []) as {
           id: number;
           player_id: number | null;
+          player_name?: string | null;
           event_type: string;
           team_id: number | null;
           minute: number | null;
         }[]).map((event): MatchEvent => ({
           id: event.id,
           playerId: event.player_id,
+          playerName: event.player_id == null ? null : playerNames.get(event.player_id) ?? null,
           type: event.event_type,
           teamId: event.team_id ?? undefined,
           minute: event.minute ?? undefined,

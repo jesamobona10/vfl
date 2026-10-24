@@ -69,9 +69,16 @@ export async function GET(_request: Request, props: { params: Promise<{ id: stri
       (organizationId && authed.teamAccount?.organization_id === organizationId);
     if (!hasAccess) return json({ error: "Forbidden" }, { status: 403 });
 
-    const events: MatchEvent[] = (fixture.match_events || []).map((e: MatchEventRow) => ({
+    const matchEventRows = (fixture.match_events || []) as MatchEventRow[];
+    const playerIds = [...new Set(matchEventRows.map((event) => event.player_id).filter((id): id is number => id != null))];
+    const { data: playerRows } = playerIds.length
+      ? await sb.from("players").select("id, name").in("id", playerIds)
+      : { data: [] };
+    const playerNames = new Map((playerRows || []).map((player: { id: number; name: string | null }) => [player.id, player.name]));
+    const events: MatchEvent[] = matchEventRows.map((e) => ({
       id: e.id,
       playerId: e.player_id,
+      playerName: e.player_id == null ? null : playerNames.get(e.player_id) ?? null,
       type: e.event_type,
       teamId: e.team_id ?? undefined,
       minute: e.minute ?? undefined,
