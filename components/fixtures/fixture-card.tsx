@@ -88,7 +88,6 @@ export function FixtureCard({
   const [showFlyer, setShowFlyer] = useState(false);
   const [showReport, setShowReport] = useState(false);
   const [showMedia, setShowMedia] = useState(false);
-  const [assigningEventId, setAssigningEventId] = useState<number | null>(null);
   const [deleting, setDeleting] = useState(false);
   const players = useAppStore((s) => s.players);
   const queryClient = useQueryClient();
@@ -109,29 +108,6 @@ export function FixtureCard({
     if (playerId == null) return "Player unavailable";
     const p = players.find((pl) => pl.id === playerId);
     return p?.name || "Unknown";
-  };
-
-  const handleAssignScorer = async (eventId: number | undefined, playerId: number) => {
-    if (!eventId || assigningEventId != null) return;
-    setAssigningEventId(eventId);
-    try {
-      const response = await fetch(`/api/events/${eventId}`, {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ playerId }),
-      });
-      const body = await response.json();
-      if (!response.ok) throw new Error(body.error || "Unable to assign scorer.");
-      useAppStore.getState().updateMatch(match.id, "events", (match.events || []).map((event) =>
-        event.id === eventId ? { ...event, playerId } : event
-      ));
-      if (match.season_id) queryClient.invalidateQueries({ queryKey: ["season-statistics", match.season_id] });
-      toast.success("Scorer assigned. Player stats updated.");
-    } catch (error) {
-      toast.error(error instanceof Error ? error.message : "Unable to assign scorer.");
-    } finally {
-      setAssigningEventId(null);
-    }
   };
 
   const events = match.events || [];
@@ -227,27 +203,6 @@ export function FixtureCard({
             &times;
           </button>
         )}
-        {editable && event.type === "goal" && event.playerId == null && event.teamId != null && event.id && (() => {
-          const teamPlayers = players.filter((player) => player.teamId === event.teamId);
-          return teamPlayers.length > 0 ? (
-            <select
-              aria-label={`Assign scorer for ${event.teamId === match.homeId ? homeTeam?.name : awayTeam?.name}`}
-              value=""
-              disabled={assigningEventId != null}
-              onClick={(click) => click.stopPropagation()}
-              onChange={(change) => {
-                const playerId = Number(change.target.value);
-                if (playerId) void handleAssignScorer(event.id, playerId);
-              }}
-              className="ml-1 max-w-36 rounded-full border border-line bg-surface px-2 py-0.5 text-[10px] font-medium text-ink-2"
-            >
-              <option value="">Add scorer…</option>
-              {teamPlayers.map((player) => <option key={player.id} value={player.id}>{player.name}</option>)}
-            </select>
-          ) : (
-            <span className="ml-1 text-[10px] font-medium text-ink-3">Add a team player to assign scorer</span>
-          );
-        })()}
       </span>
     );
   };
