@@ -11,7 +11,13 @@ import { EmptyState } from "@/components/ui/empty-state";
 import { useConfirm } from "@/components/shared/confirm-dialog";
 import type { Team } from "@/lib/types";
 
-export function TeamForm({ orgSeasonId }: { orgSeasonId?: string | null }) {
+export function TeamForm({
+  orgSeasonId,
+  canEdit = false,
+}: {
+  orgSeasonId?: string | null;
+  canEdit?: boolean;
+}) {
   const { confirm, dialog: confirmDialog } = useConfirm();
   const params = useParams();
   const slug = params.slug as string;
@@ -242,8 +248,8 @@ export function TeamForm({ orgSeasonId }: { orgSeasonId?: string | null }) {
               team={team}
               index={index}
               isManaged={isTeam && team.id === managedId}
-              showAdmin={!isTeam}
-              onDelete={!isTeam ? handleDelete : undefined}
+              showAdmin={!isTeam && canEdit}
+              onDelete={!isTeam && canEdit ? handleDelete : undefined}
             />
           ))}
         </div>

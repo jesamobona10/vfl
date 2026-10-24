@@ -24,7 +24,7 @@ export default function OrgTeamsPage() {
           fixturesHref={`/org/${slug}/competitions`}
         />
       )}
-      <TeamForm orgSeasonId={selectedOrgSeasonId} />
+      <TeamForm orgSeasonId={selectedOrgSeasonId} canEdit={isOrgAdmin} />
     </div>
   );
 }

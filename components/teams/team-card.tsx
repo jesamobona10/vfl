@@ -5,7 +5,8 @@ import { useAppStore } from "@/lib/store";
 import type { Team, TeamLineup } from "@/lib/types";
 import { ImageUpload } from "@/components/shared/image-upload";
 import { Modal } from "@/components/ui/modal";
-import { Trash2, Users, Star } from "lucide-react";
+import { Trash2, Users, Star, Pencil, Check, X } from "lucide-react";
+import { useToast } from "@/components/ui/toast";
 
 interface TeamCardProps {
   team: Team;
@@ -18,8 +19,11 @@ interface TeamCardProps {
 export function TeamCard({ team, index, isManaged, showAdmin, onDelete }: TeamCardProps) {
   const updateTeam = useAppStore((s) => s.updateTeam);
   const players = useAppStore((s) => s.players);
+  const toast = useToast();
   const [name, setName] = useState(team.name);
   const [rating, setRating] = useState(team.rating.toFixed(1));
+  const [editingName, setEditingName] = useState(false);
+  const [savingName, setSavingName] = useState(false);
 
   useEffect(() => {
     setName(team.name);
@@ -77,7 +81,7 @@ export function TeamCard({ team, index, isManaged, showAdmin, onDelete }: TeamCa
   };
 
   const saveTeam = async (data: Partial<Pick<Team, "name" | "rating">>) => {
-    if (Object.keys(data).length === 0) return;
+    if (Object.keys(data).length === 0) return false;
     try {
       const res = await fetch(`/api/teams/${team.id}`, {
         method: "PUT",
@@ -86,8 +90,8 @@ export function TeamCard({ team, index, isManaged, showAdmin, onDelete }: TeamCa
       });
       if (!res.ok) {
         const body = await res.json().catch(() => ({}));
-        console.error("Failed to save team:", body.error || res.statusText);
-        return;
+        toast.error(body.error || "Unable to update team.");
+        return false;
       }
       const payload = await res.json();
       const updated = payload.team;
@@ -95,20 +99,30 @@ export function TeamCard({ team, index, isManaged, showAdmin, onDelete }: TeamCa
         name: updated?.name ?? data.name,
         rating: updated?.rating ?? data.rating,
       });
+      return true;
     } catch (error) {
       console.error("Unable to save team:", error);
+      toast.error("Unable to update team. Please try again.");
+      return false;
     }
   };
 
-  const handleNameBlur = () => {
+  const handleSaveName = async () => {
     const trimmed = name.trim();
     if (!trimmed) {
-      setName(team.name);
+      toast.error("Team name cannot be empty.");
       return;
     }
-    if (trimmed !== team.name) {
-      saveTeam({ name: trimmed });
+    if (trimmed === team.name) {
+      setEditingName(false);
+      return;
     }
+    setSavingName(true);
+    if (await saveTeam({ name: trimmed })) {
+      setEditingName(false);
+      toast.success("Team name updated. Players and fixtures are still linked.");
+    }
+    setSavingName(false);
   };
 
   const handleRatingBlur = () => {
@@ -154,16 +168,61 @@ export function TeamCard({ team, index, isManaged, showAdmin, onDelete }: TeamCa
           />
         </div>
 
-        <input
-          type="text"
-          value={name}
-          onChange={(e) => setName(e.target.value)}
-          onBlur={handleNameBlur}
-          maxLength={40}
-          className="input text-center font-semibold text-base mb-3"
-          placeholder="Team name"
-          aria-label={`Team name for ${team.name}`}
-        />
+        <div className="w-full mb-3">
+          {editingName && showAdmin ? (
+            <>
+              <input
+                type="text"
+                value={name}
+                onChange={(e) => setName(e.target.value)}
+                maxLength={80}
+                className="input text-center font-semibold text-base"
+                placeholder="Team name"
+                aria-label={`Team name for ${team.name}`}
+                autoFocus
+              />
+              <p className="mt-1 text-center text-xs text-muted">
+                Renaming keeps this team’s players, fixtures, and history linked.
+              </p>
+              <div className="mt-2 flex justify-center gap-2">
+                <button
+                  type="button"
+                  onClick={handleSaveName}
+                  disabled={savingName || !name.trim()}
+                  className="btn-primary inline-flex items-center gap-1 text-xs"
+                >
+                  <Check size={14} /> {savingName ? "Saving…" : "Save name"}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setName(team.name);
+                    setEditingName(false);
+                  }}
+                  disabled={savingName}
+                  className="btn-outline inline-flex items-center gap-1 text-xs"
+                >
+                  <X size={14} /> Cancel
+                </button>
+              </div>
+            </>
+          ) : (
+            <div className="flex items-center justify-center gap-2">
+              <span className="text-center font-semibold text-base">{team.name}</span>
+              {showAdmin && (
+                <button
+                  type="button"
+                  onClick={() => setEditingName(true)}
+                  className="rounded p-1 text-muted hover:text-brand"
+                  aria-label={`Edit name for ${team.name}`}
+                  title="Edit team name"
+                >
+                  <Pencil size={14} />
+                </button>
+              )}
+            </div>
+          )}
+        </div>
 
         <div className="flex items-center gap-4 w-full justify-center text-xs text-muted">
           <span className="flex items-center gap-1">

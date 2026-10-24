@@ -12,6 +12,7 @@ import {
   rateLimit,
   rateLimitResponse,
   requireAdmin,
+  requireAuth,
   requireOrgAdmin,
   sanitizeText,
 } from "@/lib/security";
@@ -26,8 +27,8 @@ export async function PUT(request: Request, props: { params: Promise<{ id: strin
     if (limited.limited) return rateLimitResponse(limited.resetAt);
     const supabase = await createClient();
     const auth = await getAuthContext(supabase);
-    const adminError = requireAdmin(auth);
-    if (adminError) return adminError;
+    const authError = requireAuth(auth);
+    if (authError) return authError;
     const authed = auth!;
 
     const teamId = asInteger(params.id, 1);
