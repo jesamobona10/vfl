@@ -3,7 +3,7 @@
 import { useCompetition, useSeasons } from "@/lib/hooks/use-competitions";
 import { useParams, usePathname, useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
-import { Calendar, Trophy, Settings, ListOrdered, Users, Shield, LayoutDashboard } from "lucide-react";
+import { Calendar, Trophy, Settings, ListOrdered, Users, Shield, LayoutDashboard, BarChart3 } from "lucide-react";
 import { PageSkeleton } from "@/components/shared/skeleton";
 import { SeasonSelector } from "@/components/competitions/season-selector";
 import { Badge } from "@/components/ui/badge";
@@ -23,6 +23,7 @@ const typeLabels: Record<string, string> = {
 const tabs = [
   { href: "", label: "Overview", icon: LayoutDashboard },
   { href: "standings", label: "Standings", icon: Trophy, standingsOnly: true },
+  { href: "stats", label: "Statistics", icon: BarChart3 },
   { href: "fixtures", label: "Schedule", icon: Calendar },
   { href: "teams", label: "Teams", icon: Shield },
   { href: "players", label: "Players", icon: Users },

@@ -1,15 +1,11 @@
 "use client";
 
-import Link from "next/link";
-import { useParams } from "next/navigation";
 import { useAppStore } from "@/lib/store";
 import { matchMeta, titleCase } from "@/lib/utils/helpers";
-import { Calendar, Clock, MapPin, ArrowUpRight } from "lucide-react";
+import { Calendar, Clock, MapPin } from "lucide-react";
 import { EmptyState } from "@/components/ui/empty-state";
 
 export function UpcomingMatches() {
-  const params = useParams();
-  const slug = params.slug as string;
   const fixtures = useAppStore((s) => s.fixtures);
   const getTeam = useAppStore((s) => s.getTeam);
   const isTeamAccount = useAppStore((s) => s.isTeamAccount);
@@ -62,9 +58,6 @@ export function UpcomingMatches() {
     <div className="panel">
       <div className="panel-head">
         <span className="panel-title">Upcoming &mdash; Round {nextRound.round}</span>
-        <Link href={`/org/${slug}/competitions`} className="panel-link">
-          View all <ArrowUpRight size={12} />
-        </Link>
       </div>
       <div>
         {upcoming.map((match) => {
