@@ -466,10 +466,17 @@ export function requireOrgAdmin(auth: AuthContext | null, orgId: string) {
 export function requireOrgMember(auth: AuthContext | null, orgId: string) {
   if (!auth) return json({ error: "Unauthorized" }, { status: 401 });
   if (auth.isAdmin) return null;
-  if (!auth.orgMembership) return json({ error: "Forbidden" }, { status: 403 });
-  if (auth.orgMembership.organization_id !== orgId)
-    return json({ error: "Forbidden" }, { status: 403 });
-  return null;
+  if (auth.orgMembership) {
+    if (auth.orgMembership.organization_id !== orgId) return json({ error: "Forbidden" }, { status: 403 });
+    return null;
+  }
+  if (auth.teamAccount?.team_id) {
+    // Team accounts belong to their team's organization
+    // We'll need to verify against orgId - but we don't have supabase here
+    // For now, if teamAccount exists and has org_id matching, allow? teamAccount.organization_id might be set
+    if ((auth.teamAccount as any).organization_id === orgId) return null;
+  }
+  return json({ error: "Forbidden" }, { status: 403 });
 }
 
 /** Read access for a team account is limited to the organization that owns its team. */

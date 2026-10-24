@@ -90,10 +90,11 @@ export function can(actor: Actor, action: CanAction): CanResult {
     case "competition.manage":
     case "fixtures.generate":
     case "fixtures.edit":
-    case "players.manage":
-    case "teams.manage":
     case "teamAccounts.manage":
       return { allowed: orgAdmin };
+    case "players.manage":
+    case "teams.manage":
+      return { allowed: orgAdmin || isTeamAccountLike(actor) };
     default: {
       const exhaustive: never = action;
       return { allowed: false, reason: `Unknown action: ${exhaustive}` };

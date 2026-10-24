@@ -33,7 +33,10 @@ export default function OrgPlayersPage() {
   const players = useAppStore((s) => s.players);
   const teams = useAppStore((s) => s.teams);
   const teamName = useAppStore((s) => s.teamName);
-  const { allowed: isOrgAdmin } = useCan("players.manage");
+  const isTeamAccount = useAppStore((s) => s.isTeamAccount)();
+  const managedTeamId = useAppStore((s) => s.getManagedTeamId)();
+  const { allowed: canManagePlayers } = useCan("players.manage");
+  const { allowed: isOrgAdmin } = useCan("organization.manage");
   const { selectedOrgSeasonId, loading: seasonLoading, hasTeams, isOrgAdmin: ctxIsOrgAdmin } = useOrgSeason();
   const deletePlayer = useAppStore((s) => s.deletePlayer);
   const setPlayers = useAppStore((s) => s.setPlayers);
@@ -133,10 +136,14 @@ export default function OrgPlayersPage() {
     setAnonymizePlayer(null);
   };
 
-  const grouped = teams
+  const filteredPlayers = isTeamAccount && managedTeamId ? players.filter((p) => p.teamId === managedTeamId) : players;
+  const filteredTeams = isTeamAccount && managedTeamId ? teams.filter((t) => t.id === managedTeamId) : teams;
+
+  const teamMap = Object.fromEntries(teams.map((t) => [t.id, t]));
+  const grouped = filteredTeams
     .map((team) => ({
       team,
-      players: players.filter((p) => p.teamId === team.id),
+      players: filteredPlayers.filter((p) => p.teamId === team.id),
     }))
     .filter((g) => g.players.length > 0);
 
@@ -147,7 +154,7 @@ export default function OrgPlayersPage() {
         <div>
           <p className="page-title">Players</p>
           <p className="page-sub">
-            {players.length} player{players.length !== 1 ? "s" : ""} across {grouped.length} team
+            {filteredPlayers.length} player{filteredPlayers.length !== 1 ? "s" : ""} across {grouped.length} team
             {grouped.length !== 1 ? "s" : ""}
           </p>
         </div>
@@ -156,10 +163,12 @@ export default function OrgPlayersPage() {
             <Upload size={16} />
             Import CSV
           </button>
-          <button onClick={() => setAddModalOpen(true)} className="btn-primary">
-            <Plus size={16} />
-            Add Player
-          </button>
+          {canManagePlayers && (
+            <button onClick={() => setAddModalOpen(true)} className="btn-primary">
+              <Plus size={16} />
+              Add Player
+            </button>
+          )}
         </div>
       </div>
 
@@ -204,7 +213,7 @@ export default function OrgPlayersPage() {
             <h2 className="font-semibold">Player statistics</h2>
             <p className="mt-1 text-xs text-muted">Match events and current ratings for this season</p>
           </div>
-          {players.length === 0 ? (
+          {filteredPlayers.length === 0 ? (
             <p className="p-6 text-center text-sm text-muted">No player statistics available yet.</p>
           ) : (
             <div className="overflow-x-auto">
@@ -218,7 +227,7 @@ export default function OrgPlayersPage() {
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-line/70">
-                  {[...players].sort((a, b) => b.goals - a.goals || b.assists - a.assists || b.rating - a.rating).map((player) => (
+                  {[...filteredPlayers].sort((a, b) => b.goals - a.goals || b.assists - a.assists || b.rating - a.rating).map((player) => (
                     <tr key={player.id}>
                       <td className="px-4 py-3 font-medium">{player.name}</td>
                       <td className="px-4 py-3 text-muted">{teamName(player.teamId)}</td>
@@ -238,7 +247,7 @@ export default function OrgPlayersPage() {
         <div className="card">
           <EmptyState
             title="No players yet"
-            description="Register players to see them grouped by team here."
+            description={canManagePlayers ? "Add a player to get started." : "No players found for your team."}
           />
         </div>
       ) : (
@@ -259,14 +268,14 @@ export default function OrgPlayersPage() {
                 </span>
               </div>
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3">
-                {teamPlayers.map((p) => (
+                {teamPlayers.map((player) => (
                   <PlayerCard
-                    key={p.id}
-                    player={p}
-                    teamName={teamName(p.teamId)}
-                    onEdit={handleEdit}
-                    onDelete={handleDelete}
-                    onAnonymize={isOrgAdmin ? handleAnonymize : undefined}
+                    key={player.id}
+                    player={player}
+                    teamName={team.name}
+                    onEdit={canManagePlayers ? handleEdit : undefined}
+                    onDelete={canManagePlayers ? handleDelete : undefined}
+                    onAnonymize={canManagePlayers ? handleAnonymize : undefined}
                   />
                 ))}
               </div>

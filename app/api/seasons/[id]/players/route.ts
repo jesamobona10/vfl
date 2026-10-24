@@ -17,7 +17,7 @@ export async function GET(_request: Request, props: { params: Promise<{ id: stri
     if (!season) return json({ error: "Season not found." }, { status: 404 });
 
     const memberError = requireOrgMember(auth, organizationId as string);
-    if (memberError) return memberError;
+    if (memberError) return json({ error: "Forbidden" }, { status: 403 });
 
     // Fetch season team ids first (supabase-js doesn't support subquery IN)
     const { data: seasonTeams } = await sb
