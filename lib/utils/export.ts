@@ -58,7 +58,7 @@ async function createExportCanvas(element: HTMLElement) {
     useCORS: true,
     allowTaint: false,
 
-    backgroundColor: "#ffffff",
+    backgroundColor: "#0b1020",
 
     width,
     height,
@@ -76,6 +76,11 @@ async function createExportCanvas(element: HTMLElement) {
         * {
           animation: none !important;
           transition: none !important;
+          box-shadow: none !important;
+        }
+
+        html, body {
+          background: #0b1020 !important;
         }
 
         .sticky {
@@ -89,8 +94,15 @@ async function createExportCanvas(element: HTMLElement) {
         .overflow-hidden,
         .overflow-auto,
         .overflow-x-auto,
-        .overflow-y-auto {
+        .overflow-y-auto,
+        .overflow-scroll {
           overflow: visible !important;
+        }
+
+        .rounded-xl,
+        .rounded-lg,
+        .rounded {
+          border-radius: 12px !important;
         }
       `;
 

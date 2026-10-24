@@ -75,14 +75,32 @@ export function FixtureFilters({
 
   const handleDownloadPNG = async () => {
     setMenuOpen(false);
-    if (!captureRef?.current) return;
-    await exportAsPNG(captureRef.current, "leagueforge-fixtures.png");
+    if (!captureRef?.current) {
+      toast.error("Nothing to export.");
+      return;
+    }
+    try {
+      await exportAsPNG(captureRef.current, "leagueforge-fixtures.png");
+      toast.success("PNG downloaded");
+    } catch (e) {
+      console.error(e);
+      toast.error("Failed to download PNG");
+    }
   };
 
   const handleDownloadPDF = async () => {
     setMenuOpen(false);
-    if (!captureRef?.current) return;
-    await exportAsPDF(captureRef.current, "leagueforge-fixtures.pdf", "Fixtures");
+    if (!captureRef?.current) {
+      toast.error("Nothing to export.");
+      return;
+    }
+    try {
+      await exportAsPDF(captureRef.current, "leagueforge-fixtures.pdf", "Fixtures");
+      toast.success("PDF downloaded");
+    } catch (e) {
+      console.error(e);
+      toast.error("Failed to download PDF");
+    }
   };
 
   return (

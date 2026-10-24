@@ -1,6 +1,7 @@
 "use client";
+import { Fragment } from "react";
 
-import React, { useState, useRef, useEffect } from "react";
+import { useState, useRef, useEffect } from "react";
 import { useAppStore } from "@/lib/store";
 import { useSeasonStandings } from "@/lib/hooks/use-competitions";
 import { useResolvedTeams } from "@/lib/hooks/use-resolved-teams";
@@ -10,6 +11,7 @@ import { exportAsJSON, exportAsPNG, exportAsPDF } from "@/lib/utils/export";
 import { SkeletonTable, EmptyState } from "@/components/shared/skeleton";
 import type { StandingRow } from "@/lib/types";
 import { StandingsExport } from "./standings-export";
+import { useToast } from "@/components/ui/toast";
 
 function computeForm(
   teamId: number,
@@ -67,6 +69,7 @@ export function StandingsTable({
   const [menuOpen, setMenuOpen] = useState(false);
   const [showAdvanced, setShowAdvanced] = useState(false);
   const [expandedRows, setExpandedRows] = useState<Set<number>>(new Set());
+  const toast = useToast();
   const menuRef = useRef<HTMLDivElement>(null);
   const tableRef = useRef<HTMLDivElement>(null);
   const exportRef = useRef<HTMLDivElement>(null);
@@ -124,21 +127,31 @@ export function StandingsTable({
 
   const handleDownloadPNG = async () => {
     setMenuOpen(false);
-    if (!exportRef.current) return;
+    if (!exportRef.current) {
+      toast.error("Nothing to export.");
+      return;
+    }
     try {
       await exportAsPNG(exportRef.current, "leagueforge-standings.png");
+      toast.success("PNG downloaded");
     } catch (error) {
       console.error("Failed to export standings PNG:", error);
+      toast.error("Failed to download PNG");
     }
   };
 
   const handleDownloadPDF = async () => {
     setMenuOpen(false);
-    if (!exportRef.current) return;
+    if (!exportRef.current) {
+      toast.error("Nothing to export.");
+      return;
+    }
     try {
       await exportAsPDF(exportRef.current, "leagueforge-standings.pdf", "League Standings");
+      toast.success("PDF downloaded");
     } catch (error) {
       console.error("Failed to export standings PDF:", error);
+      toast.error("Failed to download PDF");
     }
   };
 
@@ -192,7 +205,7 @@ export function StandingsTable({
       const hasAdvancedData = false;
 
       return (
-        <React.Fragment key={team.id}>
+        <Fragment key={team.id}>
           {overviewMode && (index === 0 || index === 4 || index >= rows.length - 2) && (
             <tr className={tierInfo.color}>
               <td colSpan={overviewMode ? 10 : 14} className="px-4 py-1.5 text-xs font-semibold uppercase tracking-wider">
@@ -292,7 +305,7 @@ export function StandingsTable({
               </td>
             </tr>
           )}
-        </React.Fragment>
+        </Fragment>
       );
     });
   };
