@@ -62,7 +62,7 @@ export function UpcomingMatches() {
     <div className="panel">
       <div className="panel-head">
         <span className="panel-title">Upcoming &mdash; Round {nextRound.round}</span>
-        <Link href={`/org/${slug}/fixtures`} className="panel-link">
+        <Link href={`/org/${slug}/competitions`} className="panel-link">
           View all <ArrowUpRight size={12} />
         </Link>
       </div>

@@ -25,7 +25,7 @@ export default function OrgStandingsPage() {
         <SeasonEmptyState
           hasTeams={hasTeams}
           sheetHref={`/org/${slug}/teams`}
-          fixturesHref={`/org/${slug}/fixtures`}
+          fixturesHref={`/org/${slug}/competitions`}
         />
       )}
 

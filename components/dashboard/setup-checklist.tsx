@@ -48,7 +48,7 @@ export function SetupChecklist({ slug, competitionCount, teamCount, fixtureCount
       key: "fixtures",
       label: "Generate your fixtures",
       hint: "Round-robin or cup schedule, ready in one click",
-      href: `${base}/fixtures`,
+      href: `${base}/competitions`,
       icon: Calendar,
       done: fixtureCount > 0,
     },

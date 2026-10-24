@@ -198,7 +198,7 @@ export default function OrgDashboardPage() {
           ) : (
             <Button
               className="text-sm"
-              onClick={() => router.push(`/org/${currentOrg?.slug}/fixtures`)}
+              onClick={() => router.push(`/org/${currentOrg?.slug}/competitions`)}
             >
               <Plus size={14} /> Generate fixtures
             </Button>
@@ -226,7 +226,7 @@ export default function OrgDashboardPage() {
             <SeasonEmptyState
               hasTeams={hasTeams}
               sheetHref={`/org/${slug}/teams`}
-              fixturesHref={`/org/${slug}/fixtures`}
+              fixturesHref={`/org/${slug}/competitions`}
             />
           )}
 
@@ -237,7 +237,7 @@ export default function OrgDashboardPage() {
             fixtureCount={fixtures.length}
           />
 
-          <MetricCards fixtureHref={`/org/${slug}/fixtures`} />
+          <MetricCards fixtureHref={`/org/${slug}/competitions`} />
 
           <div className="grid grid-cols-1 xl:grid-cols-[1.3fr_1fr] gap-4">
             <UpcomingMatches />
