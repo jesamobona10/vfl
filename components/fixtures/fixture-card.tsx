@@ -11,12 +11,14 @@ import { MatchReportModal } from "./match-report-modal";
 import { LiveBadgeWithLink } from "@/components/live/live-badge";
 import { useToast } from "@/components/ui/toast";
 import { removeMatchEvent } from "@/lib/match-events";
-import { Sparkles, Radio, Trash2, Images } from "lucide-react";
+import { Sparkles, Radio, Trash2, Images, Users } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
 import { useConfirm } from "@/components/shared/confirm-dialog";
 import { MatchMediaManager } from "./match-media-manager";
+import { FixtureLineupsModal } from "./fixture-lineups";
+import { useCan } from "@/lib/hooks/use-can";
 
 /** Grace window before a removed match event is actually deleted on the server. */
 const UNDO_WINDOW_MS = 5000;
@@ -88,6 +90,7 @@ export function FixtureCard({
   const [showFlyer, setShowFlyer] = useState(false);
   const [showReport, setShowReport] = useState(false);
   const [showMedia, setShowMedia] = useState(false);
+  const [showLineups, setShowLineups] = useState(false);
   const [deleting, setDeleting] = useState(false);
   const players = useAppStore((s) => s.players);
   const queryClient = useQueryClient();
@@ -96,6 +99,7 @@ export function FixtureCard({
   const router = useRouter();
   const slug = typeof params?.slug === "string" ? params.slug : undefined;
   const { confirm, dialog: confirmDialog } = useConfirm();
+  const { allowed: canManageMatch } = useCan("match.edit");
 
   const invalidateSeasonQueries = () => {
     if (match.season_id) {
@@ -297,8 +301,17 @@ export function FixtureCard({
           </div>
         )}
 
-        {editable && (
+        {(editable || canManageMatch) && (
           <div className="flex gap-2 pt-2 border-t border-line" onClick={(e) => e.stopPropagation()}>
+            <Button
+              size="sm"
+              variant="ghost"
+              onClick={() => setShowLineups(true)}
+              className="flex-1 gap-1.5 text-brand border border-brand/25 hover:bg-brand/5"
+            >
+              <Users size={13} /> Lineups
+            </Button>
+            {editable && <>
             <Link
               href={slug ? `/org/${slug}/match/${match.id}` : "#"}
               className="btn btn-ghost btn-sm flex-1 justify-center gap-1.5 text-brand border border-brand/25 hover:bg-brand/5"
@@ -321,6 +334,7 @@ export function FixtureCard({
             >
               <Sparkles size={13} /> AI Report
             </Button>
+            </>}
           </div>
         )}
       </article>
@@ -351,6 +365,7 @@ export function FixtureCard({
         open={showMedia}
         onClose={() => setShowMedia(false)}
       />
+      <FixtureLineupsModal fixtureId={match.id} open={showLineups} onClose={() => setShowLineups(false)} />
     </>
   );
 }

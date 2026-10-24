@@ -13,6 +13,7 @@ import { readPublicPreferences } from "@/lib/public-preferences";
 import { ShareMatchButton } from "@/components/public/share-match-button";
 import { FollowTeamsButton } from "@/components/public/follow-teams-button";
 import type { MatchMediaItem } from "@/lib/match-media";
+import { MatchLineupsDisplay, type FixtureLineup } from "@/components/fixtures/fixture-lineups";
 
 type Event = PublicLiveEventRow;
 
@@ -66,6 +67,7 @@ export default function PublicLiveMatchPage() {
   const matchId = Number(params.matchId);
   const [match, setMatch] = useState<PublicMatchRow | null>(null);
   const [events, setEvents] = useState<Event[]>([]);
+  const [lineups, setLineups] = useState<FixtureLineup[]>([]);
   const [media, setMedia] = useState<MatchMediaItem[]>([]);
   const [mediaFilter, setMediaFilter] = useState<"all" | "photo" | "video">("all");
   const [mediaOffset, setMediaOffset] = useState(0);
@@ -92,6 +94,18 @@ export default function PublicLiveMatchPage() {
       .finally(() => { if (active) setMediaLoading(false); });
     return () => { active = false; };
   }, [matchId, mediaFilter, mediaReload]);
+
+  useEffect(() => {
+    if (!matchId) return;
+    let active = true;
+    const loadLineups = () => fetch(`/api/public/matches/${matchId}/lineups`)
+      .then(async (response) => { const body = await response.json(); if (!response.ok) throw new Error(body.error || "Unable to load verified lineups."); return body; })
+      .then((body) => { if (active) setLineups(body.lineups || []); })
+      .catch(() => { if (active) setLineups([]); });
+    void loadLineups();
+    const timer = setInterval(() => void loadLineups(), 30_000);
+    return () => { active = false; clearInterval(timer); };
+  }, [matchId]);
 
   async function loadMoreMedia() {
     if (!mediaHasMore || mediaLoading) return;
@@ -283,6 +297,20 @@ export default function PublicLiveMatchPage() {
             <span className="w-full truncate text-xs font-semibold sm:text-base">{match.away_team_name}</span>
           </div>
         </div>
+      </section>
+
+      <section aria-labelledby="match-lineups-heading" className="space-y-3">
+        <div className="px-1">
+          <h2 id="match-lineups-heading" className="text-base font-bold">Verified lineups</h2>
+          <p className="mt-0.5 text-xs text-ink-3">Starting XI, formation and substitutes</p>
+        </div>
+        {lineups.length ? <MatchLineupsDisplay
+          teams={[
+            { id: match.home_team_id ?? -1, name: match.home_team_name, logo_url: match.home_team_logo },
+            { id: match.away_team_id ?? -2, name: match.away_team_name, logo_url: match.away_team_logo },
+          ]}
+          lineups={lineups}
+        /> : <div className="card p-4 text-center text-sm text-muted">Lineups will appear here after they are submitted and verified.</div>}
       </section>
 
       <section aria-labelledby="match-media-heading" className="space-y-3">
