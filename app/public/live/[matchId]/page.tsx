@@ -14,6 +14,7 @@ import { ShareMatchButton } from "@/components/public/share-match-button";
 import { FollowTeamsButton } from "@/components/public/follow-teams-button";
 import type { MatchMediaItem } from "@/lib/match-media";
 import { MatchLineupsDisplay, type FixtureLineup } from "@/components/fixtures/fixture-lineups";
+import { MATCH_EVENT_CATEGORIES, matchEventCategory, matchEventCategoryColor, type MatchEventCategory } from "@/lib/match-event-categories";
 
 type Event = PublicLiveEventRow;
 
@@ -67,6 +68,7 @@ export default function PublicLiveMatchPage() {
   const matchId = Number(params.matchId);
   const [match, setMatch] = useState<PublicMatchRow | null>(null);
   const [events, setEvents] = useState<Event[]>([]);
+  const [eventCategory, setEventCategory] = useState<MatchEventCategory | "All">("All");
   const [lineups, setLineups] = useState<FixtureLineup[]>([]);
   const [media, setMedia] = useState<MatchMediaItem[]>([]);
   const [mediaFilter, setMediaFilter] = useState<"all" | "photo" | "video">("all");
@@ -348,33 +350,42 @@ export default function PublicLiveMatchPage() {
         </section>
       {selectedPhoto && <div role="dialog" aria-modal="true" aria-label={selectedPhoto.alt_text || selectedPhoto.title || "Match photo"} className="fixed inset-0 z-[100] flex items-center justify-center bg-black/90 p-4" onClick={() => setSelectedPhoto(null)}><button type="button" onClick={() => setSelectedPhoto(null)} aria-label="Close photo" className="absolute right-4 top-4 rounded-full bg-white/10 p-2 text-white"><X size={22} /></button><Image src={selectedPhoto.url} alt={selectedPhoto.alt_text || selectedPhoto.title || "Match photo"} width={selectedPhoto.width || 1600} height={selectedPhoto.height || 900} sizes="100vw" className="max-h-[90vh] w-auto max-w-full object-contain" onClick={(event) => event.stopPropagation()} /></div>}
 
-      <section aria-labelledby="match-timeline-heading" className="space-y-3">
+      <section aria-labelledby="match-timeline-heading" className="space-y-4">
         <div className="flex items-end justify-between gap-3 px-1">
           <div>
             <h2 id="match-timeline-heading" className="text-base font-bold">Match timeline</h2>
-            <p className="mt-0.5 text-xs text-ink-3">Goals, cards, and other match events</p>
+            <p className="mt-0.5 text-xs text-ink-3">Events grouped by type for a clear match record</p>
           </div>
           {liveEvents.length > 0 && <span className="rounded-full bg-surface-2 px-2.5 py-1 text-xs font-semibold text-ink-3">{liveEvents.length} updates</span>}
         </div>
-        {liveEvents.length > 0 ? liveEvents.map((event) => (
-          <div key={event.event_id} className="card flex items-center gap-3 border-l-2 border-l-brand/40 p-3.5 sm:gap-4 sm:p-4">
-            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-surface-2 text-sm font-bold text-ink-3">
-              {event.player_name?.slice(0, 1) || "•"}
-            </div>
-            <div className="min-w-0 flex-1">
-              <p className="text-sm font-semibold leading-snug">
-                {eventLabel(event, match.home_team_name, match.away_team_name)}
-              </p>
-              <p className="mt-1 text-xs text-ink-3">
-                {event.team_id === event.home_team_id ? match.home_team_name : match.away_team_name}
-              </p>
-            </div>
-            <span className={`shrink-0 rounded-full px-2.5 py-1 text-[10px] font-bold uppercase ${eventTone(event.event_type)}`}>
-              {event.event_type.replace(/[-_]/g, " ")}
-            </span>
-            {event.minute != null && <span className="min-w-8 shrink-0 text-right text-sm font-semibold tabular-nums text-ink-2">{event.minute}′</span>}
+        {liveEvents.length > 0 ? <>
+          <div className="flex gap-2 overflow-x-auto pb-1" aria-label="Filter events by category">
+            {(["All", ...MATCH_EVENT_CATEGORIES] as const).map((category) => {
+              const count = category === "All" ? liveEvents.length : liveEvents.filter((event) => matchEventCategory(event.event_type) === category).length;
+              if (category !== "All" && count === 0) return null;
+              const selected = eventCategory === category;
+              return <button key={category} type="button" onClick={() => setEventCategory(category)} aria-pressed={selected} className={`shrink-0 rounded-full px-3.5 py-2 text-xs font-semibold transition-colors ${selected ? "bg-brand text-white" : "border border-line bg-surface text-ink-3 hover:bg-surface-2"}`}>{category} <span className="ml-1 opacity-75">{count}</span></button>;
+            })}
           </div>
-        )) : (
+          {(eventCategory === "All" ? MATCH_EVENT_CATEGORIES : [eventCategory]).map((category) => {
+            const categorized = liveEvents.filter((event) => matchEventCategory(event.event_type) === category);
+            if (!categorized.length) return null;
+            return <section key={category} aria-label={`${category} events`} className="space-y-2.5">
+              <div className="flex items-center justify-between px-1"><h3 className="text-sm font-bold">{category}</h3><span className={`rounded-full px-2 py-0.5 text-[10px] font-bold ${matchEventCategoryColor(category)}`}>{categorized.length}</span></div>
+              <div className="space-y-2">{categorized.map((event) => (
+                <article key={event.event_id} className="card flex items-center gap-3 border-l-2 border-l-brand/40 p-3.5 sm:gap-4 sm:p-4">
+                  <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-surface-2 text-sm font-bold text-ink-3">{event.player_name?.slice(0, 1) || "•"}</div>
+                  <div className="min-w-0 flex-1">
+                    <p className="text-sm font-semibold leading-snug">{eventLabel(event, match.home_team_name, match.away_team_name)}</p>
+                    <p className="mt-1 text-xs text-ink-3">{event.team_id === event.home_team_id ? match.home_team_name : match.away_team_name}</p>
+                  </div>
+                  <span className={`shrink-0 rounded-full px-2.5 py-1 text-[10px] font-bold uppercase ${eventTone(event.event_type)}`}>{event.event_type.replace(/[-_]/g, " ")}</span>
+                  {event.minute != null && <span className="min-w-8 shrink-0 text-right text-sm font-semibold tabular-nums text-ink-2">{event.minute}′</span>}
+                </article>
+              ))}</div>
+            </section>;
+          })}
+        </> : (
           <div className="card p-5 text-center text-sm text-muted">
             {isLive ? "Match is underway. Updates will appear here as they happen." : "No player events have been recorded for this match."}
           </div>

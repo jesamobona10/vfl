@@ -11,7 +11,7 @@ import { MatchReportModal } from "./match-report-modal";
 import { LiveBadgeWithLink } from "@/components/live/live-badge";
 import { useToast } from "@/components/ui/toast";
 import { removeMatchEvent } from "@/lib/match-events";
-import { Sparkles, Radio, Trash2, Images, Users } from "lucide-react";
+import { Sparkles, Radio, Trash2, Images, Users, Activity } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
@@ -19,6 +19,8 @@ import { useConfirm } from "@/components/shared/confirm-dialog";
 import { MatchMediaManager } from "./match-media-manager";
 import { FixtureLineupsModal } from "./fixture-lineups";
 import { useCan } from "@/lib/hooks/use-can";
+import { MATCH_EVENT_CATEGORIES, matchEventCategory, matchEventCategoryColor } from "@/lib/match-event-categories";
+import { Modal } from "@/components/ui/modal";
 
 /** Grace window before a removed match event is actually deleted on the server. */
 const UNDO_WINDOW_MS = 5000;
@@ -91,6 +93,7 @@ export function FixtureCard({
   const [showReport, setShowReport] = useState(false);
   const [showMedia, setShowMedia] = useState(false);
   const [showLineups, setShowLineups] = useState(false);
+  const [showEvents, setShowEvents] = useState(false);
   const [deleting, setDeleting] = useState(false);
   const players = useAppStore((s) => s.players);
   const queryClient = useQueryClient();
@@ -293,11 +296,17 @@ export function FixtureCard({
         </div>
 
         {events.length > 0 && (
-          <div
-            className="flex flex-wrap gap-1 pt-1 border-t border-line"
-            onClick={(e) => e.stopPropagation()}
-          >
-            {events.map((event, i) => renderEventBadge(event, i))}
+          <div className="border-t border-line pt-2" onClick={(e) => e.stopPropagation()}>
+            <button type="button" onClick={() => setShowEvents(true)} className="flex w-full items-center justify-between gap-3 rounded-lg px-2 py-2 text-left transition-colors hover:bg-surface-2/50">
+              <span className="inline-flex min-w-0 items-center gap-2 text-sm font-semibold"><Activity size={15} className="shrink-0 text-brand" /> Match events</span>
+              <span className="shrink-0 rounded-full bg-surface-2 px-2.5 py-1 text-xs font-bold tabular-nums">{events.length}</span>
+            </button>
+            <div className="flex flex-wrap gap-1.5 px-2 pb-1">
+              {MATCH_EVENT_CATEGORIES.map((category) => {
+                const count = events.filter((event) => matchEventCategory(event.type) === category).length;
+                return count > 0 ? <span key={category} className={`rounded-full px-2 py-0.5 text-[10px] font-semibold ${matchEventCategoryColor(category)}`}>{category} · {count}</span> : null;
+              })}
+            </div>
           </div>
         )}
 
@@ -366,6 +375,18 @@ export function FixtureCard({
         onClose={() => setShowMedia(false)}
       />
       <FixtureLineupsModal fixtureId={match.id} open={showLineups} onClose={() => setShowLineups(false)} />
+      <Modal open={showEvents} onClose={() => setShowEvents(false)} title="Match events" subtitle={`${homeTeam?.name || "Home"} ${scoreDisplay || "vs"} ${awayTeam?.name || "Away"} · ${events.length} total`} className="max-w-2xl">
+        <div className="max-h-[65vh] space-y-5 overflow-y-auto pr-1">
+          {MATCH_EVENT_CATEGORIES.map((category) => {
+            const categorized = events.map((event, index) => ({ event, index })).filter(({ event }) => matchEventCategory(event.type) === category);
+            if (!categorized.length) return null;
+            return <section key={category} className="space-y-2">
+              <div className="flex items-center justify-between border-b border-line pb-2"><h3 className="text-sm font-bold">{category}</h3><span className="text-xs text-muted">{categorized.length}</span></div>
+              <div className="flex flex-wrap gap-1.5">{categorized.map(({ event, index }) => renderEventBadge(event, index))}</div>
+            </section>;
+          })}
+        </div>
+      </Modal>
     </>
   );
 }
