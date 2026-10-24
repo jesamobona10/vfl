@@ -98,12 +98,19 @@ export async function PUT(request: Request) {
     ) return json({ error: "Invalid public match preferences." }, { status: 400 });
 
     const service = createServiceRoleClient();
+    const { data: organization, error: organizationError } = await service
+      .from("organizations")
+      .select("id")
+      .eq("id", organizationId)
+      .maybeSingle();
+    if (organizationError) throw organizationError;
+    if (!organization) return json({ error: "Choose an organization." }, { status: 400 });
+
     const { data: matches, error: matchesError } = await service
       .from("public_matches")
       .select("home_team_id, away_team_id")
       .eq("organization_id", organizationId);
     if (matchesError) throw matchesError;
-    if (!matches?.length) return json({ error: "Choose an organization with public matches." }, { status: 400 });
     const eligibleTeamIds = new Set(matches.flatMap((match) => [match.home_team_id, match.away_team_id]).filter((id): id is number => typeof id === "number"));
     if (teamIds.some((id) => !eligibleTeamIds.has(id))) return json({ error: "One or more selected teams are unavailable." }, { status: 400 });
 

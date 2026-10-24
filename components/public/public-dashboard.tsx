@@ -5,7 +5,7 @@ import Link from "next/link";
 import Image from "next/image";
 import { ArrowRight, BarChart3, CalendarClock, MapPin, Radio, Settings2, Trophy } from "lucide-react";
 import { createPublicClient } from "@/lib/supabase/public";
-import type { PublicMatchRow, PublicPlayerStatisticsRow, PublicSeasonRow, PublicStandingRow } from "@/lib/types";
+import type { PublicMatchRow, PublicOrganizationRow, PublicPlayerStatisticsRow, PublicSeasonRow, PublicStandingRow } from "@/lib/types";
 import { PushSubscriptionControl } from "@/components/public/push-subscription";
 import { Modal } from "@/components/ui/modal";
 import { readPublicPreferences, savePublicPreferences, type PublicPreferences } from "@/lib/public-preferences";
@@ -115,6 +115,7 @@ export function PublicDashboard() {
   const userProfile = useAppStore((state) => state.userProfile);
   const authenticated = isAdmin || Boolean(currentTeamAccount) || userProfile?.role === "player" || userProfile?.role === "org_admin";
   const [matches, setMatches] = useState<PublicMatchRow[]>([]);
+  const [publicOrganizations, setPublicOrganizations] = useState<PublicOrganizationRow[]>([]);
   const [publicSeasons, setPublicSeasons] = useState<PublicSeasonRow[]>([]);
   const [filter, setFilter] = useState<MatchFilter>("all");
   const [clockNow, setClockNow] = useState(() => Date.now());
@@ -195,7 +196,7 @@ export function PublicDashboard() {
     let mounted = true;
 
     async function load() {
-      const [{ data, error }, { data: seasonRows, error: seasonError }] = await Promise.all([
+      const [{ data, error }, { data: seasonRows, error: seasonError }, { data: organizationRows, error: organizationError }] = await Promise.all([
         sb
           .from("public_matches")
           .select("*")
@@ -204,6 +205,7 @@ export function PublicDashboard() {
           .order("round", { ascending: true })
           .order("match_id", { ascending: true }),
         sb.from("public_seasons").select("*").order("season_name", { ascending: false }),
+        sb.from("public_organizations").select("*").order("name", { ascending: true }),
       ]);
 
       if (!mounted) return;
@@ -214,6 +216,7 @@ export function PublicDashboard() {
         setError(null);
       }
       if (!seasonError) setPublicSeasons((seasonRows as PublicSeasonRow[]) || []);
+      if (!organizationError) setPublicOrganizations((organizationRows as PublicOrganizationRow[]) || []);
       setLoading(false);
     }
 
@@ -241,6 +244,9 @@ export function PublicDashboard() {
       .on("postgres_changes", { event: "*", schema: "public", table: "organization_seasons" }, () => {
         if (mounted) load();
       })
+      .on("postgres_changes", { event: "*", schema: "public", table: "organizations" }, () => {
+        if (mounted) load();
+      })
       .subscribe();
 
     const poll = setInterval(() => {
@@ -257,12 +263,17 @@ export function PublicDashboard() {
   }, []);
 
   const organizations = useMemo(() => {
+    if (publicOrganizations.length > 0) {
+      return publicOrganizations
+        .map((organization) => ({ id: organization.id, name: organization.name }))
+        .sort((a, b) => a.name.localeCompare(b.name));
+    }
     const options = new Map<string, string>();
     for (const match of matches) {
       if (match.organization_id && match.organization_name) options.set(match.organization_id, match.organization_name);
     }
     return [...options].map(([id, name]) => ({ id, name })).sort((a, b) => a.name.localeCompare(b.name));
-  }, [matches]);
+  }, [publicOrganizations, matches]);
   const publicSeasonOptions = useMemo(() => {
     const options = new Map<string, PublicSeasonOption>();
     for (const season of publicSeasons) {

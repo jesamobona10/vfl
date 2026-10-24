@@ -54,12 +54,19 @@ export async function POST(request: Request) {
     }
 
     const supabase = createServiceRoleClient();
+    const { data: organization, error: organizationError } = await supabase
+      .from("organizations")
+      .select("id")
+      .eq("id", organizationId)
+      .maybeSingle();
+    if (organizationError) throw organizationError;
+    if (!organization) return json({ error: "Choose an organization." }, { status: 400 });
+
     const { data: publicMatches, error: matchesError } = await supabase
       .from("public_matches")
       .select("home_team_id, away_team_id")
       .eq("organization_id", organizationId);
     if (matchesError) throw matchesError;
-    if (!publicMatches?.length) return json({ error: "Choose an organization with public matches." }, { status: 400 });
     const validTeamIds = new Set(publicMatches.flatMap((match) => [match.home_team_id, match.away_team_id]).filter((id): id is number => typeof id === "number"));
     if (teamIds.some((id) => !validTeamIds.has(id))) return json({ error: "One or more selected teams are unavailable." }, { status: 400 });
 
