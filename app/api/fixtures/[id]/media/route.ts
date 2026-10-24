@@ -18,11 +18,19 @@ async function getContext(id: string) {
 }
 
 export async function GET(_request: Request, props: { params: Promise<{ id: string }> }) {
-  const context = await getContext((await props.params).id);
-  if (context.error) return context.error;
-  const { data, error } = await context.supabase.from("match_media").select("*").eq("match_id", context.fixtureId).order("created_at", { ascending: false });
-  if (error) return json({ error: "Unable to load fixture media." }, { status: 500 });
-  return json({ media: (data || []).map((row) => ({ ...row, embed_url: row.source_type === "link" ? getVideoEmbedUrl(row.url) : null })) });
+  try {
+    const context = await getContext((await props.params).id);
+    if (context.error) return context.error;
+    const { data, error } = await context.supabase.from("match_media").select("*").eq("match_id", context.fixtureId).order("created_at", { ascending: false });
+    if (error) {
+      // Table may not exist yet in some environments
+      if ((error as any)?.code === "42P01") return json({ media: [] });
+      return json({ error: "Unable to load fixture media." }, { status: 500 });
+    }
+    return json({ media: (data || []).map((row) => ({ ...row, embed_url: row.source_type === "link" ? getVideoEmbedUrl(row.url) : null })) });
+  } catch {
+    return json({ media: [] });
+  }
 }
 
 export async function POST(request: Request, props: { params: Promise<{ id: string }> }) {
@@ -39,7 +47,7 @@ export async function POST(request: Request, props: { params: Promise<{ id: stri
     const url = typeof body.url === "string" ? body.url.trim() : "";
     if (!getVideoEmbedUrl(url)) return json({ error: "Enter a valid YouTube or Vimeo video URL." }, { status: 400 });
     row = { source_type: "link", media_type: "video", url, storage_path: null, mime_type: null };
-  } else if (sourceType === "upload") {
+  } else   if (sourceType === "upload") {
     const path = typeof body.path === "string" ? body.path : "";
     const mimeType = typeof body.mimeType === "string" ? body.mimeType : "";
     const expectedPrefix = `${context.organizationId}/${context.fixtureId}/`;
@@ -47,17 +55,28 @@ export async function POST(request: Request, props: { params: Promise<{ id: stri
       return json({ error: "Invalid uploaded media." }, { status: 400 });
     }
     const mediaType = mimeType.startsWith("image/") ? "photo" : "video";
-    const { data: file } = await context.supabase.storage.from(MATCH_MEDIA_BUCKET).list(`${context.organizationId}/${context.fixtureId}`);
-    if (!file?.some((entry) => path.endsWith(`/${entry.name}`))) return json({ error: "Uploaded file not found." }, { status: 400 });
-    const { data } = context.supabase.storage.from(MATCH_MEDIA_BUCKET).getPublicUrl(path);
-    row = { source_type: "upload", media_type: mediaType, url: data.publicUrl, storage_path: path, mime_type: mimeType };
+    try {
+      const { data: file } = await context.supabase.storage.from(MATCH_MEDIA_BUCKET).list(`${context.organizationId}/${context.fixtureId}`);
+      if (!file?.some((entry) => path.endsWith(`/${entry.name}`))) return json({ error: "Uploaded file not found." }, { status: 400 });
+      const { data } = context.supabase.storage.from(MATCH_MEDIA_BUCKET).getPublicUrl(path);
+      row = { source_type: "upload", media_type: mediaType, url: data.publicUrl, storage_path: path, mime_type: mimeType };
+    } catch {
+      return json({ error: "Storage unavailable." }, { status: 500 });
+    }
   } else return json({ error: "Invalid media source." }, { status: 400 });
 
-  const { data, error } = await context.supabase.from("match_media").insert({
-    ...row, match_id: context.fixtureId, organization_id: context.organizationId,
-    title: title || (row.media_type === "photo" ? "Match photo" : "Match video"),
-    caption, created_by: context.auth.userId,
-  }).select("*").single();
-  if (error || !data) return json({ error: "Unable to save fixture media." }, { status: 500 });
-  return json({ media: { ...data, embed_url: data.source_type === "link" ? getVideoEmbedUrl(data.url) : null } }, { status: 201 });
+  try {
+    const { data, error } = await context.supabase.from("match_media").insert({
+      ...row, match_id: context.fixtureId, organization_id: context.organizationId,
+      title: title || (row.media_type === "photo" ? "Match photo" : "Match video"),
+      caption, created_by: context.auth.userId,
+    }).select("*").single();
+    if (error || !data) {
+      if ((error as any)?.code === "42P01") return json({ error: "Media storage not configured." }, { status: 500 });
+      return json({ error: "Unable to save fixture media." }, { status: 500 });
+    }
+    return json({ media: { ...data, embed_url: data.source_type === "link" ? getVideoEmbedUrl(data.url) : null } }, { status: 201 });
+  } catch {
+    return json({ error: "Media storage not configured." }, { status: 500 });
+  }
 }

@@ -132,6 +132,20 @@ export function FixtureCreator({
 
     resetForm();
     setSuccess("Fixture added successfully.");
+    // Ensure store changes are persisted even if autosave hasn't fired yet
+    try {
+      const current = useAppStore.getState().fixtures;
+      if (current.length > 0) {
+        await fetch("/api/sync/fixtures", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ fixtures: current }),
+        });
+      }
+    } catch {
+      // ignore
+    }
+    onCreated?.();
     setTimeout(() => setSuccess(""), 3000);
     setTimeout(() => {
       setOpen(false);

@@ -112,7 +112,7 @@ export default function OrgFixturesPage() {
   }, [currentOrgId, loadDbFixtures, selectedOrgSeasonId]);
 
   useEffect(() => {
-    if (!fixtures.length || !currentOrgId) return;
+    if (!currentOrgId) return;
     const serialized = JSON.stringify(fixtures);
     if (serialized === prevFixturesRef.current) return;
     prevFixturesRef.current = serialized;
@@ -133,7 +133,7 @@ export default function OrgFixturesPage() {
       } catch {
         setError("Failed to save fixtures to the database. Retrying on next change.");
       }
-    }, 1500);
+    }, 1000);
     return () => {
       if (autoSaveTimer.current) clearTimeout(autoSaveTimer.current);
     };
