@@ -11,10 +11,11 @@ import { MatchReportModal } from "./match-report-modal";
 import { LiveBadgeWithLink } from "@/components/live/live-badge";
 import { useToast } from "@/components/ui/toast";
 import { removeMatchEvent } from "@/lib/match-events";
-import { Sparkles, Radio } from "lucide-react";
+import { Sparkles, Radio, Trash2 } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
-import { useParams } from "next/navigation";
+import { useParams, useRouter } from "next/navigation";
+import { useConfirm } from "@/components/shared/confirm-dialog";
 
 /** Grace window before a removed match event is actually deleted on the server. */
 const UNDO_WINDOW_MS = 5000;
@@ -85,17 +86,25 @@ export function FixtureCard({
 }: FixtureCardProps) {
   const [showFlyer, setShowFlyer] = useState(false);
   const [showReport, setShowReport] = useState(false);
+  const [deleting, setDeleting] = useState(false);
   const players = useAppStore((s) => s.players);
   const queryClient = useQueryClient();
   const toast = useToast();
   const params = useParams();
+  const router = useRouter();
   const slug = typeof params?.slug === "string" ? params.slug : undefined;
+  const { confirm, dialog: confirmDialog } = useConfirm();
 
   const invalidateSeasonQueries = () => {
     if (match.season_id) {
       queryClient.invalidateQueries({ queryKey: ["season-standings", match.season_id] });
       queryClient.invalidateQueries({ queryKey: ["season-statistics", match.season_id] });
     }
+  };
+
+  const getPlayerName = (playerId: number) => {
+    const p = players.find((pl) => pl.id === playerId);
+    return p?.name || "Unknown";
   };
 
   const events = match.events || [];
@@ -138,9 +147,33 @@ export function FixtureCard({
     });
   };
 
-  const getPlayerName = (playerId: number) => {
-    const p = players.find((pl) => pl.id === playerId);
-    return p?.name || "Unknown";
+  const handleDelete = async (e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (deleting) return;
+    if (
+      !(await confirm({
+        title: "Delete fixture",
+        description: `${homeTeam?.name || "Home"} vs ${awayTeam?.name || "Away"} will be deleted. This cannot be undone.`,
+      }))
+    ) {
+      return;
+    }
+    setDeleting(true);
+    try {
+      const res = await fetch(`/api/fixtures/${match.id}`, { method: "DELETE" });
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({}));
+        toast.error(data.error || "Failed to delete fixture.");
+        setDeleting(false);
+        return;
+      }
+      toast.success("Fixture deleted.");
+      if (slug) router.refresh();
+      else window.location.reload();
+    } catch {
+      toast.error("Failed to delete fixture.");
+      setDeleting(false);
+    }
   };
 
   const renderEventBadge = (event: (typeof events)[0], i: number) => {
@@ -170,6 +203,7 @@ export function FixtureCard({
 
   return (
     <>
+      {confirmDialog}
       <article
         onClick={() => setShowFlyer(true)}
         onKeyDown={handleCardKeyDown}
@@ -193,9 +227,14 @@ export function FixtureCard({
             )}
           </div>
           {editable && (
-            <span className="text-xs text-muted/40 group-hover:text-muted/60 transition-colors">
-              +
-            </span>
+            <button
+              onClick={handleDelete}
+              disabled={deleting}
+              aria-label="Delete fixture"
+              className="p-1 rounded-lg text-muted hover:text-danger hover:bg-danger/10 transition-colors disabled:opacity-50"
+            >
+              <Trash2 size={14} />
+            </button>
           )}
         </div>
 

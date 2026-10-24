@@ -333,8 +333,8 @@ export async function DELETE(request: Request, props: { params: Promise<{ id: st
   try {
     const supabase = await createClient();
     const auth = await getAuthContext(supabase);
-    const adminError = requireAdmin(auth);
-    if (adminError) return adminError;
+    const authError = requireAuth(auth);
+    if (authError) return authError;
     const authed = auth!;
 
     const ip = getClientIp(request);
@@ -399,12 +399,26 @@ export async function DELETE(request: Request, props: { params: Promise<{ id: st
       }
     }
 
-    const { error } = await supabase.from("fixtures").delete().eq("id", fixtureId);
+    const { error } = await createServiceRoleClient().from("fixtures").delete().eq("id", fixtureId);
 
     if (error) {
       logApiError("fixture_delete_failed", error, { userId: authed.userId, fixtureId });
       return json({ error: "Unable to delete fixture." }, { status: 400 });
     }
+
+    const orgId = homeTeamOrgId || awayTeamOrgId;
+    void writeAuditRecord({
+      organizationId: orgId,
+      actorId: authed.userId,
+      actorRole: actorRole(authed),
+      action: AUDIT_ACTIONS.FIXTURE_DELETED,
+      resourceType: "FIXTURE",
+      resourceId: fixtureId,
+      description: `Deleted fixture #${fixtureId}`,
+      before: { homeTeamId: fixture.home_team_id, awayTeamId: fixture.away_team_id },
+      ip,
+    }).catch(() => {});
+
     return json({ success: true });
   } catch (error) {
     logApiError("fixture_delete_error", error);
