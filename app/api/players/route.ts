@@ -245,6 +245,7 @@ export async function POST(request: Request) {
         position: sanitizeText(position),
         jersey_number: jerseyNumber,
         is_captain: isCaptain,
+        rating: 6.0,
       })
       .select()
       .single();

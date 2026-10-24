@@ -104,7 +104,7 @@ export async function POST(request: Request) {
 
     const { data, error } = await sb
       .from("players")
-      .insert({ name, team_id, position, jersey_number })
+      .insert({ name, team_id, position, jersey_number, rating: 6.0 })
       .select()
       .single();
 

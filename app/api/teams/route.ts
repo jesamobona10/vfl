@@ -50,7 +50,7 @@ async function attachCurrentRatings(sb: ReturnType<typeof createServiceRoleClien
   const players = (playerRows || []).map((player: any) => ({
     id: player.id,
     teamId: player.team_id,
-    rating: player.rating ?? 6,
+    rating: typeof player.rating === "number" && player.rating > 0 ? player.rating : 6,
   })) as Player[];
   updateTeamRatings(teams, matches, players);
   const ratingById = new Map(teams.map((team) => [team.id, team.rating]));
@@ -173,7 +173,7 @@ export async function POST(request: Request) {
 
     const { data, error } = await supabase
       .from("teams")
-      .insert({ name: sanitizeText(name), organization_id })
+      .insert({ name: sanitizeText(name), organization_id, rating: 6.0 })
       .select()
       .single();
 

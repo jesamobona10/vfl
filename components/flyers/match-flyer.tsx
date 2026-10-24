@@ -196,9 +196,9 @@ export function MatchFlyer({ match, homeTeam, awayTeam, onClose }: MatchFlyerPro
         players.find((player) => Number(player.id) === Number(event.playerId))?.name;
       const teamName =
         event.teamId === homeTeam?.id
-          ? homeTeam.name
+          ? homeTeam?.name
           : event.teamId === awayTeam?.id
-            ? awayTeam.name
+            ? awayTeam?.name
             : null;
       const typeLabels: Record<string, string> = {
         goal: "Goal",

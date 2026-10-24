@@ -247,6 +247,7 @@ export async function POST(request: Request, props: { params: Promise<{ slug: st
       position: string;
       jersey_number: number | null;
       is_captain: boolean;
+      rating: number;
     }[] = [];
     for (const row of rows) {
       const teamId =
@@ -261,6 +262,7 @@ export async function POST(request: Request, props: { params: Promise<{ slug: st
         position: sanitizeText(row.position).slice(0, 10),
         jersey_number: row.jersey_number,
         is_captain: row.is_captain,
+        rating: 6.0,
       });
     }
 

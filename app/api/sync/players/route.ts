@@ -74,7 +74,7 @@ export async function POST(request: Request) {
         saves: p.saves ?? 0,
         tackles: p.tackles ?? 0,
         clean_sheets: p.cleanSheets ?? p.clean_sheets ?? 0,
-        rating: p.rating ?? 0,
+        rating: typeof p.rating === "number" && p.rating > 0 ? p.rating : 6.0,
       });
     }
 

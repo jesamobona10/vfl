@@ -81,8 +81,8 @@ export function updateTeamRatings(teams: Team[], allMatches: Match[], players: P
     const teamPlayers = players.filter((p) => p.teamId === team.id);
     const avgPlayerRating = teamPlayers.length
       ? teamPlayers.reduce((sum, p) => sum + p.rating, 0) / teamPlayers.length
-      : 1.0;
+      : 6.0;
 
-    team.rating = Math.max(6.0, Math.min(10.0, 6.0 + totalChange + (avgPlayerRating - 6.0) * 0.1));
+    team.rating = Math.max(1.0, Math.min(10.0, 6.0 + totalChange + (avgPlayerRating - 6.0) * 0.1));
   });
 }
