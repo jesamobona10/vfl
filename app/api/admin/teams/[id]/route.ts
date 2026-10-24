@@ -84,6 +84,18 @@ export async function PUT(request: Request, props: { params: Promise<{ id: strin
       return json({ error: "Failed to update team." }, { status: 500 });
     }
 
+    if (typeof update.name === "string") {
+      const { error: seasonTeamError } = await sb
+        .from("season_teams")
+        .update({ display_name: data.name })
+        .eq("team_id", params.id);
+      if (seasonTeamError) {
+        logApiError("admin_team_rename_season_names_sync_failed", seasonTeamError, {
+          teamId: params.id,
+        });
+      }
+    }
+
     return json({ team: data });
   } catch (error) {
     logApiError("admin_team_update_error", error);

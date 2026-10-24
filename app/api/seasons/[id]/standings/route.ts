@@ -42,7 +42,7 @@ export async function GET(_request: Request, props: { params: Promise<{ id: stri
 
     const teams: Team[] = (seasonTeams || []).filter((st: any) => st.team).map((st: any) => ({
       id: st.team.id,
-      name: st.display_name || st.team.name,
+      name: st.team.name || st.display_name,
       logo_url: st.team.logo_url,
       rating: st.team.rating || 6.0,
     }));

@@ -47,7 +47,14 @@ export async function GET(_request: Request, props: { params: Promise<{ id: stri
       return json({ error: "Failed to fetch season teams." }, { status: 500 });
     }
 
-    return json({ teams: seasonTeams || [] });
+    // `display_name` is a season registration snapshot. The canonical team
+    // name should win so spelling corrections appear across all competitions.
+    return json({
+      teams: (seasonTeams || []).map((seasonTeam: any) => ({
+        ...seasonTeam,
+        display_name: seasonTeam.team?.name || seasonTeam.display_name,
+      })),
+    });
   } catch (error) {
     logApiError("season_teams_error", error);
     return json({ error: "Something went wrong. Please try again." }, { status: 500 });

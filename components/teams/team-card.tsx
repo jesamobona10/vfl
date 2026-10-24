@@ -7,6 +7,7 @@ import { ImageUpload } from "@/components/shared/image-upload";
 import { Modal } from "@/components/ui/modal";
 import { Trash2, Users, Star, Pencil, Check, X } from "lucide-react";
 import { useToast } from "@/components/ui/toast";
+import { useQueryClient } from "@tanstack/react-query";
 
 interface TeamCardProps {
   team: Team;
@@ -20,6 +21,7 @@ export function TeamCard({ team, index, isManaged, showAdmin, onDelete }: TeamCa
   const updateTeam = useAppStore((s) => s.updateTeam);
   const players = useAppStore((s) => s.players);
   const toast = useToast();
+  const queryClient = useQueryClient();
   const [name, setName] = useState(team.name);
   const [rating, setRating] = useState(team.rating.toFixed(1));
   const [editingName, setEditingName] = useState(false);
@@ -99,6 +101,12 @@ export function TeamCard({ team, index, isManaged, showAdmin, onDelete }: TeamCa
         name: updated?.name ?? data.name,
         rating: updated?.rating ?? data.rating,
       });
+      if (typeof data.name === "string") {
+        void queryClient.invalidateQueries({ queryKey: ["season-teams"] });
+        void queryClient.invalidateQueries({ queryKey: ["season-standings"] });
+        void queryClient.invalidateQueries({ queryKey: ["season-players"] });
+        void queryClient.invalidateQueries({ queryKey: ["org-season-teams"] });
+      }
       return true;
     } catch (error) {
       console.error("Unable to save team:", error);

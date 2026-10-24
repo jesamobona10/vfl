@@ -40,7 +40,16 @@ export async function GET(_request: Request, props: { params: Promise<{ id: stri
         logApiError("season_players_error", error);
         return json({ error: "Failed to fetch season players." }, { status: 500 });
       }
-      registrations = data || [];
+      registrations = (data || []).map((registration: any) => ({
+        ...registration,
+        season_team: registration.season_team
+          ? {
+              ...registration.season_team,
+              display_name:
+                registration.season_team.team?.name || registration.season_team.display_name,
+            }
+          : registration.season_team,
+      }));
     }
 
     return json({ players: registrations });

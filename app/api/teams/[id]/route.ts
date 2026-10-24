@@ -1,4 +1,5 @@
 import { createClient } from "@/lib/supabase/server";
+import { createServiceRoleClient } from "@/lib/supabase/service-role";
 import {
   asInteger,
   asOptionalString,
@@ -37,7 +38,7 @@ export async function PUT(request: Request, props: { params: Promise<{ id: strin
     // Fetch team to get organization_id
     const { data: team, error: teamError } = await supabase
       .from("teams")
-      .select("organization_id")
+      .select("organization_id, name")
       .eq("id", teamId)
       .single();
 
@@ -77,6 +78,15 @@ export async function PUT(request: Request, props: { params: Promise<{ id: strin
     if (error) {
       logApiError("team_update_failed", error, { userId: authed.userId, teamId });
       return json({ error: "Unable to update team." }, { status: 400 });
+    }
+    if (typeof update.name === "string") {
+      const { error: seasonTeamError } = await createServiceRoleClient()
+        .from("season_teams")
+        .update({ display_name: data.name })
+        .eq("team_id", teamId);
+      if (seasonTeamError) {
+        logApiError("team_rename_season_names_sync_failed", seasonTeamError, { teamId });
+      }
     }
     logSecurityEvent("team_updated", {
       ip: getClientIp(request),
