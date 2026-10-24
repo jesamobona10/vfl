@@ -1,6 +1,6 @@
 import { createClient } from "@/lib/supabase/server";
 import { createServiceRoleClient } from "@/lib/supabase/service-role";
-import type { FixtureRound, Match, Team } from "@/lib/types";
+import type { FixtureRound, Match, MatchEvent, Team } from "@/lib/types";
 import { roundByeId } from "@/lib/logic/standings";
 import { sortMatchesByDateTime } from "@/lib/utils/helpers";
 import { getAuthContext, json, logApiError, requireAuth } from "@/lib/security";
@@ -56,7 +56,7 @@ export async function GET(request: Request, props: { params: Promise<{ slug: str
       rating: t.rating ?? 6.0,
     }));
 
-    let query = sb.from("fixtures").select("*").order("round").order("id");
+    let query = sb.from("fixtures").select("*, match_events(*)").order("round").order("id");
 
     if (competitionId) {
       query = query.eq("competition_id", competitionId);
@@ -130,7 +130,19 @@ export async function GET(request: Request, props: { params: Promise<{ slug: str
         date: m.date || "",
         time: m.time || "",
         venue: m.venue || "",
-        events: [],
+        events: ((m.match_events || []) as {
+          id: number;
+          player_id: number | null;
+          event_type: string;
+          team_id: number | null;
+          minute: number | null;
+        }[]).map((event): MatchEvent => ({
+          id: event.id,
+          playerId: event.player_id,
+          type: event.event_type,
+          teamId: event.team_id ?? undefined,
+          minute: event.minute ?? undefined,
+        })),
         competition_id: m.competition_id || null,
         season_id: m.season_id || null,
       };
