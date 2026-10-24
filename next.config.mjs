@@ -10,7 +10,7 @@ const CSP_DIRECTIVES = [
   "default-src 'self'",
   "script-src 'self' 'unsafe-eval' 'unsafe-inline'",
   "style-src 'self' 'unsafe-inline'",
-  `img-src 'self' blob: data: https://${supabaseHostname}`,
+  `img-src 'self' blob: data: https://${supabaseHostname} https://img.youtube.com`,
   `connect-src 'self' https://${supabaseHostname} wss://${supabaseHostname} https://vercel.live wss://ws-us3.pusher.com wss://*.pusher.com`,
   "font-src 'self'",
   // ffmpeg.wasm spawns a module worker from our own origin (self); the blob:
@@ -50,6 +50,7 @@ const nextConfig = {
         hostname: supabaseHostname,
         pathname: "/storage/v1/**",
       },
+      { protocol: "https", hostname: "img.youtube.com", pathname: "/vi/**" },
     ],
   },
 };

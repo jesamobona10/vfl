@@ -33,5 +33,5 @@ export async function getManageableFixtureMediaContext(fixtureId: number, auth: 
     return { response: json({ error: "Forbidden." }, { status: 403 }) };
   }
 
-  return { supabase, fixture, organizationId };
+  return { supabase, fixture, organizationId, canManage: true, canPublish: auth.isAdmin };
 }

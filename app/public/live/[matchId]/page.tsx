@@ -4,7 +4,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import Image from "next/image";
 import Link from "next/link";
-import { ArrowLeft, MapPin } from "lucide-react";
+import { ArrowLeft, ChevronDown, MapPin, Play, X } from "lucide-react";
 import { useLiveClock } from "@/components/live/live-clock";
 import type { LiveClockSettings } from "@/lib/logic/live";
 import { createPublicClient } from "@/lib/supabase/public";
@@ -67,6 +67,14 @@ export default function PublicLiveMatchPage() {
   const [match, setMatch] = useState<PublicMatchRow | null>(null);
   const [events, setEvents] = useState<Event[]>([]);
   const [media, setMedia] = useState<MatchMediaItem[]>([]);
+  const [mediaFilter, setMediaFilter] = useState<"all" | "photo" | "video">("all");
+  const [mediaOffset, setMediaOffset] = useState(0);
+  const [mediaHasMore, setMediaHasMore] = useState(false);
+  const [mediaLoading, setMediaLoading] = useState(false);
+  const [mediaError, setMediaError] = useState("");
+  const [mediaReload, setMediaReload] = useState(0);
+  const [activeEmbed, setActiveEmbed] = useState<string | null>(null);
+  const [selectedPhoto, setSelectedPhoto] = useState<MatchMediaItem | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const halftimeRequestFor = useRef<number | null>(null);
@@ -74,12 +82,28 @@ export default function PublicLiveMatchPage() {
   useEffect(() => {
     if (!matchId) return;
     let active = true;
-    fetch(`/api/public/matches/${matchId}/media`, { cache: "no-store" })
-      .then(async (response) => response.ok ? response.json() : { media: [] })
-      .then((body) => { if (active) setMedia(body.media || []); })
-      .catch(() => { if (active) setMedia([]); });
+    setMedia([]); setMediaOffset(0); setMediaHasMore(false); setMediaError(""); setActiveEmbed(null);
+    setMediaLoading(true);
+    const query = new URLSearchParams({ type: mediaFilter, limit: "12", offset: "0" });
+    fetch(`/api/public/matches/${matchId}/media?${query}`)
+      .then(async (response) => { const body = await response.json(); if (!response.ok) throw new Error(body.error || "Unable to load match media."); return body; })
+      .then((body) => { if (active) { setMedia(body.media || []); setMediaHasMore(Boolean(body.hasMore)); setMediaOffset(body.nextOffset || 0); } })
+      .catch((cause) => { if (active) setMediaError(cause instanceof Error ? cause.message : "Unable to load match media."); })
+      .finally(() => { if (active) setMediaLoading(false); });
     return () => { active = false; };
-  }, [matchId]);
+  }, [matchId, mediaFilter, mediaReload]);
+
+  async function loadMoreMedia() {
+    if (!mediaHasMore || mediaLoading) return;
+    setMediaLoading(true); setMediaError("");
+    try {
+      const query = new URLSearchParams({ type: mediaFilter, limit: "12", offset: String(mediaOffset) });
+      const response = await fetch(`/api/public/matches/${matchId}/media?${query}`);
+      const body = await response.json(); if (!response.ok) throw new Error(body.error || "Unable to load more media.");
+      setMedia((current) => [...current, ...(body.media || [])]); setMediaHasMore(Boolean(body.hasMore)); setMediaOffset(body.nextOffset || mediaOffset);
+    } catch (cause) { setMediaError(cause instanceof Error ? cause.message : "Unable to load more media."); }
+    finally { setMediaLoading(false); }
+  }
 
   const clockSettings = useMemo<LiveClockSettings | undefined>(
     () => match ? {
@@ -261,31 +285,40 @@ export default function PublicLiveMatchPage() {
         </div>
       </section>
 
-      {media.length > 0 && (
-        <section aria-labelledby="match-media-heading" className="space-y-3">
+      <section aria-labelledby="match-media-heading" className="space-y-3">
           <div className="flex items-end justify-between gap-3 px-1">
             <div>
               <h2 id="match-media-heading" className="text-base font-bold">Photos & highlights</h2>
               <p className="mt-0.5 text-xs text-ink-3">Match moments from {match.home_team_name} vs {match.away_team_name}</p>
             </div>
-            <span className="rounded-full bg-surface-2 px-2.5 py-1 text-xs font-semibold text-ink-3">{media.length}</span>
+            <span className="rounded-full bg-surface-2 px-2.5 py-1 text-xs font-semibold text-ink-3">{media.length}{mediaHasMore ? "+" : ""}</span>
           </div>
+          <div className="flex gap-2 overflow-x-auto pb-1" aria-label="Filter match media">
+            {([ ["all", "All"], ["photo", "Photos"], ["video", "Videos"] ] as const).map(([value, label]) => <button key={value} type="button" onClick={() => setMediaFilter(value)} aria-pressed={mediaFilter === value} className={`rounded-full px-3.5 py-2 text-xs font-semibold ${mediaFilter === value ? "bg-brand text-white" : "border border-line bg-surface text-ink-3"}`}>{label}</button>)}
+          </div>
+          {mediaError && <div role="alert" className="card flex items-center justify-between gap-3 p-3 text-sm text-danger"><span>{mediaError}</span><button type="button" onClick={() => setMediaReload((current) => current + 1)} className="btn">Retry</button></div>}
+          {mediaLoading && media.length === 0 ? <div className="card p-5 text-center text-sm text-muted">Loading match media…</div> : null}
+          {!mediaLoading && media.length === 0 && !mediaError ? <div className="card p-5 text-center text-sm text-muted">No {mediaFilter === "all" ? "photos or highlights" : mediaFilter === "photo" ? "photos" : "videos"} have been shared for this match yet.</div> : null}
           <div className="grid gap-3 sm:grid-cols-2">
             {media.map((item) => (
               <article key={item.id} className="card overflow-hidden">
                 {item.media_type === "photo" ? (
-                  <Image src={item.url} alt={item.title || "Match photo"} width={960} height={540} unoptimized className="aspect-video w-full object-cover" />
+                  <button type="button" onClick={() => setSelectedPhoto(item)} className="block w-full" aria-label={`Open photo: ${item.alt_text || item.title}`}><Image src={item.url} alt={item.alt_text || item.title || "Match photo"} width={item.width || 960} height={item.height || 540} sizes="(max-width: 640px) 100vw, 50vw" loading="lazy" className="aspect-video w-full object-cover" /></button>
                 ) : item.embed_url ? (
-                  <iframe src={item.embed_url} title={item.title || "Match highlight"} className="aspect-video w-full" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowFullScreen />
+                  activeEmbed === item.id ? <iframe src={`${item.embed_url}?autoplay=1`} title={item.title || "Match highlight"} className="aspect-video w-full" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowFullScreen /> : <button type="button" onClick={() => setActiveEmbed(item.id)} className="relative flex aspect-video w-full items-center justify-center overflow-hidden bg-surface-2" aria-label={`Play ${item.title || "match highlight"}`}>
+                    {item.thumbnail_url ? <Image src={item.thumbnail_url} alt="" fill sizes="(max-width: 640px) 100vw, 50vw" className="object-cover" /> : item.embed_url.includes("youtube-nocookie.com/embed/") ? <img src={`https://img.youtube.com/vi/${item.embed_url.split("/").pop()}/hqdefault.jpg`} alt="" loading="lazy" className="absolute inset-0 h-full w-full object-cover" /> : null}
+                    <span className="relative flex h-12 w-12 items-center justify-center rounded-full bg-black/70 text-white"><Play size={20} fill="currentColor" /></span>
+                  </button>
                 ) : (
-                  <video src={item.url} controls preload="metadata" className="aspect-video w-full bg-black" />
+                  <video src={item.url} poster={item.thumbnail_url || undefined} controls preload="none" playsInline className="aspect-video w-full bg-black" />
                 )}
                 {(item.title || item.caption) && <div className="p-3.5"><h3 className="text-sm font-semibold">{item.title}</h3>{item.caption && <p className="mt-1 text-sm text-ink-3">{item.caption}</p>}</div>}
               </article>
             ))}
           </div>
+          {mediaHasMore && <button type="button" onClick={() => void loadMoreMedia()} disabled={mediaLoading} className="btn w-full">{mediaLoading ? "Loading…" : <><ChevronDown size={15} /> Load more</>}</button>}
         </section>
-      )}
+      {selectedPhoto && <div role="dialog" aria-modal="true" aria-label={selectedPhoto.alt_text || selectedPhoto.title || "Match photo"} className="fixed inset-0 z-[100] flex items-center justify-center bg-black/90 p-4" onClick={() => setSelectedPhoto(null)}><button type="button" onClick={() => setSelectedPhoto(null)} aria-label="Close photo" className="absolute right-4 top-4 rounded-full bg-white/10 p-2 text-white"><X size={22} /></button><Image src={selectedPhoto.url} alt={selectedPhoto.alt_text || selectedPhoto.title || "Match photo"} width={selectedPhoto.width || 1600} height={selectedPhoto.height || 900} sizes="100vw" className="max-h-[90vh] w-auto max-w-full object-contain" onClick={(event) => event.stopPropagation()} /></div>}
 
       <section aria-labelledby="match-timeline-heading" className="space-y-3">
         <div className="flex items-end justify-between gap-3 px-1">

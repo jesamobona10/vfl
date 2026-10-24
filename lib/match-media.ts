@@ -14,6 +14,25 @@ export const MATCH_MEDIA_MIME_TYPES = {
 export type MatchMediaMimeType = keyof typeof MATCH_MEDIA_MIME_TYPES;
 export type MatchMediaType = "photo" | "video";
 export type MatchMediaSource = "upload" | "link";
+export type MatchMediaStatus = "pending" | "published" | "rejected" | "hidden";
+export type MatchMediaCategory =
+  | "goal"
+  | "save"
+  | "celebration"
+  | "team_photo"
+  | "crowd"
+  | "match_action"
+  | "other";
+
+export const MATCH_MEDIA_CATEGORIES: { value: MatchMediaCategory; label: string }[] = [
+  { value: "goal", label: "Goal" },
+  { value: "save", label: "Save" },
+  { value: "celebration", label: "Celebration" },
+  { value: "team_photo", label: "Team photo" },
+  { value: "crowd", label: "Crowd" },
+  { value: "match_action", label: "Match action" },
+  { value: "other", label: "Other" },
+];
 
 export interface MatchMediaItem {
   id: string;
@@ -26,6 +45,16 @@ export interface MatchMediaItem {
   caption: string;
   mime_type: string | null;
   created_at: string;
+  status: MatchMediaStatus;
+  category: MatchMediaCategory;
+  thumbnail_url?: string | null;
+  file_size_bytes?: number | null;
+  duration_seconds?: number | null;
+  width?: number | null;
+  height?: number | null;
+  alt_text?: string;
+  sort_order?: number;
+  can_publish?: boolean;
 }
 
 export function isMatchMediaMimeType(value: string): value is MatchMediaMimeType {
