@@ -4,7 +4,7 @@ import { useState, useRef, useEffect } from "react";
 import { useAppStore } from "@/lib/store";
 import { useResolvedTeams } from "@/lib/hooks/use-resolved-teams";
 import { Download, ChevronDown } from "lucide-react";
-import { exportAsJSON, exportAsPNG, exportAsPDF } from "@/lib/utils/export";
+import { exportAsJSON, exportAsPNG, exportFixturesAsPDF } from "@/lib/utils/export";
 import { useToast } from "@/components/ui/toast";
 import { Button } from "@/components/ui/button";
 import { Select } from "@/components/ui/select";
@@ -90,12 +90,13 @@ export function FixtureFilters({
 
   const handleDownloadPDF = async () => {
     setMenuOpen(false);
-    if (!captureRef?.current) {
-      toast.error("Nothing to export.");
+    const filtered = getFilteredFixtures();
+    if (!filtered.length) {
+      toast.info("No fixtures match the current filters.");
       return;
     }
     try {
-      await exportAsPDF(captureRef.current, "leagueforge-fixtures.pdf", "Fixtures");
+      await exportFixturesAsPDF(filtered, teams, "leagueforge-fixtures.pdf");
       toast.success("PDF downloaded");
     } catch (e) {
       console.error(e);

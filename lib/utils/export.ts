@@ -1,3 +1,5 @@
+import type { FixtureRound, Match, Team } from "@/lib/types";
+
 /**
  * Export utilities for downloading standings/fixtures as JSON, PNG, or PDF.
  *
@@ -239,5 +241,160 @@ export async function exportAsPDF(
     );
   }
 
+  pdf.save(filename);
+}
+
+function displayFixtureDate(date: string) {
+  const match = /^(\d{4})-(\d{2})-(\d{2})$/.exec(date);
+  return match ? `${match[3]}/${match[2]}/${match[1]}` : date || "TBA";
+}
+
+function fixtureStatus(status: Match["status"]) {
+  if (status === "completed") return "Full-time";
+  if (status === "live" || status === "in-progress") return "Live";
+  return "Scheduled";
+}
+
+/**
+ * Export fixtures as a readable, selectable-text table instead of taking a
+ * screenshot of the responsive card UI (which clips team names and scales poorly).
+ */
+export async function exportFixturesAsPDF(
+  rounds: FixtureRound[],
+  teams: Team[],
+  filename: string,
+): Promise<void> {
+  const { default: jsPDF } = await import("jspdf");
+  const pdf = new jsPDF({ orientation: "landscape", unit: "mm", format: "a4" });
+  const pageWidth = pdf.internal.pageSize.getWidth();
+  const pageHeight = pdf.internal.pageSize.getHeight();
+  const margin = 12;
+  const tableWidth = pageWidth - margin * 2;
+  const columns = [18, 27, 19, 49, 20, 49, 56, 35];
+  const headings = ["Round", "Date", "Kickoff", "Home team", "Score", "Away team", "Venue", "Status"];
+  const teamNames = new Map(teams.map((team) => [team.id, team.name]));
+  const matches = rounds.flatMap((round) => round.matches.map((match) => ({ round: round.round, match })));
+  const headerHeight = 9;
+  const tableTop = 38;
+  const bottomLimit = pageHeight - 15;
+
+  const drawPageHeading = (continuation = false) => {
+    pdf.setFillColor(14, 91, 57);
+    pdf.roundedRect(margin, 8, tableWidth, 24, 3, 3, "F");
+    pdf.setTextColor(255, 255, 255);
+    pdf.setFont("helvetica", "bold");
+    pdf.setFontSize(17);
+    pdf.text(continuation ? "Fixtures (continued)" : "Fixtures", margin + 6, 18);
+    pdf.setFont("helvetica", "normal");
+    pdf.setFontSize(9);
+    pdf.text(
+      `${matches.length} ${matches.length === 1 ? "match" : "matches"} | ${rounds.length} ${rounds.length === 1 ? "round" : "rounds"}`,
+      margin + 6,
+      26,
+    );
+    pdf.setTextColor(26, 44, 34);
+  };
+
+  const drawTableHeader = (top: number) => {
+    pdf.setFillColor(29, 49, 39);
+    pdf.roundedRect(margin, top, tableWidth, headerHeight, 1.5, 1.5, "F");
+    pdf.setFont("helvetica", "bold");
+    pdf.setFontSize(8);
+    pdf.setTextColor(255, 255, 255);
+    let x = margin;
+    headings.forEach((heading, index) => {
+      const textOptions = index === 4
+        ? { align: "center" as const, maxWidth: columns[index] - 3 }
+        : { maxWidth: columns[index] - 4 };
+      pdf.text(heading, index === 4 ? x + columns[index] / 2 : x + 2, top + 5.8, textOptions);
+      x += columns[index];
+    });
+    pdf.setTextColor(26, 44, 34);
+    pdf.setFont("helvetica", "normal");
+  };
+
+  const drawCellLines = (value: string, width: number, bold = false) => {
+    pdf.setFont("helvetica", bold ? "bold" : "normal");
+    return pdf.splitTextToSize(value || "TBA", width - 4) as string[];
+  };
+
+  drawPageHeading();
+  let y = tableTop;
+  drawTableHeader(y);
+  y += headerHeight;
+
+  matches.forEach(({ round, match }, rowIndex) => {
+    const cells = [
+      `Round ${round}`,
+      displayFixtureDate(match.date),
+      match.time || "TBA",
+      teamNames.get(match.homeId) || `Team ${match.homeId}`,
+      match.homeScore !== null && match.awayScore !== null ? `${match.homeScore} - ${match.awayScore}` : "vs",
+      teamNames.get(match.awayId) || `Team ${match.awayId}`,
+      match.venue || "Venue TBA",
+      fixtureStatus(match.status),
+    ];
+    let colX = margin;
+    const cellLines = cells.map((cell, index) => {
+      const lines = drawCellLines(cell, columns[index], index === 4);
+      colX += columns[index];
+      return lines;
+    });
+    const lineCount = Math.max(...cellLines.map((lines) => lines.length));
+    const rowHeight = Math.max(10, lineCount * 4 + 4);
+
+    if (y + rowHeight > bottomLimit) {
+      pdf.addPage();
+      drawPageHeading(true);
+      y = tableTop;
+      drawTableHeader(y);
+      y += headerHeight;
+    }
+
+    pdf.setFillColor(
+      rowIndex % 2 === 0 ? 248 : 239,
+      rowIndex % 2 === 0 ? 251 : 245,
+      rowIndex % 2 === 0 ? 248 : 240,
+    );
+    pdf.rect(margin, y, tableWidth, rowHeight, "F");
+    pdf.setDrawColor(220, 228, 221);
+    pdf.line(margin, y + rowHeight, margin + tableWidth, y + rowHeight);
+
+    colX = margin;
+    cellLines.forEach((lines, index) => {
+      const isScore = index === 4;
+      const isStatus = index === 7;
+      pdf.setFont("helvetica", isScore ? "bold" : "normal");
+      pdf.setFontSize(isScore ? 9 : 8);
+      if (isStatus) {
+        const status = match.status;
+        pdf.setTextColor(
+          status === "completed" ? 77 : status === "scheduled" ? 14 : 182,
+          status === "completed" ? 93 : status === "scheduled" ? 120 : 75,
+          status === "completed" ? 81 : status === "scheduled" ? 57 : 39,
+        );
+      } else {
+        pdf.setTextColor(26, 44, 34);
+      }
+      const textX = isScore ? colX + columns[index] / 2 : colX + 2;
+      pdf.text(lines, textX, y + 4.8, {
+        align: isScore ? "center" : "left",
+        maxWidth: columns[index] - 4,
+        lineHeightFactor: 1.05,
+      });
+      colX += columns[index];
+    });
+    y += rowHeight;
+  });
+
+  const pageCount = Math.max(1, pdf.internal.pages.length - 1);
+  for (let page = 1; page <= pageCount; page += 1) {
+    pdf.setPage(page);
+    pdf.setFont("helvetica", "normal");
+    pdf.setFontSize(8);
+    pdf.setTextColor(105, 120, 109);
+    pdf.text("LeagueForge - Fixture schedule", margin, pageHeight - 7);
+    pdf.text(`${page} / ${pageCount}`, pageWidth - margin, pageHeight - 7, { align: "right" });
+  }
   pdf.save(filename);
 }
