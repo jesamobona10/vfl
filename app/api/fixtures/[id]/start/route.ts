@@ -1,4 +1,3 @@
-import type { SupabaseClient } from "@supabase/supabase-js";
 import { createClient } from "@/lib/supabase/server";
 import { createServiceRoleClient } from "@/lib/supabase/service-role";
 import {
@@ -17,68 +16,8 @@ import {
 import { AUDIT_ACTIONS } from "@/lib/audit/actions";
 import { dispatchMatchEvent } from "@/lib/notifications/dispatch";
 import { requireSeasonEntitlementForCompetitionSeason } from "@/lib/entitlements";
-import { registeredPlayersStartError } from "@/lib/match-guard";
 
 export const dynamic = "force-dynamic";
-
-/**
- * Counts registered players for each team in a fixture. When the fixture
- * belongs to a season, the count is season registrations (active rows in
- * `season_team_players` via the team's `season_teams` row). Legacy fixtures
- * without a season fall back to players owned by each team.
- */
-async function registeredPlayerCounts(
-  sb: SupabaseClient,
-  fixture: { season_id: string | null; home_team_id: number; away_team_id: number }
-): Promise<Record<number, number>> {
-  const teamIds = [fixture.home_team_id, fixture.away_team_id];
-  const counts: Record<number, number> = {};
-
-  if (fixture.season_id) {
-    const { data: seasonTeams } = await sb
-      .from("season_teams")
-      .select("id, team_id")
-      .eq("season_id", fixture.season_id)
-      .in("team_id", teamIds);
-
-    const teamToSeasonTeam = new Map<number, string>();
-    for (const st of seasonTeams || []) teamToSeasonTeam.set(st.team_id, st.id);
-
-    for (const teamId of teamIds) {
-      const seasonTeamId = teamToSeasonTeam.get(teamId);
-      if (!seasonTeamId) {
-        counts[teamId] = 0;
-        continue;
-      }
-      const { count, error } = await sb
-        .from("season_team_players")
-        .select("id", { count: "exact", head: true })
-        .eq("season_team_id", seasonTeamId)
-        .eq("status", "active");
-      if (error) {
-        logApiError("fixture_start_player_count_error", error, { seasonTeamId });
-        counts[teamId] = 0;
-      } else {
-        counts[teamId] = count ?? 0;
-      }
-    }
-  } else {
-    for (const teamId of teamIds) {
-      const { count, error } = await sb
-        .from("players")
-        .select("id", { count: "exact", head: true })
-        .eq("team_id", teamId);
-      if (error) {
-        logApiError("fixture_start_player_count_error", error, { teamId });
-        counts[teamId] = 0;
-      } else {
-        counts[teamId] = count ?? 0;
-      }
-    }
-  }
-
-  return counts;
-}
 
 export async function POST(request: Request, props: { params: Promise<{ id: string }> }) {
   const params = await props.params;
@@ -143,29 +82,6 @@ export async function POST(request: Request, props: { params: Promise<{ id: stri
     }
 
     const sb = createServiceRoleClient();
-
-    // A match cannot kick off until both teams have at least one player
-    // registered for this fixture's season.
-    if (fixture.status !== "live" && fixture.status !== "in-progress") {
-      const counts = await registeredPlayerCounts(sb, fixture);
-      const startError = registeredPlayersStartError({
-        homeTeamId: fixture.home_team_id,
-        awayTeamId: fixture.away_team_id,
-        homeTeamName: homeTeam.name,
-        awayTeamName: awayTeam?.name || "the away team",
-        counts,
-      });
-      if (startError) {
-        logSecurityEvent("fixture_start_blocked_no_players", {
-          userId: auth.userId,
-          fixtureId,
-          homeTeamId: fixture.home_team_id,
-          awayTeamId: fixture.away_team_id,
-          counts: JSON.stringify(counts),
-        });
-        return json({ error: startError }, { status: 400 });
-      }
-    }
 
     const { data, error } = await sb
       .from("fixtures")
