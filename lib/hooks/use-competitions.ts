@@ -133,10 +133,14 @@ export function useGenerateFixtures() {
       competitionId,
       seasonId,
       gamesPerTeam,
+      mode,
+      dryRun,
     }: {
       competitionId: string;
       seasonId?: string | null;
       gamesPerTeam?: number;
+      mode?: "create" | "complete";
+      dryRun?: boolean;
     }) =>
       fetch(`/api/competitions/${competitionId}/generate-fixtures`, {
         method: "POST",
@@ -144,21 +148,22 @@ export function useGenerateFixtures() {
         body: JSON.stringify({
           season_id: seasonId || undefined,
           games_per_team: gamesPerTeam,
+          mode,
+          dry_run: dryRun,
         }),
       }).then(async (res) => {
         if (!res.ok) {
-          // Surface the route's reason (e.g. the 409 already-generated guard).
           const body = await res.json().catch(() => null);
           throw new Error(body?.error || "Failed to generate fixtures");
         }
         return res.json();
       }),
     onSuccess: (_data, variables) => {
+      if ((variables as any).dryRun) return;
       queryClient.invalidateQueries({ queryKey: ["competition", variables.competitionId] });
       if (variables.seasonId) {
         queryClient.invalidateQueries({ queryKey: ["season", variables.seasonId] });
         queryClient.invalidateQueries({ queryKey: ["seasons", variables.competitionId] });
-        // Keeps the Generate button's disabled state in sync after generating.
         queryClient.invalidateQueries({
           queryKey: ["season-has-fixtures", variables.seasonId],
         });

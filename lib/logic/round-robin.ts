@@ -360,3 +360,86 @@ export function generateRoundRobinFixtures(
 
   return result;
 }
+
+export type Pair = [number, number]; // [homeId, awayId]
+
+export function completeSingleRoundRobin(teamIds: number[], matchday1: Pair[]) {
+  const n = teamIds.length,
+    odd = n % 2 === 1,
+    total = odd ? n + 1 : n,
+    half = total / 2;
+
+  const used = new Set<number>();
+  for (const [a, b] of matchday1) {
+    if (a === b || used.has(a) || used.has(b)) throw new Error("Matchday 1 uses a team twice");
+    used.add(a);
+    used.add(b);
+  }
+  const unscheduled = teamIds.filter((t) => !used.has(t));
+  if (odd ? unscheduled.length !== 1 : unscheduled.length !== 0) {
+    throw new Error(`Matchday 1 must cover every team${odd ? " except one bye" : ""}`);
+  }
+
+  const circle: (number | null)[] = new Array(total).fill(null);
+  matchday1.forEach(([a, b], i) => {
+    circle[i] = a;
+    circle[total - 1 - i] = b;
+  });
+  if (odd) {
+    circle[matchday1.length] = unscheduled[0];
+    circle[total - 1 - matchday1.length] = null;
+  }
+
+  const home = new Map<number, number>(),
+    away = new Map<number, number>();
+  const get = (m: Map<number, number>, t: number) => m.get(t) ?? 0;
+  const rounds: { round: number; byeId: number | null; pairs: Pair[] }[] = [];
+
+  for (let r = 0; r < total - 1; r++) {
+    const pairs: Pair[] = [];
+    let bye: number | null = null;
+    for (let i = 0; i < half; i++) {
+      const l = circle[i],
+        rt = circle[total - 1 - i];
+      if (l === null || rt === null) {
+        bye = l ?? rt;
+        continue;
+      }
+      let h = l,
+        a = rt;
+      if (r === 0) {
+        const m = matchday1.find(([x, y]) => (x === l && y === rt) || (x === rt && y === l))!;
+        h = m[0];
+        a = m[1]; // keep matchday 1 exactly as entered
+      } else if (get(home, h) - get(away, h) > get(home, a) - get(away, a)) {
+        [h, a] = [a, h];
+      }
+      home.set(h, get(home, h) + 1);
+      away.set(a, get(away, a) + 1);
+      pairs.push([h, a]);
+    }
+    rounds.push({ round: r + 1, byeId: bye, pairs });
+    const last = circle.pop()!;
+    circle.splice(1, 0, last); // rotate, slot 0 fixed
+  }
+
+  // Balancing pass: flip later matches while it reduces total imbalance.
+  const imb = (t: number) => get(home, t) - get(away, t);
+  for (let guard = 0, changed = true; changed && guard < 200; guard++) {
+    changed = false;
+    for (const rd of rounds.slice(1))
+      for (const p of rd.pairs) {
+        const [h, a] = p;
+        if (Math.abs(imb(h) - 2) + Math.abs(imb(a) + 2) < Math.abs(imb(h)) + Math.abs(imb(a))) {
+          home.set(h, get(home, h) - 1);
+          away.set(h, get(away, h) + 1);
+          away.set(a, get(away, a) - 1);
+          home.set(a, get(home, a) + 1);
+          p[0] = a;
+          p[1] = h;
+          changed = true;
+        }
+      }
+  }
+  return rounds;
+}

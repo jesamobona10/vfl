@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { generateFriendlyFixtures, generateRoundRobinFixtures } from "@/lib/logic/round-robin";
+import { generateFriendlyFixtures, generateRoundRobinFixtures, completeSingleRoundRobin } from "@/lib/logic/round-robin";
 import { pairKey } from "@/lib/utils/helpers";
 import type { FixtureRound, Match } from "@/lib/types";
 
@@ -329,4 +329,169 @@ describe("generateRoundRobinFixtures — merge with existing fixtures", () => {
     // when the algorithm is fixed to guarantee coverage, this is the target:
     // expect(pairs.size).toBe(6);
   });
+});
+
+function mulberry32(seed: number) {
+  let a = seed >>> 0;
+  return function next() {
+    a = (a + 0x6d2b79f5) | 0;
+    let t = Math.imul(a ^ (a >>> 15), 1 | a);
+    t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+  };
+}
+
+function randomPerfectMatching(teamIds: number[], rand: () => number): [number, number][] {
+  const n = teamIds.length;
+  const list = [...teamIds];
+  for (let i = list.length - 1; i > 0; i--) {
+    const j = Math.floor(rand() * (i + 1));
+    [list[i], list[j]] = [list[j], list[i]];
+  }
+  if (n % 2 === 0) {
+    const pairs: [number, number][] = [];
+    for (let i = 0; i < list.length; i += 2) {
+      let h = list[i]!;
+      let a = list[i + 1]!;
+      if (rand() < 0.5) [h, a] = [a, h];
+      pairs.push([h, a]);
+    }
+    return pairs;
+  }
+  const rest = list.slice(0, -1);
+  const pairs: [number, number][] = [];
+  for (let i = 0; i < rest.length; i += 2) {
+    let h = rest[i]!;
+    let a = rest[i + 1]!;
+    if (rand() < 0.5) [h, a] = [a, h];
+    pairs.push([h, a]);
+  }
+  return pairs;
+}
+
+function allPairsFromRounds(rounds: { pairs: [number, number][] }[]): Set<string> {
+  const s = new Set<string>();
+  for (const r of rounds) for (const [h, a] of r.pairs) s.add(pairKey(h, a));
+  return s;
+}
+
+describe("completeSingleRoundRobin", () => {
+  it("reproduces matchday 1 for even leagues and schedules all pairs", () => {
+    const teams = makeTeams(4).map((t) => t.id);
+    const matchday1: [number, number][] = [
+      [1, 2],
+      [3, 4],
+    ];
+    const rounds = completeSingleRoundRobin(teams, matchday1);
+    expect(rounds).toHaveLength(3);
+    expect(rounds[0]!.pairs).toEqual(matchday1);
+    expect(allPairsFromRounds(rounds).size).toBe(6);
+    for (const r of rounds) {
+      const seen = new Set<number>();
+      for (const [h, a] of r.pairs) {
+        expect(seen.has(h)).toBe(false);
+        expect(seen.has(a)).toBe(false);
+        seen.add(h);
+        seen.add(a);
+      }
+      expect(seen.size).toBe(4);
+    }
+  });
+
+  it("handles odd leagues with a bye and covers all pairs", () => {
+    const teams = [1, 2, 3, 4, 5];
+    const matchday1: [number, number][] = [
+      [1, 2],
+      [3, 4],
+    ];
+    const rounds = completeSingleRoundRobin(teams, matchday1);
+    expect(rounds).toHaveLength(5);
+    expect(rounds[0]!.pairs).toEqual(matchday1);
+    const byes = rounds.map((r) => r.byeId);
+    expect(byes.filter((b): b is number => b !== null)).toHaveLength(5);
+    expect(new Set(byes.filter((b): b is number => b !== null)).size).toBe(5);
+    for (const r of rounds) {
+      if (r.byeId !== null) {
+        for (const [h, a] of r.pairs) {
+          expect(h).not.toBe(r.byeId);
+          expect(a).not.toBe(r.byeId);
+        }
+      }
+    }
+    expect(allPairsFromRounds(rounds).size).toBe(10);
+  });
+
+  it("rejects duplicate teams, incomplete matchday 1, and duplicate pairs", () => {
+    expect(() => completeSingleRoundRobin([1, 2, 3, 4], [[1, 2], [1, 3]])).toThrow("team twice");
+    expect(() => completeSingleRoundRobin([1, 2, 3, 4], [[1, 2]])).toThrow("cover every team");
+    expect(() => completeSingleRoundRobin([1, 2, 3, 4], [[1, 2], [1, 2]])).toThrow("team twice");
+  });
+
+  it.each([
+    [4, 123],
+    [5, 7],
+    [6, 999],
+    [7, 2024],
+    [8, 42],
+    [10, 5],
+  ])("keeps matchday 1 identical for n=%i (seed %i)", (n, seed) => {
+    const rand = mulberry32(seed);
+    const teams = makeTeams(n).map((t) => t.id);
+    const matchday1 = randomPerfectMatching(teams, rand);
+    const rounds = completeSingleRoundRobin(teams, matchday1);
+    expect(rounds[0]!.pairs).toEqual(matchday1);
+  });
+
+  it("satisfies property for n=4..20, 25 random matchday-1 matchings each", () => {
+    for (let n = 4; n <= 20; n++) {
+      const teamIds = makeTeams(n).map((t) => t.id);
+      for (let caseIdx = 0; caseIdx < 25; caseIdx++) {
+        const rand = mulberry32(n * 131542391 + caseIdx);
+        const matchday1 = randomPerfectMatching(teamIds, rand);
+        const rounds = completeSingleRoundRobin(teamIds, matchday1);
+
+        if (n % 2 === 0) expect(rounds).toHaveLength(n - 1);
+        else expect(rounds).toHaveLength(n);
+
+        expect(rounds[0]!.pairs).toEqual(matchday1);
+        expect(allPairsFromRounds(rounds).size).toBe((n * (n - 1)) / 2);
+
+        for (const r of rounds) {
+          const seen = new Set<number>();
+          for (const [h, a] of r.pairs) {
+            expect(seen.has(h)).toBe(false);
+            expect(seen.has(a)).toBe(false);
+            seen.add(h);
+            seen.add(a);
+          }
+        }
+
+        if (n % 2 === 1) {
+          const byes = rounds.map((r) => r.byeId).filter((b): b is number => b !== null);
+          expect(byes.length).toBe(n);
+          expect(new Set(byes).size).toBe(n);
+          for (const r of rounds) {
+            if (r.byeId !== null) {
+              for (const [h, a] of r.pairs) {
+                expect(h).not.toBe(r.byeId);
+                expect(a).not.toBe(r.byeId);
+              }
+            }
+          }
+        }
+
+        const home = new Map<number, number>();
+        const away = new Map<number, number>();
+        const getCnt = (m: Map<number, number>, t: number) => m.get(t) ?? 0;
+        for (const r of rounds)
+          for (const [h, a] of r.pairs) {
+            home.set(h, getCnt(home, h) + 1);
+            away.set(a, getCnt(away, a) + 1);
+          }
+        for (const t of teamIds) {
+          expect(Math.abs(getCnt(home, t) - getCnt(away, t))).toBeLessThanOrEqual(2);
+        }
+      }
+    }
+  }, 60000);
 });

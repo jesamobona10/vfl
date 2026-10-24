@@ -10,6 +10,7 @@ import { TimeInput } from "../shared/time-input";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select } from "@/components/ui/select";
+import { useSeasonTeams } from "@/lib/hooks/use-competitions";
 
 interface FixtureCreatorProps {
   /**
@@ -38,15 +39,19 @@ export function FixtureCreator({
   const [success, setSuccess] = useState("");
 
   const currentSeasonId = useAppStore((s) => s.currentSeasonId);
-  const teams = useResolvedTeams(currentSeasonId);
-  const fixtures = useAppStore((s) => s.fixtures);
-  const addFixture = useAppStore((s) => s.addFixture);
+  const storeTeams = useResolvedTeams(currentSeasonId);
+  const { data: seasonTeams } = useSeasonTeams(seasonId ?? undefined);
   const { allowed: canGenerate } = useCan("fixtures.generate");
+  const { allowed: canEditFixtures } = useCan("fixtures.edit");
   const slug = useParams().slug as string | undefined;
   const persistToServer = Boolean(competitionId && seasonId);
-
+  const teams =
+    persistToServer && seasonTeams?.length
+      ? seasonTeams.map((st: any) => ({ id: st.team_id ?? st.team?.id, name: st.team?.name ?? st.display_name ?? st.name }))
+      : storeTeams;
+  const fixtures = useAppStore((s) => s.fixtures);
+  const addFixture = useAppStore((s) => s.addFixture);
   const [submitting, setSubmitting] = useState(false);
-
   const resetForm = () => {
     setHomeId("");
     setAwayId("");
@@ -125,7 +130,7 @@ export function FixtureCreator({
     setTimeout(() => setSuccess(""), 3000);
   };
 
-  if (!canGenerate) return null;
+  if (!canGenerate && !canEditFixtures) return null;
 
   return (
     <div className="card">

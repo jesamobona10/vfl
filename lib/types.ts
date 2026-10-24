@@ -854,6 +854,12 @@ export interface PublicMatchRow {
   stoppage_minutes?: number;
 }
 
+export interface PublicOrganizationRow {
+  id: string;
+  name: string;
+  slug: string;
+}
+
 export interface PublicSeasonRow {
   season_id: string;
   competition_id: string;
@@ -877,6 +883,34 @@ export interface PublicStandingRow {
   ga: number;
   gd: number;
   points: number;
+}
+
+export interface CompleteScheduleMatch {
+  homeTeamId: number;
+  awayTeamId: number;
+  homeTeamName: string;
+  awayTeamName: string;
+  round: number;
+  existing: boolean;
+}
+
+export interface CompleteScheduleRound {
+  round: number;
+  byeId: number | null;
+  byeTeamName: string | null;
+  matches: CompleteScheduleMatch[];
+}
+
+export interface CompleteSchedulePreview {
+  success: boolean;
+  dryRun?: boolean;
+  mode?: "complete";
+  seasonId: string | null;
+  roundsCount: number;
+  existingCount?: number;
+  matchesCount: number;
+  insertedCount?: number;
+  rounds: CompleteScheduleRound[];
 }
 
 export interface PublicPlayerStatisticsRow {
