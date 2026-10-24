@@ -2,7 +2,6 @@ import { json, logApiError } from "@/lib/security";
 import { createServiceRoleClient } from "@/lib/supabase/service-role";
 import { duePublicReminderLeads, fixtureKickoffUtc } from "@/lib/public-reminders";
 import { isPublicPushConfigured, sendPublicPushNow } from "@/lib/public-push";
-import { livePhase, liveSettings } from "@/lib/logic/live";
 
 export const dynamic = "force-dynamic";
 
@@ -43,15 +42,8 @@ export async function GET(request: Request) {
       .gte("date", today)
       .lte("date", tomorrow);
     if (error) throw error;
-    const { data: liveMatches, error: liveError } = await supabase
-      .from("public_matches")
-      .select("match_id, home_team_name, away_team_name, home_score, away_score, status, live_started_at, halftime_minutes, stoppage_minutes")
-      .in("status", ["live", "in-progress"]);
-    if (liveError) throw liveError;
-
     let remindersClaimed = 0;
     let notificationsSent = 0;
-    let halftimeNotifications = 0;
     for (const fixture of fixtures || []) {
       if (!fixture.date || !fixture.time) continue;
       const kickoff = fixtureKickoffUtc(fixture.date, fixture.time, timeZone);
@@ -94,42 +86,7 @@ export async function GET(request: Request) {
         }
       }
     }
-    for (const match of liveMatches || []) {
-      if (!match.live_started_at) continue;
-      const phase = livePhase(match.live_started_at, now, liveSettings({
-        halftimeMinutes: match.halftime_minutes,
-        stoppageMinutes: match.stoppage_minutes,
-      }));
-      if (phase.label !== "HT") continue;
-
-      const { data: claimed, error: claimError } = await supabase
-        .from("fixtures")
-        .update({ halftime_notified_at: now.toISOString() })
-        .eq("id", match.match_id)
-        .is("halftime_notified_at", null)
-        .select("id")
-        .maybeSingle();
-      if (claimError) throw claimError;
-      if (!claimed) continue;
-
-      const result = await sendPublicPushNow({
-        title: "Half-time",
-        body: `${match.home_team_name} ${match.home_score ?? 0}–${match.away_score ?? 0} ${match.away_team_name} at half-time.`,
-        matchId: match.match_id,
-        tag: `match-${match.match_id}-halftime`,
-      });
-      if (result.eligible > 0 && result.delivered === 0 && result.failed > 0) {
-        const { error: resetError } = await supabase
-          .from("fixtures")
-          .update({ halftime_notified_at: null })
-          .eq("id", match.match_id)
-          .eq("halftime_notified_at", now.toISOString());
-        if (resetError) throw resetError;
-      }
-      notificationsSent += result.delivered;
-      halftimeNotifications += 1;
-    }
-    return json({ scanned: fixtures?.length || 0, remindersClaimed, halftimeNotifications, notificationsSent });
+    return json({ scanned: fixtures?.length || 0, remindersClaimed, notificationsSent });
   } catch (error) {
     logApiError("public_pre_match_reminders_failed", error);
     return json({ error: "Unable to process pre-match reminders." }, { status: 500 });

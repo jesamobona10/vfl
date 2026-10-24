@@ -14,7 +14,6 @@ import {
   requireAuth,
   requireOrgAdmin,
 } from "@/lib/security";
-import { dispatchMatchEvent } from "@/lib/notifications/dispatch";
 
 export const dynamic = "force-dynamic";
 
@@ -102,15 +101,6 @@ export async function DELETE(request: Request, props: { params: Promise<{ id: st
           return json({ error: "Unable to remove goal." }, { status: 400 });
         }
         const score = Array.isArray(scoreRows) ? scoreRows[0] : null;
-        if (score) {
-          dispatchMatchEvent({
-            title: "Score updated",
-            body: `Score corrected to ${score.home_score}–${score.away_score}.`,
-            matchId: score.match_id,
-            teamId: score.team_id,
-            tag: `match-${score.match_id}-score-corrected-${score.home_score}-${score.away_score}`,
-          });
-        }
         return json({ success: true, scoreline: score ? { homeScore: score.home_score, awayScore: score.away_score } : null });
       }
       const { data: deleted, error } = await sb

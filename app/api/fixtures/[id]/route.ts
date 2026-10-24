@@ -14,14 +14,12 @@ import {
   parseJsonObject,
   rateLimit,
   rateLimitResponse,
-  requireAdmin,
   requireAuth,
   requireOrgAdmin,
   sanitizeText,
   writeAuditRecord,
 } from "@/lib/security";
 import { AUDIT_ACTIONS } from "@/lib/audit/actions";
-import { dispatchMatchEvent } from "@/lib/notifications/dispatch";
 import type { Match, MatchEvent, MatchEventRow } from "@/lib/types";
 
 export const dynamic = "force-dynamic";
@@ -274,32 +272,6 @@ export async function PUT(request: Request, props: { params: Promise<{ id: strin
     }
 
     const orgId = homeTeamOrgId || awayTeamOrgId;
-    const scorelineActuallyChanged =
-      fixture.home_score !== data.home_score || fixture.away_score !== data.away_score;
-    const matchLabel = `${homeTeam.name} vs ${awayTeam.name}`;
-    if (fixture.status !== "live" && fixture.status !== "in-progress" && data.status === "live") {
-      dispatchMatchEvent({
-        title: "Match started",
-        body: `${matchLabel} is underway.`,
-        matchId: fixtureId,
-        tag: `match-${fixtureId}-start`,
-      });
-    }
-    if (fixture.status !== "completed" && data.status === "completed") {
-      dispatchMatchEvent({
-        title: "Full-time",
-        body: `${homeTeam.name} ${data.home_score ?? 0}–${data.away_score ?? 0} ${awayTeam.name}`,
-        matchId: fixtureId,
-        tag: `match-${fixtureId}-fulltime`,
-      });
-    } else if (scorelineActuallyChanged) {
-      dispatchMatchEvent({
-        title: "Scoreline update",
-        body: `${homeTeam.name} ${data.home_score ?? 0}–${data.away_score ?? 0} ${awayTeam.name}`,
-        matchId: fixtureId,
-        tag: `match-${fixtureId}-score-${data.home_score ?? 0}-${data.away_score ?? 0}-${data.status}`,
-      });
-    }
     const scoreChanged =
       update.home_score !== undefined ||
       update.away_score !== undefined ||

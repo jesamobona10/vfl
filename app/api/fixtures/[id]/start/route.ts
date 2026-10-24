@@ -14,7 +14,6 @@ import {
   writeAuditRecord,
 } from "@/lib/security";
 import { AUDIT_ACTIONS } from "@/lib/audit/actions";
-import { dispatchMatchEvent } from "@/lib/notifications/dispatch";
 import { requireSeasonEntitlementForCompetitionSeason } from "@/lib/entitlements";
 
 export const dynamic = "force-dynamic";
@@ -52,14 +51,8 @@ export async function POST(request: Request, props: { params: Promise<{ id: stri
 
     const { data: homeTeam } = await supabase
       .from("teams")
-      .select("organization_id, name")
+      .select("organization_id")
       .eq("id", fixture.home_team_id)
-      .single();
-
-    const { data: awayTeam } = await supabase
-      .from("teams")
-      .select("name")
-      .eq("id", fixture.away_team_id)
       .single();
 
     if (!homeTeam) {
@@ -97,15 +90,6 @@ export async function POST(request: Request, props: { params: Promise<{ id: stri
     if (error) {
       logApiError("fixture_start_failed", error, { userId: auth.userId, fixtureId });
       return json({ error: "Unable to start the match." }, { status: 400 });
-    }
-
-    if (fixture.status !== "live" && fixture.status !== "in-progress") {
-      dispatchMatchEvent({
-        title: "Match started",
-        body: `${homeTeam.name} vs ${awayTeam?.name || "their opponent"} is underway.`,
-        matchId: fixtureId,
-        tag: `match-${fixtureId}-start`,
-      });
     }
 
     void writeAuditRecord({

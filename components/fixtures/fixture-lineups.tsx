@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useState } from "react";
+import Image from "next/image";
 import { Check, Clock3, LoaderCircle, ShieldCheck, Users, X } from "lucide-react";
 import { Modal } from "@/components/ui/modal";
 import { MATCH_FORMATIONS, createMatchLineupSlots, DEFAULT_MATCH_FORMATION } from "@/lib/match-lineups";
@@ -9,17 +10,30 @@ import type { LineupSlot } from "@/lib/types";
 
 type Player = { id: number; name: string | null; jersey_number: number | null; photo_url?: string | null; position?: string | null };
 type Team = { id: number; name: string; logo_url?: string | null };
+type FixtureLineupsData = {
+  fixture: { id: number; date: string | null; time: string | null; status: string };
+  teams: Team[];
+  lineups: FixtureLineup[];
+  roster: Player[];
+  canReview: boolean;
+  canSubmitTeamId: number | null;
+  canSubmit: boolean;
+  opensAt: string | null;
+  kickoff: string | null;
+  timezone: string;
+};
 export type FixtureLineup = {
   id: string; team_id: number; formation: string; status: "pending" | "approved" | "rejected";
   starting_xi: (Omit<LineupSlot, "playerId"> & { playerId?: number; player: Player | null })[]; substitutes: Player[]; review_note?: string | null;
 };
 
 function PlayerChip({ player, label }: { player: Player | null; label: string }) {
-  return <div className="flex min-w-0 flex-col items-center gap-1 text-center" title={player?.name || label}>
-    <div className="relative flex h-8 w-8 items-center justify-center overflow-hidden rounded-full border-2 border-white bg-white text-[11px] font-bold text-ink-1 shadow sm:h-9 sm:w-9">
-      {player?.photo_url ? <img src={player.photo_url} alt="" className="h-full w-full object-cover" /> : player?.jersey_number ?? "·"}
+  const displayName = player?.name || (player?.jersey_number ? `No. ${player.jersey_number}` : label);
+  return <div className="flex min-w-0 flex-col items-center gap-1.5 text-center" title={displayName}>
+    <div className="relative flex h-10 w-10 shrink-0 items-center justify-center overflow-hidden rounded-full border-2 border-white bg-white text-xs font-extrabold text-ink-1 shadow-md sm:h-11 sm:w-11">
+      {player?.photo_url ? <Image src={player.photo_url} alt="" fill sizes="44px" className="object-cover" /> : player?.jersey_number ?? "·"}
     </div>
-    <span className="max-w-[76px] truncate rounded bg-black/40 px-1 py-0.5 text-[9px] font-semibold leading-tight text-white sm:max-w-[96px] sm:text-[10px]">{player?.name || (player?.jersey_number ? `No. ${player.jersey_number}` : label)}</span>
+    <span className="line-clamp-2 min-h-9 w-full max-w-[112px] break-words rounded-md border border-white/20 bg-slate-950/90 px-1 py-1 text-[10px] font-semibold leading-[1.15] text-white shadow-sm sm:text-[11px]">{displayName}</span>
   </div>;
 }
 
@@ -32,18 +46,25 @@ export function MatchLineupsDisplay({ teams, lineups }: { teams: Team[]; lineups
       const rows: LineupSlot["position"][] = ["ATT", "MID", "DEF", "GK"];
       return <article key={team.id} className="overflow-hidden rounded-2xl border border-line bg-surface">
         <header className="flex items-center justify-between gap-2 border-b border-line px-4 py-3">
-          <div className="flex min-w-0 items-center gap-2">{team.logo_url ? <img src={team.logo_url} alt="" className="h-7 w-7 rounded-full object-cover" /> : null}<strong className="truncate text-sm">{team.name}</strong></div>
+          <div className="flex min-w-0 items-center gap-2">{team.logo_url ? <Image src={team.logo_url} alt="" width={28} height={28} className="h-7 w-7 shrink-0 rounded-full object-cover" /> : null}<strong className="truncate text-sm">{team.name}</strong></div>
           <span className="rounded-full bg-brand/10 px-2 py-1 text-[11px] font-bold text-brand">{lineup.formation}</span>
         </header>
-        <div className="relative mx-3 my-3 overflow-hidden rounded-xl border border-white/30 bg-emerald-700 px-2 py-5">
-          <div className="absolute inset-0 opacity-15" style={{ backgroundImage: "repeating-linear-gradient(0deg, transparent 0 44px, rgba(255,255,255,.5) 45px 46px)" }} />
-          <div className="absolute left-1/2 top-1/2 h-24 w-24 -translate-x-1/2 -translate-y-1/2 rounded-full border border-white/50" />
-          <div className="absolute left-1/2 top-0 h-8 w-32 -translate-x-1/2 rounded-b-lg border border-t-0 border-white/50" />
-          <div className="absolute bottom-0 left-1/2 h-8 w-32 -translate-x-1/2 rounded-t-lg border border-b-0 border-white/50" />
-          <div className="relative z-10 flex min-h-[245px] flex-col justify-between gap-3">
-            {rows.map((position) => <div key={position} className="flex items-center justify-center gap-2 sm:gap-4">
-              {lineup.starting_xi.filter((slot) => slot.position === position).map((slot) => <PlayerChip key={slot.slotId} player={slot.player} label={slot.label} />)}
-            </div>)}
+        <div className="relative mx-3 my-3 overflow-hidden rounded-xl border-2 border-white/60 bg-[#168447] px-2 py-4 shadow-inner sm:px-3">
+          <div className="absolute inset-0 opacity-25" style={{ backgroundImage: "repeating-linear-gradient(0deg, transparent 0 19.5%, rgba(255,255,255,.42) 20%, transparent 20.5%)" }} />
+          <div className="absolute inset-2 rounded-lg border border-white/55" />
+          <div className="absolute left-1/2 top-1/2 h-24 w-24 -translate-x-1/2 -translate-y-1/2 rounded-full border-2 border-white/50" />
+          <div className="absolute left-0 right-0 top-1/2 border-t border-white/50" />
+          <div className="absolute left-1/2 top-2 h-10 w-36 -translate-x-1/2 rounded-b-xl border-2 border-t-0 border-white/50" />
+          <div className="absolute bottom-2 left-1/2 h-10 w-36 -translate-x-1/2 rounded-t-xl border-2 border-b-0 border-white/50" />
+          <div className="relative z-10 flex min-h-[430px] flex-col justify-around gap-2 py-2">
+            {rows.map((position) => {
+              const rowSlots = lineup.starting_xi.filter((slot) => slot.position === position);
+              return (
+                <div key={position} className="grid w-full items-start justify-items-center gap-1" style={{ gridTemplateColumns: `repeat(${Math.max(rowSlots.length, 1)}, minmax(0, 1fr))` }}>
+                  {rowSlots.map((slot) => <PlayerChip key={slot.slotId} player={slot.player} label={slot.label} />)}
+                </div>
+              );
+            })}
           </div>
         </div>
         <div className="px-4 pb-4">
@@ -56,7 +77,7 @@ export function MatchLineupsDisplay({ teams, lineups }: { teams: Team[]; lineups
 }
 
 export function FixtureLineupsModal({ fixtureId, open, onClose }: { fixtureId: number; open: boolean; onClose: () => void }) {
-  const [data, setData] = useState<any>(null);
+  const [data, setData] = useState<FixtureLineupsData | null>(null);
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
   const [formation, setFormation] = useState(DEFAULT_MATCH_FORMATION);
@@ -70,20 +91,24 @@ export function FixtureLineupsModal({ fixtureId, open, onClose }: { fixtureId: n
     setLoading(true); setError("");
     try {
       const response = await fetch(`/api/fixtures/${fixtureId}/lineups`, { cache: "no-store" });
-      const body = await response.json();
+      const body = await response.json() as FixtureLineupsData & { error?: string };
       if (!response.ok) throw new Error(body.error || "Unable to load fixture lineups.");
       setData(body);
-      const mine = (body.lineups || []).find((lineup: FixtureLineup) => lineup.team_id === body.canSubmitTeamId);
-      if (mine) { setFormation(mine.formation); setSlots(mine.starting_xi.map(({ player, ...slot }: any) => ({ ...slot, playerId: slot.playerId ?? player?.id ?? null }))); setSubstitutes(mine.substitutes.map((player: Player) => player.id)); }
+      const mine = body.lineups.find((lineup) => lineup.team_id === body.canSubmitTeamId);
+      if (mine) { setFormation(mine.formation); setSlots(mine.starting_xi.map((slot) => ({ slotId: slot.slotId, label: slot.label, position: slot.position, playerId: slot.playerId ?? slot.player?.id ?? null }))); setSubstitutes(mine.substitutes.map((player) => player.id)); }
       else { setFormation(DEFAULT_MATCH_FORMATION); setSlots(createMatchLineupSlots(DEFAULT_MATCH_FORMATION)); setSubstitutes([]); }
     } catch (cause) { setError(cause instanceof Error ? cause.message : "Unable to load fixture lineups."); }
     finally { setLoading(false); }
   }, [fixtureId]);
-  useEffect(() => { if (open) void load(); }, [open, load]);
+  useEffect(() => {
+    if (!open) return;
+    const timer = window.setTimeout(() => { void load(); }, 0);
+    return () => window.clearTimeout(timer);
+  }, [open, load]);
 
-  const roster: Player[] = data?.roster || [];
+  const roster = data?.roster || [];
   const selectedIds = useMemo(() => new Set(slots.map((slot) => slot.playerId).filter((id): id is number => id != null)), [slots]);
-  const teamLineups: FixtureLineup[] = useMemo(() => (data?.lineups || []).map((lineup: FixtureLineup) => lineup), [data]);
+  const teamLineups = data?.lineups || [];
 
   function changeFormation(value: string) {
     setFormation(value); setSlots(createMatchLineupSlots(value));
@@ -132,7 +157,7 @@ export function FixtureLineupsModal({ fixtureId, open, onClose }: { fixtureId: n
         </div> : <div className="flex items-start gap-2 rounded-lg bg-surface p-3 text-sm text-ink-3"><Clock3 size={17} className="mt-0.5 shrink-0" /><span>{mine?.status === "pending" ? "Submitted and awaiting verification." : mine?.status === "approved" ? "Verified lineup is public." : `Lineup submission opens at ${data.opensAt ? new Date(data.opensAt).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }) : "two hours before kickoff"}.`}</span></div>}
         {mine?.review_note && <p className="mt-2 text-xs text-danger">Reviewer note: {mine.review_note}</p>}
       </section>}
-      {data?.canReview && teamLineups.some((lineup) => lineup.status === "pending") && <section className="space-y-3 rounded-xl border border-brand/20 bg-brand/5 p-4"><h3 className="flex items-center gap-2 font-semibold"><ShieldCheck size={17} /> Pending verification</h3>{teamLineups.filter((lineup) => lineup.status === "pending").map((lineup) => <div key={lineup.id} className="flex flex-wrap items-center justify-between gap-3 rounded-lg bg-surface p-3"><div><p className="text-sm font-semibold">{data.teams.find((team: Team) => team.id === lineup.team_id)?.name} · {lineup.formation}</p><p className="text-xs text-muted">11 starters · {lineup.substitutes.length} substitutes</p></div><div className="flex items-center gap-2"><button type="button" disabled={saving} onClick={() => void review(lineup.id, "rejected")} className="btn text-danger"><X size={14} /> Return</button><button type="button" disabled={saving} onClick={() => void review(lineup.id, "approved")} className="btn btn-primary"><Check size={14} /> Verify & publish</button></div></div>)}<input value={reviewNote} onChange={(event) => setReviewNote(event.target.value)} maxLength={500} placeholder="Optional note for the coach" className="input w-full" /></section>}
+      {data?.canReview && teamLineups.some((lineup) => lineup.status === "pending") && <section className="space-y-3 rounded-xl border border-brand/20 bg-brand/5 p-4"><h3 className="flex items-center gap-2 font-semibold"><ShieldCheck size={17} /> Pending verification</h3>{teamLineups.filter((lineup) => lineup.status === "pending").map((lineup) => <div key={lineup.id} className="flex flex-wrap items-center justify-between gap-3 rounded-lg bg-surface p-3"><div><p className="text-sm font-semibold">{data.teams.find((team) => team.id === lineup.team_id)?.name} · {lineup.formation}</p><p className="text-xs text-muted">11 starters · {lineup.substitutes.length} substitutes</p></div><div className="flex items-center gap-2"><button type="button" disabled={saving} onClick={() => void review(lineup.id, "rejected")} className="btn text-danger"><X size={14} /> Return</button><button type="button" disabled={saving} onClick={() => void review(lineup.id, "approved")} className="btn btn-primary"><Check size={14} /> Verify & publish</button></div></div>)}<input value={reviewNote} onChange={(event) => setReviewNote(event.target.value)} maxLength={500} placeholder="Optional note for the coach" className="input w-full" /></section>}
       {error && <p role="alert" className="text-sm text-danger">{error}</p>}
       {loading ? <div className="flex justify-center p-8"><LoaderCircle className="animate-spin text-muted" /></div> : data && <MatchLineupsDisplay teams={data.teams || []} lineups={teamLineups.filter((lineup) => data.canReview || lineup.status === "approved" || lineup.team_id === data.canSubmitTeamId)} />}
       {!loading && data && teamLineups.length === 0 && !data.canSubmitTeamId && <p className="rounded-xl bg-surface-2/30 p-5 text-center text-sm text-muted">No team lineups have been submitted yet.</p>}

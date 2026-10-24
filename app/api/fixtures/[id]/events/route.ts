@@ -193,13 +193,24 @@ export async function POST(request: Request, props: { params: Promise<{ id: stri
       "match-win": `${scoringTeamName} won the match.`,
       "bonus-5-saves": `${subject} reached five saves for ${scoringTeamName}.`,
     };
-    dispatchMatchEvent({
-      title: eventType === "goal" || eventType === "own-goal" ? "Goal scored" : "Match update",
-      body: `${eventType === "goal" && !playerId ? `${scoringTeamName} scored.` : eventDescription[eventType]}${minute ? ` ${minute}′` : ""}`,
-      matchId: fixtureId,
-      teamId,
-      tag: `match-${fixtureId}-event-${data.id}`,
-    });
+    const notificationTitles: Record<string, string> = {
+      goal: "Goal scored",
+      "own-goal": "Goal scored",
+      assist: "Assist",
+      yellow: "Yellow card",
+      red: "Red card",
+      motm: "Player of the match",
+    };
+    const notificationTitle = notificationTitles[eventType];
+    if (notificationTitle) {
+      dispatchMatchEvent({
+        title: notificationTitle,
+        body: `${eventType === "goal" && !playerId ? `${scoringTeamName} scored.` : eventDescription[eventType]}${minute ? ` ${minute}′` : ""}`,
+        matchId: fixtureId,
+        teamId,
+        tag: `match-${fixtureId}-event-${data.id}`,
+      });
+    }
 
     return json({ event: data, scoreline });
   } catch (error) {
