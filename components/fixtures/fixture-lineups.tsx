@@ -33,13 +33,13 @@ function PlayerChip({ player, label }: { player: Player | null; label: string })
     <div className="relative flex h-10 w-10 shrink-0 items-center justify-center overflow-hidden rounded-full border-2 border-white bg-white text-xs font-extrabold text-ink-1 shadow-md sm:h-11 sm:w-11">
       {player?.photo_url ? <Image src={player.photo_url} alt="" fill sizes="44px" className="object-cover" /> : player?.jersey_number ?? "·"}
     </div>
-    <span className="line-clamp-2 min-h-9 w-full max-w-[112px] break-words rounded-md border border-white/20 bg-slate-950/90 px-1 py-1 text-[10px] font-semibold leading-[1.15] text-white shadow-sm sm:text-[11px]">{displayName}</span>
+    <span className="line-clamp-2 min-h-9 w-full max-w-[140px] break-words rounded-md border border-white/20 bg-slate-950/90 px-1 py-1 text-[10px] font-semibold leading-[1.15] text-white shadow-sm sm:text-[11px]">{displayName}</span>
   </div>;
 }
 
 export function MatchLineupsDisplay({ teams, lineups }: { teams: Team[]; lineups: FixtureLineup[] }) {
   if (lineups.length === 0) return null;
-  return <div className="grid gap-4 md:grid-cols-2">
+  return <div className="grid gap-4 2xl:grid-cols-2">
     {teams.map((team) => {
       const lineup = lineups.find((item) => item.team_id === team.id);
       if (!lineup) return null;
