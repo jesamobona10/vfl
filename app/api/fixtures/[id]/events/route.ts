@@ -95,7 +95,6 @@ export async function POST(request: Request, props: { params: Promise<{ id: stri
     const eventType = asString(parsed.data!.type ?? parsed.data!.event_type, 30);
     const minute = asInteger(parsed.data!.minute, 1, 150);
 
-    if (!playerId) return json({ error: "Player ID is required." }, { status: 400 });
     if (!teamId) return json({ error: "Team ID is required." }, { status: 400 });
     if (!eventType) return json({ error: "Event type is required." }, { status: 400 });
 
@@ -108,44 +107,72 @@ export async function POST(request: Request, props: { params: Promise<{ id: stri
       return json({ error: `Invalid event type. Allowed: ${ALLOWED_EVENT_TYPES.join(", ")}` }, { status: 400 });
     }
 
+    // Only goals may be recorded without a player. The team is the scorer,
+    // while later attribution can attach a roster player without changing score.
+    if (playerId === null && eventType !== "goal") {
+      return json({ error: "Select a player for this event." }, { status: 400 });
+    }
+
     if (teamId !== homeTeamId && teamId !== awayTeamId) {
       return json({ error: "Team does not participate in this fixture." }, { status: 400 });
     }
 
-    const { data: player } = await supabase
-      .from("players")
-      .select("id, name")
-      .eq("id", playerId)
-      .eq("team_id", teamId)
-      .maybeSingle();
-
-    if (!player) {
-      return json({ error: "Player not found on the specified team." }, { status: 400 });
-    }
-
     const sb = createServiceRoleClient();
-    const { data, error } = await sb
-      .from("match_events")
-      .insert({
-        match_id: fixtureId,
-        player_id: playerId,
-        team_id: teamId,
-        event_type: eventType,
-        minute: minute || null,
-        competition_id: competitionId,
-        season_id: seasonId,
-        organization_id: homeOrgId,
-      })
-      .select()
-      .single();
+    let data: { id: number; player_id: number | null; team_id: number; event_type: string; minute: number | null } | null = null;
+    let error: { message?: string } | null = null;
+    let scoreline: { homeScore: number; awayScore: number } | null = null;
+
+    if (eventType === "goal") {
+      const { data: goalResult, error: goalError } = await sb.rpc("record_match_goal", {
+        p_match_id: fixtureId,
+        p_team_id: teamId,
+        p_player_id: playerId,
+        p_minute: minute,
+        p_organization_id: homeOrgId,
+      });
+      error = goalError;
+      const result = Array.isArray(goalResult) ? goalResult[0] : null;
+      if (result && !goalError) {
+        data = { id: result.event_id, player_id: playerId, team_id: teamId, event_type: eventType, minute: minute ?? null };
+        scoreline = { homeScore: result.home_score, awayScore: result.away_score };
+      }
+    } else {
+      const { data: player } = await supabase
+        .from("players")
+        .select("id, name")
+        .eq("id", playerId!)
+        .eq("team_id", teamId)
+        .maybeSingle();
+
+      if (!player) return json({ error: "Player not found on the specified team." }, { status: 400 });
+
+      const result = await sb
+        .from("match_events")
+        .insert({
+          match_id: fixtureId,
+          player_id: playerId,
+          team_id: teamId,
+          event_type: eventType,
+          minute: minute || null,
+          competition_id: competitionId,
+          season_id: seasonId,
+          organization_id: homeOrgId,
+        })
+        .select()
+        .single();
+      data = result.data;
+      error = result.error;
+    }
 
     if (error) {
       logApiError("event_create_failed", error, { userId: authed.userId, fixtureId });
       return json({ error: "Unable to save event." }, { status: 400 });
     }
+    if (!data) return json({ error: "Unable to save event." }, { status: 500 });
 
     const scoringTeamName = teamId === homeTeamId ? homeTeam.name : awayTeam.name;
-    const subject = player.name || "A player";
+    const { data: eventPlayer } = playerId ? await supabase.from("players").select("name").eq("id", playerId).maybeSingle() : { data: null };
+    const subject = eventPlayer?.name || "A player";
     const eventDescription: Record<string, string> = {
       goal: `${subject} scored for ${scoringTeamName}.`,
       assist: `${subject} assisted ${scoringTeamName}.`,
@@ -168,13 +195,13 @@ export async function POST(request: Request, props: { params: Promise<{ id: stri
     };
     dispatchMatchEvent({
       title: eventType === "goal" || eventType === "own-goal" ? "Goal scored" : "Match update",
-      body: `${eventDescription[eventType]}${minute ? ` ${minute}′` : ""}`,
+      body: `${eventType === "goal" && !playerId ? `${scoringTeamName} scored.` : eventDescription[eventType]}${minute ? ` ${minute}′` : ""}`,
       matchId: fixtureId,
       teamId,
       tag: `match-${fixtureId}-event-${data.id}`,
     });
 
-    return json({ event: data });
+    return json({ event: data, scoreline });
   } catch (error) {
     logApiError("event_create_error", error);
     return json({ error: "Something went wrong. Please try again." }, { status: 500 });

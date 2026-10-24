@@ -59,7 +59,7 @@ export async function GET(request: Request, props: { params: Promise<{ id: strin
       return json({ error: "Failed to load events." }, { status: 500 });
     }
 
-    const playerIds = [...new Set((events || []).map((e) => e.player_id))];
+    const playerIds = [...new Set((events || []).map((e) => e.player_id).filter((id): id is number => id != null))];
 
     const { data: players } = await supabase
       .from("players")

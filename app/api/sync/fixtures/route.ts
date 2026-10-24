@@ -228,10 +228,12 @@ export async function POST(request: Request) {
         }
       }
     }
-    const wellFormedEvents = allEvents.filter((e) => e.player_id && e.event_type);
+    const wellFormedEvents = allEvents.filter((e) =>
+      e.event_type && (e.player_id || (e.event_type === "goal" && e.team_id))
+    );
 
     if (wellFormedEvents.length > 0 && fixtureIds.length > 0) {
-      const missingTeamIds = wellFormedEvents.filter((e) => !e.team_id).map((e) => e.player_id);
+      const missingTeamIds = wellFormedEvents.filter((e) => !e.team_id && e.player_id).map((e) => e.player_id!);
       if (missingTeamIds.length > 0) {
         const { data: eventPlayers } = await sb
           .from("players")
@@ -239,7 +241,7 @@ export async function POST(request: Request) {
           .in("id", missingTeamIds);
         const playerTeamMap = new Map((eventPlayers || []).map((p: any) => [p.id, p.team_id]));
         for (const event of wellFormedEvents) {
-          if (!event.team_id) {
+          if (!event.team_id && event.player_id) {
             event.team_id = playerTeamMap.get(event.player_id) || null;
           }
         }

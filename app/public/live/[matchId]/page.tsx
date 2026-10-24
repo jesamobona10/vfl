@@ -17,8 +17,9 @@ import type { MatchMediaItem } from "@/lib/match-media";
 type Event = PublicLiveEventRow;
 
 function eventLabel(event: Event, homeName: string, awayName: string) {
-  const name = event.player_name || "Player";
   const team = event.team_id === event.home_team_id ? homeName : awayName;
+  const name = event.player_name || "Player";
+  if (!event.player_name && event.event_type === "goal") return `Goal for ${team}`;
   switch (event.event_type) {
     case "goal": return `${name} scored for ${team}`;
     case "own-goal": return `${name} scored an own goal for ${team}`;

@@ -82,8 +82,8 @@ export function MatchMode({ match, homeTeam, awayTeam, settings, onUpdated }: Ma
   const isCompleted = match.status === "completed";
   const isLive = match.status === "live" || match.status === "in-progress";
 
-  const getPlayerName = (playerId: number) =>
-    players.find((p) => p.id === playerId)?.name || "Unknown";
+  const getPlayerName = (playerId: number | null) =>
+    playerId == null ? "Player unavailable" : players.find((p) => p.id === playerId)?.name || "Unknown";
 
   const handleStart = async () => {
     setBusy(true);
@@ -234,7 +234,7 @@ export function MatchMode({ match, homeTeam, awayTeam, settings, onUpdated }: Ma
                 </span>
                 <span className="min-w-0 flex-1 truncate">
                   <span className="font-medium">{EVENT_LABEL[event.type] || event.type}</span>{" "}
-                  <span className="text-muted">{getPlayerName(event.playerId)}</span>
+                  <span className="text-muted">{event.playerId == null && event.type === "goal" ? "Scorer to be assigned" : getPlayerName(event.playerId)}{event.playerId == null && event.teamId != null ? ` · ${event.teamId === match.homeId ? homeTeam?.name : awayTeam?.name}` : ""}</span>
                 </span>
                 {!isCompleted && (
                   <button

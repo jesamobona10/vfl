@@ -98,6 +98,7 @@ export async function GET() {
 
     for (const m of dbMatches || []) {
       const events: MatchEvent[] = (m.match_events || []).map((e: any) => ({
+        id: e.id,
         playerId: e.player_id,
         type: e.event_type,
         teamId: e.team_id,

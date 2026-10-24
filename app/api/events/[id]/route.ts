@@ -8,11 +8,13 @@ import {
   json,
   logApiError,
   ownsTeam,
+  parseJsonObject,
   rateLimit,
   rateLimitResponse,
   requireAuth,
   requireOrgAdmin,
 } from "@/lib/security";
+import { dispatchMatchEvent } from "@/lib/notifications/dispatch";
 
 export const dynamic = "force-dynamic";
 
@@ -79,7 +81,7 @@ export async function DELETE(request: Request, props: { params: Promise<{ id: st
     if (eventIdParam) {
       const { data: event } = await supabase
         .from("match_events")
-        .select("match_id")
+        .select("match_id, event_type")
         .eq("id", eventIdParam)
         .single();
 
@@ -93,6 +95,24 @@ export async function DELETE(request: Request, props: { params: Promise<{ id: st
       // org-level admins, so a coach's delete would otherwise silently affect
       // zero rows and still report success.
       const sb = createServiceRoleClient();
+      if (event.event_type === "goal") {
+        const { data: scoreRows, error: goalDeleteError } = await sb.rpc("delete_match_goal", { p_event_id: eventIdParam });
+        if (goalDeleteError) {
+          logApiError("goal_delete_failed", goalDeleteError, { userId: authed.userId, eventId: eventIdParam });
+          return json({ error: "Unable to remove goal." }, { status: 400 });
+        }
+        const score = Array.isArray(scoreRows) ? scoreRows[0] : null;
+        if (score) {
+          dispatchMatchEvent({
+            title: "Score updated",
+            body: `Score corrected to ${score.home_score}–${score.away_score}.`,
+            matchId: score.match_id,
+            teamId: score.team_id,
+            tag: `match-${score.match_id}-score-corrected-${score.home_score}-${score.away_score}`,
+          });
+        }
+        return json({ success: true, scoreline: score ? { homeScore: score.home_score, awayScore: score.away_score } : null });
+      }
       const { data: deleted, error } = await sb
         .from("match_events")
         .delete()
@@ -153,6 +173,60 @@ export async function DELETE(request: Request, props: { params: Promise<{ id: st
     return json({ success: true });
   } catch (error) {
     logApiError("event_delete_error", error);
+    return json({ error: "Something went wrong. Please try again." }, { status: 500 });
+  }
+}
+
+export async function PATCH(request: Request, props: { params: Promise<{ id: string }> }) {
+  const params = await props.params;
+  try {
+    const session = await createClient();
+    const auth = await getAuthContext(session);
+    const authError = requireAuth(auth);
+    if (authError) return authError;
+    const eventId = asInteger(params.id, 1);
+    if (!eventId) return json({ error: "Invalid event id." }, { status: 400 });
+    const parsed = await parseJsonObject(request);
+    if (parsed.error) return json({ error: parsed.error }, { status: 400 });
+    const playerId = asInteger(parsed.data?.playerId ?? parsed.data?.player_id, 1);
+    if (!playerId) return json({ error: "Select a player." }, { status: 400 });
+
+    const sb = createServiceRoleClient();
+    const { data: event } = await sb
+      .from("match_events")
+      .select("id, match_id, player_id, team_id, event_type")
+      .eq("id", eventId)
+      .maybeSingle();
+    if (!event) return json({ error: "Event not found." }, { status: 404 });
+    const ownershipError = await checkEventOwnership(session, auth!, event.match_id);
+    if (ownershipError) return ownershipError;
+    if (event.event_type !== "goal") return json({ error: "Only goals can be attributed after the match." }, { status: 400 });
+    if (event.player_id != null) return json({ error: "This event already has a player assigned." }, { status: 409 });
+    if (!event.team_id) return json({ error: "This event has no team to assign a player from." }, { status: 400 });
+
+    const { data: player } = await sb
+      .from("players")
+      .select("id, name")
+      .eq("id", playerId)
+      .eq("team_id", event.team_id)
+      .maybeSingle();
+    if (!player) return json({ error: "Choose a player from the scoring team." }, { status: 400 });
+
+    const { data: updated, error } = await sb
+      .from("match_events")
+      .update({ player_id: playerId })
+      .eq("id", eventId)
+      .is("player_id", null)
+      .select("id, player_id, team_id, event_type, minute")
+      .maybeSingle();
+    if (error) {
+      logApiError("event_attribution_failed", error, { userId: auth!.userId, eventId });
+      return json({ error: "Unable to assign player to event." }, { status: 500 });
+    }
+    if (!updated) return json({ error: "This event has already been updated." }, { status: 409 });
+    return json({ event: updated, playerName: player.name });
+  } catch (error) {
+    logApiError("event_attribution_error", error);
     return json({ error: "Something went wrong. Please try again." }, { status: 500 });
   }
 }

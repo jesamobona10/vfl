@@ -149,6 +149,27 @@ export function AddEventModal({
       });
   };
 
+  const handleUnattributedGoal = (teamId: number) => {
+    if (saving || selectedType !== "goal") return;
+    setSaving(true);
+    onClose();
+    void submitMatchEvent({
+      match,
+      playerId: null,
+      teamId,
+      type: "goal",
+      minute: initialMinute,
+      onSettled: invalidateStandings,
+    }).then(({ undo }) => {
+      const teamName = teamId === match.homeId ? homeTeamName : awayTeamName;
+      toast.success(`Goal for ${teamName} recorded. Add the player later to update individual stats.`, {
+        action: { label: "Undo", onAction: undo },
+      });
+    }).catch(() => {
+      toast.error("The goal could not be saved. Please refresh and try again.");
+    });
+  };
+
   const handleMarkComplete = async () => {
     const home = match.homeScore ?? 0;
     const away = match.awayScore ?? 0;
@@ -172,7 +193,7 @@ export function AddEventModal({
       open
       onClose={onClose}
       title="Quick match event"
-      subtitle={`${homeTeamName} vs ${awayTeamName} · ${initialMinute ? `${initialMinute}′` : "Choose a player"}`}
+      subtitle={`${homeTeamName} vs ${awayTeamName} · ${initialMinute ? `${initialMinute}′` : "Choose a player or team"}`}
       className="max-w-md"
       footer={
         match.status !== "completed" ? (
@@ -262,7 +283,7 @@ export function AddEventModal({
         {/* One scroll region on mobile: the dialog itself. A nested scroller here
             fights the on-screen keyboard for scroll gestures. */}
         <div className="max-h-none space-y-3 sm:max-h-72 sm:overflow-y-auto">
-          {([ [homeTeamName, homePlayers], [awayTeamName, awayPlayers] ] as const).map(([teamName, teamPlayers]) => (
+          {([ [match.homeId, homeTeamName, homePlayers], [match.awayId, awayTeamName, awayPlayers] ] as const).map(([teamId, teamName, teamPlayers]) => (
             <section key={teamName}>
               <p className="mb-1.5 text-xs font-semibold text-ink-3">{teamName}</p>
               {teamPlayers.length > 0 ? (
@@ -287,6 +308,16 @@ export function AddEventModal({
                 <p className="py-2 text-xs text-muted">
                   {normalizedSearch ? "No matching players." : "No players found for this team."}
                 </p>
+              )}
+              {selectedType === "goal" && (
+                <button
+                  type="button"
+                  disabled={saving}
+                  onClick={() => handleUnattributedGoal(teamId)}
+                  className="mt-2 w-full rounded-xl border border-brand/30 bg-brand/5 px-3 py-2.5 text-left text-xs font-semibold text-brand hover:bg-brand/10 disabled:opacity-50"
+                >
+                  Record goal for {teamName} · add player later
+                </button>
               )}
             </section>
           ))}

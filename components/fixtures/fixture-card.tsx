@@ -104,7 +104,8 @@ export function FixtureCard({
     }
   };
 
-  const getPlayerName = (playerId: number) => {
+  const getPlayerName = (playerId: number | null) => {
+    if (playerId == null) return "Player unavailable";
     const p = players.find((pl) => pl.id === playerId);
     return p?.name || "Unknown";
   };
@@ -186,7 +187,10 @@ export function FixtureCard({
         className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium ${color}`}
       >
         <span className="font-semibold">{EVENT_ABBR[event.type] || event.type}</span>
-        {getPlayerName(event.playerId)}
+        {event.playerId == null && event.type === "goal" ? "Scorer to be assigned" : getPlayerName(event.playerId)}
+        {event.playerId == null && event.teamId != null && (
+          <span className="opacity-75">· {event.teamId === match.homeId ? homeTeam?.name : awayTeam?.name}</span>
+        )}
         {editable && (
           <button
             onClick={(e) => {

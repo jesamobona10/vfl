@@ -97,7 +97,7 @@ function persistScore(matchId: number, home: number | null | undefined, away: nu
 
 export interface SubmitMatchEventInput {
   match: Match;
-  playerId: number;
+  playerId: number | null;
   teamId: number;
   type: string;
   minute?: number;
@@ -121,7 +121,7 @@ export async function submitMatchEvent(input: SubmitMatchEventInput): Promise<Su
   const { match, playerId, teamId, type, minute, onSettled } = input;
   const store = useAppStore.getState();
 
-  const player = store.players.find((p) => p.id === playerId);
+  const player = playerId == null ? undefined : store.players.find((p) => p.id === playerId);
   const newEvent: MatchEvent = { playerId, type, teamId, minute };
   const prevHome = match.homeScore;
   const prevAway = match.awayScore;
@@ -133,7 +133,7 @@ export async function submitMatchEvent(input: SubmitMatchEventInput): Promise<Su
   store.updateMatch(match.id, "homeScore", score.homeScore);
   store.updateMatch(match.id, "awayScore", score.awayScore);
 
-  if (player) {
+  if (player && playerId != null) {
     const field = EVENT_STAT_FIELD[type];
     if (field) {
       store.updatePlayer(playerId, { [field]: ((player[field] as number) || 0) + 1 });
@@ -164,15 +164,15 @@ export async function submitMatchEvent(input: SubmitMatchEventInput): Promise<Su
     }
     fresh.updateMatch(match.id, "events", list);
 
-    const current = fresh.players.find((p) => p.id === playerId);
+    const current = playerId == null ? undefined : fresh.players.find((p) => p.id === playerId);
     if (current && field) {
-      fresh.updatePlayer(playerId, {
+      fresh.updatePlayer(playerId!, {
         [field]: Math.max(0, ((current[field] as number) || 0) - 1),
       });
     }
     fresh.updateMatch(match.id, "homeScore", prevHome);
     fresh.updateMatch(match.id, "awayScore", prevAway);
-    persistScore(match.id, prevHome, prevAway);
+    if (type !== "goal" || !serverId) persistScore(match.id, prevHome, prevAway);
     fresh.recalculateRatings();
 
     if (serverId) {
@@ -193,11 +193,16 @@ export async function submitMatchEvent(input: SubmitMatchEventInput): Promise<Su
   }).then(async (res) => {
     if (!res.ok) throw new Error("Match event save failed");
     const payload = await res.json().catch(() => null);
+    if (payload?.scoreline) {
+      const fresh = useAppStore.getState();
+      fresh.updateMatch(match.id, "homeScore", payload.scoreline.homeScore);
+      fresh.updateMatch(match.id, "awayScore", payload.scoreline.awayScore);
+    }
     return (payload?.event?.id as number | undefined) ?? null;
   });
 
   const scoreSave =
-    type === "goal" || type === "own-goal"
+    type === "own-goal"
       ? fetch(`/api/fixtures/${match.id}`, {
           method: "PUT",
           headers: { "Content-Type": "application/json" },
@@ -213,6 +218,19 @@ export async function submitMatchEvent(input: SubmitMatchEventInput): Promise<Su
 
   const [id] = await Promise.all([eventSave, scoreSave]);
   serverId = id;
+  if (serverId) {
+    const fresh = useAppStore.getState();
+    for (const round of fresh.fixtures) {
+      const currentMatch = round.matches.find((item) => item.id === match.id);
+      const eventIndex = currentMatch?.events?.findIndex((event) => event === newEvent) ?? -1;
+      if (currentMatch && eventIndex >= 0) {
+        fresh.updateMatch(match.id, "events", currentMatch.events!.map((event, index) =>
+          index === eventIndex ? { ...event, id: serverId } : event
+        ));
+        break;
+      }
+    }
+  }
   onSettled?.();
 
   return { serverId, undo };
@@ -247,18 +265,18 @@ export function removeMatchEvent(input: RemoveMatchEventInput): RemovedMatchEven
   const prevAway = match.awayScore;
 
   const field = EVENT_STAT_FIELD[event.type];
-  const player = store.players.find((p) => p.id === event.playerId);
+  const player = event.playerId == null ? undefined : store.players.find((p) => p.id === event.playerId);
   const prevStatValue = player && field ? ((player[field] as number) || 0) : undefined;
 
   // Optimistic removal: hide the event and roll back score/stat locally.
   store.updateMatch(match.id, "events", updatedEvents);
   if (player && field && prevStatValue !== undefined) {
-    store.updatePlayer(event.playerId, { [field]: Math.max(0, prevStatValue - 1) });
+    store.updatePlayer(event.playerId!, { [field]: Math.max(0, prevStatValue - 1) });
   }
   let nextHome = prevHome;
   let nextAway = prevAway;
   if (event.type === "goal" || event.type === "own-goal") {
-    const teamId = player?.teamId ?? match.homeId;
+    const teamId = event.teamId ?? player?.teamId ?? match.homeId;
     const isOwnGoal = event.type === "own-goal";
     const scoringTeam = isOwnGoal
       ? teamId === match.homeId
@@ -269,7 +287,7 @@ export function removeMatchEvent(input: RemoveMatchEventInput): RemovedMatchEven
     nextAway = scoringTeam === match.awayId ? Math.max(0, (prevAway ?? 0) - 1) : prevAway;
     store.updateMatch(match.id, "homeScore", nextHome);
     store.updateMatch(match.id, "awayScore", nextAway);
-    persistScore(match.id, nextHome, nextAway);
+    if (event.type !== "goal" || !event.id) persistScore(match.id, nextHome, nextAway);
   }
   store.recalculateRatings();
 
@@ -277,20 +295,18 @@ export function removeMatchEvent(input: RemoveMatchEventInput): RemovedMatchEven
     const fresh = useAppStore.getState();
     fresh.updateMatch(match.id, "events", events);
     if (player && field && prevStatValue !== undefined) {
-      fresh.updatePlayer(event.playerId, { [field]: prevStatValue });
+      fresh.updatePlayer(event.playerId!, { [field]: prevStatValue });
     }
     if (event.type === "goal" || event.type === "own-goal") {
       fresh.updateMatch(match.id, "homeScore", prevHome);
       fresh.updateMatch(match.id, "awayScore", prevAway);
-      persistScore(match.id, prevHome, prevAway);
+      if (event.type !== "goal" || !event.id) persistScore(match.id, prevHome, prevAway);
     }
     fresh.recalculateRatings();
   };
 
   const persistDelete = () => {
-    fetch(`/api/events/0?match_id=${match.id}&player_id=${event.playerId}&type=${event.type}`, {
-      method: "DELETE",
-    })
+    fetch(event.id ? `/api/events/${event.id}` : `/api/events/0?match_id=${match.id}&player_id=${event.playerId}&type=${event.type}`, { method: "DELETE" })
       .then(() => onSettled?.())
       .catch(() => {
         // persist silently

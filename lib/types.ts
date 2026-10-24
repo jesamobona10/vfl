@@ -75,8 +75,10 @@ export interface TeamLineup {
 
 /** A single event that occurred during a match (goal, card, save, etc.). */
 export interface MatchEvent {
-  /** ID of the player involved. */
-  playerId: number;
+  /** Server event ID, when this event has been persisted. */
+  id?: number;
+  /** ID of the player involved; null until a player is attributed. */
+  playerId: number | null;
   /** Event type (e.g. "goal", "yellow_card", "save", "own_goal"). */
   type: string;
   /** Minute of the match when the event occurred. */
@@ -661,8 +663,8 @@ export interface FixtureRow {
 /** Raw row from the `match_events` table. */
 export interface MatchEventRow {
   id: number;
-  fixture_id: number;
-  player_id: number;
+  match_id: number;
+  player_id: number | null;
   event_type: string;
   team_id: number | null;
   minute: number | null;

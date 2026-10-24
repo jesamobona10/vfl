@@ -59,7 +59,7 @@ function FixtureManager() {
           date: string;
           time: string;
           venue: string;
-          events: Array<{ type: string; playerId: number; minute: number | null; teamId: number }>;
+          events: Array<{ type: string; playerId: number | null; minute: number | null; teamId: number }>;
           homeTeamName: string;
           awayTeamName: string;
           homeTeamLogo?: string;
@@ -324,7 +324,7 @@ function FixtureManager() {
                                       <span className="font-mono font-bold text-xs uppercase">
                                         {event.type.slice(0, 3).toUpperCase()}
                                       </span>
-                                      <span>#{event.playerId}</span>
+                                      <span>{event.playerId == null ? "Team goal" : `#${event.playerId}`}</span>
                                       {event.minute != null && (
                                         <span className="text-muted">{event.minute}&apos;</span>
                                       )}

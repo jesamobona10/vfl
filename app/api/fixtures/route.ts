@@ -65,6 +65,7 @@ export async function GET(request: Request) {
 
     for (const m of rawFixtures) {
       const events: MatchEvent[] = (m.match_events || []).map((e) => ({
+        id: e.id,
         playerId: e.player_id,
         type: e.event_type,
         teamId: e.team_id ?? undefined,

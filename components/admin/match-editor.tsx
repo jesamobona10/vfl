@@ -12,6 +12,8 @@ import { Input } from "@/components/ui/input";
 import { Select } from "@/components/ui/select";
 import { ChevronDown, ChevronRight, AlertCircle, Clock3, Plus } from "lucide-react";
 import { TimeInput } from "../shared/time-input";
+import { useToast } from "@/components/ui/toast";
+import { useQueryClient } from "@tanstack/react-query";
 
 function teamLocked(match: ReturnType<typeof allMatches>[number]): boolean {
   return (
@@ -47,6 +49,7 @@ const EVENT_TYPE_LABELS: Record<string, string> = {
 export function MatchEditor() {
   const [expanded, setExpanded] = useState<Set<number>>(new Set());
   const [eventMatchId, setEventMatchId] = useState<number | null>(null);
+  const [assigningEventId, setAssigningEventId] = useState<number | null>(null);
 
   const currentSeasonId = useAppStore((s) => s.currentSeasonId);
   const teams = useResolvedTeams(currentSeasonId);
@@ -54,8 +57,39 @@ export function MatchEditor() {
   const players = useAppStore((s) => s.players);
   const updateMatch = useAppStore((s) => s.updateMatch);
   const getTeam = useAppStore((s) => s.getTeam);
+  const toast = useToast();
+  const queryClient = useQueryClient();
 
   const matches = allMatches(fixtures);
+
+  const assignPlayerToEvent = async (
+    match: (typeof matches)[number],
+    event: NonNullable<(typeof matches)[number]["events"]>[number],
+    playerId: number
+  ) => {
+    if (!event.id || assigningEventId != null) return;
+    setAssigningEventId(event.id);
+    try {
+      const response = await fetch(`/api/events/${event.id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ playerId }),
+      });
+      const body = await response.json();
+      if (!response.ok) throw new Error(body.error || "Unable to assign player.");
+      updateMatch(match.id, "events", (match.events || []).map((item) =>
+        item.id === event.id ? { ...item, playerId } : item
+      ));
+      if (match.season_id) {
+        queryClient.invalidateQueries({ queryKey: ["season-statistics", match.season_id] });
+      }
+      toast.success("Player assigned to goal.");
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Unable to assign player.");
+    } finally {
+      setAssigningEventId(null);
+    }
+  };
 
   const statusLabel: Record<string, string> = {
     scheduled: "Scheduled",
@@ -325,7 +359,7 @@ export function MatchEditor() {
                       {(match.events || []).map((event, i) => {
                         const store = useAppStore.getState();
                         const player = store.players.find((p) => p.id === event.playerId);
-                        const team = player ? store.getTeam(player.teamId) : undefined;
+                        const team = player ? store.getTeam(player.teamId) : store.getTeam(event.teamId ?? -1);
                         return (
                           <div
                             key={i}
@@ -333,9 +367,26 @@ export function MatchEditor() {
                           >
                             <span>
                               <span className="font-medium">{team?.name?.[0] || "?"}</span>{" "}
-                              {player?.name || "Unknown"}{" "}
+                              {player?.name || (event.playerId == null && event.type === "goal" ? "Scorer to be assigned" : event.playerId == null ? "Player unavailable" : "Unknown")}{" "}
                               <span className="text-muted text-xs">{event.type}</span>
                             </span>
+                            {event.type === "goal" && event.playerId == null && event.teamId != null && event.id && (
+                              <select
+                                aria-label={`Assign player to ${event.type} for ${team?.name || "team"}`}
+                                disabled={assigningEventId != null}
+                                defaultValue=""
+                                onChange={(change) => {
+                                  const selected = Number(change.target.value);
+                                  if (selected) void assignPlayerToEvent(match, event, selected);
+                                }}
+                                className="max-w-40 rounded-lg border border-line bg-surface px-2 py-1 text-xs"
+                              >
+                                <option value="">Add player later…</option>
+                                {players.filter((candidate) => candidate.teamId === event.teamId).map((candidate) => (
+                                  <option key={candidate.id} value={candidate.id}>{candidate.name}</option>
+                                ))}
+                              </select>
+                            )}
                           </div>
                         );
                       })}
