@@ -59,6 +59,7 @@ const CANVAS_CSS = `
     padding: 30px 26px;
     text-align: center;
   }
+  .fc-root.fc-fulltime .fc-content { justify-content: flex-start; gap: 8px; padding: 24px 22px; }
 
   .fc-comp {
     font-size: 11px;
@@ -123,6 +124,11 @@ const CANVAS_CSS = `
   .fc-event { display: flex; justify-content: space-between; gap: 10px; padding: 5px 8px; border-radius: 6px; background: rgba(127, 127, 127, 0.12); font-size: 10px; line-height: 1.3; }
   .fc-event-minute { flex: 0 0 30px; font-weight: 800; font-variant-numeric: tabular-nums; }
   .fc-event-description { flex: 1; text-align: right; overflow-wrap: anywhere; }
+  .fc-events-many { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 5px 8px; }
+  .fc-events-many .fc-events-title { grid-column: 1 / -1; }
+  .fc-events-many .fc-event { min-width: 0; gap: 5px; padding: 5px 6px; font-size: 9px; }
+  .fc-events-many .fc-event-minute { flex-basis: 25px; }
+  .fc-events-many .fc-event-description { text-align: left; }
   .fc-root.fc-fulltime .fc-team { width: 30%; }
   .fc-root.fc-fulltime .fc-scoreline { font-size: 32px; }
 
@@ -220,7 +226,11 @@ export function FlyerCanvas({
 }: FlyerCanvasProps) {
   const spec = FLYER_FORMAT_SPECS[settings.format];
   const hasBg = Boolean(settings.background_url);
-  const canvasHeight = fullTime ? Math.max(spec.height, 400 + eventRows.length * 34) : spec.height;
+  const eventsInColumns = fullTime && eventRows.length > 12;
+  const eventRowCount = eventsInColumns ? Math.ceil(eventRows.length / 2) : eventRows.length;
+  const canvasHeight = fullTime
+    ? Math.max(360, 340 + eventRowCount * (eventsInColumns ? 48 : 34))
+    : spec.height;
 
   const rootStyle: CSSProperties = {
     width: spec.width,
@@ -248,7 +258,7 @@ export function FlyerCanvas({
         {hasBg && <div className="fc-scrim" style={{ opacity: settings.overlay / 100 }} />}
 
         <div className="fc-content">
-          {settings.show_competition && competitionName && (
+          {!fullTime && settings.show_competition && competitionName && (
             <div className="fc-comp">{competitionName}</div>
           )}
           {fullTime ? (
@@ -270,15 +280,17 @@ export function FlyerCanvas({
             <TeamBlock team={awayTeam} fallback="Away" showLogos={settings.show_logos} />
           </div>
 
-          <div className="fc-details">
-            <div className="fc-date">{formatDate(date)}</div>
-            {time && <div className="fc-time">{time}</div>}
-            {settings.show_venue && venue && <div className="fc-venue">{venue}</div>}
-          </div>
+          {!fullTime && (
+            <div className="fc-details">
+              <div className="fc-date">{formatDate(date)}</div>
+              {time && <div className="fc-time">{time}</div>}
+              {settings.show_venue && venue && <div className="fc-venue">{venue}</div>}
+            </div>
+          )}
 
           {fullTime && (
-            <div className="fc-events">
-              <div className="fc-events-title">Match events</div>
+            <div className={`fc-events${eventsInColumns ? " fc-events-many" : ""}`}>
+              <div className="fc-events-title">Match events · {eventRows.length}</div>
               {eventRows.length > 0 ? (
                 eventRows.map((event, index) => (
                   <div key={`${event.minute}-${index}`} className="fc-event">
@@ -294,7 +306,7 @@ export function FlyerCanvas({
             </div>
           )}
 
-          {settings.footer_text && <div className="fc-footer">{settings.footer_text}</div>}
+          {!fullTime && settings.footer_text && <div className="fc-footer">{settings.footer_text}</div>}
         </div>
       </div>
     </div>
