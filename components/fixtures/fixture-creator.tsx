@@ -5,12 +5,13 @@ import { useParams } from "next/navigation";
 import { useAppStore } from "@/lib/store";
 import { useCan } from "@/lib/hooks/use-can";
 import { useResolvedTeams } from "@/lib/hooks/use-resolved-teams";
-import { Plus, X, AlertCircle, CheckCircle } from "lucide-react";
+import { Plus, AlertCircle, CheckCircle } from "lucide-react";
 import { TimeInput } from "../shared/time-input";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select } from "@/components/ui/select";
 import { useSeasonTeams } from "@/lib/hooks/use-competitions";
+import { Modal } from "@/components/ui/modal";
 
 interface FixtureCreatorProps {
   /**
@@ -100,6 +101,10 @@ export function FixtureCreator({
         setSuccess("Fixture added successfully.");
         onCreated?.();
         setTimeout(() => setSuccess(""), 3000);
+        setTimeout(() => {
+          setOpen(false);
+          setSuccess("");
+        }, 600);
       } catch {
         setError("Failed to create fixture. Please try again.");
       } finally {
@@ -128,108 +133,119 @@ export function FixtureCreator({
     resetForm();
     setSuccess("Fixture added successfully.");
     setTimeout(() => setSuccess(""), 3000);
+    setTimeout(() => {
+      setOpen(false);
+      setSuccess("");
+    }, 600);
   };
 
   if (!canGenerate && !canEditFixtures) return null;
 
   return (
-    <div className="card">
-      <button
+    <>
+      <Button
         onClick={() => {
-          setOpen(!open);
+          setOpen(true);
           setError("");
           setSuccess("");
+          resetForm();
         }}
-        className="flex items-center gap-2 w-full px-5 py-3 text-sm font-medium text-left hover:bg-surface-2 transition-colors"
+        variant="primary"
+        size="sm"
+        leftIcon={<Plus size={16} />}
       >
-        {open ? <X size={16} /> : <Plus size={16} />}
-        {open ? "Close Fixture Creator" : "+ Add Fixture"}
-      </button>
+        Add Fixture
+      </Button>
 
-      {open && (
-        <div className="border-t border-line px-5 py-4">
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 mb-4">
-            <div>
-              <label htmlFor="fc-home" className="block text-sm font-medium mb-1">Home Team</label>
-              <Select id="fc-home" value={homeId} onChange={(e) => setHomeId(e.target.value)}>
-                <option value="">Select home team</option>
-                {teams.map((t) => (
-                  <option key={t.id} value={t.id}>
-                    {t.name}
-                  </option>
-                ))}
-              </Select>
-            </div>
-            <div>
-              <label htmlFor="fc-away" className="block text-sm font-medium mb-1">Away Team</label>
-              <Select id="fc-away" value={awayId} onChange={(e) => setAwayId(e.target.value)}>
-                <option value="">Select away team</option>
-                {teams.map((t) => (
-                  <option key={t.id} value={t.id}>
-                    {t.name}
-                  </option>
-                ))}
-              </Select>
-            </div>
-            <div>
-              <label htmlFor="fc-round" className="block text-sm font-medium mb-1">Round</label>
-              <Select id="fc-round" value={round} onChange={(e) => setRound(e.target.value)}>
-                <option value="">Auto (next available)</option>
-                {fixtures.map((r) => (
-                  <option key={r.round} value={r.round}>
-                    Round {r.round}
-                  </option>
-                ))}
-              </Select>
-            </div>
-            <div>
-              <label htmlFor="fc-date" className="block text-sm font-medium mb-1">Date</label>
-              <Input
-                id="fc-date"
-                type="date"
-                value={date}
-                onChange={(e) => setDate(e.target.value)}
-              />
-            </div>
-            <div>
-              <label htmlFor="fc-time" className="block text-sm font-medium mb-1">Time</label>
-              <TimeInput value={time} onChange={setTime} label="Kickoff time" />
-            </div>
-            <div>
-              <label htmlFor="fc-venue" className="block text-sm font-medium mb-1">Venue</label>
-              <Input
-                id="fc-venue"
-                type="text"
-                value={venue}
-                onChange={(e) => setVenue(e.target.value)}
-                placeholder="Main pitch"
-              />
-            </div>
+      <Modal
+        open={open}
+        onClose={() => setOpen(false)}
+        title="Add Fixture"
+        subtitle="Add a single match to this competition season"
+        footer={
+          <div className="flex justify-end gap-2">
+            <Button type="button" variant="secondary" size="sm" onClick={() => setOpen(false)} disabled={submitting}>
+              Cancel
+            </Button>
+            <Button type="button" variant="primary" size="sm" onClick={() => void handleSubmit()} loading={submitting} disabled={submitting}>
+              {submitting ? "Adding..." : "Add Fixture"}
+            </Button>
           </div>
-
-          {error && (
-            <div className="flex items-center gap-2 text-sm text-danger bg-danger/10 rounded-lg px-3 py-2 mb-3">
-              <AlertCircle size={16} />
-              {error}
-            </div>
-          )}
-          {success && (
-            <div className="flex items-center gap-2 text-sm text-brand bg-brand/10 rounded-lg px-3 py-2 mb-3">
-              <CheckCircle size={16} />
-              {success}
-            </div>
-          )}
-
-          <Button
-            onClick={handleSubmit}
-            loading={submitting}
-            leftIcon={<Plus size={16} />}
-            disabled={submitting}
-          >
-            {submitting ? "Adding..." : "Add Fixture"}
-          </Button>
+        }
+      >
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div>
+            <label htmlFor="fc-home" className="block text-sm font-medium mb-1">
+              Home Team
+            </label>
+            <Select id="fc-home" value={homeId} onChange={(e) => setHomeId(e.target.value)}>
+              <option value="">Select home team</option>
+              {teams.map((t: any) => (
+                <option key={t.id} value={t.id}>
+                  {t.name}
+                </option>
+              ))}
+            </Select>
+          </div>
+          <div>
+            <label htmlFor="fc-away" className="block text-sm font-medium mb-1">
+              Away Team
+            </label>
+            <Select id="fc-away" value={awayId} onChange={(e) => setAwayId(e.target.value)}>
+              <option value="">Select away team</option>
+              {teams.map((t: any) => (
+                <option key={t.id} value={t.id}>
+                  {t.name}
+                </option>
+              ))}
+            </Select>
+          </div>
+          <div>
+            <label htmlFor="fc-round" className="block text-sm font-medium mb-1">
+              Round
+            </label>
+            <Select id="fc-round" value={round} onChange={(e) => setRound(e.target.value)}>
+              <option value="">Auto (next available)</option>
+              {fixtures.map((r: any) => (
+                <option key={r.round} value={r.round}>
+                  Round {r.round}
+                </option>
+              ))}
+            </Select>
+          </div>
+          <div>
+            <label htmlFor="fc-date" className="block text-sm font-medium mb-1">
+              Date
+            </label>
+            <Input id="fc-date" type="date" value={date} onChange={(e) => setDate(e.target.value)} />
+          </div>
+          <div>
+            <label htmlFor="fc-time" className="block text-sm font-medium mb-1">
+              Time
+            </label>
+            <TimeInput value={time} onChange={setTime} label="Kickoff time" />
+          </div>
+          <div>
+            <label htmlFor="fc-venue" className="block text-sm font-medium mb-1">
+              Venue
+            </label>
+            <Input id="fc-venue" type="text" value={venue} onChange={(e) => setVenue(e.target.value)} placeholder="Main pitch" />
+          </div>
         </div>
-      )}
-    </div>
+
+        {error && (
+          <div className="flex items-center gap-2 text-sm text-danger bg-danger/10 rounded-lg px-3 py-2 mt-4">
+            <AlertCircle size={16} />
+            {error}
+          </div>
+        )}
+        {success && (
+          <div className="flex items-center gap-2 text-sm text-brand bg-brand/10 rounded-lg px-3 py-2 mt-4">
+            <CheckCircle size={16} />
+            {success}
+          </div>
+        )}
+      </Modal>
+    </>
   );
 }
