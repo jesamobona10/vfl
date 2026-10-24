@@ -12,6 +12,7 @@ import type { PublicLiveEventRow, PublicMatchRow } from "@/lib/types";
 import { readPublicPreferences } from "@/lib/public-preferences";
 import { ShareMatchButton } from "@/components/public/share-match-button";
 import { FollowTeamsButton } from "@/components/public/follow-teams-button";
+import type { MatchMediaItem } from "@/lib/match-media";
 
 type Event = PublicLiveEventRow;
 
@@ -64,9 +65,20 @@ export default function PublicLiveMatchPage() {
   const matchId = Number(params.matchId);
   const [match, setMatch] = useState<PublicMatchRow | null>(null);
   const [events, setEvents] = useState<Event[]>([]);
+  const [media, setMedia] = useState<MatchMediaItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const halftimeRequestFor = useRef<number | null>(null);
+
+  useEffect(() => {
+    if (!matchId) return;
+    let active = true;
+    fetch(`/api/public/matches/${matchId}/media`, { cache: "no-store" })
+      .then(async (response) => response.ok ? response.json() : { media: [] })
+      .then((body) => { if (active) setMedia(body.media || []); })
+      .catch(() => { if (active) setMedia([]); });
+    return () => { active = false; };
+  }, [matchId]);
 
   const clockSettings = useMemo<LiveClockSettings | undefined>(
     () => match ? {
@@ -247,6 +259,32 @@ export default function PublicLiveMatchPage() {
           </div>
         </div>
       </section>
+
+      {media.length > 0 && (
+        <section aria-labelledby="match-media-heading" className="space-y-3">
+          <div className="flex items-end justify-between gap-3 px-1">
+            <div>
+              <h2 id="match-media-heading" className="text-base font-bold">Photos & highlights</h2>
+              <p className="mt-0.5 text-xs text-ink-3">Match moments from {match.home_team_name} vs {match.away_team_name}</p>
+            </div>
+            <span className="rounded-full bg-surface-2 px-2.5 py-1 text-xs font-semibold text-ink-3">{media.length}</span>
+          </div>
+          <div className="grid gap-3 sm:grid-cols-2">
+            {media.map((item) => (
+              <article key={item.id} className="card overflow-hidden">
+                {item.media_type === "photo" ? (
+                  <Image src={item.url} alt={item.title || "Match photo"} width={960} height={540} unoptimized className="aspect-video w-full object-cover" />
+                ) : item.embed_url ? (
+                  <iframe src={item.embed_url} title={item.title || "Match highlight"} className="aspect-video w-full" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowFullScreen />
+                ) : (
+                  <video src={item.url} controls preload="metadata" className="aspect-video w-full bg-black" />
+                )}
+                {(item.title || item.caption) && <div className="p-3.5"><h3 className="text-sm font-semibold">{item.title}</h3>{item.caption && <p className="mt-1 text-sm text-ink-3">{item.caption}</p>}</div>}
+              </article>
+            ))}
+          </div>
+        </section>
+      )}
 
       <section aria-labelledby="match-timeline-heading" className="space-y-3">
         <div className="flex items-end justify-between gap-3 px-1">

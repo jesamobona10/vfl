@@ -17,6 +17,7 @@ const CSP_DIRECTIVES = [
   // fallback covers browsers/paths that inline the worker.
   "worker-src 'self' blob:",
   "child-src 'self' blob:",
+  "frame-src 'self' https://www.youtube-nocookie.com https://player.vimeo.com",
   "object-src 'none'",
   "base-uri 'self'",
   "form-action 'self'",

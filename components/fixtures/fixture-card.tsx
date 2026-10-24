@@ -11,11 +11,12 @@ import { MatchReportModal } from "./match-report-modal";
 import { LiveBadgeWithLink } from "@/components/live/live-badge";
 import { useToast } from "@/components/ui/toast";
 import { removeMatchEvent } from "@/lib/match-events";
-import { Sparkles, Radio, Trash2 } from "lucide-react";
+import { Sparkles, Radio, Trash2, Images } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
 import { useConfirm } from "@/components/shared/confirm-dialog";
+import { MatchMediaManager } from "./match-media-manager";
 
 /** Grace window before a removed match event is actually deleted on the server. */
 const UNDO_WINDOW_MS = 5000;
@@ -86,6 +87,7 @@ export function FixtureCard({
 }: FixtureCardProps) {
   const [showFlyer, setShowFlyer] = useState(false);
   const [showReport, setShowReport] = useState(false);
+  const [showMedia, setShowMedia] = useState(false);
   const [deleting, setDeleting] = useState(false);
   const players = useAppStore((s) => s.players);
   const queryClient = useQueryClient();
@@ -302,6 +304,14 @@ export function FixtureCard({
             <Button
               size="sm"
               variant="ghost"
+              onClick={() => setShowMedia(true)}
+              className="flex-1 gap-1.5 text-brand border border-brand/25 hover:bg-brand/5"
+            >
+              <Images size={13} /> Media
+            </Button>
+            <Button
+              size="sm"
+              variant="ghost"
               onClick={() => setShowReport(true)}
               className="flex-1 gap-1.5 text-brand border border-brand/25 hover:bg-brand/5"
             >
@@ -330,6 +340,13 @@ export function FixtureCard({
           onClose={() => setShowReport(false)}
         />
       )}
+      <MatchMediaManager
+        matchId={match.id}
+        homeTeamName={homeTeam?.name || "Home"}
+        awayTeamName={awayTeam?.name || "Away"}
+        open={showMedia}
+        onClose={() => setShowMedia(false)}
+      />
     </>
   );
 }
