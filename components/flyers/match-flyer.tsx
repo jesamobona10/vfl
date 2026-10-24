@@ -117,9 +117,9 @@ async function waitForAssets(element: HTMLElement): Promise<void> {
     })
   );
 
-  const backgrounds = Array.from(
-    element.querySelectorAll<HTMLElement>(".fc-bg")
-  ).map((node) => (node.style.backgroundImage || "").replace(/^url\(["']?/, "").replace(/["']?\)$/, ""));
+  const backgrounds = Array.from(element.querySelectorAll<HTMLElement>(".fc-bg")).map((node) =>
+    (node.style.backgroundImage || "").replace(/^url\(["']?/, "").replace(/["']?\)$/, "")
+  );
   await Promise.all(
     backgrounds.filter(Boolean).map(
       (src) =>
@@ -178,7 +178,9 @@ export function MatchFlyer({ match, homeTeam, awayTeam, onClose }: MatchFlyerPro
   const [error, setError] = useState("");
 
   const updateMatch = useAppStore((s) => s.updateMatch);
+  const players = useAppStore((s) => s.players);
   const toast = useToast();
+  const isFullTime = match.status === "completed";
 
   const { data: competition } = useCompetition(match.competition_id || undefined);
   const settings = readFlyerSettings(competition?.settings);
@@ -186,6 +188,43 @@ export function MatchFlyer({ match, homeTeam, awayTeam, onClose }: MatchFlyerPro
   const { allowed: canEdit } = useCan("fixtures.edit");
   const dirty = date !== baseline.date || time !== baseline.time || venue !== baseline.venue;
   const hasSchedule = Boolean(date && time);
+  const eventRows = [...(match.events || [])]
+    .sort((a, b) => (a.minute ?? Number.MAX_SAFE_INTEGER) - (b.minute ?? Number.MAX_SAFE_INTEGER))
+    .map((event) => {
+      const playerName =
+        event.playerName ||
+        players.find((player) => Number(player.id) === Number(event.playerId))?.name;
+      const teamName =
+        event.teamId === homeTeam?.id
+          ? homeTeam.name
+          : event.teamId === awayTeam?.id
+            ? awayTeam.name
+            : null;
+      const typeLabels: Record<string, string> = {
+        goal: "Goal",
+        assist: "Assist",
+        "own-goal": "Own goal",
+        yellow: "Yellow card",
+        yellow_card: "Yellow card",
+        red: "Red card",
+        red_card: "Red card",
+        motm: "Player of the match",
+        "penalty-save": "Penalty save",
+        "clean-sheet": "Clean sheet",
+        "goal-conceded": "Goal conceded",
+        "match-win": "Match win",
+        "bonus-5-saves": "5+ saves",
+      };
+      const typeLabel = typeLabels[event.type] || event.type.replace(/[-_]/g, " ");
+      const description = [
+        typeLabel,
+        playerName || (event.type === "goal" ? "Unattributed scorer" : "Player unavailable"),
+        teamName,
+      ]
+        .filter(Boolean)
+        .join(" · ");
+      return { minute: event.minute != null ? `${event.minute}′` : "—", description };
+    });
 
   // Modal a11y: focus management, Escape, focus trap, body scroll lock.
   useEffect(() => {
@@ -278,7 +317,7 @@ export function MatchFlyer({ match, homeTeam, awayTeam, onClose }: MatchFlyerPro
       const url = URL.createObjectURL(blob);
       const anchor = document.createElement("a");
       anchor.href = url;
-      anchor.download = flyerFileName(match.id, homeTeam?.name, awayTeam?.name);
+      anchor.download = `${isFullTime ? "full-time" : "flyer"}-${flyerFileName(match.id, homeTeam?.name, awayTeam?.name)}`;
       anchor.click();
       URL.revokeObjectURL(url);
     } catch {
@@ -323,9 +362,13 @@ export function MatchFlyer({ match, homeTeam, awayTeam, onClose }: MatchFlyerPro
         setError("Could not generate the flyer.");
         return;
       }
-      const file = new File([blob], flyerFileName(match.id, homeTeam?.name, awayTeam?.name), {
-        type: "image/png",
-      });
+      const file = new File(
+        [blob],
+        `${isFullTime ? "full-time" : "flyer"}-${flyerFileName(match.id, homeTeam?.name, awayTeam?.name)}`,
+        {
+          type: "image/png",
+        }
+      );
       const shareData: ShareData = { files: [file], title: "Match flyer", text: "Match day flyer" };
       if (navigator.canShare && !navigator.canShare({ files: [file] })) {
         toast.error("This browser cannot share image files.");
@@ -358,7 +401,7 @@ export function MatchFlyer({ match, homeTeam, awayTeam, onClose }: MatchFlyerPro
         className="flyer-panel"
       >
         <div className="flyer-panel-header">
-          <h2 id="flyer-dialog-title">Match Flyer</h2>
+          <h2 id="flyer-dialog-title">{isFullTime ? "Full-time Match Flyer" : "Match Flyer"}</h2>
           <button type="button" className="flyer-close" aria-label="Close" onClick={onClose}>
             <X size={16} />
           </button>
@@ -374,6 +417,13 @@ export function MatchFlyer({ match, homeTeam, awayTeam, onClose }: MatchFlyerPro
               venue={venue}
               competitionName={competition?.name}
               settings={settings}
+              fullTime={isFullTime}
+              score={
+                match.homeScore != null && match.awayScore != null
+                  ? `${match.homeScore} — ${match.awayScore}`
+                  : undefined
+              }
+              eventRows={eventRows}
             />
           </div>
 
@@ -382,48 +432,52 @@ export function MatchFlyer({ match, homeTeam, awayTeam, onClose }: MatchFlyerPro
               <CalendarClock size={14} />
               Match details
             </div>
-            <div style={{ display: "flex", gap: 8 }}>
+            {!isFullTime && (
+              <div style={{ display: "flex", gap: 8 }}>
+                <input
+                  type="date"
+                  value={date}
+                  onChange={(e) => {
+                    setDate(e.target.value);
+                    setError("");
+                  }}
+                  disabled={!canEdit}
+                  className="input flex-1 text-sm py-1.5"
+                  aria-label="Match date"
+                />
+                <input
+                  type="time"
+                  value={time}
+                  onChange={(e) => {
+                    setTime(e.target.value);
+                    setError("");
+                  }}
+                  disabled={!canEdit}
+                  className="input flex-1 text-sm py-1.5"
+                  aria-label="Match time"
+                />
+              </div>
+            )}
+            {!isFullTime && (
               <input
-                type="date"
-                value={date}
+                type="text"
+                value={venue}
                 onChange={(e) => {
-                  setDate(e.target.value);
+                  setVenue(e.target.value);
                   setError("");
                 }}
                 disabled={!canEdit}
-                className="input flex-1 text-sm py-1.5"
-                aria-label="Match date"
+                placeholder="Venue"
+                className="input w-full text-sm py-1.5 disabled:opacity-60 disabled:cursor-not-allowed"
+                aria-label="Match venue"
               />
-              <input
-                type="time"
-                value={time}
-                onChange={(e) => {
-                  setTime(e.target.value);
-                  setError("");
-                }}
-                disabled={!canEdit}
-                className="input flex-1 text-sm py-1.5"
-                aria-label="Match time"
-              />
-            </div>
-            <input
-              type="text"
-              value={venue}
-              onChange={(e) => {
-                setVenue(e.target.value);
-                setError("");
-              }}
-              disabled={!canEdit}
-              placeholder="Venue"
-              className="input w-full text-sm py-1.5 disabled:opacity-60 disabled:cursor-not-allowed"
-              aria-label="Match venue"
-            />
-            {!canEdit && (
+            )}
+            {!canEdit && !isFullTime && (
               <p className="flyer-field">
                 Date, time and venue are managed by an organizer — download or share as-is.
               </p>
             )}
-            {!hasSchedule && (
+            {!isFullTime && !hasSchedule && (
               <p className="flyer-field">No kick-off set yet — the flyer shows “TBD”.</p>
             )}
             {error && <p style={{ fontSize: 12, color: "var(--danger-500)" }}>{error}</p>}
@@ -450,7 +504,11 @@ export function MatchFlyer({ match, homeTeam, awayTeam, onClose }: MatchFlyerPro
             }`}
           >
             <Download size={15} />
-            {busy === "download" ? "Generating…" : "Download"}
+            {busy === "download"
+              ? "Generating…"
+              : isFullTime
+                ? "Download full-time flyer"
+                : "Download"}
           </button>
           <button
             type="button"

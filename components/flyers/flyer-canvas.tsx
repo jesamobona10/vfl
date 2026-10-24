@@ -2,7 +2,11 @@
 
 import type { CSSProperties, Ref } from "react";
 import type { Team } from "@/lib/types";
-import { FLYER_FORMAT_SPECS, DEFAULT_FLYER_SETTINGS, type FlyerSettings } from "@/lib/flyer/settings";
+import {
+  FLYER_FORMAT_SPECS,
+  DEFAULT_FLYER_SETTINGS,
+  type FlyerSettings,
+} from "@/lib/flyer/settings";
 
 export interface FlyerCanvasProps {
   homeTeam?: Team;
@@ -12,6 +16,9 @@ export interface FlyerCanvasProps {
   venue?: string | null;
   competitionName?: string | null;
   settings: FlyerSettings;
+  fullTime?: boolean;
+  score?: string;
+  eventRows?: { minute: string; description: string }[];
   /** Rendered at this CSS scale (exports use 1 + a 3x canvas scale). */
   scale?: number;
   innerRef?: Ref<HTMLDivElement>;
@@ -110,6 +117,14 @@ const CANVAS_CSS = `
   .fc-date { font-size: 15px; font-weight: 700; }
   .fc-time { font-size: 13px; opacity: 0.85; }
   .fc-venue { font-size: 12px; opacity: 0.7; }
+  .fc-scoreline { font-size: 36px; font-weight: 900; letter-spacing: 0.06em; font-variant-numeric: tabular-nums; }
+  .fc-events { width: 100%; display: flex; flex-direction: column; gap: 5px; text-align: left; }
+  .fc-events-title { font-size: 10px; font-weight: 800; letter-spacing: 0.16em; text-transform: uppercase; opacity: 0.72; margin-bottom: 2px; }
+  .fc-event { display: flex; justify-content: space-between; gap: 10px; padding: 5px 8px; border-radius: 6px; background: rgba(127, 127, 127, 0.12); font-size: 10px; line-height: 1.3; }
+  .fc-event-minute { flex: 0 0 30px; font-weight: 800; font-variant-numeric: tabular-nums; }
+  .fc-event-description { flex: 1; text-align: right; overflow-wrap: anywhere; }
+  .fc-root.fc-fulltime .fc-team { width: 30%; }
+  .fc-root.fc-fulltime .fc-scoreline { font-size: 32px; }
 
   .fc-footer {
     margin-top: 6px;
@@ -196,16 +211,20 @@ export function FlyerCanvas({
   venue,
   competitionName,
   settings,
+  fullTime = false,
+  score,
+  eventRows = [],
   scale = 1,
   innerRef,
   className,
 }: FlyerCanvasProps) {
   const spec = FLYER_FORMAT_SPECS[settings.format];
   const hasBg = Boolean(settings.background_url);
+  const canvasHeight = fullTime ? Math.max(spec.height, 400 + eventRows.length * 34) : spec.height;
 
   const rootStyle: CSSProperties = {
     width: spec.width,
-    height: spec.height,
+    height: canvasHeight,
     ["--fc-text" as string]: settings.text_color,
     ["--fc-accent" as string]:
       settings.accent_color === DEFAULT_FLYER_SETTINGS.accent_color
@@ -216,21 +235,15 @@ export function FlyerCanvas({
   };
 
   return (
-    <div
-      className={className}
-      style={{ width: spec.width * scale, height: spec.height * scale }}
-    >
+    <div className={className} style={{ width: spec.width * scale, height: canvasHeight * scale }}>
       <style>{CANVAS_CSS}</style>
       <div
         ref={innerRef}
-        className={`fc-root fc-${settings.template}${hasBg ? " fc-has-bg" : ""}`}
+        className={`fc-root fc-${settings.template}${hasBg ? " fc-has-bg" : ""}${fullTime ? " fc-fulltime" : ""}`}
         style={rootStyle}
       >
         {hasBg && (
-          <div
-            className="fc-bg"
-            style={{ backgroundImage: `url(${settings.background_url})` }}
-          />
+          <div className="fc-bg" style={{ backgroundImage: `url(${settings.background_url})` }} />
         )}
         {hasBg && <div className="fc-scrim" style={{ opacity: settings.overlay / 100 }} />}
 
@@ -238,14 +251,22 @@ export function FlyerCanvas({
           {settings.show_competition && competitionName && (
             <div className="fc-comp">{competitionName}</div>
           )}
-          {settings.headline && <div className="fc-headline">{settings.headline}</div>}
-          {settings.subtitle && <div className="fc-subtitle">{settings.subtitle}</div>}
+          {fullTime ? (
+            <div className="fc-headline">FULL TIME</div>
+          ) : settings.headline ? (
+            <div className="fc-headline">{settings.headline}</div>
+          ) : null}
+          {!fullTime && settings.subtitle && <div className="fc-subtitle">{settings.subtitle}</div>}
 
           <div className="fc-divider" />
 
           <div className="fc-teams">
             <TeamBlock team={homeTeam} fallback="Home" showLogos={settings.show_logos} />
-            <div className="fc-vs">VS</div>
+            {fullTime ? (
+              <div className="fc-scoreline">{score || "—"}</div>
+            ) : (
+              <div className="fc-vs">VS</div>
+            )}
             <TeamBlock team={awayTeam} fallback="Away" showLogos={settings.show_logos} />
           </div>
 
@@ -254,6 +275,24 @@ export function FlyerCanvas({
             {time && <div className="fc-time">{time}</div>}
             {settings.show_venue && venue && <div className="fc-venue">{venue}</div>}
           </div>
+
+          {fullTime && (
+            <div className="fc-events">
+              <div className="fc-events-title">Match events</div>
+              {eventRows.length > 0 ? (
+                eventRows.map((event, index) => (
+                  <div key={`${event.minute}-${index}`} className="fc-event">
+                    <span className="fc-event-minute">{event.minute}</span>
+                    <span className="fc-event-description">{event.description}</span>
+                  </div>
+                ))
+              ) : (
+                <div className="fc-event">
+                  <span>No match events recorded</span>
+                </div>
+              )}
+            </div>
+          )}
 
           {settings.footer_text && <div className="fc-footer">{settings.footer_text}</div>}
         </div>
