@@ -42,7 +42,45 @@ export async function GET(request: Request, props: { params: Promise<{ id: strin
     .order("created_at", { ascending: false })
     .order("id", { ascending: false });
   if (type !== "all") query = query.eq("media_type", type);
-  const { data, error, count } = await query.range(offset, offset + limit - 1);
+  let { data, error, count } = await query.range(offset, offset + limit - 1);
+  if (["42703", "PGRST204"].includes((error as any)?.code)) {
+    let legacyQuery = supabase
+      .from("match_media")
+      .select("id, match_id, media_type, source_type, url, storage_path, mime_type, title, caption, created_at", { count: "exact" })
+      .eq("match_id", matchId)
+      .order("created_at", { ascending: false });
+    if (type !== "all") legacyQuery = legacyQuery.eq("media_type", type);
+    const legacy = await legacyQuery.range(offset, offset + limit - 1);
+    data = legacy.data as typeof data;
+    error = legacy.error;
+    count = legacy.count;
+    if (!error && data) {
+      const media = data.map((row) => ({
+        id: row.id,
+        match_id: row.match_id,
+        media_type: row.media_type,
+        source_type: row.source_type,
+        url: row.url,
+        embed_url: row.source_type === "link" ? getVideoEmbedUrl(row.url) : null,
+        thumbnail_url: null,
+        mime_type: row.mime_type,
+        title: row.title,
+        caption: row.caption,
+        category: "other",
+        file_size_bytes: null,
+        duration_seconds: null,
+        width: null,
+        height: null,
+        alt_text: row.title,
+        sort_order: 0,
+        created_at: row.created_at,
+      }));
+      const hasMore = count != null ? offset + media.length < count : media.length === limit;
+      const response = json({ media, hasMore, nextOffset: hasMore ? offset + media.length : null, migrationPending: true });
+      response.headers.set("Cache-Control", "public, s-maxage=60, stale-while-revalidate=300");
+      return response;
+    }
+  }
   if (error) return json({ error: "Unable to load match media." }, { status: 500 });
 
   const media = (data || []).map((row) => ({

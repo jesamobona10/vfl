@@ -11,7 +11,7 @@ const CSP_DIRECTIVES = [
   "script-src 'self' 'unsafe-eval' 'unsafe-inline'",
   "style-src 'self' 'unsafe-inline'",
   `img-src 'self' blob: data: https://${supabaseHostname} https://img.youtube.com`,
-  `connect-src 'self' https://${supabaseHostname} wss://${supabaseHostname} https://vercel.live wss://ws-us3.pusher.com wss://*.pusher.com`,
+  `connect-src 'self' https://${supabaseHostname} https://*.storage.supabase.co wss://${supabaseHostname} https://vercel.live wss://ws-us3.pusher.com wss://*.pusher.com`,
   "font-src 'self'",
   // ffmpeg.wasm spawns a module worker from our own origin (self); the blob:
   // fallback covers browsers/paths that inline the worker.

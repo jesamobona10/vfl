@@ -38,7 +38,7 @@ export async function GET(_request: Request, props: { params: Promise<{ id: stri
   try {
     const context = await getContext((await props.params).id);
     if (context.error) return context.error;
-    const { data, error } = await context.supabase
+    let { data, error } = await context.supabase
       .from("match_media")
       .select("id, match_id, organization_id, media_type, source_type, url, storage_path, thumbnail_path, mime_type, title, caption, category, status, file_size_bytes, duration_seconds, width, height, alt_text, sort_order, created_at, approved_by, approved_at")
       .eq("match_id", context.fixtureId)
@@ -47,6 +47,40 @@ export async function GET(_request: Request, props: { params: Promise<{ id: stri
     if (error) {
       // Table may not exist yet in some environments
       if ((error as any)?.code === "42P01") return json({ media: [] });
+      // Keep the manager usable when the base media migration is deployed but
+      // the additive moderation/metadata migration has not reached production.
+      if (["42703", "PGRST204"].includes((error as any)?.code)) {
+        const legacy = await context.supabase
+          .from("match_media")
+          .select("id, match_id, organization_id, media_type, source_type, url, storage_path, mime_type, title, caption, created_at")
+          .eq("match_id", context.fixtureId)
+          .order("created_at", { ascending: false });
+        data = legacy.data as typeof data;
+        error = legacy.error;
+        if (!error && data) {
+          const media = data.map((row) => ({
+            ...row,
+            category: "other",
+            status: "published",
+            thumbnail_path: null,
+            thumbnail_url: null,
+            file_size_bytes: null,
+            duration_seconds: null,
+            width: null,
+            height: null,
+            alt_text: row.title,
+            sort_order: 0,
+            approved_by: null,
+            approved_at: null,
+            embed_url: row.source_type === "link" ? getVideoEmbedUrl(row.url) : null,
+            can_publish: context.canPublish,
+          }));
+          return json({ media, canPublish: context.canPublish, migrationPending: true });
+        }
+      }
+    }
+    if (error) {
+      logApiError("fixture_media_list_query_failed", error, { fixtureId: context.fixtureId });
       return json({ error: "Unable to load fixture media." }, { status: 500 });
     }
     return json({
