@@ -1,8 +1,8 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useAppStore } from "@/lib/store";
-import type { Match } from "@/lib/types";
+import type { Match, Player } from "@/lib/types";
 import { CheckCircle } from "lucide-react";
 import { useQueryClient } from "@tanstack/react-query";
 import { Modal } from "@/components/ui/modal";
@@ -86,6 +86,8 @@ interface AddEventModalProps {
   initialMinute?: number;
   /** Preselects an event type (match mode's big Goal/Card buttons). */
   initialType?: string;
+  /** Loads the full organization roster, including players not registered to this season. */
+  organizationId?: string;
 }
 
 export function AddEventModal({
@@ -95,6 +97,7 @@ export function AddEventModal({
   onClose,
   initialMinute,
   initialType,
+  organizationId,
 }: AddEventModalProps) {
   const [selectedType, setSelectedType] = useState<string>(initialType ?? "goal");
   const [playerSearch, setPlayerSearch] = useState("");
@@ -102,9 +105,33 @@ export function AddEventModal({
   const [showAllTypes, setShowAllTypes] = useState(false);
   const [saving, setSaving] = useState(false);
 
-  const players = useAppStore((s) => s.players);
+  const storePlayers = useAppStore((s) => s.players);
+  const [organizationPlayers, setOrganizationPlayers] = useState<Player[] | null>(null);
+  const [loadingOrganizationPlayers, setLoadingOrganizationPlayers] = useState(Boolean(organizationId));
+  const players = organizationPlayers ?? storePlayers;
   const queryClient = useQueryClient();
   const toast = useToast();
+
+  useEffect(() => {
+    if (!organizationId) return;
+    let active = true;
+    fetch(`/api/players?org_id=${encodeURIComponent(organizationId)}`)
+      .then(async (response) => {
+        if (!response.ok) throw new Error("Unable to load organization players.");
+        return response.json() as Promise<{ players?: Player[] }>;
+      })
+      .then((body) => {
+        if (active) setOrganizationPlayers(body.players || []);
+      })
+      .catch(() => {
+        // Keep the season-scoped store roster as a fallback if the full roster
+        // cannot be loaded for this account.
+      })
+      .finally(() => {
+        if (active) setLoadingOrganizationPlayers(false);
+      });
+    return () => { active = false; };
+  }, [organizationId]);
 
   const invalidateStandings = () => {
     void queryClient.invalidateQueries({ queryKey: ["season-standings"] });
@@ -302,7 +329,9 @@ export function AddEventModal({
           {([ [match.homeId, homeTeamName, homePlayers], [match.awayId, awayTeamName, awayPlayers] ] as const).map(([teamId, teamName, teamPlayers]) => (
             <section key={teamName}>
               <p className="mb-1.5 text-xs font-semibold text-ink-3">{teamName}</p>
-              {teamPlayers.length > 0 ? (
+              {loadingOrganizationPlayers ? (
+                <p className="py-2 text-xs text-muted">Loading team players…</p>
+              ) : teamPlayers.length > 0 ? (
                 <div className="grid grid-cols-1 gap-1.5 sm:grid-cols-2">
                   {teamPlayers.map((player) => (
                     <button

@@ -395,6 +395,7 @@ export function FixtureCard({
         match={match}
         homeTeamName={homeTeam?.name || "Home"}
         awayTeamName={awayTeam?.name || "Away"}
+        organizationId={homeTeam?.organization_id}
         onClose={() => setShowAddEvent(false)}
       />}
     </>
