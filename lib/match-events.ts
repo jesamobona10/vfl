@@ -245,8 +245,8 @@ export interface RemoveMatchEventInput {
 export interface RemovedMatchEvent {
   /** Restores the event, score and player stat locally and on the server. */
   undo: () => void;
-  /** Fires the deferred server-side delete. */
-  persistDelete: () => void;
+  /** Fires the deferred server-side delete and reports whether it persisted. */
+  persistDelete: () => Promise<boolean>;
 }
 
 /**
@@ -305,19 +305,25 @@ export function removeMatchEvent(input: RemoveMatchEventInput): RemovedMatchEven
     fresh.recalculateRatings();
   };
 
-  const persistDelete = () => {
-    fetch(event.id ? `/api/events/${event.id}` : `/api/events/0?match_id=${match.id}&player_id=${event.playerId}&type=${event.type}`, { method: "DELETE" })
-      .then(async (res) => {
-        if (!res.ok) {
-          const body = await res.json().catch(() => ({}));
-          console.error("Failed to delete event:", body?.error || res.status);
-        }
-        onSettled?.();
-      })
-      .catch((err) => {
-        console.error("Failed to delete event:", err);
-        // persist silently
-      });
+  const persistDelete = async () => {
+    try {
+      const response = await fetch(
+        event.id
+          ? `/api/events/${event.id}`
+          : `/api/events/0?match_id=${match.id}&player_id=${event.playerId}&type=${event.type}`,
+        { method: "DELETE" }
+      );
+      if (!response.ok) {
+        const body = await response.json().catch(() => ({}));
+        console.error("Failed to delete event:", body?.error || response.status);
+        return false;
+      }
+      onSettled?.();
+      return true;
+    } catch (error) {
+      console.error("Failed to delete event:", error);
+      return false;
+    }
   };
 
   return { undo, persistDelete };

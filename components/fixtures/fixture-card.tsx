@@ -105,10 +105,14 @@ export function FixtureCard({
   const { allowed: canManageMatch } = useCan("match.edit");
 
   const invalidateSeasonQueries = () => {
-    if (match.season_id) {
-      queryClient.invalidateQueries({ queryKey: ["season-standings", match.season_id] });
-      queryClient.invalidateQueries({ queryKey: ["season-statistics", match.season_id] });
-    }
+    void queryClient.invalidateQueries({ queryKey: ["fixtures"] });
+    void queryClient.invalidateQueries({ queryKey: ["org-season-fixtures"] });
+    void queryClient.invalidateQueries({ queryKey: ["players"] });
+    void queryClient.invalidateQueries({ queryKey: ["org-season-players"] });
+    void queryClient.invalidateQueries({ queryKey: ["teams"] });
+    void queryClient.invalidateQueries({ queryKey: ["org-season-teams"] });
+    void queryClient.invalidateQueries({ queryKey: ["season-standings"] });
+    void queryClient.invalidateQueries({ queryKey: ["season-statistics"] });
   };
 
   const getPlayerName = (playerId: number | null) => {
@@ -143,7 +147,15 @@ export function FixtureCard({
 
     // The server delete is deferred: the event hides immediately, the DELETE
     // only fires after the grace window unless the user taps Undo.
-    const timer = setTimeout(removed.persistDelete, UNDO_WINDOW_MS);
+    const timer = setTimeout(() => {
+      void removed.persistDelete().then((persisted) => {
+        if (!persisted) {
+          removed.undo();
+          toast.error("The event could not be removed from the server. It has been restored; please try again.");
+          invalidateSeasonQueries();
+        }
+      });
+    }, UNDO_WINDOW_MS);
 
     toast.info("Event removed", {
       action: {
