@@ -76,14 +76,22 @@ export async function DELETE(request: Request, props: { params: Promise<{ id: st
     const url = new URL(request.url);
     const eventIdParam = asInteger(params.id, 1);
     const matchId = asInteger(url.searchParams.get("match_id"), 1);
+    // Match event rows may not be selectable through the caller's RLS policy.
+    // Read them with service role only after authenticating; every operation
+    // below still verifies that the caller can manage the owning fixture.
+    const sb = createServiceRoleClient();
 
     if (eventIdParam) {
-      const { data: event } = await supabase
+      const { data: event, error: eventLookupError } = await sb
         .from("match_events")
         .select("match_id, event_type")
         .eq("id", eventIdParam)
         .maybeSingle();
 
+      if (eventLookupError) {
+        logApiError("event_delete_lookup_failed", eventLookupError, { userId: authed.userId, eventId: eventIdParam });
+        return json({ error: "Unable to find event." }, { status: 500 });
+      }
       if (!event) return json({ error: "Event not found." }, { status: 404 });
 
       const ownershipError = await checkEventOwnership(supabase, authed, event.match_id);
@@ -93,7 +101,6 @@ export async function DELETE(request: Request, props: { params: Promise<{ id: st
       // caller (org admin or team owner), but the RLS delete policy only allows
       // org-level admins, so a coach's delete would otherwise silently affect
       // zero rows and still report success.
-      const sb = createServiceRoleClient();
       if (event.event_type === "goal") {
         const { data: scoreRows, error: goalDeleteError } = await sb.rpc("delete_match_goal", { p_event_id: eventIdParam });
         if (goalDeleteError) {
@@ -133,7 +140,7 @@ export async function DELETE(request: Request, props: { params: Promise<{ id: st
       return json({ error: "Provide event id, or match_id + player_id + type." }, { status: 400 });
     }
 
-    const { data: existing } = await supabase
+    const { data: existing, error: existingLookupError } = await sb
       .from("match_events")
       .select("id")
       .eq("match_id", matchId)
@@ -141,11 +148,14 @@ export async function DELETE(request: Request, props: { params: Promise<{ id: st
       .eq("event_type", eventType)
       .limit(1);
 
+    if (existingLookupError) {
+      logApiError("event_delete_lookup_failed", existingLookupError, { userId: authed.userId, matchId });
+      return json({ error: "Unable to find event." }, { status: 500 });
+    }
     if (!existing || existing.length === 0) {
       return json({ error: "Event not found." }, { status: 404 });
     }
 
-    const sb = createServiceRoleClient();
     const { data: deletedByKey, error } = await sb
       .from("match_events")
       .delete()
