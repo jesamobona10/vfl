@@ -98,6 +98,7 @@ export function AddEventModal({
 }: AddEventModalProps) {
   const [selectedType, setSelectedType] = useState<string>(initialType ?? "goal");
   const [playerSearch, setPlayerSearch] = useState("");
+  const [minute, setMinute] = useState(initialMinute == null ? "" : String(initialMinute));
   const [showAllTypes, setShowAllTypes] = useState(false);
   const [saving, setSaving] = useState(false);
 
@@ -106,10 +107,13 @@ export function AddEventModal({
   const toast = useToast();
 
   const invalidateStandings = () => {
-    if (match.season_id) {
-      queryClient.invalidateQueries({ queryKey: ["season-standings", match.season_id] });
-      queryClient.invalidateQueries({ queryKey: ["season-statistics", match.season_id] });
-    }
+    void queryClient.invalidateQueries({ queryKey: ["season-standings"] });
+    void queryClient.invalidateQueries({ queryKey: ["season-statistics"] });
+    void queryClient.invalidateQueries({ queryKey: ["players"] });
+    void queryClient.invalidateQueries({ queryKey: ["org-season-players"] });
+    void queryClient.invalidateQueries({ queryKey: ["org-season-fixtures"] });
+    void queryClient.invalidateQueries({ queryKey: ["teams"] });
+    void queryClient.invalidateQueries({ queryKey: ["org-season-teams"] });
   };
 
   const normalizedSearch = playerSearch.trim().toLocaleLowerCase();
@@ -136,7 +140,7 @@ export function AddEventModal({
       playerId,
       teamId,
       type: selectedType,
-      minute: initialMinute,
+      minute: minute ? Number(minute) : undefined,
       onSettled: invalidateStandings,
     })
       .then(({ undo }) => {
@@ -158,7 +162,7 @@ export function AddEventModal({
       playerId: null,
       teamId,
       type: "goal",
-      minute: initialMinute,
+      minute: minute ? Number(minute) : undefined,
       onSettled: invalidateStandings,
     }).then(({ undo }) => {
       const teamName = teamId === match.homeId ? homeTeamName : awayTeamName;
@@ -269,6 +273,18 @@ export function AddEventModal({
             </div>
           )}
         </div>
+
+        <label className="block">
+          <span className="mb-1.5 block text-xs font-semibold uppercase tracking-wider text-muted">Match minute <span className="font-normal normal-case">(optional)</span></span>
+          <Input
+            type="number"
+            min={0}
+            max={130}
+            value={minute}
+            onChange={(event) => setMinute(event.target.value)}
+            placeholder="e.g. 67"
+          />
+        </label>
 
         <label className="block">
           <span className="mb-1.5 block text-xs font-semibold uppercase tracking-wider text-muted">Player</span>

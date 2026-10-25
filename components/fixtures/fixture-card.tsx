@@ -10,7 +10,7 @@ import { matchStatusVariant, statusLabel } from "@/lib/status";
 import { LiveBadgeWithLink } from "@/components/live/live-badge";
 import { useToast } from "@/components/ui/toast";
 import { removeMatchEvent } from "@/lib/match-events";
-import { Radio, Trash2, Images, Users, Activity } from "lucide-react";
+import { Radio, Trash2, Images, Users, Activity, Plus } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
@@ -20,6 +20,7 @@ import { FixtureLineupsModal } from "./fixture-lineups";
 import { useCan } from "@/lib/hooks/use-can";
 import { MATCH_EVENT_CATEGORIES, matchEventCategory, matchEventCategoryColor } from "@/lib/match-event-categories";
 import { Modal } from "@/components/ui/modal";
+import { AddEventModal } from "./add-event-modal";
 
 /** Grace window before a removed match event is actually deleted on the server. */
 const UNDO_WINDOW_MS = 5000;
@@ -92,6 +93,7 @@ export function FixtureCard({
   const [showMedia, setShowMedia] = useState(false);
   const [showLineups, setShowLineups] = useState(false);
   const [showEvents, setShowEvents] = useState(false);
+  const [showAddEvent, setShowAddEvent] = useState(false);
   const [deleting, setDeleting] = useState(false);
   const players = useAppStore((s) => s.players);
   const queryClient = useQueryClient();
@@ -101,6 +103,7 @@ export function FixtureCard({
   const slug = typeof params?.slug === "string" ? params.slug : undefined;
   const { confirm, dialog: confirmDialog } = useConfirm();
   const { allowed: canManageMatch } = useCan("match.edit");
+  const canManageEvents = Boolean(editable || canManageMatch);
 
   const invalidateSeasonQueries = () => {
     void queryClient.invalidateQueries({ queryKey: ["fixtures"] });
@@ -208,7 +211,7 @@ export function FixtureCard({
         {event.playerId == null && event.teamId != null && (
           <span className="opacity-75">· {event.teamId === match.homeId ? homeTeam?.name : awayTeam?.name}</span>
         )}
-        {editable && (
+        {canManageEvents && (
           <button
             onClick={(e) => {
               e.stopPropagation();
@@ -369,7 +372,14 @@ export function FixtureCard({
         onClose={() => setShowMedia(false)}
       />
       <FixtureLineupsModal fixtureId={match.id} open={showLineups} onClose={() => setShowLineups(false)} />
-      <Modal open={showEvents} onClose={() => setShowEvents(false)} title="Match events" subtitle={`${homeTeam?.name || "Home"} ${scoreDisplay || "vs"} ${awayTeam?.name || "Away"} · ${events.length} total`} className="max-w-2xl">
+      <Modal
+        open={showEvents}
+        onClose={() => setShowEvents(false)}
+        title="Match events"
+        subtitle={`${homeTeam?.name || "Home"} ${scoreDisplay || "vs"} ${awayTeam?.name || "Away"} · ${events.length} total`}
+        className="max-w-2xl"
+        headerActions={canManageEvents ? <Button size="sm" onClick={() => setShowAddEvent(true)} className="gap-1.5"><Plus size={14} /> Add event</Button> : undefined}
+      >
         <div className="max-h-[65vh] space-y-5 overflow-y-auto pr-1">
           {MATCH_EVENT_CATEGORIES.map((category) => {
             const categorized = events.map((event, index) => ({ event, index })).filter(({ event }) => matchEventCategory(event.type) === category);
@@ -381,6 +391,12 @@ export function FixtureCard({
           })}
         </div>
       </Modal>
+      {showAddEvent && <AddEventModal
+        match={match}
+        homeTeamName={homeTeam?.name || "Home"}
+        awayTeamName={awayTeam?.name || "Away"}
+        onClose={() => setShowAddEvent(false)}
+      />}
     </>
   );
 }
