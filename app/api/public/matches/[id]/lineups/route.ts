@@ -8,17 +8,13 @@ export async function GET(_request: Request, props: { params: Promise<{ id: stri
   if (!fixtureId) return json({ error: "Invalid match id." }, { status: 400 });
   const service = createServiceRoleClient();
   const { data: match, error: matchError } = await service.from("public_matches")
-    .select("match_id, organization_id, home_team_id, away_team_id")
+    .select("match_id, home_team_id, away_team_id")
     .eq("match_id", fixtureId).maybeSingle();
   if (matchError) {
     logApiError("public_match_lineups_match_query_failed", matchError, { fixtureId });
     return json({ error: "Unable to load match lineups." }, { status: 500 });
   }
   if (!match) return json({ error: "Match not found." }, { status: 404 });
-  const { data: organization } = await service.from("organizations")
-    .select("public_player_names_enabled")
-    .eq("id", match.organization_id).maybeSingle();
-  const revealPlayers = Boolean(organization?.public_player_names_enabled);
   const { data: rows, error } = await service.from("fixture_lineups")
     .select("id, team_id, formation, starting_xi, substitutes, status, submitted_at, reviewed_at")
     .eq("fixture_id", fixtureId)
@@ -35,7 +31,7 @@ export async function GET(_request: Request, props: { params: Promise<{ id: stri
     ...(Array.isArray(row.substitutes) ? row.substitutes : []),
   ]).filter((id): id is number => Number.isInteger(id)))];
   const { data: players } = playerIds.length
-    ? await service.from("players").select("id, name, jersey_number, photo_url").in("id", playerIds)
+    ? await service.from("players").select("id, name, jersey_number").in("id", playerIds)
     : { data: [] };
   const byId = new Map((players || []).map((player) => [player.id, player]));
   const lineups = (rows || []).map((row) => ({
@@ -51,9 +47,11 @@ export async function GET(_request: Request, props: { params: Promise<{ id: stri
         position: slot.position,
         player: player ? {
           id: player.id,
-          name: revealPlayers ? player.name : null,
+          // Player names are part of the public lineup display. Keep photos
+          // private; the public match centre does not use them.
+          name: player.name,
           jersey_number: player.jersey_number,
-          photo_url: revealPlayers ? player.photo_url : null,
+          photo_url: null,
         } : null,
       };
     }),
@@ -61,11 +59,11 @@ export async function GET(_request: Request, props: { params: Promise<{ id: stri
       const player = byId.get(id);
       return player ? {
         id: player.id,
-        name: revealPlayers ? player.name : null,
+        name: player.name,
         jersey_number: player.jersey_number,
-        photo_url: revealPlayers ? player.photo_url : null,
+        photo_url: null,
       } : null;
     }).filter(Boolean),
   }));
-  return json({ lineups, publicPlayerNamesEnabled: revealPlayers });
+  return json({ lineups });
 }
