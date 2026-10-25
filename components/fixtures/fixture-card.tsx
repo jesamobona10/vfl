@@ -202,9 +202,9 @@ export function FixtureCard({
           <button
             onClick={(e) => {
               e.stopPropagation();
-              handleRemoveEvent(events.indexOf(event));
+              handleRemoveEvent(i);
             }}
-            aria-label={`Remove ${event.type} event for ${getPlayerName(event.playerId)}`}
+            aria-label={`Remove ${event.type} event for ${event.playerId == null ? "unattributed player" : event.playerName || getPlayerName(event.playerId)}`}
             className="ml-0.5 hover:text-danger leading-none"
           >
             &times;

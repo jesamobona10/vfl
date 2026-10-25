@@ -307,8 +307,15 @@ export function removeMatchEvent(input: RemoveMatchEventInput): RemovedMatchEven
 
   const persistDelete = () => {
     fetch(event.id ? `/api/events/${event.id}` : `/api/events/0?match_id=${match.id}&player_id=${event.playerId}&type=${event.type}`, { method: "DELETE" })
-      .then(() => onSettled?.())
-      .catch(() => {
+      .then(async (res) => {
+        if (!res.ok) {
+          const body = await res.json().catch(() => ({}));
+          console.error("Failed to delete event:", body?.error || res.status);
+        }
+        onSettled?.();
+      })
+      .catch((err) => {
+        console.error("Failed to delete event:", err);
         // persist silently
       });
   };

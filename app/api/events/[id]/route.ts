@@ -82,7 +82,7 @@ export async function DELETE(request: Request, props: { params: Promise<{ id: st
         .from("match_events")
         .select("match_id, event_type")
         .eq("id", eventIdParam)
-        .single();
+        .maybeSingle();
 
       if (!event) return json({ error: "Event not found." }, { status: 404 });
 

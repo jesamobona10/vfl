@@ -196,7 +196,7 @@ export function PublicDashboard() {
     let mounted = true;
 
     async function load() {
-      const [{ data, error }, { data: seasonRows, error: seasonError }, { data: organizationRows, error: organizationError }] = await Promise.all([
+      const [{ data, error }, { data: seasonRows, error: seasonError }, orgResult] = await Promise.all([
         sb
           .from("public_matches")
           .select("*")
@@ -205,7 +205,7 @@ export function PublicDashboard() {
           .order("round", { ascending: true })
           .order("match_id", { ascending: true }),
         sb.from("public_seasons").select("*").order("season_name", { ascending: false }),
-        sb.from("public_organizations").select("*").order("name", { ascending: true }),
+        sb.rpc("list_public_organizations"),
       ]);
 
       if (!mounted) return;
@@ -216,7 +216,18 @@ export function PublicDashboard() {
         setError(null);
       }
       if (!seasonError) setPublicSeasons((seasonRows as PublicSeasonRow[]) || []);
-      if (!organizationError) setPublicOrganizations((organizationRows as PublicOrganizationRow[]) || []);
+      if (!orgResult.error) {
+        setPublicOrganizations(((orgResult.data as PublicOrganizationRow[]) || []));
+      } else {
+        // Fallback to view
+        const { data: orgViewRows, error: orgViewError } = await sb
+          .from("public_organizations")
+          .select("*")
+          .order("name", { ascending: true });
+        if (!orgViewError) {
+          setPublicOrganizations((orgViewRows as PublicOrganizationRow[]) || []);
+        }
+      }
       setLoading(false);
     }
 
