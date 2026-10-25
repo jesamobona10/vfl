@@ -75,6 +75,14 @@ async function resolveAccountKind(
 }
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || "";
+const supabaseOrigin = supabaseUrl ? new URL(supabaseUrl).origin : "";
+const supabaseHostname = supabaseUrl ? new URL(supabaseUrl).hostname : "";
+const supabaseProjectRef = supabaseHostname.endsWith(".supabase.co")
+  ? supabaseHostname.slice(0, -".supabase.co".length)
+  : "";
+const supabaseStorageOrigin = supabaseProjectRef
+  ? `https://${supabaseProjectRef}.storage.supabase.co`
+  : "https://*.storage.supabase.co";
 
 const ALLOWED_ORIGINS = [
   "https://vfl-iota.vercel.app",
@@ -112,7 +120,7 @@ function secure(response: NextResponse, pathname?: string) {
   const isDev = process.env.NODE_ENV !== "production";
   response.headers.set(
     "Content-Security-Policy",
-    `default-src 'self'; script-src 'self' 'unsafe-inline' https://vercel.live${isDev ? " 'unsafe-eval'" : ""}; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https:; font-src 'self' https://vercel.live; connect-src 'self' ${supabaseUrl} ${supabaseUrl.replace(/^https:/, "wss:")} https://vercel.live wss://ws-us3.pusher.com wss://*.pusher.com; frame-src https://vercel.live; frame-ancestors 'none';`
+    `default-src 'self'; script-src 'self' 'unsafe-inline' https://vercel.live${isDev ? " 'unsafe-eval'" : ""}; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https:; font-src 'self' https://vercel.live; connect-src 'self' ${supabaseOrigin} ${supabaseOrigin.replace(/^https:/, "wss:")} ${supabaseStorageOrigin} https://vercel.live wss://ws-us3.pusher.com wss://*.pusher.com; frame-src https://vercel.live; frame-ancestors 'none';`
   );
   if (process.env.NODE_ENV === "production") {
     response.headers.set(
