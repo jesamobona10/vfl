@@ -6,8 +6,7 @@
 --   season_teams, season_team_players, teams, team_lineups,
 --   team_accounts, players, player_profiles, player_statistics,
 --   player_transfers, notifications, credential_generation_logs,
---   match_report_analyses, organizations, organization_members,
---   auth_audit_logs.
+--   organizations, organization_members, auth_audit_logs.
 --
 -- PRESERVED (auth infra, NOT domain data):
 --   auth.users            (Supabase identity rows)
@@ -32,7 +31,7 @@ BEGIN
     'match_events','season_team_players','season_teams','cup_matches','fixtures',
     'team_lineups','player_transfers','notifications','player_profiles',
     'player_statistics','credential_generation_logs','players','team_accounts',
-    'seasons','competitions','match_report_analyses','auth_audit_logs','teams',
+    'seasons','competitions','auth_audit_logs','teams',
     'organization_members','organizations'
   ]) LOOP
     EXECUTE format('SELECT count(*) FROM %I', t) INTO n;
@@ -66,7 +65,6 @@ DELETE FROM players;
 DELETE FROM team_accounts;
 DELETE FROM seasons;           -- competitions.current_season_id → ON DELETE SET NULL
 DELETE FROM competitions;
-DELETE FROM match_report_analyses;
 DELETE FROM auth_audit_logs;
 
 -- 4. Base tables
@@ -91,7 +89,6 @@ SELECT setval('player_statistics_id_seq', 1, false) WHERE EXISTS (SELECT 1 FROM 
 SELECT setval('credential_generation_logs_id_seq', 1, false) WHERE EXISTS (SELECT 1 FROM pg_class WHERE relname = 'credential_generation_logs_id_seq');
 SELECT setval('auth_audit_logs_id_seq', 1, false) WHERE EXISTS (SELECT 1 FROM pg_class WHERE relname = 'auth_audit_logs_id_seq');
 SELECT setval('cup_matches_id_seq', 1, false) WHERE EXISTS (SELECT 1 FROM pg_class WHERE relname = 'cup_matches_id_seq');
-SELECT setval('match_report_analyses_id_seq', 1, false) WHERE EXISTS (SELECT 1 FROM pg_class WHERE relname = 'match_report_analyses_id_seq');
 
 -- ------------------------------------------------------------
 -- Optional: also wipe the 11 seeded teams from the original

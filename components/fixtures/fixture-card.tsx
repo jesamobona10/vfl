@@ -7,11 +7,10 @@ import { useQueryClient } from "@tanstack/react-query";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { matchStatusVariant, statusLabel } from "@/lib/status";
-import { MatchReportModal } from "./match-report-modal";
 import { LiveBadgeWithLink } from "@/components/live/live-badge";
 import { useToast } from "@/components/ui/toast";
 import { removeMatchEvent } from "@/lib/match-events";
-import { Sparkles, Radio, Trash2, Images, Users, Activity } from "lucide-react";
+import { Radio, Trash2, Images, Users, Activity } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
@@ -90,7 +89,6 @@ export function FixtureCard({
   onDrop,
 }: FixtureCardProps) {
   const [showFlyer, setShowFlyer] = useState(false);
-  const [showReport, setShowReport] = useState(false);
   const [showMedia, setShowMedia] = useState(false);
   const [showLineups, setShowLineups] = useState(false);
   const [showEvents, setShowEvents] = useState(false);
@@ -347,14 +345,6 @@ export function FixtureCard({
             >
               <Images size={13} /> Media
             </Button>
-            <Button
-              size="sm"
-              variant="ghost"
-              onClick={() => setShowReport(true)}
-              className="flex-1 gap-1.5 text-brand border border-brand/25 hover:bg-brand/5"
-            >
-              <Sparkles size={13} /> AI Report
-            </Button>
             </>}
           </div>
         )}
@@ -371,14 +361,6 @@ export function FixtureCard({
         </Suspense>
       )}
 
-      {showReport && (
-        <MatchReportModal
-          match={match}
-          homeTeamName={homeTeam?.name || "Home"}
-          awayTeamName={awayTeam?.name || "Away"}
-          onClose={() => setShowReport(false)}
-        />
-      )}
       <MatchMediaManager
         matchId={match.id}
         homeTeamName={homeTeam?.name || "Home"}
