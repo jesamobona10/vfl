@@ -564,6 +564,7 @@ export interface SeasonTeam {
     name: string;
     logo_url?: string | null;
     rating?: number;
+    organization_id?: string | null;
   } | null;
 }
 

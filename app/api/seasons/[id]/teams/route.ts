@@ -38,7 +38,7 @@ export async function GET(_request: Request, props: { params: Promise<{ id: stri
     // season teams stored in `season_teams` (season_id, team_id, display_name, logo)
     const { data: seasonTeams, error } = await sb
       .from("season_teams")
-      .select("*, team:team_id(id, name, logo_url)")
+      .select("*, team:team_id(id, name, logo_url, organization_id)")
       .eq("season_id", params.id)
       .order("display_name", { ascending: true });
 
@@ -153,7 +153,7 @@ export async function POST(request: Request, props: { params: Promise<{ id: stri
 
     const { data: seasonTeams } = await sb
       .from("season_teams")
-      .select("*, team:team_id(id, name, logo_url)")
+      .select("*, team:team_id(id, name, logo_url, organization_id)")
       .eq("season_id", params.id);
 
     return json({ teams: seasonTeams || [], registered: rows.length });

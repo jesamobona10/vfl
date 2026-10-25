@@ -31,6 +31,7 @@ export function useResolvedTeams(seasonId?: string | null): Team[] {
             name: team.name,
             logo_url: team.logo_url ?? undefined,
             rating: team.rating ?? 6.0,
+            organization_id: team.organization_id ?? undefined,
           };
         }
         return st as unknown as Team;
