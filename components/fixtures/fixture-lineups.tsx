@@ -30,11 +30,11 @@ export type FixtureLineup = {
 
 function PlayerChip({ player, label }: { player: Player | null; label: string }) {
   const displayName = player?.name || (player?.jersey_number ? `No. ${player.jersey_number}` : label);
-  return <div className="flex min-w-0 flex-col items-center gap-1.5 text-center" title={displayName}>
-    <div className="relative flex h-10 w-10 shrink-0 items-center justify-center overflow-hidden rounded-full border-2 border-white bg-white text-xs font-extrabold text-ink-1 shadow-md sm:h-11 sm:w-11">
+  return <div className="flex w-full min-w-0 flex-col items-center gap-1.5 px-0.5 text-center" title={displayName}>
+    <div className="relative flex h-9 w-9 shrink-0 items-center justify-center overflow-hidden rounded-full border-2 border-white bg-white text-xs font-extrabold text-ink-1 shadow-md sm:h-11 sm:w-11">
       {player?.photo_url ? <Image src={player.photo_url} alt="" fill sizes="44px" className="object-cover" /> : player?.jersey_number ?? "·"}
     </div>
-    <span className="line-clamp-2 min-h-9 w-full max-w-[140px] break-words rounded-md border border-white/20 bg-slate-950/90 px-1 py-1 text-[10px] font-semibold leading-[1.15] text-white shadow-sm sm:text-[11px]">{displayName}</span>
+    <span className="line-clamp-3 box-border w-full min-w-0 overflow-hidden [overflow-wrap:anywhere] rounded-md border border-white/20 bg-slate-950/90 px-1 py-1 text-[9px] font-semibold leading-[1.1] text-white shadow-sm sm:text-[11px]">{displayName}</span>
   </div>;
 }
 
@@ -47,7 +47,13 @@ export function MatchLineupsDisplay({ teams, lineups }: { teams: Team[]; lineups
     const element = lineupRefs.current.get(team.id);
     if (!element || downloadingTeamId !== null) return;
     setDownloadingTeamId(team.id);
+    const originalWidth = element.style.width;
+    const originalMaxWidth = element.style.maxWidth;
     try {
+      // Keep exported flyers readable on phones: capture at a consistent
+      // portrait width instead of inheriting the narrow card width.
+      element.style.width = "480px";
+      element.style.maxWidth = "480px";
       const filename = `${team.name}-${formation}-lineup.png`
         .toLowerCase()
         .replace(/[^a-z0-9]+/g, "-")
@@ -57,6 +63,8 @@ export function MatchLineupsDisplay({ teams, lineups }: { teams: Team[]; lineups
     } catch {
       toast.error("Unable to download this lineup. Please try again.");
     } finally {
+      element.style.width = originalWidth;
+      element.style.maxWidth = originalMaxWidth;
       setDownloadingTeamId(null);
     }
   }
@@ -69,7 +77,7 @@ export function MatchLineupsDisplay({ teams, lineups }: { teams: Team[]; lineups
       const rows: LineupSlot["position"][] = ["ATT", "MID", "DEF", "GK"];
       return <article key={team.id} ref={(node) => { if (node) lineupRefs.current.set(team.id, node); else lineupRefs.current.delete(team.id); }} className="overflow-hidden rounded-2xl border border-line bg-surface">
         <header className="flex flex-wrap items-center justify-between gap-2 border-b border-line px-4 py-3">
-          <div className="flex min-w-0 items-center gap-2">{team.logo_url ? <Image src={team.logo_url} alt="" width={28} height={28} className="h-7 w-7 shrink-0 rounded-full object-cover" /> : null}<strong className="truncate text-sm">{team.name}</strong></div>
+          <div className="flex min-w-0 flex-1 items-center gap-2">{team.logo_url ? <Image src={team.logo_url} alt="" width={28} height={28} className="h-7 w-7 shrink-0 rounded-full object-cover" /> : null}<strong className="min-w-0 break-words text-sm leading-tight">{team.name}</strong></div>
           <div className="flex shrink-0 items-center gap-2">
             <span className="rounded-full bg-brand/10 px-2 py-1 text-[11px] font-bold text-brand">{lineup.formation}</span>
             <button type="button" data-html2canvas-ignore onClick={() => void downloadLineup(team, lineup.formation)} disabled={downloadingTeamId !== null} aria-label={`Download ${team.name} lineup`} className="inline-flex items-center gap-1.5 rounded-lg border border-brand/25 px-2.5 py-1.5 text-xs font-semibold text-brand transition-colors hover:bg-brand/10 disabled:opacity-60">
@@ -84,11 +92,11 @@ export function MatchLineupsDisplay({ teams, lineups }: { teams: Team[]; lineups
           <div className="absolute left-0 right-0 top-1/2 border-t border-white/50" />
           <div className="absolute left-1/2 top-2 h-10 w-36 -translate-x-1/2 rounded-b-xl border-2 border-t-0 border-white/50" />
           <div className="absolute bottom-2 left-1/2 h-10 w-36 -translate-x-1/2 rounded-t-xl border-2 border-b-0 border-white/50" />
-          <div className="relative z-10 flex min-h-[430px] flex-col justify-around gap-2 py-2">
+          <div className="relative z-10 flex min-h-[480px] flex-col justify-around gap-3 py-2 sm:min-h-[520px]">
             {rows.map((position) => {
               const rowSlots = lineup.starting_xi.filter((slot) => slot.position === position);
               return (
-                <div key={position} className="grid w-full items-start justify-items-center gap-1" style={{ gridTemplateColumns: `repeat(${Math.max(rowSlots.length, 1)}, minmax(0, 1fr))` }}>
+                <div key={position} className="grid w-full min-w-0 items-start justify-items-stretch gap-1.5" style={{ gridTemplateColumns: `repeat(${Math.max(rowSlots.length, 1)}, minmax(0, 1fr))` }}>
                   {rowSlots.map((slot) => <PlayerChip key={slot.slotId} player={slot.player} label={slot.label} />)}
                 </div>
               );
@@ -97,7 +105,7 @@ export function MatchLineupsDisplay({ teams, lineups }: { teams: Team[]; lineups
         </div>
         <div className="px-4 pb-4">
           <div className="mb-2 flex items-center gap-1.5 text-xs font-bold uppercase tracking-wide text-ink-3"><Users size={13} /> Substitutes ({lineup.substitutes.length})</div>
-          {lineup.substitutes.length ? <div className="flex flex-wrap gap-x-3 gap-y-2">{lineup.substitutes.map((player) => <div key={player.id} className="flex items-center gap-2 text-xs"><span className="flex h-6 w-6 items-center justify-center rounded-full bg-surface-2 font-bold">{player.jersey_number ?? "·"}</span><span>{player.name || `No. ${player.jersey_number ?? "—"}`}</span></div>)}</div> : <p className="text-xs text-muted">No substitutes listed</p>}
+          {lineup.substitutes.length ? <div className="grid grid-cols-1 gap-x-4 gap-y-2 sm:grid-cols-2">{lineup.substitutes.map((player) => <div key={player.id} className="flex min-w-0 items-center gap-2 text-xs"><span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-surface-2 font-bold">{player.jersey_number ?? "·"}</span><span className="min-w-0 break-words">{player.name || `No. ${player.jersey_number ?? "—"}`}</span></div>)}</div> : <p className="text-xs text-muted">No substitutes listed</p>}
         </div>
       </article>;
     })}
