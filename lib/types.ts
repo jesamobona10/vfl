@@ -624,6 +624,102 @@ export interface SeasonPlayerStats {
   appearances: number;
 }
 
+// ─── Team of the Round ───────────────────────────────────────────────────────
+
+/** Football position category used by round awards. */
+export type PlayerPosition = "GK" | "DEF" | "MID" | "ATT";
+
+/** A round in a competition season and whether every fixture is finished. */
+export interface RoundAwardRound {
+  /** Round number. */
+  round: number;
+  /** Number of fixtures in the round. */
+  matches: number;
+  /** Number of fixtures with status `completed`. */
+  completedMatches: number;
+  /** True when the round has at least one result and no match is still pending. */
+  complete: boolean;
+}
+
+/** Per-player aggregate for one completed round. */
+export interface RoundAwardPlayer {
+  /** Player numeric ID. */
+  playerId: number;
+  /** Player name. */
+  name: string;
+  /** Team numeric ID. */
+  teamId: number;
+  /** Team name. */
+  teamName: string;
+  /** Team logo URL, when available. */
+  teamLogo: string | null;
+  /** Player photo URL, when available. */
+  photoUrl: string | null;
+  /** Position used for scoring and selection. */
+  position: PlayerPosition;
+  /** Position-specific impact score for the round. */
+  impact: number;
+  /** Number of completed fixtures the player appeared in. */
+  appearances: number;
+  goals: number;
+  assists: number;
+  ownGoals: number;
+  saves: number;
+  penaltySaves: number;
+  /** True when the player made five or more saves in the round. */
+  fivePlusSaves: boolean;
+  cleanSheets: number;
+  goalsConceded: number;
+  tackles: number;
+  interceptions: number;
+  blocks: number;
+  aerialsWon: number;
+  errors: number;
+  penaltiesConceded: number;
+  yellowCards: number;
+  redCards: number;
+  wins: number;
+  draws: number;
+  losses: number;
+  motm: number;
+}
+
+/** One player placed in the 4-3-3 formation. */
+export interface TeamOfRoundSlot {
+  /** Formation slot the player occupies. */
+  slot: PlayerPosition;
+  /** Selected player and their round statistics. */
+  player: RoundAwardPlayer;
+  /** True when the player's natural position differs from the slot. */
+  outOfPosition: boolean;
+}
+
+/** Player of the Round winner plus the criteria they met. */
+export interface PlayerOfRoundAward {
+  /** Winning player. */
+  player: RoundAwardPlayer;
+  /** Human-readable criteria the player satisfied. */
+  criteria: string[];
+}
+
+/** Full Team of the Round response for a competition season and round. */
+export interface TeamOfRoundResult {
+  competitionId: string;
+  seasonId: string | null;
+  /** Selected round, or null when the season has no fixtures. */
+  round: number | null;
+  /** True when the selected round is finished and an XI was generated. */
+  completed: boolean;
+  /** Every round in the season with its completion state. */
+  rounds: RoundAwardRound[];
+  /** Generated 4-3-3 XI. Empty when the round is incomplete. */
+  team: TeamOfRoundSlot[];
+  /** Player of the Round, when a player met the qualifying criteria. */
+  playerOfRound: PlayerOfRoundAward | null;
+  /** Explains an empty or incomplete result. */
+  note: string | null;
+}
+
 // ─── Cup State ────────────────────────────────────────────────────────────────
 
 /** Complete state of a cup/bracket competition. */

@@ -46,7 +46,7 @@ const FILES = walkRoutes(API);
 
 /** Any evidence that the route gates access on an account or ownership. */
 const GUARDED_RE =
-  /requireOrgOwner\b|requireOrgAdmin\b|requireOrgMember\b|requireAuth\b|requireAdmin\b|ownsTeam\b|createApiHandler\b|auth\s*:\s*"[a-z_]+"|orgMembership\b|isAdmin\b|if\s*\(\s*!auth\b/;
+  /requireOrgOwner\b|requireOrgAdmin\b|requireOrgMember\b|requireOrgReadAccess\b|requireAuth\b|requireAdmin\b|ownsTeam\b|createApiHandler\b|auth\s*:\s*"[a-z_]+"|orgMembership\b|isAdmin\b|if\s*\(\s*!auth\b/;
 
 /** Super-admin only. */
 const ADMIN_GUARD_RE = /requireAdmin\b|auth\s*:\s*"admin"/;
