@@ -98,6 +98,7 @@ function persistScore(matchId: number, home: number | null | undefined, away: nu
 export interface SubmitMatchEventInput {
   match: Match;
   playerId: number | null;
+  playerName?: string | null;
   teamId: number;
   type: string;
   minute?: number;
@@ -118,11 +119,11 @@ export interface SubmittedMatchEvent {
  * so the caller can surface an error.
  */
 export async function submitMatchEvent(input: SubmitMatchEventInput): Promise<SubmittedMatchEvent> {
-  const { match, playerId, teamId, type, minute, onSettled } = input;
+  const { match, playerId, playerName, teamId, type, minute, onSettled } = input;
   const store = useAppStore.getState();
 
   const player = playerId == null ? undefined : store.players.find((p) => p.id === playerId);
-  const newEvent: MatchEvent = { playerId, type, teamId, minute };
+  const newEvent: MatchEvent = { playerId, playerName: playerName ?? player?.name ?? null, type, teamId, minute };
   const prevHome = match.homeScore;
   const prevAway = match.awayScore;
 

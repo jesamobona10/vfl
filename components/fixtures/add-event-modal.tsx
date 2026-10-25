@@ -165,6 +165,7 @@ export function AddEventModal({
     void submitMatchEvent({
       match,
       playerId,
+      playerName: player.name,
       teamId,
       type: selectedType,
       minute: minute ? Number(minute) : undefined,
