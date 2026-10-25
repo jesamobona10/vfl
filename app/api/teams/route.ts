@@ -72,11 +72,8 @@ export async function GET(request: Request) {
     let orgId: string | null;
     if (auth!.isAdmin) {
       orgId = requestedOrgId || auth!.orgMembership?.organization_id || null;
-    } else {
-      orgId = auth!.orgMembership?.organization_id || null;
-      if (!orgId) {
-        return json({ error: "Organization ID is required." }, { status: 400 });
-      }
+    } else if (auth!.orgMembership) {
+      orgId = auth!.orgMembership.organization_id;
       if (requestedOrgId && requestedOrgId !== orgId) {
         logSecurityEvent("teams_list_forbidden_org", {
           userId: auth!.userId,
@@ -85,6 +82,20 @@ export async function GET(request: Request) {
         });
         return json({ error: "Forbidden" }, { status: 403 });
       }
+    } else if (auth!.teamAccount?.team_id && auth!.teamAccount.organization_id) {
+      // Team accounts may read team lists for their own organization, but the
+      // response below is restricted to their assigned team.
+      orgId = auth!.teamAccount.organization_id;
+      if (requestedOrgId && requestedOrgId !== orgId) {
+        logSecurityEvent("teams_list_forbidden_org", {
+          userId: auth!.userId,
+          requestedOrgId,
+          orgId,
+        });
+        return json({ error: "Forbidden" }, { status: 403 });
+      }
+    } else {
+      orgId = null;
     }
 
     if (!orgId) {
@@ -123,7 +134,10 @@ export async function GET(request: Request) {
         logApiError("teams_list_failed", error);
         return json({ error: "Unable to load teams." }, { status: 500 });
       }
-      return json({ teams: await attachCurrentRatings(sb, data || []) });
+      const visibleTeams = auth!.teamAccount?.team_id
+        ? (data || []).filter((team) => team.id === auth!.teamAccount!.team_id)
+        : data || [];
+      return json({ teams: await attachCurrentRatings(sb, visibleTeams) });
     }
 
     const { data, error } = await sb
@@ -136,7 +150,10 @@ export async function GET(request: Request) {
       logApiError("teams_list_failed", error);
       return json({ error: "Unable to load teams." }, { status: 500 });
     }
-    return json({ teams: await attachCurrentRatings(sb, data || []) });
+    const visibleTeams = auth!.teamAccount?.team_id
+      ? (data || []).filter((team) => team.id === auth!.teamAccount!.team_id)
+      : data || [];
+    return json({ teams: await attachCurrentRatings(sb, visibleTeams) });
   } catch (error) {
     logApiError("teams_list_error", error);
     return json({ error: "Something went wrong. Please try again." }, { status: 500 });

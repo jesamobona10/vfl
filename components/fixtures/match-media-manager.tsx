@@ -13,7 +13,7 @@ import { getVideoPoster, uploadMatchMediaWithTus } from "@/lib/upload-match-medi
 const ACCEPT = "image/jpeg,image/png,image/webp,image/gif,video/mp4,video/webm,video/quicktime";
 type UploadTask = {
   id: string; file: File; progress: number; status: "queued" | "uploading" | "saving" | "complete" | "failed";
-  error?: string; path?: string; token?: string; posterPath?: string; posterToken?: string;
+  error?: string; path?: string; token?: string; endpoint?: string; posterPath?: string; posterToken?: string; posterEndpoint?: string;
 };
 
 export function MatchMediaManager({ matchId, homeTeamName, awayTeamName, open, onClose }: {
@@ -60,19 +60,20 @@ export function MatchMediaManager({ matchId, homeTeamName, awayTeamName, open, o
       try {
         let path = task.path;
         let token = task.token;
-        if (!path || !token) {
+        let endpoint = task.endpoint;
+        if (!path || !token || !endpoint) {
           const signedResponse = await fetch(`/api/fixtures/${matchId}/media/upload-url`, {
             method: "POST", headers: { "Content-Type": "application/json" },
             body: JSON.stringify({ mimeType: task.file.type, size: task.file.size }),
           });
           const signed = await signedResponse.json();
           if (!signedResponse.ok) throw new Error(signed.error || "Unable to prepare upload.");
-          if (typeof signed.path !== "string" || typeof signed.token !== "string") throw new Error("Upload service returned an invalid token.");
-          path = signed.path; token = signed.token;
-          updateTasks((current) => current.map((entry) => entry.id === task.id ? { ...entry, path, token } : entry));
+          if (typeof signed.path !== "string" || typeof signed.token !== "string" || typeof signed.endpoint !== "string") throw new Error("Upload service returned an invalid upload authorization.");
+          path = signed.path; token = signed.token; endpoint = signed.endpoint;
+          updateTasks((current) => current.map((entry) => entry.id === task.id ? { ...entry, path, token, endpoint } : entry));
         }
-        if (!path || !token) throw new Error("Upload service returned an invalid upload path.");
-        await uploadMatchMediaWithTus({ file: task.file, path, token, onProgress: (progress) => updateTasks((current) => current.map((entry) => entry.id === task.id ? { ...entry, progress } : entry)) });
+        if (!path || !token || !endpoint) throw new Error("Upload service returned invalid upload details.");
+        await uploadMatchMediaWithTus({ file: task.file, path, token, endpoint, onProgress: (progress) => updateTasks((current) => current.map((entry) => entry.id === task.id ? { ...entry, progress } : entry)) });
 
         let thumbnailPath: string | undefined;
         let posterMetadata: { width: number; height: number; durationSeconds: number | null } | null = null;
@@ -82,20 +83,21 @@ export function MatchMediaManager({ matchId, homeTeamName, awayTeamName, open, o
             posterMetadata = { width: poster.width, height: poster.height, durationSeconds: poster.durationSeconds };
             let posterPath = task.posterPath;
             let posterToken = task.posterToken;
-            if (!posterPath || !posterToken) {
+            let posterEndpoint = task.posterEndpoint;
+            if (!posterPath || !posterToken || !posterEndpoint) {
               const posterSignedResponse = await fetch(`/api/fixtures/${matchId}/media/upload-url`, {
                 method: "POST", headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({ mimeType: "image/webp", size: poster.blob.size, kind: "thumbnail" }),
               });
               const posterSigned = await posterSignedResponse.json();
               if (!posterSignedResponse.ok) throw new Error(posterSigned.error || "Unable to prepare video poster.");
-              if (typeof posterSigned.path !== "string" || typeof posterSigned.token !== "string") throw new Error("Upload service returned an invalid poster token.");
-              posterPath = posterSigned.path; posterToken = posterSigned.token;
-              updateTasks((current) => current.map((entry) => entry.id === task.id ? { ...entry, posterPath, posterToken } : entry));
+              if (typeof posterSigned.path !== "string" || typeof posterSigned.token !== "string" || typeof posterSigned.endpoint !== "string") throw new Error("Upload service returned an invalid poster authorization.");
+              posterPath = posterSigned.path; posterToken = posterSigned.token; posterEndpoint = posterSigned.endpoint;
+              updateTasks((current) => current.map((entry) => entry.id === task.id ? { ...entry, posterPath, posterToken, posterEndpoint } : entry));
             }
             const posterFile = new File([poster.blob], "poster.webp", { type: "image/webp" });
-            if (!posterPath || !posterToken) throw new Error("Upload service returned an invalid poster path.");
-            await uploadMatchMediaWithTus({ file: posterFile, path: posterPath, token: posterToken, onProgress: () => undefined });
+            if (!posterPath || !posterToken || !posterEndpoint) throw new Error("Upload service returned invalid poster details.");
+            await uploadMatchMediaWithTus({ file: posterFile, path: posterPath, token: posterToken, endpoint: posterEndpoint, onProgress: () => undefined });
             thumbnailPath = posterPath;
           }
         } else {
@@ -115,7 +117,19 @@ export function MatchMediaManager({ matchId, homeTeamName, awayTeamName, open, o
         updateTasks((current) => current.map((entry) => entry.id === task.id ? { ...entry, status: "complete" } : entry));
       } catch (cause) {
         const message = cause instanceof Error ? cause.message : "Upload failed.";
-        updateTasks((current) => current.map((entry) => entry.id === task.id ? { ...entry, status: "failed", error: message } : entry));
+        // Signed upload tokens are short lived. Retry with a new path/token so
+        // Tus cannot resume against a stale upload URL from a prior attempt.
+        updateTasks((current) => current.map((entry) => entry.id === task.id ? {
+          ...entry,
+          status: "failed",
+          error: message,
+          path: undefined,
+          token: undefined,
+          endpoint: undefined,
+          posterPath: undefined,
+          posterToken: undefined,
+          posterEndpoint: undefined,
+        } : entry));
       }
     }
     runningRef.current = false;

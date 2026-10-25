@@ -55,7 +55,20 @@ export async function POST(request: Request, props: { params: Promise<{ id: stri
     try {
       const { data, error } = await access.supabase.storage.from(MATCH_MEDIA_BUCKET).createSignedUploadUrl(path, { upsert: false });
       if (error || !data) return json({ error: "Unable to prepare file upload." }, { status: 500 });
-      return json({ path, token: data.token, mediaType, mimeType, kind });
+      const projectUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+      if (!projectUrl) return json({ error: "Storage is not configured." }, { status: 500 });
+      const projectHost = new URL(projectUrl).hostname;
+      const suffix = ".supabase.co";
+      if (!projectHost.endsWith(suffix)) return json({ error: "Storage is not configured." }, { status: 500 });
+      const projectRef = projectHost.slice(0, -suffix.length);
+      return json({
+        path,
+        token: data.token,
+        endpoint: `https://${projectRef}.storage.supabase.co/storage/v1/upload/resumable`,
+        mediaType,
+        mimeType,
+        kind,
+      });
     } catch {
       return json({ error: "Storage unavailable." }, { status: 500 });
     }

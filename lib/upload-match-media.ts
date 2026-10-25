@@ -4,23 +4,14 @@ type UploadOptions = {
   file: File;
   path: string;
   token: string;
+  endpoint: string;
   onProgress: (percentage: number) => void;
 };
 
-function getProjectRef(): string {
-  const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
-  if (!url) throw new Error("Supabase is not configured.");
-  const hostname = new URL(url).hostname;
-  const suffix = ".supabase.co";
-  if (!hostname.endsWith(suffix)) throw new Error("Invalid Supabase project URL.");
-  return hostname.slice(0, -suffix.length);
-}
-
-export function uploadMatchMediaWithTus({ file, path, token, onProgress }: UploadOptions): Promise<void> {
-  const projectRef = getProjectRef();
+export function uploadMatchMediaWithTus({ file, path, token, endpoint, onProgress }: UploadOptions): Promise<void> {
   return new Promise((resolve, reject) => {
     const upload = new tus.Upload(file, {
-      endpoint: `https://${projectRef}.storage.supabase.co/storage/v1/upload/resumable`,
+      endpoint,
       headers: { "x-signature": token },
       retryDelays: [0, 3000, 5000, 10000, 20000],
       uploadDataDuringCreation: true,
