@@ -56,7 +56,14 @@ const pushChannel: NotificationChannel = {
   async send(event) {
     if (!event.push) return;
     if (!isPublicPushConfigured()) return;
-    await sendPublicPushNow(event.push);
+    const result = await sendPublicPushNow(event.push);
+    if (result.eligible === 0) {
+      console.warn("Public match push had no eligible subscriptions", {
+        matchId: event.push.matchId,
+        teamId: event.push.teamId ?? null,
+        tag: event.push.tag ?? null,
+      });
+    }
   },
 };
 

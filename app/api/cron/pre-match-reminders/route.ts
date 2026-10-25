@@ -44,6 +44,8 @@ export async function GET(request: Request) {
     if (error) throw error;
     let remindersClaimed = 0;
     let notificationsSent = 0;
+    let subscriptionsEligible = 0;
+    let deliveriesFailed = 0;
     for (const fixture of fixtures || []) {
       if (!fixture.date || !fixture.time) continue;
       const kickoff = fixtureKickoffUtc(fixture.date, fixture.time, timeZone);
@@ -75,6 +77,8 @@ export async function GET(request: Request) {
               .eq("lead_minutes", leadMinutes);
             throw new Error("No pre-match reminder endpoints accepted delivery.");
           }
+          subscriptionsEligible += result.eligible;
+          deliveriesFailed += result.failed;
           notificationsSent += result.delivered;
         } catch (dispatchError) {
           // Permit the next cron tick to retry a transient failure.
@@ -86,7 +90,13 @@ export async function GET(request: Request) {
         }
       }
     }
-    return json({ scanned: fixtures?.length || 0, remindersClaimed, notificationsSent });
+    return json({
+      scanned: fixtures?.length || 0,
+      remindersClaimed,
+      subscriptionsEligible,
+      notificationsSent,
+      deliveriesFailed,
+    });
   } catch (error) {
     logApiError("public_pre_match_reminders_failed", error);
     return json({ error: "Unable to process pre-match reminders." }, { status: 500 });

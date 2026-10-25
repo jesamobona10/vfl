@@ -16,10 +16,25 @@ function publicVapidKey() {
   return process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY || "";
 }
 
-export async function GET() {
+export async function GET(request: Request) {
   const key = publicVapidKey();
   if (!key) return json({ error: "Push notifications are not configured." }, { status: 503 });
-  return json({ publicKey: key });
+  const endpoint = new URL(request.url).searchParams.get("endpoint");
+  if (!endpoint) return json({ publicKey: key });
+  if (!isSupportedPushEndpoint(endpoint)) return json({ publicKey: key, registered: false });
+
+  try {
+    const { data, error } = await createServiceRoleClient()
+      .from("public_push_subscriptions")
+      .select("endpoint")
+      .eq("endpoint", endpoint)
+      .maybeSingle();
+    if (error) throw error;
+    return json({ publicKey: key, registered: Boolean(data) });
+  } catch (error) {
+    logApiError("public_push_subscription_check_failed", error);
+    return json({ error: "Unable to check the push subscription." }, { status: 500 });
+  }
 }
 
 export async function POST(request: Request) {

@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Bell, BellOff, LoaderCircle } from "lucide-react";
 import type { PublicPreferences } from "@/lib/public-preferences";
 
@@ -28,13 +28,23 @@ function decodeApplicationServerKey(base64Url: string) {
   return Uint8Array.from(raw, (character) => character.charCodeAt(0));
 }
 
+function hasCurrentApplicationKey(subscription: PushSubscription, publicKey: string) {
+  const currentKey = subscription.options.applicationServerKey;
+  if (!currentKey) return true;
+  const current = Array.from(new Uint8Array(currentKey));
+  const expected = Array.from(decodeApplicationServerKey(publicKey));
+  return current.length === expected.length && current.every((byte, index) => byte === expected[index]);
+}
+
 export function PushSubscriptionControl({ preferences }: { preferences: PublicPreferences }) {
   const [publicKey, setPublicKey] = useState<string | null>(null);
   const [subscription, setSubscription] = useState<PushSubscription | null>(null);
+  const [needsRefresh, setNeedsRefresh] = useState(false);
   const [loading, setLoading] = useState(true);
   const [busy, setBusy] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
   const [showAndroidHint, setShowAndroidHint] = useState(false);
+  const lastPreferencesRef = useRef<string | null>(null);
 
   const iosNeedsInstall = typeof window !== "undefined" && isIosDevice() && !isStandaloneApp();
 
@@ -59,10 +69,21 @@ export function PushSubscriptionControl({ preferences }: { preferences: PublicPr
       }),
       navigator.serviceWorker.ready.then((registration) => registration.pushManager.getSubscription()),
     ])
-      .then(([key, current]) => {
+      .then(async ([key, current]) => {
         if (!mounted) return;
         setPublicKey(key);
         setSubscription(current);
+        if (current && key) {
+          const keyMatches = hasCurrentApplicationKey(current, key);
+          let registered = true;
+          try {
+            const response = await fetch(`/api/public/push-subscriptions?endpoint=${encodeURIComponent(current.endpoint)}`, { cache: "no-store" });
+            if (response.ok) registered = Boolean((await response.json()).registered);
+          } catch {
+            // Keep the local subscription state if the status check is offline.
+          }
+          if (mounted) setNeedsRefresh(!keyMatches || !registered);
+        }
         setLoading(false);
       })
       .catch(() => {
@@ -78,20 +99,33 @@ export function PushSubscriptionControl({ preferences }: { preferences: PublicPr
   }, []);
 
   useEffect(() => {
-    if (!subscription || !preferences) return;
-    fetch("/api/public/push-subscriptions", {
+    if (!preferences) return;
+    const preferencesKey = JSON.stringify(preferences);
+    if (lastPreferencesRef.current === null) {
+      lastPreferencesRef.current = preferencesKey;
+      return;
+    }
+    if (lastPreferencesRef.current === preferencesKey) return;
+    lastPreferencesRef.current = preferencesKey;
+    if (!subscription || needsRefresh) return;
+    void fetch("/api/public/push-subscriptions", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ ...subscription.toJSON(), preferences }),
-    }).catch(() => {});
-  }, [subscription, preferences]);
+    }).then(async (response) => {
+      if (!response.ok) {
+        const body = await response.json().catch(() => ({}));
+        setMessage(body.error || "Unable to save alert preferences.");
+      }
+    }).catch(() => setMessage("Unable to save alert preferences. Check your connection and try again."));
+  }, [subscription, preferences, needsRefresh]);
 
   const toggleSubscription = async () => {
     if (busy || (!subscription && !publicKey)) return;
     setBusy(true);
     setMessage(null);
     try {
-      if (subscription) {
+      if (subscription && !needsRefresh) {
         const endpoint = subscription.endpoint;
         await subscription.unsubscribe();
         await fetch("/api/public/push-subscriptions", {
@@ -100,6 +134,7 @@ export function PushSubscriptionControl({ preferences }: { preferences: PublicPr
           body: JSON.stringify({ endpoint }),
         });
         setSubscription(null);
+        setNeedsRefresh(false);
       } else {
         if (!publicKey) throw new Error("Push notifications are not configured.");
         // Keep the permission request directly inside the tap gesture; iOS
@@ -108,6 +143,17 @@ export function PushSubscriptionControl({ preferences }: { preferences: PublicPr
         if (permission !== "granted") {
           setMessage("Allow notifications in your browser settings to receive match alerts.");
           return;
+        }
+        if (subscription && needsRefresh) {
+          const endpoint = subscription.endpoint;
+          await subscription.unsubscribe();
+          await fetch("/api/public/push-subscriptions", {
+            method: "DELETE",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ endpoint }),
+          }).catch(() => undefined);
+          setSubscription(null);
+          setNeedsRefresh(false);
         }
         await navigator.serviceWorker.register("/sw.js", { scope: "/" });
         const registration = await navigator.serviceWorker.ready;
@@ -126,6 +172,7 @@ export function PushSubscriptionControl({ preferences }: { preferences: PublicPr
           throw new Error(body.error || "Unable to enable match alerts.");
         }
         setSubscription(created);
+        setNeedsRefresh(false);
         // Android still needs a one-time channel change before alerts banner,
         // so surface the reminder while the choice is fresh.
         if (isAndroidDevice()) setShowAndroidHint(true);
@@ -163,13 +210,14 @@ export function PushSubscriptionControl({ preferences }: { preferences: PublicPr
         type="button"
         onClick={toggleSubscription}
         disabled={busy || (!subscription && permissionDenied)}
-        aria-pressed={Boolean(subscription)}
+        aria-pressed={Boolean(subscription && !needsRefresh)}
         className="btn-secondary inline-flex min-h-10 max-w-full items-center gap-2 whitespace-nowrap px-3 py-2 text-xs"
       >
-        {subscription ? <BellOff size={15} /> : <Bell size={15} />}
-        <span className="sm:hidden">{busy ? "Saving…" : subscription ? "Turn alerts off" : "Enable team alerts"}</span>
-        <span className="hidden sm:inline">{busy ? "Saving…" : subscription ? "Turn off match alerts" : "Enable alerts for my teams"}</span>
+        {subscription && !needsRefresh ? <BellOff size={15} /> : <Bell size={15} />}
+        <span className="sm:hidden">{busy ? "Saving…" : needsRefresh ? "Refresh alerts" : subscription ? "Turn alerts off" : "Enable team alerts"}</span>
+        <span className="hidden sm:inline">{busy ? "Saving…" : needsRefresh ? "Refresh match alerts" : subscription ? "Turn off match alerts" : "Enable alerts for my teams"}</span>
       </button>
+      {needsRefresh && <p className="w-full text-xs text-ink-3" role="status">This browser’s saved alert connection is expired or uses an old key. Tap Refresh match alerts to reconnect it.</p>}
       {message && <p className="w-full text-xs text-ink-3" role="status">{message}</p>}
       {permissionDenied && (
         <p className="w-full text-xs text-ink-3" role="status">

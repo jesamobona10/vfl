@@ -41,13 +41,27 @@ async function deliverPublicPush(payload: PublicPushPayload) {
     .eq("match_id", payload.matchId)
     .maybeSingle();
   if (matchError) throw matchError;
-  if (!match?.organization_id) return { eligible: 0, delivered: 0, failed: 0 };
+  if (!match) return { eligible: 0, delivered: 0, failed: 0 };
+  let organizationId = match.organization_id as string | null;
+  // Some older fixtures have no competition link, so the public view cannot
+  // infer their organization. Resolve it from the home team, which is the
+  // fixture's authoritative organization relationship.
+  if (!organizationId && match.home_team_id) {
+    const { data: homeTeam, error: teamError } = await supabase
+      .from("teams")
+      .select("organization_id")
+      .eq("id", match.home_team_id)
+      .maybeSingle();
+    if (teamError) throw teamError;
+    organizationId = homeTeam?.organization_id ?? null;
+  }
+  if (!organizationId) return { eligible: 0, delivered: 0, failed: 0 };
   if (payload.reminderMinutes && match.status !== "scheduled") return { eligible: 0, delivered: 0, failed: 0 };
 
   const { data: subscriptions, error } = await supabase
     .from("public_push_subscriptions")
     .select("endpoint, p256dh, auth, display_name, team_ids, reminder_minutes")
-    .eq("organization_id", match.organization_id)
+    .eq("organization_id", organizationId)
     .limit(5000);
 
   if (error) throw error;
@@ -101,10 +115,14 @@ async function deliverPublicPush(payload: PublicPushPayload) {
 
   const failed = results.filter((result) => result.status === "rejected").length;
   if (failed > expiredEndpoints.length) {
+    const failureCodes = results.flatMap((result) => result.status === "rejected"
+      ? [result.reason instanceof WebPushError ? result.reason.statusCode ?? "unknown" : "unknown"]
+      : []);
     console.error("Some public match push notifications could not be delivered", {
       failed: failed - expiredEndpoints.length,
       total: matchedSubscriptions.length,
       matchId: payload.matchId,
+      failureCodes,
     });
   }
   return {
