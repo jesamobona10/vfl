@@ -10,12 +10,11 @@ import { matchStatusVariant, statusLabel } from "@/lib/status";
 import { LiveBadgeWithLink } from "@/components/live/live-badge";
 import { useToast } from "@/components/ui/toast";
 import { removeMatchEvent } from "@/lib/match-events";
-import { Radio, Trash2, Images, Users, Activity, Plus } from "lucide-react";
+import { Radio, Trash2, Users, Activity, Plus } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
 import { useConfirm } from "@/components/shared/confirm-dialog";
-import { MatchMediaManager } from "./match-media-manager";
 import { FixtureLineupsModal } from "./fixture-lineups";
 import { useCan } from "@/lib/hooks/use-can";
 import { MATCH_EVENT_CATEGORIES, matchEventCategory, matchEventCategoryColor } from "@/lib/match-event-categories";
@@ -90,7 +89,6 @@ export function FixtureCard({
   onDrop,
 }: FixtureCardProps) {
   const [showFlyer, setShowFlyer] = useState(false);
-  const [showMedia, setShowMedia] = useState(false);
   const [showLineups, setShowLineups] = useState(false);
   const [showEvents, setShowEvents] = useState(false);
   const [showAddEvent, setShowAddEvent] = useState(false);
@@ -340,14 +338,6 @@ export function FixtureCard({
             >
               <Radio size={13} /> Match mode
             </Link>
-            <Button
-              size="sm"
-              variant="ghost"
-              onClick={() => setShowMedia(true)}
-              className="flex-1 gap-1.5 text-brand border border-brand/25 hover:bg-brand/5"
-            >
-              <Images size={13} /> Media
-            </Button>
             </>}
           </div>
         )}
@@ -364,13 +354,6 @@ export function FixtureCard({
         </Suspense>
       )}
 
-      <MatchMediaManager
-        matchId={match.id}
-        homeTeamName={homeTeam?.name || "Home"}
-        awayTeamName={awayTeam?.name || "Away"}
-        open={showMedia}
-        onClose={() => setShowMedia(false)}
-      />
       <FixtureLineupsModal fixtureId={match.id} open={showLineups} onClose={() => setShowLineups(false)} />
       <Modal
         open={showEvents}
