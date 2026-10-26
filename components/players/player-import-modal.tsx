@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useOrg } from "@/lib/hooks/use-org";
-import { parsePlayerImportCSV } from "@/lib/utils/csv";
+import { buildPlayerImportErrorCsv, parsePlayerImportCSV } from "@/lib/utils/csv";
 import type { Player, PlayerImportRow, Team } from "@/lib/types";
 import { Upload, FileSpreadsheet, AlertCircle, CheckCircle2, Loader2 } from "lucide-react";
 import { Modal } from "@/components/ui/modal";
@@ -21,8 +21,6 @@ interface SeasonOption {
   competitionName: string;
 }
 
-const VALID_POSITIONS = ["GK", "DEF", "MID", "ATT"];
-
 export function PlayerImportModal({ slug, onClose, onImported }: PlayerImportModalProps) {
   const { data: org } = useOrg(slug);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -38,7 +36,6 @@ export function PlayerImportModal({ slug, onClose, onImported }: PlayerImportMod
   const [createMissingTeams, setCreateMissingTeams] = useState(true);
   const [seasonId, setSeasonId] = useState("");
   const [seasonOptions, setSeasonOptions] = useState<SeasonOption[]>([]);
-  const [loading, setLoading] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [result, setResult] = useState<{
     imported: number;
@@ -194,6 +191,17 @@ export function PlayerImportModal({ slug, onClose, onImported }: PlayerImportMod
     }
   };
 
+  const downloadErrorReport = (errors: string[]) => {
+    if (!errors.length) return;
+    const file = new Blob([buildPlayerImportErrorCsv(errors)], { type: "text/csv;charset=utf-8" });
+    const url = URL.createObjectURL(file);
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = "player-import-errors.csv";
+    link.click();
+    window.setTimeout(() => URL.revokeObjectURL(url), 1000);
+  };
+
   return (
     <Modal
       open
@@ -343,7 +351,7 @@ export function PlayerImportModal({ slug, onClose, onImported }: PlayerImportMod
 
               {parseResult.errors.length > 0 && (
                 <div className="text-xs text-danger bg-danger/10 p-3 rounded-lg space-y-1 max-h-40 overflow-y-auto">
-                  <p className="font-medium">{parseResult.errors.length} row(s) will be skipped:</p>
+                  <div className="flex flex-wrap items-center justify-between gap-2"><p className="font-medium">{parseResult.errors.length} row(s) will be skipped:</p><button type="button" className="btn btn-sm" onClick={() => downloadErrorReport(parseResult.errors)}>Download error report</button></div>
                   {parseResult.errors.map((er, i) => (
                     <p key={i}>• {er}</p>
                   ))}
@@ -451,11 +459,7 @@ export function PlayerImportModal({ slug, onClose, onImported }: PlayerImportMod
                       {result.createdTeams > 0 ? ` · ${result.createdTeams} team(s) created` : ""}
                     </p>
                     {result.errors.length > 0 && (
-                      <ul className="text-xs mt-2 list-disc pl-4 space-y-1 max-h-40 overflow-y-auto">
-                        {result.errors.map((er, i) => (
-                          <li key={i}>{er}</li>
-                        ))}
-                      </ul>
+                      <div className="mt-2 space-y-2"><button type="button" className="btn btn-sm" onClick={() => downloadErrorReport(result.errors)}>Download error report</button><ul className="text-xs list-disc pl-4 space-y-1 max-h-40 overflow-y-auto">{result.errors.map((er, i) => <li key={i}>{er}</li>)}</ul></div>
                     )}
                   </div>
                 </div>

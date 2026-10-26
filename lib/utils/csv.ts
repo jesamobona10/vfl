@@ -7,6 +7,12 @@ export function sanitizeCsvCell(value: string): string {
   return value.replace(FORMULA_CHARS, "'$&");
 }
 
+/** Format row-level player-import failures as a spreadsheet-safe CSV report. */
+export function buildPlayerImportErrorCsv(errors: string[]): string {
+  const escape = (value: string) => `"${sanitizeCsvCell(value).replace(/"/g, '""')}"`;
+  return ["Issue,Details", ...errors.map((error, index) => `${index + 1},${escape(error)}`)].join("\r\n");
+}
+
 function parseCSVLine(line: string): string[] {
   const result: string[] = [];
   let current = "";

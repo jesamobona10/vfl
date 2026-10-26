@@ -49,6 +49,7 @@ will remain addressable while the navigation is grouped.
 | MD-01 | Matchday | Organization-wide fixture work is split across competition pages | Provide season-scoped Today, Live, Needs action, Upcoming and Recently completed views with search and competition filters | Retry the shared organization-season fixture query | P0 | In review — implemented with role gate and focused view-classification tests |
 | MW-01 | Match workspace | Match events, lineups and media use separate entry points | Reuse the existing match mode, lineup manager and media manager in one fixture workspace | Return to the matchday/competition list and reopen the fixture | P0 | In progress — shared workspace shell exists; result confirmation and report workflow need existing data/API support |
 | STAFF-01 | Staff access | Organization members have no management interface | Reuse the member invite/list/remove API with clear role labels and owner-only mutations | Retry failed loads and mutations; keep server authorization authoritative | P1 | In review — owner invitations and removals, admin view, and email visibility for org admins are wired to existing APIs |
+| REG-01 | Player import | Invalid CSV rows require manual investigation and there is no portable failure report | Export row-level parse/import errors as formula-safe CSV | Download the failure report and correct source rows before retrying | P1 | In review — parse-time and server import errors are downloadable from the existing preview/result UI |
 
 ## First implementation slice
 
@@ -74,3 +75,8 @@ Phase 4 has a first staff-management slice at `/org/[slug]/staff`. It lists
 members and supports owner-controlled invitations and removals through the
 existing API. The current API/schema does not support per-team assignments,
 invitation revocation before acceptance, or role edits, so those remain open.
+
+Phase 5 has a first import-recovery slice: parse-time and server-side row
+errors can be downloaded as a spreadsheet-safe CSV from the existing player
+import dialog. Registration identifiers, eligibility state and import-job
+history need schema design and remain open.

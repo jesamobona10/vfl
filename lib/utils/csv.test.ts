@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { parseTeamInviteCSV, sanitizeCsvCell } from "@/lib/utils/csv";
+import { buildPlayerImportErrorCsv, parseTeamInviteCSV, sanitizeCsvCell } from "@/lib/utils/csv";
 
 describe("sanitizeCsvCell", () => {
   it.each([
@@ -24,6 +24,14 @@ describe("sanitizeCsvCell", () => {
 
   it("handles empty strings", () => {
     expect(sanitizeCsvCell("")).toBe("");
+  });
+});
+
+describe("buildPlayerImportErrorCsv", () => {
+  it("quotes details, escapes quotes, and protects spreadsheet formulas", () => {
+    expect(buildPlayerImportErrorCsv(["Duplicate: \"Sam\"", "=HYPERLINK(\"bad\")"])).toBe(
+      'Issue,Details\r\n1,"Duplicate: ""Sam"""\r\n2,"\'=HYPERLINK(""bad"")"'
+    );
   });
 });
 
