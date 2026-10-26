@@ -16,6 +16,7 @@ import { PlayerDashboard } from "@/components/player/player-dashboard";
 import { TeamDashboard } from "@/components/team/team-dashboard";
 import { SeasonEmptyState } from "@/components/dashboard/season-empty-state";
 import { SetupChecklist } from "@/components/dashboard/setup-checklist";
+import { NeedsAttention } from "@/components/dashboard/needs-attention";
 import { Shield, RefreshCw, Plus, Upload, Loader2 } from "lucide-react";
 import { DashboardSkeleton } from "@/components/shared/skeleton";
 import { useOrgSeason } from "@/components/competitions/org-season-provider";
@@ -32,7 +33,7 @@ export default function OrgDashboardPage() {
   const queryClient = useQueryClient();
   const { data: currentOrg } = useOrg(slug);
   const { data: competitions = [] } = useCompetitions(currentOrg?.id);
-  const { loading: seasonLoading, hasFixtures, hasTeams, isOrgAdmin } = useOrgSeason();
+  const { loading: seasonLoading, hasFixtures, hasTeams, isOrgAdmin, selectedOrgSeasonId } = useOrgSeason();
   const teams = useAppStore((s) => s.teams);
   const players = useAppStore((s) => s.players);
   const fixtures = useAppStore((s) => s.fixtures);
@@ -236,6 +237,8 @@ export default function OrgDashboardPage() {
             teamCount={teams.length}
             fixtureCount={fixtures.length}
           />
+
+          {isOrgAdmin && <NeedsAttention slug={slug} orgSeasonId={selectedOrgSeasonId} />}
 
           <MetricCards fixtureHref={`/org/${slug}/competitions`} />
 

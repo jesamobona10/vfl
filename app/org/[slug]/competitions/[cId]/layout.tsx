@@ -20,16 +20,25 @@ const typeLabels: Record<string, string> = {
   friendly: "Friendly",
 };
 
-const tabs = [
-  { href: "", label: "Overview", icon: LayoutDashboard },
-  { href: "standings", label: "Standings", icon: Trophy, standingsOnly: true },
-  { href: "stats", label: "Statistics", icon: BarChart3 },
-  { href: "team-of-round", label: "Team of the Round", icon: Award },
-  { href: "fixtures", label: "Schedule", icon: Calendar },
-  { href: "teams", label: "Teams", icon: Shield },
-  { href: "players", label: "Players", icon: Users },
-  { href: "results", label: "Final Match Results", icon: ListOrdered },
-  { href: "settings", label: "Settings", icon: Settings },
+type CompetitionTab = { href: string; label: string; icon: typeof LayoutDashboard; standingsOnly?: boolean };
+type CompetitionSection = { label: string; tabs: CompetitionTab[] };
+
+const competitionSections: CompetitionSection[] = [
+  { label: "Overview", tabs: [{ href: "", label: "Overview", icon: LayoutDashboard }] },
+  { label: "Matches", tabs: [
+    { href: "fixtures", label: "Schedule", icon: Calendar },
+    { href: "results", label: "Final Match Results", icon: ListOrdered },
+  ] },
+  { label: "Table & Stats", tabs: [
+    { href: "standings", label: "Standings", icon: Trophy, standingsOnly: true },
+    { href: "stats", label: "Statistics", icon: BarChart3 },
+    { href: "team-of-round", label: "Team of the Round", icon: Award },
+  ] },
+  { label: "Participants", tabs: [
+    { href: "teams", label: "Teams", icon: Shield },
+    { href: "players", label: "Players", icon: Users },
+  ] },
+  { label: "Settings", tabs: [{ href: "settings", label: "Settings", icon: Settings }] },
 ];
 
 export default function CompetitionLayout({ children }: { children: React.ReactNode }) {
@@ -114,6 +123,24 @@ export default function CompetitionLayout({ children }: { children: React.ReactN
     return pathname === target || pathname.startsWith(`${target}/`);
   };
 
+  const visibleSections = competitionSections
+    .map((section) => ({
+      ...section,
+      tabs: section.tabs.filter((tab) => !tab.standingsOnly || !isFriendly),
+    }))
+    .filter((section) => section.tabs.length > 0);
+  const activeSection = visibleSections.find((section) => section.tabs.some((tab) => isActive(tab.href)))
+    ?? visibleSections[0];
+  const activeTab = activeSection?.tabs.find((tab) => isActive(tab.href));
+
+  const sectionHref = (section: CompetitionSection) => {
+    const firstTab = section.tabs.find((tab) => !tab.standingsOnly || !isFriendly) ?? section.tabs[0];
+    return `${basePath}${firstTab.href ? `/${firstTab.href}` : ""}${seasonQuery}`;
+  };
+
+  const tabHref = (tab: CompetitionTab) =>
+    `${basePath}${tab.href ? `/${tab.href}` : ""}${seasonQuery}`;
+
   const seasonSelector = seasons.length > 0 && (
     <SeasonSelector
       seasons={seasons}
@@ -165,30 +192,56 @@ export default function CompetitionLayout({ children }: { children: React.ReactN
         </div>
       </div>
 
-      {/* Competition Navigation */}
-      <div className="overflow-x-auto border-b border-line">
-        <nav aria-label="Competition" className="flex min-w-max gap-1">
-          {tabs.filter((tab) => !tab.standingsOnly || !isFriendly).map((tab) => {
-            const active = isActive(tab.href);
-            const Icon = tab.icon;
-            return (
-              <Link
-                key={tab.href || "overview"}
-                href={`${basePath}${tab.href ? `/${tab.href}` : ""}${seasonQuery}`}
-                aria-current={active ? "page" : undefined}
-                className={cn(
-                  "flex items-center gap-2 px-4 py-3 text-sm font-medium border-b-2 transition-colors shrink-0",
-                  active
-                    ? "border-brand text-brand bg-brand-50/30"
-                    : "border-transparent text-muted hover:text-text hover:bg-surface-2/50"
-                )}
-              >
-                <Icon size={16} />
-                <span>{tab.label}</span>
-              </Link>
-            );
-          })}
-        </nav>
+      {/* Grouped competition navigation. The original routes remain canonical,
+          so bookmarks and existing links continue to work. */}
+      <div className="space-y-2 border-b border-line pb-2">
+        <div className="overflow-x-auto">
+          <nav aria-label="Competition sections" className="flex min-w-max gap-1">
+            {visibleSections.map((section) => {
+              const active = section === activeSection;
+              const Icon = section.tabs[0].icon;
+              return (
+                <Link
+                  key={section.label}
+                  href={sectionHref(section)}
+                  aria-current={active ? "page" : undefined}
+                  className={cn(
+                    "flex min-h-11 items-center gap-2 rounded-t-lg border-b-2 px-3 py-2 text-sm font-semibold transition-colors sm:px-4",
+                    active
+                      ? "border-brand bg-brand-50/30 text-brand"
+                      : "border-transparent text-muted hover:bg-surface-2/50 hover:text-text"
+                  )}
+                >
+                  <Icon size={16} />
+                  <span>{section.label}</span>
+                  {section.tabs.length > 1 && <span className="text-[10px] opacity-70">{section.tabs.length}</span>}
+                </Link>
+              );
+            })}
+          </nav>
+        </div>
+        {activeSection && activeSection.tabs.length > 1 && (
+          <nav aria-label={`${activeSection.label} pages`} className="flex flex-wrap gap-2 px-1">
+            {activeSection.tabs.map((tab) => {
+              const active = tab === activeTab;
+              const Icon = tab.icon;
+              return (
+                <Link
+                  key={tab.href}
+                  href={tabHref(tab)}
+                  aria-current={active ? "page" : undefined}
+                  className={cn(
+                    "inline-flex min-h-9 items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-medium transition-colors",
+                    active ? "bg-brand/10 text-brand" : "text-muted hover:bg-surface-2 hover:text-text"
+                  )}
+                >
+                  <Icon size={14} />
+                  {tab.label}
+                </Link>
+              );
+            })}
+          </nav>
+        )}
       </div>
 
       {children}
