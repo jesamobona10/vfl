@@ -35,6 +35,7 @@ interface FixtureCardProps {
   homeTeam: Team | undefined;
   awayTeam: Team | undefined;
   editable?: boolean;
+  showDelete?: boolean;
   onDrop: (matchId: number, targetId: number) => void;
 }
 
@@ -86,6 +87,7 @@ export function FixtureCard({
   homeTeam,
   awayTeam,
   editable,
+  showDelete = true,
   onDrop,
 }: FixtureCardProps) {
   const [showFlyer, setShowFlyer] = useState(false);
@@ -250,7 +252,7 @@ export function FixtureCard({
               </Badge>
             )}
           </div>
-          {editable && (
+          {editable && showDelete && (
             <button
               onClick={handleDelete}
               disabled={deleting}
@@ -336,7 +338,7 @@ export function FixtureCard({
               href={slug ? `/org/${slug}/match/${match.id}` : "#"}
               className="btn btn-ghost btn-sm flex-1 justify-center gap-1.5 text-brand border border-brand/25 hover:bg-brand/5"
             >
-              <Radio size={13} /> Match mode
+              <Radio size={13} /> Match workspace
             </Link>
             </>}
           </div>
