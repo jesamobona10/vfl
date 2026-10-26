@@ -38,7 +38,7 @@ export function useOrgMembers(orgId: string | undefined) {
   return useQuery({
     queryKey: ["org-members", orgId],
     queryFn: () =>
-      fetchJson<{ members: OrgMember[] }>(`/api/org/${orgId}/members`).then((d) => d.members),
+      fetchJson<{ members: OrgMember[] }>(`/api/org/members?org_id=${encodeURIComponent(orgId!)}`).then((d) => d.members),
     enabled: !!orgId,
   });
 }

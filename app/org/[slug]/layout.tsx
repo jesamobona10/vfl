@@ -11,7 +11,7 @@ import { Sidebar, type SidebarItem } from "@/components/layout/sidebar";
 import { MobileNavDrawer } from "@/components/layout/mobile-nav-drawer";
 import { OrgSeasonProvider } from "@/components/competitions/org-season-provider";
 import { brandStyleVars } from "@/lib/branding";
-import { LayoutDashboard, Users, Shield, UserCog, Swords, Radio, CalendarDays } from "lucide-react";
+import { LayoutDashboard, Users, Shield, UserCog, Swords, Radio, CalendarDays, UserRoundCog } from "lucide-react";
 
 const SearchModal = dynamic(() => import("@/components/search/search-modal").then(m => m.SearchModal), {
   ssr: false,
@@ -25,6 +25,7 @@ const tabs: SidebarItem[] = [
   { href: "/players", label: "Players", icon: Users },
   { href: "/teams", label: "Teams", icon: Shield },
   { href: "/team-accounts", label: "Team Accounts", icon: UserCog },
+  { href: "/staff", label: "Staff", icon: UserRoundCog },
   { href: "/public", label: "Public Match Centre", icon: Radio },
 ];
 
@@ -44,6 +45,7 @@ const NAV_BY_ROLE: Record<string, string[]> = {
     "/players",
     "/teams",
     "/team-accounts",
+    "/staff",
     "/public",
   ],
   team_account: ["/dashboard", "/players", "/public"],

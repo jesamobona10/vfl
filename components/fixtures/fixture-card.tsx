@@ -88,7 +88,7 @@ export function FixtureCard({
   awayTeam,
   editable,
   showDelete = true,
-  onDrop,
+  onDrop: _onDrop,
 }: FixtureCardProps) {
   const [showFlyer, setShowFlyer] = useState(false);
   const [showLineups, setShowLineups] = useState(false);

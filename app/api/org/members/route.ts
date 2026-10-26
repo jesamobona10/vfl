@@ -54,7 +54,16 @@ export async function GET(request: Request) {
       return json({ error: "Failed to fetch members." }, { status: 500 });
     }
 
-    return json({ members: members || [] });
+    const memberRows = members || [];
+    const maySeeEmails = auth?.isAdmin || ["owner", "admin"].includes(auth?.orgMembership?.role ?? "");
+    const enrichedMembers = maySeeEmails
+      ? await Promise.all(memberRows.map(async (member) => {
+          const { data } = await sb.auth.admin.getUserById(member.user_id);
+          return { ...member, email: data.user?.email ?? null };
+        }))
+      : memberRows;
+
+    return json({ members: enrichedMembers });
   } catch (error) {
     logApiError("org_members_error", error);
     return json({ error: "Something went wrong. Please try again." }, { status: 500 });

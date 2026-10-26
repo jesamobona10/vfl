@@ -48,6 +48,7 @@ will remain addressable while the navigation is grouped.
 | OPS-02 | Dashboard | Failures in optional dashboard panels can obscure operational work | Load the attention queue independently with its own error/retry state | Retry only the queue request | P0 | Done — queue has separate loading, error, retry and empty states |
 | MD-01 | Matchday | Organization-wide fixture work is split across competition pages | Provide season-scoped Today, Live, Needs action, Upcoming and Recently completed views with search and competition filters | Retry the shared organization-season fixture query | P0 | In review — implemented with role gate and focused view-classification tests |
 | MW-01 | Match workspace | Match events, lineups and media use separate entry points | Reuse the existing match mode, lineup manager and media manager in one fixture workspace | Return to the matchday/competition list and reopen the fixture | P0 | In progress — shared workspace shell exists; result confirmation and report workflow need existing data/API support |
+| STAFF-01 | Staff access | Organization members have no management interface | Reuse the member invite/list/remove API with clear role labels and owner-only mutations | Retry failed loads and mutations; keep server authorization authoritative | P1 | In review — owner invitations and removals, admin view, and email visibility for org admins are wired to existing APIs |
 
 ## First implementation slice
 
@@ -68,3 +69,8 @@ organization-season fixture query; the workspace reuses match event, lineup,
 and media components. A separate report workflow and result confirmation
 state/API were not present in the repository scan, so those remain open rather
 than being represented by mock state.
+
+Phase 4 has a first staff-management slice at `/org/[slug]/staff`. It lists
+members and supports owner-controlled invitations and removals through the
+existing API. The current API/schema does not support per-team assignments,
+invitation revocation before acceptance, or role edits, so those remain open.
