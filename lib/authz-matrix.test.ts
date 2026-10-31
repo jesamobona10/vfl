@@ -38,7 +38,9 @@ const PUBLIC_DESIGN = [
   "/cron/pre-match-reminders",
   "/org/register",
   "/public/live",
+  "/public/matches/[id]/media",
   "/public/matches/[id]/halftime",
+  "/public/matches/[id]/lineups",
   "/public/push-subscriptions",
 ];
 

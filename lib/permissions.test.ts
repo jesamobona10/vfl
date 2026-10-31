@@ -53,7 +53,6 @@ describe("can", () => {
     "competition.manage",
     "fixtures.generate",
     "fixtures.edit",
-    "players.manage",
     "teams.manage",
     "teamAccounts.manage",
   ] as const;
@@ -81,6 +80,11 @@ describe("can", () => {
     expect(can(teamAccount, "match.edit").allowed).toBe(true);
     expect(can(player, "match.edit").allowed).toBe(false);
     expect(can(actor(), "match.edit").allowed).toBe(false);
+  });
+
+  it("allows team accounts to manage players on their own team, not organization teams", () => {
+    expect(can(teamAccount, "players.manage").allowed).toBe(true);
+    expect(can(teamAccount, "teams.manage").allowed).toBe(false);
   });
 
   it("denies signed-out actors", () => {

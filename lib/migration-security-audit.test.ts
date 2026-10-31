@@ -15,6 +15,7 @@ const PUBLIC_TABLES = [
 ];
 
 type Fn = { file: string; name: string; options: string; body: string };
+type SearchPathOverride = { file: string; name: string };
 
 /**
  * Drop `--` line comments and /* block *\/ comments. A table named in a
@@ -54,6 +55,22 @@ function readFunctions(): Fn[] {
 
 const functions = readFunctions();
 
+function readEmptySearchPathOverrides(): SearchPathOverride[] {
+  const files = readdirSync(MIGRATIONS).filter((file) => file.endsWith(".sql"));
+  const out: SearchPathOverride[] = [];
+  const pattern = /ALTER\s+FUNCTION\s+([\w.]+)\s*\([^)]*\)\s+SET\s+search_path\s*=\s*''/gi;
+  for (const file of files) {
+    const src = stripComments(readFileSync(join(MIGRATIONS, file), "utf8"));
+    for (const match of src.matchAll(pattern)) out.push({ file, name: match[1]!.toLowerCase() });
+  }
+  return out;
+}
+
+const emptySearchPathOverrides = readEmptySearchPathOverrides();
+const hasLaterEmptySearchPath = (fn: Fn) => emptySearchPathOverrides.some(
+  (override) => override.name === fn.name.toLowerCase() && override.file > fn.file
+);
+
 /**
  * A SECURITY DEFINER function runs as its owner, so anything it names without
  * a schema is resolved against a caller-influenced search_path. Setting
@@ -69,17 +86,20 @@ describe("migration SECURITY DEFINER audit", () => {
 
   it.each(functions.map((f) => [f.file, f.name, f] as const))(
     "%s :: %s pins an empty search_path when SECURITY DEFINER",
-    (_file, _name, fn) => {
+      (_file, _name, fn) => {
       if (!/SECURITY\s+DEFINER/i.test(fn.options)) return;
-      expect(fn.options).toMatch(/search_path\s*=\s*''/i);
+      expect(
+        /search_path\s*=\s*''/i.test(fn.options) || hasLaterEmptySearchPath(fn),
+        `${fn.name} must pin an empty search_path in its definition or a later migration`
+      ).toBe(true);
     }
   );
 
   it.each(functions.map((f) => [f.file, f.name, f] as const))(
     "%s :: %s schema-qualifies every public table it names",
-    (_file, _name, fn) => {
+      (_file, _name, fn) => {
       if (!/SECURITY\s+DEFINER/i.test(fn.options)) return;
-      if (!/search_path\s*=\s*''/i.test(fn.options)) return;
+      if (!/search_path\s*=\s*''/i.test(fn.options) && !hasLaterEmptySearchPath(fn)) return;
 
       const unqualified = PUBLIC_TABLES.filter((t) =>
         // Not preceded by a dot (public.x), not part of a longer identifier,

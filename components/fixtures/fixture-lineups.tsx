@@ -31,10 +31,10 @@ export type FixtureLineup = {
 function PlayerChip({ player, label }: { player: Player | null; label: string }) {
   const displayName = player?.name || (player?.jersey_number ? `No. ${player.jersey_number}` : label);
   return <div className="flex w-full min-w-0 flex-col items-center gap-1.5 px-0.5 text-center" title={displayName}>
-    <div className="relative flex h-9 w-9 shrink-0 items-center justify-center overflow-hidden rounded-full border-2 border-white bg-white text-xs font-extrabold text-ink-1 shadow-md sm:h-11 sm:w-11">
+    <div className="relative flex h-9 w-9 shrink-0 items-center justify-center overflow-hidden rounded-full border-2 border-white bg-white text-xs font-extrabold text-ink shadow-md sm:h-11 sm:w-11">
       {player?.photo_url ? <Image src={player.photo_url} alt="" fill sizes="44px" className="object-cover" /> : player?.jersey_number ?? "·"}
     </div>
-    <span className="line-clamp-3 box-border w-full min-w-0 overflow-hidden [overflow-wrap:anywhere] rounded-md border border-white/20 bg-slate-950/90 px-1 py-1 text-[9px] font-semibold leading-[1.1] text-white shadow-sm sm:text-[11px]">{displayName}</span>
+    <span className="line-clamp-3 box-border w-full min-w-0 overflow-hidden [overflow-wrap:anywhere] rounded-md border border-white/20 bg-ink/95 px-1 py-1 text-[9px] font-semibold leading-[1.1] text-white shadow-sm sm:text-[11px]">{displayName}</span>
   </div>;
 }
 

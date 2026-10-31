@@ -118,9 +118,9 @@ describe("updateTeamRatings", () => {
     const loser = teams[1]!;
     expect(winner.rating).toBeGreaterThan(loser.rating);
 
-    // winner: 6 + 0.3; loser clamped at the 6.0 floor
+    // A win raises the baseline, while a loss lowers it below 6.0.
     expect(winner.rating).toBeCloseTo(6.3, 5);
-    expect(loser.rating).toBe(6.0);
+    expect(loser.rating).toBeCloseTo(5.8, 5);
   });
 
   it("counts a draw as a small positive bump", () => {
@@ -132,20 +132,18 @@ describe("updateTeamRatings", () => {
     expect(teams[0]!.rating).toBeCloseTo(6.1, 5);
   });
 
-  it("documents the empty-squad handicap: fallback avg of 1.0 drags ratings by -0.5", () => {
-    // CURRENT BEHAVIOR — if this starts failing after changing the fallback
-    // to 6.0 in ratings.ts, update this test (the change is desirable).
+  it("uses the 6.0 baseline when a team has no registered players", () => {
     const teams = makeTeams(2);
     const matches: Match[] = [
       { id: 1, round: 1, homeId: 1, awayId: 2, homeScore: 3, awayScore: 0, status: "completed", date: "", time: "", venue: "", events: [] },
     ];
     updateTeamRatings(teams, matches, []);
-    // winner: max(6, 6 + 0.3 + (1-6)*0.1) = max(6, 5.8) = 6.0 — identical to loser
-    expect(teams[0]!.rating).toBe(6.0);
-    expect(teams[1]!.rating).toBe(6.0);
+    // Empty squads contribute no rating penalty: results still distinguish teams.
+    expect(teams[0]!.rating).toBeCloseTo(6.3, 5);
+    expect(teams[1]!.rating).toBeCloseTo(5.8, 5);
   });
 
-  it("blends in average squad rating at 10% weight and clamps to [6,10]", () => {
+  it("blends in average squad rating at 10% weight and clamps to [1,10]", () => {
     const teams = makeTeams(2);
     const star = makePlayer("ATT", { teamId: 1, rating: 10 });
     const matches: Match[] = [

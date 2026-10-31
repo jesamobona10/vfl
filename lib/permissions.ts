@@ -93,8 +93,9 @@ export function can(actor: Actor, action: CanAction): CanResult {
     case "teamAccounts.manage":
       return { allowed: orgAdmin };
     case "players.manage":
-    case "teams.manage":
       return { allowed: orgAdmin || isTeamAccountLike(actor) };
+    case "teams.manage":
+      return { allowed: orgAdmin };
     default: {
       const exhaustive: never = action;
       return { allowed: false, reason: `Unknown action: ${exhaustive}` };

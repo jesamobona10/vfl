@@ -170,7 +170,19 @@ function scan(rule: (line: string) => string | null) {
   return findings;
 }
 
+function usesBareViewportWidth(line: string): boolean {
+  // Image `sizes` describes a download hint, not CSS layout width. Strip it
+  // before checking actual width utilities and inline style declarations.
+  const layoutSource = line.replace(/\bsizes\s*=\s*["'][^"']*["']/g, "");
+  return /\bw-\[100vw\]|\bw-screen\b|\bwidth\s*:\s*["']?100vw\b|\bwidth\s*=\s*["']100vw["']/i.test(layoutSource);
+}
+
 describe("responsive source audit", () => {
+  it("detects CSS viewport widths but ignores image download hints", () => {
+    expect(usesBareViewportWidth('<div className="w-[100vw]" />')).toBe(true);
+    expect(usesBareViewportWidth('<div className="w-screen" />')).toBe(true);
+    expect(usesBareViewportWidth('<Image sizes="100vw" className="w-full" />')).toBe(false);
+  });
   it("scans a meaningful number of files", () => {
     expect(FILES.length).toBeGreaterThan(100);
   });
@@ -240,7 +252,7 @@ describe("responsive source audit", () => {
   it("never uses a bare 100vw width", () => {
     const findings = scan((line) => {
       // 100vw includes the scrollbar width and causes horizontal overflow.
-      if (line.includes("100vw") && !/calc\(100vw\s*-/.test(line)) {
+      if (usesBareViewportWidth(line)) {
         return "bare 100vw causes horizontal overflow";
       }
       return null;
