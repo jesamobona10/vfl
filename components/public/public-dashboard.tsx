@@ -205,7 +205,10 @@ export function PublicDashboard() {
           .order("round", { ascending: true })
           .order("match_id", { ascending: true }),
         sb.from("public_seasons").select("*").order("season_name", { ascending: false }),
-        sb.rpc("list_public_organizations"),
+        fetch("/api/public/organizations", { cache: "no-store" })
+          .then((r) => (r.ok ? r.json() : { data: [] }))
+          .then((j) => ({ data: j.data || [], error: null }))
+          .catch(() => ({ data: [], error: null as any })),
       ]);
 
       if (!mounted) return;
