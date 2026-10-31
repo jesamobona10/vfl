@@ -1,15 +1,21 @@
 import { NextResponse } from "next/server";
 import { getPublicOrganizationsCached } from "@/lib/cache/public-orgs";
 
-export const dynamic = "force-dynamic";
+export const revalidate = 300;
 
 export async function GET() {
   try {
-    const data = await getPublicOrganizationsCached();
-    const res = NextResponse.json({ data });
-    res.headers.set("Cache-Control", "public, s-maxage=300, stale-while-revalidate=600");
-    return res;
+    const organizations = await getPublicOrganizationsCached();
+    return NextResponse.json(
+      { data: organizations },
+      {
+        headers: {
+          "Cache-Control": "public, s-maxage=300, stale-while-revalidate=600",
+        },
+      }
+    );
   } catch (error) {
-    return NextResponse.json({ data: [], error: "Failed to load organizations" }, { status: 500 });
+    console.error("Error fetching public organizations:", error);
+    return NextResponse.json({ data: [] }, { status: 200 });
   }
 }

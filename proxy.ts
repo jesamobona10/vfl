@@ -48,10 +48,18 @@ function isPasswordRotationAllowedApi(pathname: string, method: string): boolean
   return false;
 }
 
+const accountCache = new Map<string, { info: AccountInfo; expiresAt: number }>();
+const ACCOUNT_CACHE_TTL = 60 * 1000; // 1 minute
+
 async function resolveAccountKind(
   supabase: ReturnType<typeof createMiddlewareClient>["supabase"],
   userId: string
 ): Promise<AccountInfo> {
+  const cached = accountCache.get(userId);
+  if (cached && cached.expiresAt > Date.now()) {
+    return cached.info;
+  }
+
   const [{ data: admin }, { data: team }, { data: player }, { data: orgMember }] =
     await Promise.all([
       supabase.from("admin_users").select("id").eq("id", userId).maybeSingle(),
@@ -68,13 +76,16 @@ async function resolveAccountKind(
         .maybeSingle(),
     ]);
 
-  if (admin) return { kind: "admin", mustChangePassword: false };
-  if (team) return { kind: "team", mustChangePassword: false };
-  if (player)
-    return { kind: "player", mustChangePassword: player.must_change_password === true };
-  if (orgMember) return { kind: "org", mustChangePassword: false };
+  let info: AccountInfo;
+  if (admin) info = { kind: "admin", mustChangePassword: false };
+  else if (team) info = { kind: "team", mustChangePassword: false };
+  else if (player)
+    info = { kind: "player", mustChangePassword: player.must_change_password === true };
+  else if (orgMember) info = { kind: "org", mustChangePassword: false };
+  else info = { kind: "unknown", mustChangePassword: false };
 
-  return { kind: "unknown", mustChangePassword: false };
+  accountCache.set(userId, { info, expiresAt: Date.now() + ACCOUNT_CACHE_TTL });
+  return info;
 }
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || "";
