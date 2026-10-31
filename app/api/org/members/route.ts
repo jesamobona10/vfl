@@ -1,3 +1,4 @@
+import { PLAYER_ACCOUNTS_ENABLED } from '@/lib/feature-flags';
 import { createClient } from "@/lib/supabase/server";
 import { createServiceRoleClient } from "@/lib/supabase/service-role";
 import {
@@ -88,6 +89,9 @@ export async function POST(request: Request) {
 
     if (!["admin", "coach", "player"].includes(role)) {
       return json({ error: "Role must be admin, coach, or player." }, { status: 400 });
+    }
+    if (!PLAYER_ACCOUNTS_ENABLED && role === "player") {
+      return json({ error: "Player accounts are temporarily unavailable" }, { status: 403 });
     }
 
     const ownerError = requireOrgOwner(auth, orgId);

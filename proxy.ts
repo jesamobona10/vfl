@@ -11,6 +11,9 @@ type AccountInfo = {
   mustChangePassword: boolean;
 };
 
+const PLAYER_ACCOUNTS_ENABLED =
+  process.env.NEXT_PUBLIC_PLAYER_ACCOUNTS_ENABLED === "true";
+
 /** Pages player accounts may visit (fixtures, standings, player stats). */
 const PLAYER_PAGE_PREFIXES = ["/", "/fixtures", "/standings", "/players"] as const;
 
@@ -235,7 +238,7 @@ export async function proxy(request: NextRequest) {
   // signed-in one off the callback would strand it, so the callback is exempt
   // whenever a code is actually present.
   const isCallbackWithCode = pathname === "/auth/callback" && search.has("code");
-  if (isAuthPage && !isChangePasswordPage && !isResetPasswordPage && !isCallbackWithCode) {
+  if (isAuthPage && !isChangePasswordPage && !isResetPasswordPage && !isCallbackWithCode && pathname !== "/auth/player-disabled") {
     return respond(NextResponse.redirect(new URL("/", request.url)), request);
   }
 
@@ -326,6 +329,18 @@ export async function proxy(request: NextRequest) {
   }
 
   if (accountKind === "player") {
+    if (!PLAYER_ACCOUNTS_ENABLED) {
+      if (pathname === "/auth/player-disabled") {
+        return respond(response, request);
+      }
+      if (isApiRoute && !isPublicApi) {
+        return respond(
+          NextResponse.json({ error: "Player accounts are temporarily unavailable" }, { status: 403 }),
+          request
+        );
+      }
+      return respond(NextResponse.redirect(new URL("/auth/player-disabled", request.url)), request);
+    }
     if (isApiRoute && !isPublicApi) {
       if (!isPlayerAllowedApi(pathname, request.method)) {
         logSecurityEvent("forbidden_player_api", {

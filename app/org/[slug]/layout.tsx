@@ -48,7 +48,7 @@ const NAV_BY_ROLE: Record<string, string[]> = {
     "/staff",
     "/public",
   ],
-  team_account: ["/dashboard", "/players", "/public"],
+  team_account: ["/dashboard", "/players", "/public", "/team-settings"],
   player: ["/dashboard", "/public"],
 };
 

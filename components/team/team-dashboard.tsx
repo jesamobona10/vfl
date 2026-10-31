@@ -8,7 +8,6 @@ import { UpcomingMatches } from "@/components/dashboard/upcoming-matches";
 import { TopFiveStandings } from "@/components/dashboard/top-five-standings";
 import { CompetitionsCard } from "@/components/dashboard/competitions-card";
 import { CalendarView } from "@/components/calendar/calendar-view";
-import { GeneratePlayerCredentials } from "@/components/players/generate-player-credentials";
 
 interface TeamDashboardProps {
   team: {
@@ -24,7 +23,6 @@ interface TeamDashboardProps {
 
 const TABS = [
   { key: "overview", label: "Overview" },
-  { key: "players", label: "Players" },
   { key: "matches", label: "Matches" },
   { key: "standings", label: "Standings" },
 ];
@@ -69,17 +67,6 @@ export function TeamDashboard({ team, teamPlayerCount, competitions }: TeamDashb
           </div>
           <CompetitionsCard competitions={competitions} canCreate={false} />
         </>
-      )}
-
-      {current === "players" && (
-        <div className="card p-5">
-          <GeneratePlayerCredentials
-            scope="team"
-            teamId={team.id}
-            teamName={team.name}
-            playerCount={teamPlayerCount}
-          />
-        </div>
       )}
 
       {current === "matches" && (

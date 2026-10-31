@@ -8,7 +8,7 @@ import { useToast } from "@/components/ui/toast";
 import { Button } from "@/components/ui/button";
 
 export function UsersManager() {
-  const [tab, setTab] = useState<"admins" | "teams" | "players">("admins");
+  const [tab, setTab] = useState<"admins" | "teams">("admins");
 
   return (
     <div className="space-y-4">
@@ -19,7 +19,6 @@ export function UsersManager() {
           [
             ["admins", "Admin Users"],
             ["teams", "Team Accounts"],
-            ["players", "Player Credentials"],
           ] as const
         ).map(([key, label]) => (
           <button
@@ -34,7 +33,6 @@ export function UsersManager() {
 
       {tab === "admins" && <AdminUsersList />}
       {tab === "teams" && <TeamAccountsList />}
-      {tab === "players" && <PlayerCredsList />}
     </div>
   );
 }

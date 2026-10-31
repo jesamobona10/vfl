@@ -1,0 +1,2 @@
+export const PLAYER_ACCOUNTS_ENABLED =
+  process.env.NEXT_PUBLIC_PLAYER_ACCOUNTS_ENABLED === "true";

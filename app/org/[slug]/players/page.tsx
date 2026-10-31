@@ -52,9 +52,11 @@ export default function OrgPlayersPage() {
   const players = useAppStore((s) => s.players);
   const teams = useAppStore((s) => s.teams);
   const teamName = useAppStore((s) => s.teamName);
-  const isTeamAccount = useAppStore((s) => s.isTeamAccount)();
+  const storeIsTeamAccount = useAppStore((s) => s.isTeamAccount)();
   const managedTeamId = useAppStore((s) => s.getManagedTeamId)();
   const { allowed: canManagePlayers } = useCan("players.manage");
+  const currentTeamAccount = useAppStore((s) => s.currentTeamAccount);
+  const isTeamAccount = storeIsTeamAccount || currentTeamAccount != null;
   const { selectedOrgSeasonId, loading: seasonLoading, hasTeams, isOrgAdmin: ctxIsOrgAdmin } =
     useOrgSeason();
   const deletePlayer = useAppStore((s) => s.deletePlayer);
@@ -195,10 +197,12 @@ export default function OrgPlayersPage() {
           </p>
         </div>
         <div className="flex flex-wrap items-center gap-2">
-          <button onClick={() => setImportOpen(true)} className="btn-ghost">
-            <Upload size={16} />
-            Import CSV
-          </button>
+          {!isTeamAccount && (
+            <button onClick={() => setImportOpen(true)} className="btn-ghost">
+              <Upload size={16} />
+              Import CSV
+            </button>
+          )}
           {canManagePlayers && (
             <button
               onClick={() => {
@@ -449,8 +453,8 @@ export default function OrgPlayersPage() {
               teamName={teamName(player.teamId)}
               teamLogo={teamMap[player.teamId]?.logo_url}
               onEdit={canManagePlayers ? handleEdit : undefined}
-              onDelete={canManagePlayers ? handleDelete : undefined}
-              onAnonymize={canManagePlayers ? handleAnonymize : undefined}
+              onDelete={!isTeamAccount && canManagePlayers ? handleDelete : undefined}
+              onAnonymize={!isTeamAccount && canManagePlayers ? handleAnonymize : undefined}
             />
           ))}
         </section>
@@ -463,8 +467,8 @@ export default function OrgPlayersPage() {
               teamName={teamName(player.teamId)}
               teamLogo={teamMap[player.teamId]?.logo_url}
               onEdit={canManagePlayers ? handleEdit : undefined}
-              onDelete={canManagePlayers ? handleDelete : undefined}
-              onAnonymize={canManagePlayers ? handleAnonymize : undefined}
+              onDelete={!isTeamAccount && canManagePlayers ? handleDelete : undefined}
+              onAnonymize={!isTeamAccount && canManagePlayers ? handleAnonymize : undefined}
             />
           ))}
         </section>

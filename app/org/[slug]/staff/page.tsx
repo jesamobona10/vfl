@@ -95,7 +95,7 @@ export default function OrganizationStaffPage() {
 
     {canInvite ? <form onSubmit={(event) => void inviteMember(event)} className="card grid gap-3 p-4 sm:grid-cols-[minmax(0,1fr)_180px_auto] sm:items-end">
       <Input label="Staff email" type="email" required autoComplete="email" value={email} onChange={(event) => setEmail(event.target.value)} placeholder="name@example.com" hint="An invitation email will be sent if they do not have an account yet." />
-      <label className="block text-sm font-medium text-text">Organization role<select value={role} onChange={(event) => setRole(event.target.value as Exclude<OrgRole, "owner">)} className="input mt-1 w-full"><option value="admin">Administrator</option><option value="coach">Coach</option><option value="player">Player</option></select></label>
+      <label className="block text-sm font-medium text-text">Organization role<select value={role} onChange={(event) => setRole(event.target.value as Exclude<OrgRole, "owner">)} className="input mt-1 w-full"><option value="admin">Administrator</option><option value="coach">Coach</option></select></label>
       <Button type="submit" loading={saving} disabled={!organization} leftIcon={<MailPlus size={16} />}>Send invite</Button>
     </form> : <div className="rounded-xl border border-line bg-surface px-4 py-3 text-sm text-muted">Only an organization owner can invite or remove members. You can review the current staff list below.</div>}
 

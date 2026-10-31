@@ -1,3 +1,5 @@
+import { NextResponse } from 'next/server';
+import { PLAYER_ACCOUNTS_ENABLED } from '@/lib/feature-flags';
 import { createClient } from "@/lib/supabase/server";
 import { createServiceRoleClient } from "@/lib/supabase/service-role";
 import { isValidPlayerUsername, playerEmailFromUsername } from "@/lib/player-credentials";
@@ -17,6 +19,9 @@ import { AUDIT_ACTIONS } from "@/lib/audit/actions";
 export const dynamic = "force-dynamic";
 
 export async function POST(request: Request) {
+  if (!PLAYER_ACCOUNTS_ENABLED) {
+    return NextResponse.json({ error: 'Player accounts are temporarily unavailable' }, { status: 403 });
+  }
   try {
     const ip = getClientIp(request);
     const parsed = await parseJsonObject(request);
