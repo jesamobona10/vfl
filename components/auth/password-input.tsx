@@ -11,11 +11,11 @@ export function PasswordInput(props: PasswordInputProps) {
 
   return (
     <div className="relative">
-      <Input {...props} type={show ? "text" : "password"} />
+      <Input {...props} type={show ? "text" : "password"} className={props.className ? `${props.className} pr-10` : "pr-10"} />
       <button
         type="button"
         onClick={() => setShow(!show)}
-        className="absolute right-2 top-8 -translate-y-1/2 text-muted hover:text-text"
+        className="absolute right-2 top-[38px] -translate-y-1/2 text-muted hover:text-text"
         aria-label={show ? "Hide password" : "Show password"}
       >
         {show ? <EyeOff size={18} /> : <Eye size={18} />}

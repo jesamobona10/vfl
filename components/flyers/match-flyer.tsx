@@ -169,10 +169,12 @@ export function MatchFlyer({ match, homeTeam, awayTeam, onClose }: MatchFlyerPro
     date: match.date || "",
     time: match.time || "",
     venue: match.venue || "",
+    round: String(match.round || ""),
   }));
   const [date, setDate] = useState(() => match.date || "");
   const [time, setTime] = useState(() => match.time || "");
   const [venue, setVenue] = useState(() => match.venue || "");
+  const [round, setRound] = useState(() => String(match.round || ""));
   const [saving, setSaving] = useState(false);
   const [busy, setBusy] = useState<"download" | "copy" | "share" | null>(null);
   const [error, setError] = useState("");
@@ -183,10 +185,9 @@ export function MatchFlyer({ match, homeTeam, awayTeam, onClose }: MatchFlyerPro
   const isFullTime = match.status === "completed";
 
   const { data: competition } = useCompetition(match.competition_id || undefined);
-  const settings = readFlyerSettings(competition?.settings);
-
   const { allowed: canEdit } = useCan("fixtures.edit");
-  const dirty = date !== baseline.date || time !== baseline.time || venue !== baseline.venue;
+  const settings = readFlyerSettings(competition?.settings);
+  const dirty = date !== baseline.date || time !== baseline.time || venue !== baseline.venue || round !== baseline.round;
   const hasSchedule = Boolean(date && time);
   const eventRows = [...(match.events || [])]
     .sort((a, b) => (a.minute ?? Number.MAX_SAFE_INTEGER) - (b.minute ?? Number.MAX_SAFE_INTEGER))
@@ -281,7 +282,7 @@ export function MatchFlyer({ match, homeTeam, awayTeam, onClose }: MatchFlyerPro
       const res = await fetch(`/api/fixtures/${match.id}`, {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ date, time, venue }),
+        body: JSON.stringify({ date, time, venue, round: round ? Number(round) : undefined }),
       });
       const body = await res.json();
       if (!res.ok) {
@@ -291,7 +292,8 @@ export function MatchFlyer({ match, homeTeam, awayTeam, onClose }: MatchFlyerPro
       updateMatch(match.id, "date", date);
       updateMatch(match.id, "time", time);
       updateMatch(match.id, "venue", venue);
-      setBaseline({ date, time, venue });
+      if (round) updateMatch(match.id, "round", Number(round));
+      setBaseline({ date, time, venue, round });
       toast.success("Match details saved.");
     } catch {
       setError("Unable to save. Check your connection.");
@@ -472,9 +474,27 @@ export function MatchFlyer({ match, homeTeam, awayTeam, onClose }: MatchFlyerPro
                 aria-label="Match venue"
               />
             )}
+            {!isFullTime && (
+              <div>
+                <label className="block text-xs text-muted mb-1">Round</label>
+                <input
+                  type="number"
+                  min={1}
+                  value={round}
+                  onChange={(e) => {
+                    setRound(e.target.value);
+                    setError("");
+                  }}
+                  disabled={!canEdit}
+                  placeholder="Round"
+                  className="input w-full text-sm py-1.5 disabled:opacity-60 disabled:cursor-not-allowed"
+                  aria-label="Match round"
+                />
+              </div>
+            )}
             {!canEdit && !isFullTime && (
               <p className="flyer-field">
-                Date, time and venue are managed by an organizer — download or share as-is.
+                Date, time, venue and round are managed by an organizer — download or share as-is.
               </p>
             )}
             {!isFullTime && !hasSchedule && (
