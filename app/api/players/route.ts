@@ -167,7 +167,24 @@ export async function GET(request: Request) {
     };
     });
 
-    updatePlayerRatings(players);
+    let trackingLevel: any = "essential";
+    try {
+      if (scopedSeasonIds && scopedSeasonIds.length > 0) {
+        const sb = createServiceRoleClient();
+        const { data: seasonRow } = await sb.from("seasons").select("competition_id").in("id", scopedSeasonIds).limit(1).maybeSingle();
+        if (seasonRow?.competition_id) {
+          const { data: comp } = await sb.from("competitions").select("settings").eq("id", seasonRow.competition_id).maybeSingle();
+          const lvl = (comp?.settings as any)?.rating?.trackingLevel;
+          if (lvl === "standard" || lvl === "detailed") trackingLevel = lvl;
+        }
+      } else if (orgId) {
+        const sb = createServiceRoleClient();
+        const { data: comp } = await sb.from("competitions").select("settings").eq("organization_id", orgId).order("created_at", { ascending: false }).limit(1).maybeSingle();
+        const lvl = (comp?.settings as any)?.rating?.trackingLevel;
+        if (lvl === "standard" || lvl === "detailed") trackingLevel = lvl;
+      }
+    } catch {}
+    updatePlayerRatings(players, trackingLevel);
 
     return json({ players });
   } catch (error) {

@@ -34,7 +34,7 @@ import { Badge } from "@/components/ui/badge";
 import { seasonStatusVariant, statusLabel } from "@/lib/status";
 import { useConfirm } from "@/components/shared/confirm-dialog";
 import { useSeasonHasFixtures } from "@/lib/hooks/use-competition-stats";
-import type { Season, Team } from "@/lib/types";
+import type { Season, Team, TrackingLevel } from "@/lib/types";
 import {
   DEFAULT_FLYER_SETTINGS,
   FLYER_FORMATS,
@@ -95,6 +95,14 @@ export default function CompetitionSettingsPage() {
   const [flyerDraft, setFlyerDraft] = useState<FlyerSettings | null>(null);
   const [flyerSaving, setFlyerSaving] = useState(false);
   const flyerInputRef = useRef<HTMLInputElement>(null);
+
+  const savedTrackingLevel = (currentCompetition?.settings && typeof currentCompetition.settings === "object" && (currentCompetition.settings as Record<string, unknown>).rating
+    && typeof ((currentCompetition.settings as Record<string, unknown>).rating as any)?.trackingLevel === "string"
+    ? ((currentCompetition.settings as Record<string, unknown>).rating as any).trackingLevel
+    : "essential") as TrackingLevel;
+  const [trackingLevelDraft, setTrackingLevelDraft] = useState<TrackingLevel | null>(null);
+  const trackingLevel = trackingLevelDraft ?? savedTrackingLevel;
+  const trackingLevelDirty = trackingLevelDraft !== null && trackingLevelDraft !== savedTrackingLevel;
 
   // Derive the live flyer config: the edited draft when present, otherwise the
   // value persisted on the competition. No pre-load seeding needed.
@@ -198,6 +206,33 @@ export default function CompetitionSettingsPage() {
             text: err instanceof Error ? err.message : "Something went wrong",
           }),
         onSettled: () => setFlyerSaving(false),
+      }
+    );
+  };
+
+  const handleRatingSave = async () => {
+    if (!currentCompetition) return;
+    setMessage(null);
+    const currentSettings = (
+      currentCompetition.settings && typeof currentCompetition.settings === "object"
+        ? currentCompetition.settings
+        : {}
+    ) as Record<string, unknown>;
+    updateMutation.mutate(
+      {
+        id: cId,
+        settings: { ...currentSettings, rating: { ...(currentSettings.rating as Record<string, unknown> || {}), trackingLevel } },
+      },
+      {
+        onSuccess: () => {
+          setTrackingLevelDraft(null);
+          setMessage({ type: "success", text: "Rating settings saved." });
+        },
+        onError: (err) =>
+          setMessage({
+            type: "error",
+            text: err instanceof Error ? err.message : "Something went wrong",
+          }),
       }
     );
   };
@@ -701,6 +736,45 @@ export default function CompetitionSettingsPage() {
             Save Flyer Settings
           </button>
         </div>
+      </div>
+
+      <div className="card p-6 space-y-4">
+        <div className="flex items-center justify-between">
+          <div>
+            <h2 className="text-lg font-semibold">Player Ratings</h2>
+            <p className="text-sm text-muted mt-1">Control how detailed player ratings are calculated for this competition.</p>
+          </div>
+        </div>
+        <div className="flex items-end gap-3">
+          <div className="flex-1">
+            <label htmlFor="trackingLevel" className="block text-sm font-medium mb-1">
+              Tracking level
+            </label>
+            <select
+              id="trackingLevel"
+              value={trackingLevel}
+              onChange={(e) => setTrackingLevelDraft(e.target.value as TrackingLevel)}
+              className="input w-full"
+            >
+              <option value="essential">Essential (goals, assists, cards, results — best for small orgs)</option>
+              <option value="standard">Standard (+ goalkeeper saves/penalties)</option>
+              <option value="detailed">Detailed (+ tackles, interceptions, blocks, aerials)</option>
+            </select>
+          </div>
+          <button
+            onClick={handleRatingSave}
+            disabled={updateMutation.isPending || !trackingLevelDirty}
+            className="btn-primary flex items-center gap-2"
+          >
+            {updateMutation.isPending ? (
+              <span className="block w-4 h-4 bg-surface-2 rounded animate-pulse" />
+            ) : (
+              <Check size={14} />
+            )}
+            Save
+          </button>
+        </div>
+        <p className="text-xs text-muted">Unlogged metrics are never treated as zero — only tracked metrics are used and ratings are averaged per match.</p>
       </div>
 
       <div className="card p-6 space-y-4">

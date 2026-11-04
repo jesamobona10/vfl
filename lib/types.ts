@@ -463,6 +463,8 @@ export type CompetitionType = "league" | "cup" | "friendly";
 /** Lifecycle status of a competition. */
 export type CompetitionStatus = "draft" | "active" | "completed" | "archived";
 
+export type TrackingLevel = "essential" | "standard" | "detailed";
+
 /** A competition (league, cup, or friendly) within an organization. */
 export interface Competition {
   /** Competition UUID. */
